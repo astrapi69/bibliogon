@@ -1,5 +1,17 @@
 {
   "ui": {
+    "migration": {
+      "title": "Bibliogon'a hoş geldiniz",
+      "intro": "Uygulamayı çevrimiçi olarak kullandınız mı? Kitaplarınız ve makaleleriniz aktarılabilir.",
+      "step_open": "Çevrimiçi sürümü açın.",
+      "step_settings": "Ayarlar → Veriler → Tam yedek (.bgb) bölümüne gidin.",
+      "step_download": ".bgb dosyasını indirin.",
+      "step_import": "Burada “Yedeği içe aktar” düğmesine tıklayın.",
+      "skip": "Verisiz başla",
+      "open_online": "Çevrimiçi sürümü aç",
+      "import": "Yedeği içe aktar",
+      "settings_hint": "Çevrimiçi sürümden mi geçiyorsunuz? Orada tam yedek (.bgb) dışa aktarın ve burada “Yedeği içe aktar” ile içe aktarın."
+    },
     "ai_extraction": {
       "story_bible_button": "Kitap metninden oluştur",
       "storyboard_button": "Kitap metninden oluştur",
@@ -518,6 +530,9 @@
       "export_book": "Kitabi disa aktar",
       "toc_validate": "Icindekiler tablosunu dogrula",
       "save_as_template": "Sablon olarak kaydet",
+      "export_learnset": "Öğrenme setini dışa aktar",
+      "learnset_export_success": "Öğrenme seti dışa aktarıldı",
+      "learnset_export_failed": "Öğrenme seti dışa aktarımı başarısız oldu",
       "save_template_tooltip": "Kitap yapisini tekrar kullanilabilir sablon olarak kaydet",
       "save_template_disabled": "Once bir bolum olusturun",
       "chapter_save_as_template": "Sablon olarak kaydet",
@@ -910,6 +925,37 @@
         "description": "Onsoz ve sonsoz ile cercevelenmis kisisel anilar; sekiz anlatimsal bolum ve tesekkur."
       }
     },
+    "book_templates": {
+      "name": {
+        "roman_3act": "Roman (3 Perde)",
+        "sachbuch": "Kurgu Dışı",
+        "kurzgeschichte": "Kısa Öykü",
+        "lyrik": "Şiir",
+        "kinderbuch": "Resimli Kitap",
+        "comic": "Çizgi Roman"
+      },
+      "desc": {
+        "roman_3act": "Prolog, perde başlıkları, on bir bölüm ve sonsözden oluşan üç perdelik roman yapısı.",
+        "sachbuch": "Ön söz, giriş, sekiz bölüm, özet ve ekten oluşan bir kurgu dışı kitap.",
+        "kurzgeschichte": "Tek bir bölümde tek bir kısa öykü.",
+        "lyrik": "Yirmi şiir bölümünden oluşan bir şiir kitabı.",
+        "kinderbuch": "On iki sayfalık resimli kitap (görsel ve metin).",
+        "comic": "Standart formatta yirmi iki sayfalık bir çizgi roman."
+      },
+      "title": {
+        "prologue": "Prolog",
+        "epilogue": "Sonsöz",
+        "act": "Perde",
+        "chapter": "Bölüm",
+        "foreword": "Ön söz",
+        "introduction": "Giriş",
+        "summary": "Özet",
+        "appendix": "Ek",
+        "poem": "Şiir",
+        "story": "Öykü"
+      },
+      "page_count": "{count} sayfa"
+    },
     "save_template": {
       "title": "Sablon olarak kaydet",
       "name": "Ad",
@@ -1035,8 +1081,19 @@
       "image_cache_empty": "Önbellekte görsel yok."
     },
     "settings": {
+      "updates_section": "Güncellemeler",
+      "updates_description": "Yeni sürümler için otomatik kontrol.",
+      "auto_check": "Otomatik güncelleme kontrolü",
+      "auto_check_hint": "Arka planda yeni sürümleri denetler.",
+      "check_interval": "Kontrol aralığı",
+      "interval_daily": "Günlük",
+      "interval_weekly": "Haftalık",
+      "interval_monthly": "Aylık",
+      "interval_never": "Asla",
       "title": "Ayarlar",
       "tab_general": "Genel",
+      "notes": "Project notes",
+      "notes_placeholder": "Notes about the book project…",
       "tab_erscheinungsbild": "Gorunum",
       "tab_verhalten": "Davranis",
       "tab_editor": "Düzenleyici",
@@ -1284,16 +1341,7 @@
       "export_engine_hint": "Dışa aktarmanın hangi motoru kullanacağı. \"Otomatik\" çevrimiçi Pandoc (LaTeX PDF), çevrimdışı tarayıcı dışa aktarmasını kullanır. \"Tarayıcı\" her zaman tarayıcıda dışa aktarır; \"Backend\" her zaman Pandoc kullanır (yalnızca çevrimiçi).",
       "export_engine_auto": "Otomatik (önerilen)",
       "export_engine_client": "Tarayıcı (çevrimdışı)",
-      "export_engine_backend": "Backend (Pandoc/LaTeX, yalnızca çevrimiçi)",
-      "updates_section": "Güncellemeler",
-      "updates_description": "Yeni sürümler için otomatik kontrol.",
-      "auto_check": "Otomatik güncelleme kontrolü",
-      "auto_check_hint": "Arka planda yeni sürümleri denetler.",
-      "check_interval": "Kontrol aralığı",
-      "interval_daily": "Günlük",
-      "interval_weekly": "Haftalık",
-      "interval_monthly": "Aylık",
-      "interval_never": "Asla"
+      "export_engine_backend": "Backend (Pandoc/LaTeX, yalnızca çevrimiçi)"
     },
     "authors_database": {
       "title": "Yazarlar Veritabanı",
@@ -1756,9 +1804,7 @@
       "asin_ebook": "ASIN e-kitap",
       "asin_paperback": "ASIN karton kapak",
       "asin_hardcover": "ASIN sert kapak",
-      "backpage_author_bio": "Yazar hakkinda",
-      "notes": "Project notes",
-      "notes_placeholder": "Notes about the book project…"
+      "backpage_author_bio": "Yazar hakkinda"
     },
     "cover": {
       "choose_file": "Dosya sec",
@@ -2082,14 +2128,14 @@
     },
     "update_banner": {
       "needs_restart": "Güncellemeyi tamamlamak için uygulamayı tamamen kapatıp yeniden açın.",
-      "message": "Bibliogon'un yeni bir sürümü mevcut.",
-      "button": "Şimdi güncelle",
-      "updating": "Çalışmanız kaydediliyor ve güncelleniyor …",
-      "dismiss": "Kapat",
       "version_available": "Yeni sürüm {version} mevcut",
       "whats_new": "Yenilikler neler?",
       "later": "Daha sonra",
-      "notes_title": "{version} sürümündeki yenilikler"
+      "notes_title": "{version} sürümündeki yenilikler",
+      "message": "Bibliogon'un yeni bir sürümü mevcut.",
+      "button": "Şimdi güncelle",
+      "updating": "Çalışmanız kaydediliyor ve güncelleniyor …",
+      "dismiss": "Kapat"
     },
     "versions": {
       "menu_item": "Surum gecmisi",
@@ -2827,6 +2873,7 @@
       "no_image": "Henüz görsel yok",
       "upload_image": "Görsel yükle",
       "replace_image": "Görseli değiştir",
+      "drop_image": "Görseli buraya bırakın",
       "no_secondary_image": "Henüz ikinci görsel yok",
       "upload_secondary_image": "İkinci görseli yükle",
       "replace_secondary_image": "İkinci görseli değiştir",
@@ -3311,8 +3358,7 @@
             "italic": "İtalik"
           }
         }
-      },
-      "drop_image": "Görseli buraya bırakın"
+      }
     },
     "chapter_status": {
       "label": "Durum",
@@ -3486,18 +3532,18 @@
       "col_synopsis": "Synopsis",
       "synopsis_placeholder": "Short summary…",
       "synopsis_auto": "Generate from first paragraph",
+      "col_notes": "Notlar",
+      "notes_placeholder": "Çalışma notları…",
       "collections_label": "Collections",
       "collection_all": "All chapters",
       "collection_new": "New collection",
       "collection_delete": "Delete",
+      "collection_color": "Koleksiyon rengi",
       "collection_name": "Collection name",
       "collection_filter": "Filter to collection",
       "collection_default_name": "New collection",
       "collection_save_failed": "Could not save collection",
-      "col_in_collection": "In",
-      "col_notes": "Notlar",
-      "notes_placeholder": "Çalışma notları…",
-      "collection_color": "Koleksiyon rengi"
+      "col_in_collection": "In"
     },
     "storyboard": {
       "title": "Storyboard",
@@ -3564,6 +3610,7 @@
     "comic_book_editor": {
       "panel_upload_image": "Görsel yükle",
       "panel_replace_image": "Görseli değiştir",
+      "panel_drop_image": "Görseli buraya bırakın",
       "back": "Geri",
       "overflow_title": "Bu şablon için çok fazla panel var",
       "overflow_message": "Seçili şablon yalnızca {target} panele izin veriyor ancak bu sayfada {current} panel var. Fazladan {excess} panel taşınmalı veya silinmelidir.",
@@ -3600,8 +3647,7 @@
         "grid_2x2": "Standart ızgara (4 panel)",
         "grid_2x3": "İki katmanlı (6 panel)",
         "grid_3x2": "Üç katmanlı (6 panel)"
-      },
-      "panel_drop_image": "Görseli buraya bırakın"
+      }
     },
     "lan_access": {
       "heading": "LAN erişimi",
@@ -3620,7 +3666,13 @@
       "client_hint": "Çevrimdışı dışa aktarma doğrudan tarayıcıda. Pandoc PDF için masaüstü uygulamasını kullanın.",
       "client_engine_hint": "Tarayıcı dışa aktarması Ayarlar'da seçili. Pandoc PDF için dışa aktarma motorunu \"Backend\" olarak ayarlayın."
     },
+    "preview_banner": {
+      "title": "Önizleme/Test sürümü",
+      "message": "Bir önizleme/test sürümü kullanıyorsunuz. Kararlı değildir ve hatalar içerebilir."
+    },
     "about": {
+      "next_check": "Sonraki otomatik kontrol: {time}",
+      "next_check_disabled": "Otomatik kontrol devre dışı",
       "heading": "Bibliogon Hakkında",
       "description": "Surum, sistem bilgisi, yuklenmis eklentiler ve bagis kanallari.",
       "loading": "Bilgiler yükleniyor ...",
@@ -3630,6 +3682,21 @@
       "build_label": "Build",
       "branch_label": "Branch",
       "build_date_label": "Yapım tarihi",
+      "commit_label": "Commit",
+      "preview_heading": "Önizleme/Test sürümü",
+      "share_heading": "Uygulamayı paylaş",
+      "share_production_heading": "Ana sürüm (kararlı)",
+      "share_production_description": "Kararlı uygulamayı QR kodu ile paylaşın, böylece başkaları açabilir.",
+      "share_preview_heading": "En son sürüm (test)",
+      "share_preview_description": "Bu bir önizleme/test sürümüdür. Kararlı değildir ve hatalar içerebilir. Yalnızca test edenlerle paylaşın.",
+      "share_qr_show": "QR kodunu göster",
+      "share_qr_hide": "QR kodunu gizle",
+      "share_open": "Bağlantıyı aç",
+      "share_copy": "Bağlantıyı kopyala",
+      "share_copied": "Bağlantı kopyalandı!",
+      "share_copy_failed": "Bağlantı kopyalanamadı.",
+      "share_native": "Paylaş",
+      "share_text": "Yazarlar için açık kaynaklı platform",
       "check_update_button": "Yeni sürümü denetle",
       "check_update_checking": "Denetleniyor …",
       "update_up_to_date": "En güncel sürümü kullanıyorsunuz.",
@@ -3669,24 +3736,7 @@
       "ai_assistance_label": "Yapay zeka desteği",
       "ai_assistance_value": "Claude (Anthropic) - mimari, kod, içerik, dokümantasyon",
       "resources_heading": "Lisans ve Kaynaklar",
-      "docs_label": "Dokümantasyon",
-      "next_check": "Sonraki otomatik kontrol: {time}",
-      "next_check_disabled": "Otomatik kontrol devre dışı",
-      "commit_label": "Commit",
-      "preview_heading": "Önizleme/Test sürümü",
-      "share_heading": "Uygulamayı paylaş",
-      "share_production_heading": "Ana sürüm (kararlı)",
-      "share_production_description": "Kararlı uygulamayı QR kodu ile paylaşın, böylece başkaları açabilir.",
-      "share_preview_heading": "En son sürüm (test)",
-      "share_preview_description": "Bu bir önizleme/test sürümüdür. Kararlı değildir ve hatalar içerebilir. Yalnızca test edenlerle paylaşın.",
-      "share_qr_show": "QR kodunu göster",
-      "share_qr_hide": "QR kodunu gizle",
-      "share_open": "Bağlantıyı aç",
-      "share_copy": "Bağlantıyı kopyala",
-      "share_copied": "Bağlantı kopyalandı!",
-      "share_copy_failed": "Bağlantı kopyalanamadı.",
-      "share_native": "Paylaş",
-      "share_text": "Yazarlar için açık kaynaklı platform"
+      "docs_label": "Dokümantasyon"
     },
     "kdp_publishing_wizard": {
       "open_button": "KDP'de yayımla",
@@ -3696,6 +3746,27 @@
       "step_metadata": "Meta veriler",
       "step_cover": "Kapak",
       "step_export": "Paket",
+      "step_format": "Biçim",
+      "format_intro": "Yayın biçimini seç. eBook EPUB'dur; ciltsiz ve ciltli, taşmalı baskı PDF'leridir.",
+      "format_kind_label": "Biçim",
+      "format_kind_ebook": "eBook (EPUB/KPF)",
+      "format_kind_paperback": "Ciltsiz (taşmalı PDF)",
+      "format_kind_hardcover": "Ciltli (taşmalı PDF)",
+      "format_trim_label": "Kesim boyutu",
+      "format_margin_label": "Kenar boşlukları",
+      "format_margin_narrow": "Dar",
+      "format_margin_normal": "Normal",
+      "format_margin_wide": "Geniş",
+      "guide_format_label": "Seçilen biçim",
+      "step_guide": "Kılavuz",
+      "guide_intro": "Bibliogon senin yerine yüklemez. Paketini KDP'de şöyle yayımlarsın:",
+      "guide_open_kdp": "KDP Bookshelf'i aç",
+      "guide_step_create": "KDP'de yeni bir başlık oluştur (e-Kitap veya Ciltsiz/Ciltli).",
+      "guide_step_manuscript": "Manuskript dosyasını ZIP'ten yükle: e-Kitap için manuscript-ebook.epub, baskı için manuscript-paperback.pdf.",
+      "guide_step_cover": "Kapak dosyasını yükle (cover.*).",
+      "guide_step_metadata": "metadata.json'daki bilgileri aktar (başlık, yazar, açıklama, kategoriler, anahtar kelimeler).",
+      "guide_step_price": "Fiyatı belirle (telif + asgari fiyat için Fiyatlar adımına bak) ve yayımla.",
+      "guide_note": "KDP kapağı reddederse ZIP'teki kapak doğrulama raporunu (cover-validation-report.json) kontrol et.",
       "metadata_loading": "Meta veriler kontrol ediliyor…",
       "metadata_check_failed": "Meta veri kontrolü başarısız oldu.",
       "metadata_hint": "Bu kitap KDP'ye yüklenmeden önce zorunlu alanlar doldurulmalıdır. Uyarılar yalnızca öneridir.",
@@ -3752,75 +3823,7 @@
       "arc_mailto_subject": "ARC isteği",
       "arc_send_mail": "E-posta yaz",
       "conflict_banner": "Kitap meta verileri son sihirbaz oturumundan bu yana değişti. Paketi oluşturmadan önce lütfen meta verileri + kapağı yeniden doğrulayın.",
-      "conflict_dismiss": "Bildirimi kapat",
-      "step_guide": "Kılavuz",
-      "guide_intro": "Bibliogon senin yerine yüklemez. Paketini KDP'de şöyle yayımlarsın:",
-      "guide_open_kdp": "KDP Bookshelf'i aç",
-      "guide_step_create": "KDP'de yeni bir başlık oluştur (e-Kitap veya Ciltsiz/Ciltli).",
-      "guide_step_manuscript": "Manuskript dosyasını ZIP'ten yükle: e-Kitap için manuscript-ebook.epub, baskı için manuscript-paperback.pdf.",
-      "guide_step_cover": "Kapak dosyasını yükle (cover.*).",
-      "guide_step_metadata": "metadata.json'daki bilgileri aktar (başlık, yazar, açıklama, kategoriler, anahtar kelimeler).",
-      "guide_step_price": "Fiyatı belirle (telif + asgari fiyat için Fiyatlar adımına bak) ve yayımla.",
-      "guide_note": "KDP kapağı reddederse ZIP'teki kapak doğrulama raporunu (cover-validation-report.json) kontrol et.",
-      "step_format": "Biçim",
-      "format_intro": "Yayın biçimini seç. eBook EPUB'dur; ciltsiz ve ciltli, taşmalı baskı PDF'leridir.",
-      "format_kind_label": "Biçim",
-      "format_kind_ebook": "eBook (EPUB/KPF)",
-      "format_kind_paperback": "Ciltsiz (taşmalı PDF)",
-      "format_kind_hardcover": "Ciltli (taşmalı PDF)",
-      "format_trim_label": "Kesim boyutu",
-      "format_margin_label": "Kenar boşlukları",
-      "format_margin_narrow": "Dar",
-      "format_margin_normal": "Normal",
-      "format_margin_wide": "Geniş",
-      "guide_format_label": "Seçilen biçim"
-    },
-    "migration": {
-      "title": "Bibliogon'a hoş geldiniz",
-      "intro": "Uygulamayı çevrimiçi olarak kullandınız mı? Kitaplarınız ve makaleleriniz aktarılabilir.",
-      "step_open": "Çevrimiçi sürümü açın.",
-      "step_settings": "Ayarlar → Veriler → Tam yedek (.bgb) bölümüne gidin.",
-      "step_download": ".bgb dosyasını indirin.",
-      "step_import": "Burada “Yedeği içe aktar” düğmesine tıklayın.",
-      "skip": "Verisiz başla",
-      "open_online": "Çevrimiçi sürümü aç",
-      "import": "Yedeği içe aktar",
-      "settings_hint": "Çevrimiçi sürümden mi geçiyorsunuz? Orada tam yedek (.bgb) dışa aktarın ve burada “Yedeği içe aktar” ile içe aktarın."
-    },
-    "preview_banner": {
-      "title": "Önizleme/Test sürümü",
-      "message": "Bir önizleme/test sürümü kullanıyorsunuz. Kararlı değildir ve hatalar içerebilir."
-    },
-    "book_templates": {
-      "name": {
-        "roman_3act": "Roman (3 Perde)",
-        "sachbuch": "Kurgu Dışı",
-        "kurzgeschichte": "Kısa Öykü",
-        "lyrik": "Şiir",
-        "kinderbuch": "Resimli Kitap",
-        "comic": "Çizgi Roman"
-      },
-      "desc": {
-        "roman_3act": "Prolog, perde başlıkları, on bir bölüm ve sonsözden oluşan üç perdelik roman yapısı.",
-        "sachbuch": "Ön söz, giriş, sekiz bölüm, özet ve ekten oluşan bir kurgu dışı kitap.",
-        "kurzgeschichte": "Tek bir bölümde tek bir kısa öykü.",
-        "lyrik": "Yirmi şiir bölümünden oluşan bir şiir kitabı.",
-        "kinderbuch": "On iki sayfalık resimli kitap (görsel ve metin).",
-        "comic": "Standart formatta yirmi iki sayfalık bir çizgi roman."
-      },
-      "title": {
-        "prologue": "Prolog",
-        "epilogue": "Sonsöz",
-        "act": "Perde",
-        "chapter": "Bölüm",
-        "foreword": "Ön söz",
-        "introduction": "Giriş",
-        "summary": "Özet",
-        "appendix": "Ek",
-        "poem": "Şiir",
-        "story": "Öykü"
-      },
-      "page_count": "{count} sayfa"
+      "conflict_dismiss": "Bildirimi kapat"
     }
   }
 }

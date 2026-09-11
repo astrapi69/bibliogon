@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { BookDetail } from "../api/client";
+import { api, ApiError, BookDetail } from "../api/client";
+import { toast } from "react-toastify";
+import { downloadBlob } from "../shared/utils/downloadBlob";
 import ConflictResolutionDialog from "../components/import/ConflictResolutionDialog";
 import ChapterSidebar from "../components/book/ChapterSidebar";
 import { OfflineToggleButton } from "../components/shared/OfflineToggleButton";
@@ -40,6 +42,7 @@ export default function BookEditor() {
     const navigate = useNavigate();
     const { t } = useI18n();
     const gitSync = useFeature(FEATURES.GIT_SYNC);
+    const learnsetExport = useFeature(FEATURES.LEARNSET_EXPORT);
     const versionHistory = useFeature(FEATURES.VERSION_HISTORY);
     const offlineGate = !gitSync.isActive;
     const bookTypesSnapshot = useBookTypes();
@@ -160,6 +163,21 @@ export default function BookEditor() {
 
     const handleExport = () => {
         navigate(`/books/${bookId}/export`);
+    };
+
+    const handleExportLearnset = async () => {
+        if (!bookId) return;
+        try {
+            const { blob, filename } = await api.learnset.download(bookId);
+            downloadBlob(blob, filename);
+            toast.success(t("ui.sidebar.learnset_export_success", "Lernset exportiert"));
+        } catch (error) {
+            if (error instanceof ApiError) {
+                toast.error(error.detail);
+            } else {
+                toast.error(t("ui.sidebar.learnset_export_failed", "Lernset-Export fehlgeschlagen"));
+            }
+        }
     };
 
     if (loading) {
@@ -307,6 +325,7 @@ export default function BookEditor() {
                     }
                     relationshipsActive={showRelationships}
                     onSaveAsTemplate={() => setShowSaveTemplate(true)}
+                    onExportLearnset={learnsetExport.isActive ? handleExportLearnset : undefined}
                     onAddFromTemplate={() => setShowChapterTemplatePicker(true)}
                     onSaveAsChapterTemplate={(id) => setSaveChapterTemplateId(id)}
                     onShowVersions={

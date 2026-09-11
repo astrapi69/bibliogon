@@ -116,7 +116,7 @@ def generate_settings() -> None:
 
 
 def generate_book_types() -> None:
-    from app.services.book_type_registry import load_book_types
+    from app.services.registries.book_type_registry import load_book_types
 
     data = {
         type_id: definition.model_dump(mode="json")
@@ -128,7 +128,7 @@ def generate_book_types() -> None:
 
 
 def generate_content_types() -> None:
-    from app.services.content_type_registry import load_content_types
+    from app.services.registries.content_type_registry import load_content_types
 
     data = {
         type_id: definition.model_dump(mode="json")
@@ -140,7 +140,7 @@ def generate_content_types() -> None:
 
 
 def generate_story_entity_types() -> None:
-    from app.services.story_entity_registry import load_story_entity_types
+    from app.services.registries.story_entity_registry import load_story_entity_types
 
     data = {
         type_id: definition.model_dump(mode="json")

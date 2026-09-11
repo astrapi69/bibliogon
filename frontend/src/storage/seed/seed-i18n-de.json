@@ -1,5 +1,17 @@
 {
   "ui": {
+    "migration": {
+      "title": "Willkommen bei Bibliogon",
+      "intro": "Hast du die App schon online genutzt? Deine Bücher und Artikel können übernommen werden.",
+      "step_open": "Öffne die Online-Version.",
+      "step_settings": "Gehe zu Einstellungen → Daten → Vollbackup (.bgb).",
+      "step_download": "Lade die .bgb-Datei herunter.",
+      "step_import": "Klicke hier auf „Backup importieren“.",
+      "skip": "Ohne Daten starten",
+      "open_online": "Online-Version öffnen",
+      "import": "Backup importieren",
+      "settings_hint": "Aus der Online-Version migrieren? Exportiere dort ein Vollbackup (.bgb) und importiere es hier mit „Backup importieren“."
+    },
     "ai_extraction": {
       "story_bible_button": "Aus Buchtext generieren",
       "storyboard_button": "Aus Buchtext generieren",
@@ -518,6 +530,9 @@
       "export_book": "Buch exportieren",
       "toc_validate": "TOC prüfen",
       "save_as_template": "Als Vorlage speichern",
+      "export_learnset": "Lernset exportieren",
+      "learnset_export_success": "Lernset exportiert",
+      "learnset_export_failed": "Lernset-Export fehlgeschlagen",
       "save_template_tooltip": "Buchstruktur als wiederverwendbare Vorlage speichern",
       "save_template_disabled": "Erstelle zuerst ein Kapitel",
       "chapter_save_as_template": "Als Vorlage speichern",
@@ -891,6 +906,37 @@
         "description": "Eine persönliche Lebenserinnerung gerahmt von Prolog und Epilog mit acht erzählerischen Kapiteln und Danksagung."
       }
     },
+    "book_templates": {
+      "name": {
+        "roman_3act": "Roman (3-Akt)",
+        "sachbuch": "Sachbuch",
+        "kurzgeschichte": "Kurzgeschichte",
+        "lyrik": "Lyrik / Gedichte",
+        "kinderbuch": "Kinderbuch",
+        "comic": "Comic"
+      },
+      "desc": {
+        "roman_3act": "Romanstruktur in drei Akten mit Prolog, Aktüberschriften, elf Kapiteln und Epilog.",
+        "sachbuch": "Sachbuch mit Vorwort, Einleitung, acht Kapiteln, Zusammenfassung und Anhang.",
+        "kurzgeschichte": "Eine einzelne Kurzgeschichte in einem Kapitel.",
+        "lyrik": "Gedichtband mit zwanzig Gedicht-Kapiteln.",
+        "kinderbuch": "Bilderbuch mit zwölf Seiten (Bild und Text).",
+        "comic": "Comic-Heft mit zweiundzwanzig Seiten im Standardformat."
+      },
+      "title": {
+        "prologue": "Prolog",
+        "epilogue": "Epilog",
+        "act": "Akt",
+        "chapter": "Kapitel",
+        "foreword": "Vorwort",
+        "introduction": "Einleitung",
+        "summary": "Zusammenfassung",
+        "appendix": "Anhang",
+        "poem": "Gedicht",
+        "story": "Geschichte"
+      },
+      "page_count": "{count} Seiten"
+    },
     "save_template": {
       "title": "Als Vorlage speichern",
       "name": "Name",
@@ -1016,8 +1062,19 @@
       "image_cache_empty": "Keine Bilder im Cache."
     },
     "settings": {
+      "updates_section": "Updates",
+      "updates_description": "Automatische Prüfung auf neue Versionen.",
+      "auto_check": "Automatische Update-Prüfung",
+      "auto_check_hint": "Prüft im Hintergrund auf neue Versionen.",
+      "check_interval": "Prüfintervall",
+      "interval_daily": "Täglich",
+      "interval_weekly": "Wöchentlich",
+      "interval_monthly": "Monatlich",
+      "interval_never": "Nie",
       "title": "Einstellungen",
       "tab_general": "Allgemein",
+      "notes": "Projektnotizen",
+      "notes_placeholder": "Notizen zum Buchprojekt…",
       "tab_erscheinungsbild": "Erscheinungsbild",
       "tab_verhalten": "Verhalten",
       "tab_editor": "Editor",
@@ -1265,16 +1322,7 @@
       "export_engine_hint": "Welche Engine der Export nutzt. „Automatisch“ verwendet online Pandoc (LaTeX-PDF) und offline den Browser-Export. „Browser“ exportiert immer direkt im Browser; „Backend“ immer über Pandoc (nur online).",
       "export_engine_auto": "Automatisch (empfohlen)",
       "export_engine_client": "Browser (offline-fähig)",
-      "export_engine_backend": "Backend (Pandoc/LaTeX, nur online)",
-      "updates_section": "Updates",
-      "updates_description": "Automatische Prüfung auf neue Versionen.",
-      "auto_check": "Automatische Update-Prüfung",
-      "auto_check_hint": "Prüft im Hintergrund auf neue Versionen.",
-      "check_interval": "Prüfintervall",
-      "interval_daily": "Täglich",
-      "interval_weekly": "Wöchentlich",
-      "interval_monthly": "Monatlich",
-      "interval_never": "Nie"
+      "export_engine_backend": "Backend (Pandoc/LaTeX, nur online)"
     },
     "authors_database": {
       "title": "Autoren-Datenbank",
@@ -1714,9 +1762,7 @@
       "asin_ebook": "ASIN E-Book",
       "asin_paperback": "ASIN Taschenbuch",
       "asin_hardcover": "ASIN Hardcover",
-      "backpage_author_bio": "Über den Autor",
-      "notes": "Projektnotizen",
-      "notes_placeholder": "Notizen zum Buchprojekt…"
+      "backpage_author_bio": "Über den Autor"
     },
     "cover": {
       "choose_file": "Datei wählen",
@@ -2082,14 +2128,14 @@
     },
     "update_banner": {
       "needs_restart": "Bitte schließe die App vollständig und öffne sie erneut, um das Update abzuschließen.",
-      "message": "Eine neue Version von Bibliogon ist verfügbar.",
-      "button": "Jetzt aktualisieren",
-      "updating": "Deine Änderungen werden gesichert und die App wird aktualisiert …",
-      "dismiss": "Schließen",
       "version_available": "Neue Version {version} verfügbar",
       "whats_new": "Was ist neu?",
       "later": "Später",
-      "notes_title": "Neuerungen in {version}"
+      "notes_title": "Neuerungen in {version}",
+      "message": "Eine neue Version von Bibliogon ist verfügbar.",
+      "button": "Jetzt aktualisieren",
+      "updating": "Deine Änderungen werden gesichert und die App wird aktualisiert …",
+      "dismiss": "Schließen"
     },
     "versions": {
       "menu_item": "Versionsverlauf",
@@ -2827,6 +2873,7 @@
       "no_image": "Noch kein Bild",
       "upload_image": "Bild hochladen",
       "replace_image": "Bild ersetzen",
+      "drop_image": "Bild hier ablegen",
       "no_secondary_image": "Noch kein zweites Bild",
       "upload_secondary_image": "Zweites Bild hochladen",
       "replace_secondary_image": "Zweites Bild ersetzen",
@@ -3311,8 +3358,7 @@
             "italic": "Kursiv"
           }
         }
-      },
-      "drop_image": "Bild hier ablegen"
+      }
     },
     "chapter_status": {
       "label": "Status",
@@ -3486,18 +3532,18 @@
       "col_synopsis": "Synopsis",
       "synopsis_placeholder": "Kurze Zusammenfassung…",
       "synopsis_auto": "Aus erstem Absatz erzeugen",
+      "col_notes": "Notizen",
+      "notes_placeholder": "Arbeitsnotizen…",
       "collections_label": "Sammlungen",
       "collection_all": "Alle Kapitel",
       "collection_new": "Neue Sammlung",
       "collection_delete": "Löschen",
+      "collection_color": "Farbe der Sammlung",
       "collection_name": "Sammlungsname",
       "collection_filter": "Auf Sammlung filtern",
       "collection_default_name": "Neue Sammlung",
       "collection_save_failed": "Sammlung konnte nicht gespeichert werden",
-      "col_in_collection": "In",
-      "col_notes": "Notizen",
-      "notes_placeholder": "Arbeitsnotizen…",
-      "collection_color": "Farbe der Sammlung"
+      "col_in_collection": "In"
     },
     "storyboard": {
       "title": "Storyboard",
@@ -3564,6 +3610,7 @@
     "comic_book_editor": {
       "panel_upload_image": "Bild hochladen",
       "panel_replace_image": "Bild ersetzen",
+      "panel_drop_image": "Bild hier ablegen",
       "back": "Zurück",
       "overflow_title": "Zu viele Panels für diese Vorlage",
       "overflow_message": "Die ausgewählte Vorlage erlaubt nur {target} Panel(s), aber die Seite hat {current}. {excess} überzählige Panel(s) müssen verschoben oder gelöscht werden.",
@@ -3600,8 +3647,7 @@
         "grid_2x2": "Standardraster (4 Panels)",
         "grid_2x3": "Zweistufig (6 Panels)",
         "grid_3x2": "Dreistufig (6 Panels)"
-      },
-      "panel_drop_image": "Bild hier ablegen"
+      }
     },
     "lan_access": {
       "heading": "LAN-Zugriff",
@@ -3620,7 +3666,13 @@
       "client_hint": "Offline-Export direkt im Browser. Für Pandoc-PDF die Desktop-App nutzen.",
       "client_engine_hint": "Browser-Export ist in den Einstellungen gewählt. Für Pandoc-PDF die Export-Engine auf „Backend“ stellen."
     },
+    "preview_banner": {
+      "title": "Vorschau-/Testversion",
+      "message": "Du verwendest eine Vorschau-/Testversion. Sie ist nicht stabil und kann Fehler enthalten."
+    },
     "about": {
+      "next_check": "Nächste automatische Prüfung: {time}",
+      "next_check_disabled": "Automatische Prüfung deaktiviert",
       "heading": "Über Bibliogon",
       "description": "Version, System-Info, installierte Plugins und Spenden-Kanäle.",
       "loading": "Lade Informationen ...",
@@ -3630,6 +3682,21 @@
       "build_label": "Build",
       "branch_label": "Branch",
       "build_date_label": "Build-Datum",
+      "commit_label": "Commit",
+      "preview_heading": "Vorschau-/Testversion",
+      "share_heading": "Die App teilen",
+      "share_production_heading": "Hauptversion (stabil)",
+      "share_production_description": "Teile die stabile App per QR-Code, damit andere sie öffnen können.",
+      "share_preview_heading": "Latest-Version (Test)",
+      "share_preview_description": "Dies ist eine Vorschau-/Testversion. Sie ist nicht stabil und kann Fehler enthalten. Teile sie nur mit Testern.",
+      "share_qr_show": "QR-Code anzeigen",
+      "share_qr_hide": "QR-Code verbergen",
+      "share_open": "Link öffnen",
+      "share_copy": "Link kopieren",
+      "share_copied": "Link kopiert!",
+      "share_copy_failed": "Link konnte nicht kopiert werden.",
+      "share_native": "Teilen",
+      "share_text": "Open-Source-Plattform für Autoren",
       "check_update_button": "Auf neue Version prüfen",
       "check_update_checking": "Prüfe …",
       "update_up_to_date": "Sie verwenden die aktuellste Version.",
@@ -3669,24 +3736,7 @@
       "ai_assistance_label": "KI-Assistenz",
       "ai_assistance_value": "Claude (Anthropic) - Architektur, Code, Content, Dokumentation",
       "resources_heading": "Lizenz & Ressourcen",
-      "docs_label": "Dokumentation",
-      "next_check": "Nächste automatische Prüfung: {time}",
-      "next_check_disabled": "Automatische Prüfung deaktiviert",
-      "commit_label": "Commit",
-      "preview_heading": "Vorschau-/Testversion",
-      "share_heading": "Die App teilen",
-      "share_production_heading": "Hauptversion (stabil)",
-      "share_production_description": "Teile die stabile App per QR-Code, damit andere sie öffnen können.",
-      "share_preview_heading": "Latest-Version (Test)",
-      "share_preview_description": "Dies ist eine Vorschau-/Testversion. Sie ist nicht stabil und kann Fehler enthalten. Teile sie nur mit Testern.",
-      "share_qr_show": "QR-Code anzeigen",
-      "share_qr_hide": "QR-Code verbergen",
-      "share_open": "Link öffnen",
-      "share_copy": "Link kopieren",
-      "share_copied": "Link kopiert!",
-      "share_copy_failed": "Link konnte nicht kopiert werden.",
-      "share_native": "Teilen",
-      "share_text": "Open-Source-Plattform für Autoren"
+      "docs_label": "Dokumentation"
     },
     "kdp_publishing_wizard": {
       "open_button": "Für KDP veröffentlichen",
@@ -3696,6 +3746,27 @@
       "step_metadata": "Metadaten",
       "step_cover": "Cover",
       "step_export": "Paket",
+      "step_format": "Format",
+      "format_intro": "Wähle das Veröffentlichungsformat. eBook ist EPUB; Taschenbuch und Hardcover sind Druck-PDFs mit Beschnitt.",
+      "format_kind_label": "Format",
+      "format_kind_ebook": "eBook (EPUB/KPF)",
+      "format_kind_paperback": "Taschenbuch (PDF mit Beschnitt)",
+      "format_kind_hardcover": "Hardcover (PDF mit Beschnitt)",
+      "format_trim_label": "Trim-Größe",
+      "format_margin_label": "Ränder",
+      "format_margin_narrow": "Schmal",
+      "format_margin_normal": "Normal",
+      "format_margin_wide": "Breit",
+      "guide_format_label": "Gewähltes Format",
+      "step_guide": "Anleitung",
+      "guide_intro": "Bibliogon lädt nicht für dich hoch. So veröffentlichst du dein Paket bei KDP:",
+      "guide_open_kdp": "KDP-Bookshelf öffnen",
+      "guide_step_create": "Erstelle bei KDP einen neuen Titel (eBook oder Taschenbuch/Hardcover).",
+      "guide_step_manuscript": "Lade die Manuskript-Datei aus dem ZIP hoch: manuscript-ebook.epub für eBook, manuscript-paperback.pdf für den Druck.",
+      "guide_step_cover": "Lade die Cover-Datei hoch (cover.*).",
+      "guide_step_metadata": "Übertrage die Angaben aus metadata.json (Titel, Autor, Beschreibung, Kategorien, Keywords).",
+      "guide_step_price": "Lege den Preis fest (siehe den Preise-Schritt für Tantiemen + Mindestpreis) und veröffentliche.",
+      "guide_note": "Prüfe den Cover-Validierungsbericht (cover-validation-report.json) im ZIP, falls KDP das Cover ablehnt.",
       "metadata_loading": "Metadaten werden geprüft…",
       "metadata_check_failed": "Metadaten-Prüfung fehlgeschlagen.",
       "metadata_hint": "Pflichtfelder müssen ausgefüllt sein, bevor das Buch zu KDP hochgeladen werden kann. Warnungen sind Empfehlungen.",
@@ -3752,75 +3823,7 @@
       "arc_mailto_subject": "ARC-Anfrage",
       "arc_send_mail": "E-Mail verfassen",
       "conflict_banner": "Die Buchmetadaten wurden seit der letzten Wizard-Sitzung geändert. Bitte Metadaten + Cover erneut bestätigen, bevor du das Paket erstellst.",
-      "conflict_dismiss": "Hinweis schließen",
-      "step_guide": "Anleitung",
-      "guide_intro": "Bibliogon lädt nicht für dich hoch. So veröffentlichst du dein Paket bei KDP:",
-      "guide_open_kdp": "KDP-Bookshelf öffnen",
-      "guide_step_create": "Erstelle bei KDP einen neuen Titel (eBook oder Taschenbuch/Hardcover).",
-      "guide_step_manuscript": "Lade die Manuskript-Datei aus dem ZIP hoch: manuscript-ebook.epub für eBook, manuscript-paperback.pdf für den Druck.",
-      "guide_step_cover": "Lade die Cover-Datei hoch (cover.*).",
-      "guide_step_metadata": "Übertrage die Angaben aus metadata.json (Titel, Autor, Beschreibung, Kategorien, Keywords).",
-      "guide_step_price": "Lege den Preis fest (siehe den Preise-Schritt für Tantiemen + Mindestpreis) und veröffentliche.",
-      "guide_note": "Prüfe den Cover-Validierungsbericht (cover-validation-report.json) im ZIP, falls KDP das Cover ablehnt.",
-      "step_format": "Format",
-      "format_intro": "Wähle das Veröffentlichungsformat. eBook ist EPUB; Taschenbuch und Hardcover sind Druck-PDFs mit Beschnitt.",
-      "format_kind_label": "Format",
-      "format_kind_ebook": "eBook (EPUB/KPF)",
-      "format_kind_paperback": "Taschenbuch (PDF mit Beschnitt)",
-      "format_kind_hardcover": "Hardcover (PDF mit Beschnitt)",
-      "format_trim_label": "Trim-Größe",
-      "format_margin_label": "Ränder",
-      "format_margin_narrow": "Schmal",
-      "format_margin_normal": "Normal",
-      "format_margin_wide": "Breit",
-      "guide_format_label": "Gewähltes Format"
-    },
-    "migration": {
-      "title": "Willkommen bei Bibliogon",
-      "intro": "Hast du die App schon online genutzt? Deine Bücher und Artikel können übernommen werden.",
-      "step_open": "Öffne die Online-Version.",
-      "step_settings": "Gehe zu Einstellungen → Daten → Vollbackup (.bgb).",
-      "step_download": "Lade die .bgb-Datei herunter.",
-      "step_import": "Klicke hier auf „Backup importieren“.",
-      "skip": "Ohne Daten starten",
-      "open_online": "Online-Version öffnen",
-      "import": "Backup importieren",
-      "settings_hint": "Aus der Online-Version migrieren? Exportiere dort ein Vollbackup (.bgb) und importiere es hier mit „Backup importieren“."
-    },
-    "preview_banner": {
-      "title": "Vorschau-/Testversion",
-      "message": "Du verwendest eine Vorschau-/Testversion. Sie ist nicht stabil und kann Fehler enthalten."
-    },
-    "book_templates": {
-      "name": {
-        "roman_3act": "Roman (3-Akt)",
-        "sachbuch": "Sachbuch",
-        "kurzgeschichte": "Kurzgeschichte",
-        "lyrik": "Lyrik / Gedichte",
-        "kinderbuch": "Kinderbuch",
-        "comic": "Comic"
-      },
-      "desc": {
-        "roman_3act": "Romanstruktur in drei Akten mit Prolog, Aktüberschriften, elf Kapiteln und Epilog.",
-        "sachbuch": "Sachbuch mit Vorwort, Einleitung, acht Kapiteln, Zusammenfassung und Anhang.",
-        "kurzgeschichte": "Eine einzelne Kurzgeschichte in einem Kapitel.",
-        "lyrik": "Gedichtband mit zwanzig Gedicht-Kapiteln.",
-        "kinderbuch": "Bilderbuch mit zwölf Seiten (Bild und Text).",
-        "comic": "Comic-Heft mit zweiundzwanzig Seiten im Standardformat."
-      },
-      "title": {
-        "prologue": "Prolog",
-        "epilogue": "Epilog",
-        "act": "Akt",
-        "chapter": "Kapitel",
-        "foreword": "Vorwort",
-        "introduction": "Einleitung",
-        "summary": "Zusammenfassung",
-        "appendix": "Anhang",
-        "poem": "Gedicht",
-        "story": "Geschichte"
-      },
-      "page_count": "{count} Seiten"
+      "conflict_dismiss": "Hinweis schließen"
     }
   }
 }

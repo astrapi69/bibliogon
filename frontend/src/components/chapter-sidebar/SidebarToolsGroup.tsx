@@ -11,6 +11,7 @@ import {
   Table,
   Network,
   ListChecks,
+  GraduationCap,
 } from "lucide-react";
 import type { Chapter } from "../../api/client";
 import { SIDEBAR_MENU_BREAKPOINT_PX } from "../../hooks/ui/useSidebarCollapse";
@@ -46,6 +47,7 @@ export default function SidebarToolsGroup({
   hasToc,
   onValidateToc,
   onSaveAsTemplate,
+  onExportLearnset,
   t,
 }: {
   chapters: Chapter[];
@@ -65,6 +67,7 @@ export default function SidebarToolsGroup({
   hasToc: boolean;
   onValidateToc?: () => void;
   onSaveAsTemplate?: () => void;
+  onExportLearnset?: () => void;
   t: (key: string, fallback: string) => string;
 }) {
   // The secondary book-tool buttons (Storyboard, Story Bible, Git, ...) live
@@ -234,6 +237,17 @@ export default function SidebarToolsGroup({
               {t("ui.sidebar.save_as_template", "Als Vorlage speichern")}
             </button>
           </Tooltip>
+        )}
+        {onExportLearnset && (
+          <button
+            className="btn-sidebar-block"
+            style={{ marginBottom: 6 }}
+            onClick={onExportLearnset}
+            data-testid="sidebar-export-learnset"
+          >
+            <GraduationCap size={14} />{" "}
+            {t("ui.sidebar.export_learnset", "Lernset exportieren")}
+          </button>
         )}
       </Collapsible.Content>
     </Collapsible.Root>

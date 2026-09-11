@@ -1,5 +1,17 @@
 {
   "ui": {
+    "migration": {
+      "title": "Bem-vindo ao Bibliogon",
+      "intro": "Já usou a aplicação online? Os seus livros e artigos podem ser transferidos.",
+      "step_open": "Abra a versão online.",
+      "step_settings": "Vá a Definições → Dados → Backup completo (.bgb).",
+      "step_download": "Transfira o ficheiro .bgb.",
+      "step_import": "Clique aqui em «Importar backup».",
+      "skip": "Começar sem dados",
+      "open_online": "Abrir versão online",
+      "import": "Importar backup",
+      "settings_hint": "A migrar da versão online? Exporte aí um backup completo (.bgb) e importe-o aqui com «Importar backup»."
+    },
     "ai_extraction": {
       "story_bible_button": "Gerar a partir do texto do livro",
       "storyboard_button": "Gerar a partir do texto do livro",
@@ -518,6 +530,9 @@
       "export_book": "Exportar livro",
       "toc_validate": "Validar sumario",
       "save_as_template": "Salvar como modelo",
+      "export_learnset": "Exportar conjunto de aprendizagem",
+      "learnset_export_success": "Conjunto de aprendizagem exportado",
+      "learnset_export_failed": "Falha ao exportar o conjunto de aprendizagem",
       "save_template_tooltip": "Salvar a estrutura do livro como modelo reutilizavel",
       "save_template_disabled": "Crie um capitulo primeiro",
       "chapter_save_as_template": "Salvar como modelo",
@@ -891,6 +906,37 @@
         "description": "Memorias pessoais enquadradas por prologo e epilogo, com oito capitulos narrativos e agradecimentos."
       }
     },
+    "book_templates": {
+      "name": {
+        "roman_3act": "Romance (3 atos)",
+        "sachbuch": "Não ficção",
+        "kurzgeschichte": "Conto",
+        "lyrik": "Poesia",
+        "kinderbuch": "Livro ilustrado",
+        "comic": "Quadrinhos"
+      },
+      "desc": {
+        "roman_3act": "Estrutura de romance em três atos com prólogo, títulos de ato, onze capítulos e epílogo.",
+        "sachbuch": "Um livro de não ficção com prefácio, introdução, oito capítulos, resumo e apêndice.",
+        "kurzgeschichte": "Um único conto em um capítulo.",
+        "lyrik": "Uma coletânea de poesia com vinte capítulos de poemas.",
+        "kinderbuch": "Um livro ilustrado com doze páginas (imagem e texto).",
+        "comic": "Uma revista em quadrinhos com vinte e duas páginas no formato padrão."
+      },
+      "title": {
+        "prologue": "Prólogo",
+        "epilogue": "Epílogo",
+        "act": "Ato",
+        "chapter": "Capítulo",
+        "foreword": "Prefácio",
+        "introduction": "Introdução",
+        "summary": "Resumo",
+        "appendix": "Apêndice",
+        "poem": "Poema",
+        "story": "Conto"
+      },
+      "page_count": "{count} páginas"
+    },
     "save_template": {
       "title": "Salvar como modelo",
       "name": "Nome",
@@ -1016,8 +1062,19 @@
       "image_cache_empty": "Sem imagens em cache."
     },
     "settings": {
+      "updates_section": "Atualizações",
+      "updates_description": "Verificação automática de novas versões.",
+      "auto_check": "Verificação automática de atualizações",
+      "auto_check_hint": "Procura novas versões em segundo plano.",
+      "check_interval": "Intervalo de verificação",
+      "interval_daily": "Diariamente",
+      "interval_weekly": "Semanalmente",
+      "interval_monthly": "Mensalmente",
+      "interval_never": "Nunca",
       "title": "Configuracoes",
       "tab_general": "Geral",
+      "notes": "Project notes",
+      "notes_placeholder": "Notes about the book project…",
       "tab_erscheinungsbild": "Aparencia",
       "tab_verhalten": "Comportamento",
       "tab_editor": "Editor",
@@ -1265,16 +1322,7 @@
       "export_engine_hint": "Que motor a exportação usa. «Automático» usa Pandoc (PDF LaTeX) online e a exportação do navegador offline. «Navegador» exporta sempre no navegador; «Backend» usa sempre Pandoc (apenas online).",
       "export_engine_auto": "Automático (recomendado)",
       "export_engine_client": "Navegador (offline)",
-      "export_engine_backend": "Backend (Pandoc/LaTeX, apenas online)",
-      "updates_section": "Atualizações",
-      "updates_description": "Verificação automática de novas versões.",
-      "auto_check": "Verificação automática de atualizações",
-      "auto_check_hint": "Procura novas versões em segundo plano.",
-      "check_interval": "Intervalo de verificação",
-      "interval_daily": "Diariamente",
-      "interval_weekly": "Semanalmente",
-      "interval_monthly": "Mensalmente",
-      "interval_never": "Nunca"
+      "export_engine_backend": "Backend (Pandoc/LaTeX, apenas online)"
     },
     "authors_database": {
       "title": "Base de dados de autores",
@@ -1714,9 +1762,7 @@
       "asin_ebook": "ASIN e-book",
       "asin_paperback": "ASIN brochura",
       "asin_hardcover": "ASIN capa dura",
-      "backpage_author_bio": "Sobre o autor",
-      "notes": "Project notes",
-      "notes_placeholder": "Notes about the book project…"
+      "backpage_author_bio": "Sobre o autor"
     },
     "cover": {
       "choose_file": "Escolher arquivo",
@@ -2082,14 +2128,14 @@
     },
     "update_banner": {
       "needs_restart": "Feche completamente o app e abra-o novamente para concluir a atualização.",
-      "message": "Uma nova versão do Bibliogon está disponível.",
-      "button": "Atualizar agora",
-      "updating": "A guardar o seu trabalho e a atualizar …",
-      "dismiss": "Fechar",
       "version_available": "Nova versão {version} disponível",
       "whats_new": "O que há de novo?",
       "later": "Mais tarde",
-      "notes_title": "Novidades na {version}"
+      "notes_title": "Novidades na {version}",
+      "message": "Uma nova versão do Bibliogon está disponível.",
+      "button": "Atualizar agora",
+      "updating": "A guardar o seu trabalho e a atualizar …",
+      "dismiss": "Fechar"
     },
     "versions": {
       "menu_item": "Historico de versoes",
@@ -2827,6 +2873,7 @@
       "no_image": "Ainda sem imagem",
       "upload_image": "Carregar imagem",
       "replace_image": "Substituir imagem",
+      "drop_image": "Solte a imagem aqui",
       "no_secondary_image": "Ainda sem imagem secundária",
       "upload_secondary_image": "Carregar imagem secundária",
       "replace_secondary_image": "Substituir imagem secundária",
@@ -3311,8 +3358,7 @@
             "italic": "Itálico"
           }
         }
-      },
-      "drop_image": "Solte a imagem aqui"
+      }
     },
     "chapter_status": {
       "label": "Estado",
@@ -3486,18 +3532,18 @@
       "col_synopsis": "Synopsis",
       "synopsis_placeholder": "Short summary…",
       "synopsis_auto": "Generate from first paragraph",
+      "col_notes": "Notas",
+      "notes_placeholder": "Notas de trabalho…",
       "collections_label": "Collections",
       "collection_all": "All chapters",
       "collection_new": "New collection",
       "collection_delete": "Delete",
+      "collection_color": "Cor da coleção",
       "collection_name": "Collection name",
       "collection_filter": "Filter to collection",
       "collection_default_name": "New collection",
       "collection_save_failed": "Could not save collection",
-      "col_in_collection": "In",
-      "col_notes": "Notas",
-      "notes_placeholder": "Notas de trabalho…",
-      "collection_color": "Cor da coleção"
+      "col_in_collection": "In"
     },
     "storyboard": {
       "title": "Storyboard",
@@ -3564,6 +3610,7 @@
     "comic_book_editor": {
       "panel_upload_image": "Carregar imagem",
       "panel_replace_image": "Substituir imagem",
+      "panel_drop_image": "Solte a imagem aqui",
       "back": "Voltar",
       "overflow_title": "Demasiados quadros para este modelo",
       "overflow_message": "O modelo selecionado permite apenas {target} quadro(s), mas esta página tem {current}. {excess} quadro(s) em excesso têm de ser movidos ou eliminados.",
@@ -3600,8 +3647,7 @@
         "grid_2x2": "Grelha padrão (4 quadros)",
         "grid_2x3": "Duas filas (6 quadros)",
         "grid_3x2": "Três filas (6 quadros)"
-      },
-      "panel_drop_image": "Solte a imagem aqui"
+      }
     },
     "lan_access": {
       "heading": "Acesso LAN",
@@ -3620,7 +3666,13 @@
       "client_hint": "Exportação offline diretamente no navegador. Para PDF com Pandoc, use o aplicativo de desktop.",
       "client_engine_hint": "A exportação do navegador está selecionada nas Definições. Para PDF com Pandoc, defina o motor de exportação para «Backend»."
     },
+    "preview_banner": {
+      "title": "Versão de pré-visualização/teste",
+      "message": "Está a usar uma versão de pré-visualização/teste. Não é estável e pode conter erros."
+    },
     "about": {
+      "next_check": "Próxima verificação automática: {time}",
+      "next_check_disabled": "Verificação automática desativada",
       "heading": "Acerca do Bibliogon",
       "description": "Versao, info do sistema, plugins instalados e canais de doacao.",
       "loading": "A carregar informações ...",
@@ -3630,6 +3682,21 @@
       "build_label": "Build",
       "branch_label": "Branch",
       "build_date_label": "Data de compilação",
+      "commit_label": "Commit",
+      "preview_heading": "Versão de pré-visualização/teste",
+      "share_heading": "Partilhar a aplicação",
+      "share_production_heading": "Versão principal (estável)",
+      "share_production_description": "Partilhe a aplicação estável através de um código QR para que outros possam abri-la.",
+      "share_preview_heading": "Última versão (teste)",
+      "share_preview_description": "Esta é uma versão de pré-visualização/teste. Não é estável e pode conter erros. Partilhe-a apenas com testadores.",
+      "share_qr_show": "Mostrar código QR",
+      "share_qr_hide": "Ocultar código QR",
+      "share_open": "Abrir ligação",
+      "share_copy": "Copiar ligação",
+      "share_copied": "Ligação copiada!",
+      "share_copy_failed": "Não foi possível copiar a ligação.",
+      "share_native": "Partilhar",
+      "share_text": "Plataforma de código aberto para autores",
       "check_update_button": "Procurar nova versão",
       "check_update_checking": "A verificar …",
       "update_up_to_date": "Está a usar a versão mais recente.",
@@ -3669,24 +3736,7 @@
       "ai_assistance_label": "Assistência de IA",
       "ai_assistance_value": "Claude (Anthropic) - arquitetura, código, conteúdo, documentação",
       "resources_heading": "Licença e recursos",
-      "docs_label": "Documentação",
-      "next_check": "Próxima verificação automática: {time}",
-      "next_check_disabled": "Verificação automática desativada",
-      "commit_label": "Commit",
-      "preview_heading": "Versão de pré-visualização/teste",
-      "share_heading": "Partilhar a aplicação",
-      "share_production_heading": "Versão principal (estável)",
-      "share_production_description": "Partilhe a aplicação estável através de um código QR para que outros possam abri-la.",
-      "share_preview_heading": "Última versão (teste)",
-      "share_preview_description": "Esta é uma versão de pré-visualização/teste. Não é estável e pode conter erros. Partilhe-a apenas com testadores.",
-      "share_qr_show": "Mostrar código QR",
-      "share_qr_hide": "Ocultar código QR",
-      "share_open": "Abrir ligação",
-      "share_copy": "Copiar ligação",
-      "share_copied": "Ligação copiada!",
-      "share_copy_failed": "Não foi possível copiar a ligação.",
-      "share_native": "Partilhar",
-      "share_text": "Plataforma de código aberto para autores"
+      "docs_label": "Documentação"
     },
     "kdp_publishing_wizard": {
       "open_button": "Publicar na KDP",
@@ -3696,6 +3746,27 @@
       "step_metadata": "Metadados",
       "step_cover": "Capa",
       "step_export": "Pacote",
+      "step_format": "Formato",
+      "format_intro": "Escolha o formato de publicação. eBook é EPUB; capa comum e capa dura são PDFs de impressão com sangria.",
+      "format_kind_label": "Formato",
+      "format_kind_ebook": "eBook (EPUB/KPF)",
+      "format_kind_paperback": "Capa comum (PDF com sangria)",
+      "format_kind_hardcover": "Capa dura (PDF com sangria)",
+      "format_trim_label": "Tamanho de corte",
+      "format_margin_label": "Margens",
+      "format_margin_narrow": "Estreita",
+      "format_margin_normal": "Normal",
+      "format_margin_wide": "Larga",
+      "guide_format_label": "Formato escolhido",
+      "step_guide": "Guia",
+      "guide_intro": "O Bibliogon não envia por você. Veja como publicar o seu pacote no KDP:",
+      "guide_open_kdp": "Abrir KDP Bookshelf",
+      "guide_step_create": "Crie um novo título no KDP (eBook ou capa comum/capa dura).",
+      "guide_step_manuscript": "Envie o arquivo do manuscrito do ZIP: manuscript-ebook.epub para eBook, manuscript-paperback.pdf para impressão.",
+      "guide_step_cover": "Envie o arquivo de capa (cover.*).",
+      "guide_step_metadata": "Transfira os dados de metadata.json (título, autor, descrição, categorias, palavras-chave).",
+      "guide_step_price": "Defina o preço (veja a etapa de Preços para royalties + preço mínimo) e publique.",
+      "guide_note": "Verifique o relatório de validação de capa (cover-validation-report.json) no ZIP se o KDP rejeitar a capa.",
       "metadata_loading": "A verificar os metadados…",
       "metadata_check_failed": "A verificação dos metadados falhou.",
       "metadata_hint": "Os campos obrigatórios têm de ser preenchidos antes de o livro poder ser carregado para a KDP. Os avisos são recomendações.",
@@ -3752,75 +3823,7 @@
       "arc_mailto_subject": "Pedido de ARC",
       "arc_send_mail": "Compor e-mail",
       "conflict_banner": "Os metadados do livro foram alterados desde a última sessão do assistente. Volte a validar os metadados + a capa antes de criar o pacote.",
-      "conflict_dismiss": "Fechar aviso",
-      "step_guide": "Guia",
-      "guide_intro": "O Bibliogon não envia por você. Veja como publicar o seu pacote no KDP:",
-      "guide_open_kdp": "Abrir KDP Bookshelf",
-      "guide_step_create": "Crie um novo título no KDP (eBook ou capa comum/capa dura).",
-      "guide_step_manuscript": "Envie o arquivo do manuscrito do ZIP: manuscript-ebook.epub para eBook, manuscript-paperback.pdf para impressão.",
-      "guide_step_cover": "Envie o arquivo de capa (cover.*).",
-      "guide_step_metadata": "Transfira os dados de metadata.json (título, autor, descrição, categorias, palavras-chave).",
-      "guide_step_price": "Defina o preço (veja a etapa de Preços para royalties + preço mínimo) e publique.",
-      "guide_note": "Verifique o relatório de validação de capa (cover-validation-report.json) no ZIP se o KDP rejeitar a capa.",
-      "step_format": "Formato",
-      "format_intro": "Escolha o formato de publicação. eBook é EPUB; capa comum e capa dura são PDFs de impressão com sangria.",
-      "format_kind_label": "Formato",
-      "format_kind_ebook": "eBook (EPUB/KPF)",
-      "format_kind_paperback": "Capa comum (PDF com sangria)",
-      "format_kind_hardcover": "Capa dura (PDF com sangria)",
-      "format_trim_label": "Tamanho de corte",
-      "format_margin_label": "Margens",
-      "format_margin_narrow": "Estreita",
-      "format_margin_normal": "Normal",
-      "format_margin_wide": "Larga",
-      "guide_format_label": "Formato escolhido"
-    },
-    "migration": {
-      "title": "Bem-vindo ao Bibliogon",
-      "intro": "Já usou a aplicação online? Os seus livros e artigos podem ser transferidos.",
-      "step_open": "Abra a versão online.",
-      "step_settings": "Vá a Definições → Dados → Backup completo (.bgb).",
-      "step_download": "Transfira o ficheiro .bgb.",
-      "step_import": "Clique aqui em «Importar backup».",
-      "skip": "Começar sem dados",
-      "open_online": "Abrir versão online",
-      "import": "Importar backup",
-      "settings_hint": "A migrar da versão online? Exporte aí um backup completo (.bgb) e importe-o aqui com «Importar backup»."
-    },
-    "preview_banner": {
-      "title": "Versão de pré-visualização/teste",
-      "message": "Está a usar uma versão de pré-visualização/teste. Não é estável e pode conter erros."
-    },
-    "book_templates": {
-      "name": {
-        "roman_3act": "Romance (3 atos)",
-        "sachbuch": "Não ficção",
-        "kurzgeschichte": "Conto",
-        "lyrik": "Poesia",
-        "kinderbuch": "Livro ilustrado",
-        "comic": "Quadrinhos"
-      },
-      "desc": {
-        "roman_3act": "Estrutura de romance em três atos com prólogo, títulos de ato, onze capítulos e epílogo.",
-        "sachbuch": "Um livro de não ficção com prefácio, introdução, oito capítulos, resumo e apêndice.",
-        "kurzgeschichte": "Um único conto em um capítulo.",
-        "lyrik": "Uma coletânea de poesia com vinte capítulos de poemas.",
-        "kinderbuch": "Um livro ilustrado com doze páginas (imagem e texto).",
-        "comic": "Uma revista em quadrinhos com vinte e duas páginas no formato padrão."
-      },
-      "title": {
-        "prologue": "Prólogo",
-        "epilogue": "Epílogo",
-        "act": "Ato",
-        "chapter": "Capítulo",
-        "foreword": "Prefácio",
-        "introduction": "Introdução",
-        "summary": "Resumo",
-        "appendix": "Apêndice",
-        "poem": "Poema",
-        "story": "Conto"
-      },
-      "page_count": "{count} páginas"
+      "conflict_dismiss": "Fechar aviso"
     }
   }
 }

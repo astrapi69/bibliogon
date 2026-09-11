@@ -59,7 +59,8 @@
       "git-sync",
       "medium-import",
       "comics",
-      "story-bible"
+      "story-bible",
+      "learnset"
     ],
     "entry_point_group": "bibliogon.plugins"
   },
@@ -76,6 +77,7 @@
     }
   },
   "topics": [],
+  "features": null,
   "donations": {
     "enabled": true,
     "landing_page_url": null,
@@ -107,11 +109,11 @@
       }
     ]
   },
-  "_secrets_managed_externally": false,
   "updates": {
     "auto_check": true,
     "check_interval": "daily",
     "last_check_at": null,
     "dismissed_version": null
-  }
+  },
+  "_secrets_managed_externally": false
 }

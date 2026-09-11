@@ -70,6 +70,7 @@ plugins:
   - medium-import
   - comics
   - story-bible
+  - learnset
   entry_point_group: bibliogon.plugins
 ui:
   logo: assets/logo.svg

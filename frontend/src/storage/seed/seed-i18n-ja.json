@@ -1,5 +1,17 @@
 {
   "ui": {
+    "migration": {
+      "title": "Bibliogon へようこそ",
+      "intro": "オンライン版をすでにご利用になりましたか？ 書籍と記事を引き継げます。",
+      "step_open": "オンライン版を開きます。",
+      "step_settings": "設定 → データ → フルバックアップ（.bgb）に移動します。",
+      "step_download": ".bgb ファイルをダウンロードします。",
+      "step_import": "ここで「バックアップをインポート」をクリックします。",
+      "skip": "データなしで開始",
+      "open_online": "オンライン版を開く",
+      "import": "バックアップをインポート",
+      "settings_hint": "オンライン版から移行しますか？ そちらでフルバックアップ（.bgb）をエクスポートし、ここで「バックアップをインポート」から取り込みます。"
+    },
     "ai_extraction": {
       "story_bible_button": "本文から生成",
       "storyboard_button": "本文から生成",
@@ -518,6 +530,9 @@
       "export_book": "本をエクスポート",
       "toc_validate": "目次を検証",
       "save_as_template": "テンプレートとして保存",
+      "export_learnset": "学習セットをエクスポート",
+      "learnset_export_success": "学習セットをエクスポートしました",
+      "learnset_export_failed": "学習セットのエクスポートに失敗しました",
       "save_template_tooltip": "本の構成を再利用可能なテンプレートとして保存",
       "save_template_disabled": "まず章を作成してください",
       "chapter_save_as_template": "テンプレートとして保存",
@@ -891,6 +906,37 @@
         "description": "プロローグとエピローグで枠取られた個人的な回想録。8つの物語章と謝辞を含む。"
       }
     },
+    "book_templates": {
+      "name": {
+        "roman_3act": "小説（三幕構成）",
+        "sachbuch": "ノンフィクション",
+        "kurzgeschichte": "短編小説",
+        "lyrik": "詩集",
+        "kinderbuch": "絵本",
+        "comic": "コミック"
+      },
+      "desc": {
+        "roman_3act": "プロローグ、幕見出し、11章、エピローグからなる三幕構成の小説。",
+        "sachbuch": "まえがき、序章、8つの章、まとめ、付録からなるノンフィクション書。",
+        "kurzgeschichte": "1つの章からなる単一の短編小説。",
+        "lyrik": "20編の詩の章からなる詩集。",
+        "kinderbuch": "12ページ（画像とテキスト）の絵本。",
+        "comic": "標準的な形式の22ページのコミック。"
+      },
+      "title": {
+        "prologue": "プロローグ",
+        "epilogue": "エピローグ",
+        "act": "幕",
+        "chapter": "章",
+        "foreword": "まえがき",
+        "introduction": "序章",
+        "summary": "まとめ",
+        "appendix": "付録",
+        "poem": "詩",
+        "story": "物語"
+      },
+      "page_count": "{count}ページ"
+    },
     "save_template": {
       "title": "テンプレートとして保存",
       "name": "名前",
@@ -1016,8 +1062,19 @@
       "image_cache_empty": "キャッシュに画像がありません。"
     },
     "settings": {
+      "updates_section": "アップデート",
+      "updates_description": "新しいバージョンを自動的に確認します。",
+      "auto_check": "自動アップデート確認",
+      "auto_check_hint": "バックグラウンドで新しいバージョンを確認します。",
+      "check_interval": "確認間隔",
+      "interval_daily": "毎日",
+      "interval_weekly": "毎週",
+      "interval_monthly": "毎月",
+      "interval_never": "なし",
       "title": "設定",
       "tab_general": "一般",
+      "notes": "Project notes",
+      "notes_placeholder": "Notes about the book project…",
       "tab_erscheinungsbild": "外観",
       "tab_verhalten": "動作",
       "tab_editor": "エディタ",
@@ -1265,16 +1322,7 @@
       "export_engine_hint": "エクスポートが使用するエンジン。「自動」はオンラインで Pandoc（LaTeX PDF）、オフラインでブラウザエクスポートを使用します。「ブラウザ」は常にブラウザでエクスポートし、「バックエンド」は常に Pandoc を使用します（オンラインのみ）。",
       "export_engine_auto": "自動（推奨）",
       "export_engine_client": "ブラウザ（オフライン対応）",
-      "export_engine_backend": "バックエンド（Pandoc/LaTeX、オンラインのみ）",
-      "updates_section": "アップデート",
-      "updates_description": "新しいバージョンを自動的に確認します。",
-      "auto_check": "自動アップデート確認",
-      "auto_check_hint": "バックグラウンドで新しいバージョンを確認します。",
-      "check_interval": "確認間隔",
-      "interval_daily": "毎日",
-      "interval_weekly": "毎週",
-      "interval_monthly": "毎月",
-      "interval_never": "なし"
+      "export_engine_backend": "バックエンド（Pandoc/LaTeX、オンラインのみ）"
     },
     "authors_database": {
       "title": "著者データベース",
@@ -1714,9 +1762,7 @@
       "asin_ebook": "ASIN 電子書籍",
       "asin_paperback": "ASIN ペーパーバック",
       "asin_hardcover": "ASIN ハードカバー",
-      "backpage_author_bio": "著者について",
-      "notes": "Project notes",
-      "notes_placeholder": "Notes about the book project…"
+      "backpage_author_bio": "著者について"
     },
     "cover": {
       "choose_file": "ファイルを選択",
@@ -2082,14 +2128,14 @@
     },
     "update_banner": {
       "needs_restart": "更新を完了するには、アプリを完全に終了してから再度開いてください。",
-      "message": "Bibliogon の新しいバージョンが利用可能です。",
-      "button": "今すぐ更新",
-      "updating": "作業内容を保存して更新しています …",
-      "dismiss": "閉じる",
       "version_available": "新しいバージョン {version} が利用可能です",
       "whats_new": "新着情報",
       "later": "後で",
-      "notes_title": "{version} の新機能"
+      "notes_title": "{version} の新機能",
+      "message": "Bibliogon の新しいバージョンが利用可能です。",
+      "button": "今すぐ更新",
+      "updating": "作業内容を保存して更新しています …",
+      "dismiss": "閉じる"
     },
     "versions": {
       "menu_item": "バージョン履歴",
@@ -2827,6 +2873,7 @@
       "no_image": "画像がまだありません",
       "upload_image": "画像をアップロード",
       "replace_image": "画像を差し替え",
+      "drop_image": "画像をここにドロップ",
       "no_secondary_image": "2 枚目の画像がまだありません",
       "upload_secondary_image": "2 枚目の画像をアップロード",
       "replace_secondary_image": "2 枚目の画像を差し替え",
@@ -3311,8 +3358,7 @@
             "italic": "斜体"
           }
         }
-      },
-      "drop_image": "画像をここにドロップ"
+      }
     },
     "chapter_status": {
       "label": "ステータス",
@@ -3486,18 +3532,18 @@
       "col_synopsis": "Synopsis",
       "synopsis_placeholder": "Short summary…",
       "synopsis_auto": "Generate from first paragraph",
+      "col_notes": "メモ",
+      "notes_placeholder": "作業メモ…",
       "collections_label": "Collections",
       "collection_all": "All chapters",
       "collection_new": "New collection",
       "collection_delete": "Delete",
+      "collection_color": "コレクションの色",
       "collection_name": "Collection name",
       "collection_filter": "Filter to collection",
       "collection_default_name": "New collection",
       "collection_save_failed": "Could not save collection",
-      "col_in_collection": "In",
-      "col_notes": "メモ",
-      "notes_placeholder": "作業メモ…",
-      "collection_color": "コレクションの色"
+      "col_in_collection": "In"
     },
     "storyboard": {
       "title": "ストーリーボード",
@@ -3564,6 +3610,7 @@
     "comic_book_editor": {
       "panel_upload_image": "画像をアップロード",
       "panel_replace_image": "画像を置き換える",
+      "panel_drop_image": "画像をここにドロップ",
       "back": "戻る",
       "overflow_title": "このテンプレートにはコマが多すぎます",
       "overflow_message": "選択したテンプレートでは {target} コマしか配置できませんが、このページには {current} コマあります。超過した {excess} コマを移動するか削除する必要があります。",
@@ -3600,8 +3647,7 @@
         "grid_2x2": "標準グリッド（4 コマ）",
         "grid_2x3": "2 段組み（6 コマ）",
         "grid_3x2": "3 段組み（6 コマ）"
-      },
-      "panel_drop_image": "画像をここにドロップ"
+      }
     },
     "lan_access": {
       "heading": "LANアクセス",
@@ -3620,7 +3666,13 @@
       "client_hint": "ブラウザで直接オフラインエクスポート。Pandoc PDFにはデスクトップアプリを使用してください。",
       "client_engine_hint": "設定でブラウザエクスポートが選択されています。Pandoc PDFには、エクスポートエンジンを「バックエンド」に設定してください。"
     },
+    "preview_banner": {
+      "title": "プレビュー/テスト版",
+      "message": "プレビュー/テスト版を使用しています。安定しておらず、不具合が含まれる可能性があります。"
+    },
     "about": {
+      "next_check": "次回の自動確認: {time}",
+      "next_check_disabled": "自動確認は無効です",
       "heading": "Bibliogon について",
       "description": "バージョン、システム情報、インストール済みプラグイン、寄付チャネル。",
       "loading": "情報を読み込み中 ...",
@@ -3630,6 +3682,21 @@
       "build_label": "ビルド",
       "branch_label": "ブランチ",
       "build_date_label": "ビルド日時",
+      "commit_label": "コミット",
+      "preview_heading": "プレビュー/テスト版",
+      "share_heading": "アプリを共有",
+      "share_production_heading": "メインバージョン（安定版）",
+      "share_production_description": "QRコードで安定版アプリを共有し、他の人が開けるようにします。",
+      "share_preview_heading": "最新バージョン（テスト）",
+      "share_preview_description": "これはプレビュー/テスト版です。安定しておらず、不具合が含まれる可能性があります。テスターとのみ共有してください。",
+      "share_qr_show": "QRコードを表示",
+      "share_qr_hide": "QRコードを非表示",
+      "share_open": "リンクを開く",
+      "share_copy": "リンクをコピー",
+      "share_copied": "リンクをコピーしました！",
+      "share_copy_failed": "リンクをコピーできませんでした。",
+      "share_native": "共有",
+      "share_text": "著者向けのオープンソースプラットフォーム",
       "check_update_button": "新しいバージョンを確認",
       "check_update_checking": "確認中 …",
       "update_up_to_date": "最新のバージョンを使用しています。",
@@ -3669,24 +3736,7 @@
       "ai_assistance_label": "AI アシスタンス",
       "ai_assistance_value": "Claude (Anthropic) - アーキテクチャ、コード、コンテンツ、ドキュメント",
       "resources_heading": "ライセンスとリソース",
-      "docs_label": "ドキュメント",
-      "next_check": "次回の自動確認: {time}",
-      "next_check_disabled": "自動確認は無効です",
-      "commit_label": "コミット",
-      "preview_heading": "プレビュー/テスト版",
-      "share_heading": "アプリを共有",
-      "share_production_heading": "メインバージョン（安定版）",
-      "share_production_description": "QRコードで安定版アプリを共有し、他の人が開けるようにします。",
-      "share_preview_heading": "最新バージョン（テスト）",
-      "share_preview_description": "これはプレビュー/テスト版です。安定しておらず、不具合が含まれる可能性があります。テスターとのみ共有してください。",
-      "share_qr_show": "QRコードを表示",
-      "share_qr_hide": "QRコードを非表示",
-      "share_open": "リンクを開く",
-      "share_copy": "リンクをコピー",
-      "share_copied": "リンクをコピーしました！",
-      "share_copy_failed": "リンクをコピーできませんでした。",
-      "share_native": "共有",
-      "share_text": "著者向けのオープンソースプラットフォーム"
+      "docs_label": "ドキュメント"
     },
     "kdp_publishing_wizard": {
       "open_button": "KDP で出版",
@@ -3696,6 +3746,27 @@
       "step_metadata": "メタデータ",
       "step_cover": "カバー",
       "step_export": "パッケージ",
+      "step_format": "形式",
+      "format_intro": "出版形式を選択します。eBook は EPUB、ペーパーバックとハードカバーは裁ち落とし付きの印刷用 PDF です。",
+      "format_kind_label": "形式",
+      "format_kind_ebook": "eBook（EPUB/KPF）",
+      "format_kind_paperback": "ペーパーバック（裁ち落とし付き PDF）",
+      "format_kind_hardcover": "ハードカバー（裁ち落とし付き PDF）",
+      "format_trim_label": "トリムサイズ",
+      "format_margin_label": "余白",
+      "format_margin_narrow": "狭い",
+      "format_margin_normal": "標準",
+      "format_margin_wide": "広い",
+      "guide_format_label": "選択した形式",
+      "step_guide": "ガイド",
+      "guide_intro": "Bibliogon は代わりにアップロードしません。KDP でパッケージを公開する手順:",
+      "guide_open_kdp": "KDP本棚を開く",
+      "guide_step_create": "KDP で新しいタイトルを作成します（電子書籍またはペーパーバック/ハードカバー）。",
+      "guide_step_manuscript": "ZIP から原稿ファイルをアップロード：電子書籍は manuscript-ebook.epub、印刷は manuscript-paperback.pdf。",
+      "guide_step_cover": "表紙ファイル（cover.*）をアップロードします。",
+      "guide_step_metadata": "metadata.json の情報（タイトル、著者、説明、カテゴリー、キーワード）を転記します。",
+      "guide_step_price": "価格を設定し（ロイヤルティと最低価格は「価格」ステップを参照）、公開します。",
+      "guide_note": "KDP が表紙を却下した場合は、ZIP 内の表紙検証レポート（cover-validation-report.json）を確認してください。",
       "metadata_loading": "メタデータを確認中…",
       "metadata_check_failed": "メタデータの確認に失敗しました。",
       "metadata_hint": "この本を KDP にアップロードする前に、必須項目を入力する必要があります。警告は推奨事項です。",
@@ -3752,75 +3823,7 @@
       "arc_mailto_subject": "ARC のお願い",
       "arc_send_mail": "メールを作成",
       "conflict_banner": "前回のウィザードセッション以降に本のメタデータが変更されました。パッケージを作成する前に、メタデータとカバーを再度確認してください。",
-      "conflict_dismiss": "通知を閉じる",
-      "step_guide": "ガイド",
-      "guide_intro": "Bibliogon は代わりにアップロードしません。KDP でパッケージを公開する手順:",
-      "guide_open_kdp": "KDP本棚を開く",
-      "guide_step_create": "KDP で新しいタイトルを作成します（電子書籍またはペーパーバック/ハードカバー）。",
-      "guide_step_manuscript": "ZIP から原稿ファイルをアップロード：電子書籍は manuscript-ebook.epub、印刷は manuscript-paperback.pdf。",
-      "guide_step_cover": "表紙ファイル（cover.*）をアップロードします。",
-      "guide_step_metadata": "metadata.json の情報（タイトル、著者、説明、カテゴリー、キーワード）を転記します。",
-      "guide_step_price": "価格を設定し（ロイヤルティと最低価格は「価格」ステップを参照）、公開します。",
-      "guide_note": "KDP が表紙を却下した場合は、ZIP 内の表紙検証レポート（cover-validation-report.json）を確認してください。",
-      "step_format": "形式",
-      "format_intro": "出版形式を選択します。eBook は EPUB、ペーパーバックとハードカバーは裁ち落とし付きの印刷用 PDF です。",
-      "format_kind_label": "形式",
-      "format_kind_ebook": "eBook（EPUB/KPF）",
-      "format_kind_paperback": "ペーパーバック（裁ち落とし付き PDF）",
-      "format_kind_hardcover": "ハードカバー（裁ち落とし付き PDF）",
-      "format_trim_label": "トリムサイズ",
-      "format_margin_label": "余白",
-      "format_margin_narrow": "狭い",
-      "format_margin_normal": "標準",
-      "format_margin_wide": "広い",
-      "guide_format_label": "選択した形式"
-    },
-    "migration": {
-      "title": "Bibliogon へようこそ",
-      "intro": "オンライン版をすでにご利用になりましたか？ 書籍と記事を引き継げます。",
-      "step_open": "オンライン版を開きます。",
-      "step_settings": "設定 → データ → フルバックアップ（.bgb）に移動します。",
-      "step_download": ".bgb ファイルをダウンロードします。",
-      "step_import": "ここで「バックアップをインポート」をクリックします。",
-      "skip": "データなしで開始",
-      "open_online": "オンライン版を開く",
-      "import": "バックアップをインポート",
-      "settings_hint": "オンライン版から移行しますか？ そちらでフルバックアップ（.bgb）をエクスポートし、ここで「バックアップをインポート」から取り込みます。"
-    },
-    "preview_banner": {
-      "title": "プレビュー/テスト版",
-      "message": "プレビュー/テスト版を使用しています。安定しておらず、不具合が含まれる可能性があります。"
-    },
-    "book_templates": {
-      "name": {
-        "roman_3act": "小説（三幕構成）",
-        "sachbuch": "ノンフィクション",
-        "kurzgeschichte": "短編小説",
-        "lyrik": "詩集",
-        "kinderbuch": "絵本",
-        "comic": "コミック"
-      },
-      "desc": {
-        "roman_3act": "プロローグ、幕見出し、11章、エピローグからなる三幕構成の小説。",
-        "sachbuch": "まえがき、序章、8つの章、まとめ、付録からなるノンフィクション書。",
-        "kurzgeschichte": "1つの章からなる単一の短編小説。",
-        "lyrik": "20編の詩の章からなる詩集。",
-        "kinderbuch": "12ページ（画像とテキスト）の絵本。",
-        "comic": "標準的な形式の22ページのコミック。"
-      },
-      "title": {
-        "prologue": "プロローグ",
-        "epilogue": "エピローグ",
-        "act": "幕",
-        "chapter": "章",
-        "foreword": "まえがき",
-        "introduction": "序章",
-        "summary": "まとめ",
-        "appendix": "付録",
-        "poem": "詩",
-        "story": "物語"
-      },
-      "page_count": "{count}ページ"
+      "conflict_dismiss": "通知を閉じる"
     }
   }
 }

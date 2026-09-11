@@ -49,6 +49,7 @@ jobs:
           - bibliogon-plugin-help
           - bibliogon-plugin-kdp
           - bibliogon-plugin-kinderbuch
+          - bibliogon-plugin-learnset
           - bibliogon-plugin-ms-tools
           - bibliogon-plugin-translation
     steps:

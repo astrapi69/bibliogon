@@ -1,0 +1,1262 @@
+{
+  "$defs": {
+    "Card": {
+      "additionalProperties": false,
+      "description": "The smallest learnable unit (Phase 43 / 2B-lesson).\n\nA card carries a single term / concept / fact in a single\ndirection. SRS (Phase 46) tracks one card at a time;\nindividual exercises reference cards by id so a single\n'Bonjour = Hello' card can drive a matching exercise, a\nfree-text drill, and a summary review without\nduplication.\n\nConvention: ``card.id`` is unique within the lesson, not\nglobally. Cross-lesson card sharing happens via a\nseparate ``shared/`` directory inside the set (P-111\nterritory — not yet implemented).",
+      "properties": {
+        "audio": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional relative path inside ``assets/`` for TTS-recorded pronunciation. The voice plugin already supports playback (v1.18.0).",
+          "title": "Audio"
+        },
+        "back": {
+          "description": "What the learner is being TAUGHT to recall. Typically the translation / definition / answer (e.g. 'Hello').",
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Back",
+          "type": "string"
+        },
+        "code_language": {
+          "anyOf": [
+            {
+              "maxLength": 30,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Highlighter language hint for ``code_snippet`` ('python', 'javascript', 'sql', 'excel', ...). Free string; the viewer maps unknown values to plain text.",
+          "title": "Code Language"
+        },
+        "code_snippet": {
+          "anyOf": [
+            {
+              "maxLength": 5000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional code / formula the card teaches (e.g. a Python snippet or an Excel formula). Rendered as a monospace, syntax-highlighted block in the viewer.",
+          "title": "Code Snippet"
+        },
+        "difficulty": {
+          "anyOf": [
+            {
+              "maximum": 5,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional 1-5 difficulty scale (1 = easiest).",
+          "title": "Difficulty"
+        },
+        "expected_output": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "What ``code_snippet`` produces, shown in an 'Output:' block.",
+          "title": "Expected Output"
+        },
+        "front": {
+          "description": "What the learner sees first. Typically the target-language term (e.g. 'Bonjour').",
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Front",
+          "type": "string"
+        },
+        "hint": {
+          "anyOf": [
+            {
+              "maxLength": 1000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Progressive hint, revealed on request during an exercise.",
+          "title": "Hint"
+        },
+        "id": {
+          "description": "Slug-safe id. Unique within the parent lesson. SRS reviews this id, not the surface term.",
+          "title": "Id",
+          "$ref": "#/$defs/SlugId"
+        },
+        "stable_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{7,63}$"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stable Id",
+          "description": "engine#90 - schema 1.9 (additive). Author-owned, version-stable identity for progress/SRS joins: once published it NEVER changes, set-wide unique (cross-lesson uniqueness is checked by the repo gate via collectStableIds; the schema sees one document). Opaque mint-once value (lowercase slug, 8-64 chars), NOT derived from content, so answer-text fixes do not move it. Optional: pre-1.9 content validates unchanged. SCOPE: this closes orphaning by slug rename or position shift on the exercise/card level; it does NOT close the element-level case (an answer correction inside a surviving exercise still moves the content-derived element key, engine#91). COMPAT NOTE (engine#105): this pattern predates $defs/SlugId and is deliberately NOT tightened - stable_ids are immutable once published, so the underscore stays allowed here even though SlugId forbids it. For NEW mints prefer the stricter SlugId shape (hyphens only); the bundled mint-stable-ids minter already emits only [a-z0-9-]."
+        },
+        "image": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional relative path inside the set's ``assets/`` directory ('assets/img/bonjour.png'). Resolved by the asset loader.",
+          "title": "Image"
+        },
+        "media_type": {
+          "anyOf": [
+            {
+              "enum": [
+                "text",
+                "code",
+                "formula",
+                "diagram"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Card content kind: 'text' (default when null), 'code', 'formula', or 'diagram'. Drives code-aware rendering + exercise input (monospace editor for code/formula). EXP-039: a closed ``Literal`` so the generated JSON-Schema / TS types carry the exact union (was a free ``str`` gated by a runtime validator).",
+          "title": "Media Type"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional Markdown footnote shown after the user answers. Pronunciation tips, etymology, false-friend warnings — anything that helps long-term retention.",
+          "title": "Notes"
+        },
+        "tags": {
+          "default": [],
+          "description": "Tags for SRS filtering ('greeting', 'verb-present', 'irregular'). Each tag must match $defs/SlugId - the reference consumer checks tags with the same regex it applies to ids and skips lessons whose tags fail (engine#108, hard since schema 1.11 after the published corpus was cleaned).",
+          "items": {
+            "$ref": "#/$defs/SlugId"
+          },
+          "maxItems": 20,
+          "title": "Tags",
+          "type": "array"
+        },
+        "token_roles": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/CardTokenRole"
+              },
+              "maxItems": 10,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Phase 52I / v1.35.0 / P-130. Optional list of ``{token, role}`` annotations on the card's ``front``. The cloze generator (52E) uses these to pick a semantically-meaningful blank when available; absent annotations fall through to a position-based heuristic so old content keeps working unchanged.",
+          "title": "Token Roles"
+        }
+      },
+      "required": [
+        "id",
+        "front",
+        "back"
+      ],
+      "title": "Card",
+      "type": "object"
+    },
+    "CardTokenRole": {
+      "additionalProperties": false,
+      "description": "One ``token → role`` annotation on a card.\n\nPhase 52I / v1.35.0 / P-130. The cloze generator looks up\nits target blank by matching ``token`` against the\n``ElementError.element_key`` — when a role is present, the\ngenerator can pick a same-role distractor pool instead of\na position-based heuristic.\n\nThe ``token`` is a verbatim slice of the card's ``front``;\nno whitespace normalisation, so authors can annotate even\nsub-word morphemes (an accent-bearing letter, an article\ncontraction) if a future generator needs it.",
+      "properties": {
+        "role": {
+          "$ref": "#/$defs/TokenRole",
+          "description": "Grammatical role of this token in the card."
+        },
+        "token": {
+          "description": "Verbatim slice of the card's ``front``. The generator matches this against the wrong-answer key recorded by the SRS layer.",
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Token",
+          "type": "string"
+        }
+      },
+      "required": [
+        "token",
+        "role"
+      ],
+      "title": "CardTokenRole",
+      "type": "object"
+    },
+    "ClozeBlank": {
+      "additionalProperties": false,
+      "description": "One blank inside a cloze exercise's ``sentence`` (Phase 52D /\nv1.35.0 / P-127).\n\nMarker-based convention: the sentence carries visible ``___``\ntokens; ``blanks[i]`` provides the metadata for the i-th\nmarker (left-to-right). The validator enforces\n``sentence.count(\"___\") == len(blanks)`` so the i↔i mapping\nis unambiguous at render time.\n\n``accept`` carries the per-blank canonical + acceptable\nvariants — the renderer reuses FreeText's ``isFreeTextCorrect``\nmatcher (NFC-normalised + Levenshtein <= 1) so authors only\nneed to enumerate semantic variants (gendered article,\ncapitalisation, et cetera), not typos.",
+      "properties": {
+        "accept": {
+          "description": "Accepted answers for this blank. First entry is the canonical (shown after a wrong attempt). Same shape as FREE_TEXT.accept.",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Accept",
+          "type": "array"
+        },
+        "hint": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional per-blank hint. Surfaced inline next to this specific blank, not lesson-wide.",
+          "title": "Hint"
+        },
+        "placeholder": {
+          "anyOf": [
+            {
+              "maxLength": 40,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional placeholder text shown inside the input (``type`` mode) before the user starts typing.",
+          "title": "Placeholder"
+        },
+        "stable_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SlugId"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stable Id",
+          "description": "engine#91 - schema 1.12 (additive). Element-level counterpart to the exercise/card stable_id (engine#90): identifies THIS blank for progress/SRS joins below the exercise level, so an answer-text correction (moving `accept[0]`) does not orphan its learner row. Once published it NEVER changes. Shares the SAME per-set stable_id namespace as card/exercise ids (checked the same way: collectStableIds set-wide, the schema's E-STABLE-ID-DUP rule per-document). Opaque mint-once value, NOT derived from content. Optional: content without it validates unchanged. Uses the strict $defs/SlugId shape (hyphens only) - unlike the card/exercise field, this is a brand-new field with no legacy underscore-bearing ids to grandfather."
+        }
+      },
+      "required": [
+        "accept"
+      ],
+      "title": "ClozeBlank",
+      "type": "object"
+    },
+    "Exercise": {
+      "additionalProperties": false,
+      "description": "One exercise step. Type-tagged via ``type``.\n\nThe fields are kept in a single flat shape per\n``type`` rather than per-type discriminated unions\nbecause the JSON manifests are author-edited; flat\nshapes are easier to read and to diff in PRs. The\nvalidator enforces type-specific requirements via\nmodel_validator instead.",
+      "properties": {
+        "accept": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "FREE_TEXT: list of accepted answers. Exact-match first, Levenshtein-tolerant fallback in the renderer. The first entry is the canonical answer shown after a wrong attempt. CLOZE ``multiselect`` (#1195) reuses this field with a mode-specific meaning: EVERY entry is a correct option (not just the first), rendered as a checkbox group with ``distractors`` and graded by exact-set match; the two lists must be disjoint.",
+          "title": "Accept"
+        },
+        "accept_orderings": {
+          "anyOf": [
+            {
+              "items": {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "WORD_TILES: optional list of accepted tile-index orderings (each is a permutation of [0..len-1]). If omitted, only the canonical order in ``tiles`` is accepted.",
+          "title": "Accept Orderings"
+        },
+        "blanks": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ClozeBlank"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "CLOZE: per-marker metadata in left-to-right order. ``len(blanks) == sentence.count('___')`` enforced at validation time. Phase 52D / v1.35.0. Not used in ``multiselect`` mode (#1195).",
+          "title": "Blanks"
+        },
+        "card_ids": {
+          "default": [],
+          "description": "Cards this exercise drills. SRS feedback after a wrong answer schedules these cards for review.",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 50,
+          "title": "Card Ids",
+          "type": "array"
+        },
+        "cloze_mode": {
+          "anyOf": [
+            {
+              "enum": [
+                "type",
+                "select",
+                "multiselect"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "CLOZE: ``type`` renders an ``<input>`` per blank, ``select`` renders a single-answer ``<select>`` per blank with options from ``distractors``, ``multiselect`` (#1195) renders a checkbox group of ``accept`` (all correct) + ``distractors`` for a 'select all that apply' question. Defaults to ``type`` when omitted on a CLOZE exercise. Phase 52D / v1.35.0.",
+          "title": "Cloze Mode"
+        },
+        "direction": {
+          "default": "target_to_source",
+          "description": "EXP-018 / Phase 62 / v1.46.0: which way the card is drilled. ``target_to_source`` (default) shows the target language and asks the learner to recognise the source language (RECEPTIVE, easier). ``source_to_target`` shows the source and asks the learner to produce the target (PRODUCTIVE, harder). ``both`` / ``random`` let the renderer or the adaptive generator pick per attempt. Additive + optional; schema_version stays 1.2. Cloze ignores it (in-context).",
+          "enum": [
+            "source_to_target",
+            "target_to_source",
+            "both",
+            "random"
+          ],
+          "title": "Direction",
+          "type": "string"
+        },
+        "distractors": {
+          "default": [],
+          "description": "Content-only fallback distractors. The exercise renderer picks from this pool when no AI provider is configured (EXP-005 / P-114 dual mode). When AI is available, the AI generator may use the pool as a seed for harder distractors.",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Distractors",
+          "type": "array"
+        },
+        "examples": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/InlineExample"
+              },
+              "maxItems": 20,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional inline worked examples shown BEFORE the answer controls, to help the learner understand the task (schema v1.5, additive). Each is plain text or a syntax-highlighted code snippet (see ``InlineExample.language``). Author responsibility not to spoil the answer. Independent of the per-type fields; absent on exercises that need no example.",
+          "title": "Examples"
+        },
+        "explanation": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional Markdown explanation of WHY the answer/grammar is what it is (e.g. word order, a grammatical case), shown AFTER the learner answers - regardless of correct or incorrect - unlike ``hint`` (on demand, before/during answering) and ``examples`` (worked examples shown before answering, must not spoil it). 2000 chars, twice ``hint``'s 1000: Markdown structure (a short list, bold terms) eats characters faster than a single-line nudge, and a real \"why\" often runs longer than a hint. Not restricted to any exercise type. Additive; schema_version 1.13.",
+          "title": "Explanation"
+        },
+        "ext_payload": {
+          "additionalProperties": true,
+          "description": "Opaque per-exercise payload for an ``ext:`` extension type. The core engine does not interpret it; the registered extension validator does. Absent on core exercises.",
+          "type": "object"
+        },
+        "from_cards": {
+          "default": false,
+          "description": "MATCHING: when true, the exercise derives its ``pairs`` from the referenced cards (left = card ``front``, right = card ``back``) instead of listing them explicitly, so a definition lives in one place. Requires non-empty ``card_ids`` and forbids an explicit ``pairs`` list. The engine resolves it to concrete ``pairs`` at parse time. Additive + optional; schema_version stays 1.5.",
+          "title": "From Cards",
+          "type": "boolean"
+        },
+        "hint": {
+          "anyOf": [
+            {
+              "maxLength": 1000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional Markdown hint shown on demand. The viewer renders this behind a 'Need a hint?' button.",
+          "title": "Hint"
+        },
+        "id": {
+          "description": "Slug-safe id, unique within the lesson.",
+          "title": "Id",
+          "$ref": "#/$defs/SlugId"
+        },
+        "stable_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{7,63}$"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stable Id",
+          "description": "engine#90 - schema 1.9 (additive). Author-owned, version-stable identity for progress/SRS joins: once published it NEVER changes, set-wide unique (cross-lesson uniqueness is checked by the repo gate via collectStableIds; the schema sees one document). Opaque mint-once value (lowercase slug, 8-64 chars), NOT derived from content, so answer-text fixes do not move it. Optional: pre-1.9 content validates unchanged. SCOPE: this closes orphaning by slug rename or position shift on the exercise/card level; it does NOT close the element-level case (an answer correction inside a surviving exercise still moves the content-derived element key, engine#91). COMPAT NOTE (engine#105): this pattern predates $defs/SlugId and is deliberately NOT tightened - stable_ids are immutable once published, so the underscore stays allowed here even though SlugId forbids it. For NEW mints prefer the stricter SlugId shape (hyphens only); the bundled mint-stable-ids minter already emits only [a-z0-9-]."
+        },
+        "images": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/PictureImage"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "PICTURE_CHOICE: list of {src, label, is_correct?} options. Exactly one entry MUST include 'is_correct': 'true'. ``src`` is a relative path inside the set's ``assets/`` directory.",
+          "title": "Images"
+        },
+        "multiple": {
+          "default": false,
+          "description": "MULTIPLE_CHOICE: when false (default) exactly one option is correct (single choice); when true the learner selects ALL correct options ('select all that apply', graded by exact-set match). Ignored by the other exercise types.",
+          "title": "Multiple",
+          "type": "boolean"
+        },
+        "options": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/MultipleChoiceOption"
+              },
+              "maxItems": 20,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "MULTIPLE_CHOICE: list of {text, correct?} answer options (schema v1.6). At least two options; ``multiple`` controls whether exactly one or at least one must be marked correct. Correctness is a per-option flag, so no separate accept/distractor lists (and no disjointness rule) are needed. The renderer shuffles before display.",
+          "title": "Options"
+        },
+        "pairs": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Pair"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "MATCHING: list of {left, right} pairs to match up. The renderer shuffles before display.",
+          "title": "Pairs"
+        },
+        "prompt": {
+          "description": "The question text shown to the learner.",
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Prompt",
+          "type": "string"
+        },
+        "sentence": {
+          "anyOf": [
+            {
+              "maxLength": 1000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "CLOZE: the cloze sentence with visible ``___`` markers at each blank position. The renderer splits on the markers + interleaves the per-blank input control. Phase 52D / v1.35.0. In ``multiselect`` mode (#1195) this is instead the question stem (no ``___`` markers, no ``blanks``).",
+          "title": "Sentence"
+        },
+        "tiles": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "WORD_TILES: ordered list of tile labels. The renderer shuffles before display. Multiple correct orderings are configured via ``accept_orderings`` below.",
+          "title": "Tiles"
+        },
+        "type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExerciseType"
+            },
+            {
+              "$ref": "#/$defs/ExtExerciseType"
+            }
+          ],
+          "description": "Which exercise renderer handles this step. A core ExerciseType value, or an ``ext:<vendor>-<name>`` extension type (ExtExerciseType) that the lesson declares in ``requires_extensions``."
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "prompt"
+      ],
+      "title": "Exercise",
+      "type": "object"
+    },
+    "ExerciseType": {
+      "description": "Closed enum of exercise types the loader knows about.\n\nEXP-001 + EXP-006: the four base types ship in Phase 43-45.\nPhase 52D / v1.35.0 added CLOZE (fill-in-the-blank with\n``___`` markers) — see the schema_version bump in\n``models.py``. Adding a sixth type (ordering, drag-image-\npair, etc.) requires a minor schema_version bump and a new\nenum value plus its renderer.",
+      "enum": [
+        "matching",
+        "picture_choice",
+        "free_text",
+        "word_tiles",
+        "cloze",
+        "multiple_choice"
+      ],
+      "title": "ExerciseType",
+      "type": "string"
+    },
+    "ExtExerciseType": {
+      "description": "Extension exercise type in the ``ext:<vendor>-<name>`` namespace (e.g. ``ext:acme-ordering``). Structurally opaque here: an exercise carrying it must be declared in the lesson's ``requires_extensions`` and is validated by a registered extension, never by the core schema. Core content never uses this branch, so pre-1.7 content validates unchanged.",
+      "pattern": "^ext:[a-z0-9]+-[a-z0-9-]+$",
+      "title": "ExtExerciseType",
+      "type": "string"
+    },
+    "InlineExample": {
+      "additionalProperties": false,
+      "description": "One inline worked example on a theory step or exercise (schema v1.5).\n\nAn inline example carries REAL content the learner reads in place —\na sample sentence (language lessons) or a code snippet with syntax\nhighlighting (programming lessons). This is DISTINCT from\n``LessonStep.example_url`` (#139 / schema v1.4), which links OUT to an\nexternal illustration: ``example_url`` is the LINK variant,\n``examples`` is the INLINE-CONTENT variant. The two are complementary\nand may coexist on the same theory step.\n\nWhen ``language`` is set, ``content`` is treated as source code in\nthat language and rendered as a syntax-highlighted block (the same\n``CodeBlock`` the theory Markdown + code cards use); when it is\nabsent, ``content`` is plain text. Additive + optional, so content\nwithout ``examples`` validates unchanged.",
+      "properties": {
+        "content": {
+          "description": "The example's content. Plain text (e.g. a sample sentence) when ``language`` is absent; source code in ``language`` when it is set.",
+          "maxLength": 5000,
+          "minLength": 1,
+          "title": "Content",
+          "type": "string"
+        },
+        "language": {
+          "anyOf": [
+            {
+              "maxLength": 30,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional highlighter language hint ('jsx', 'python', 'sql', ...). When set, ``content`` is rendered as a syntax-highlighted code block; when null, ``content`` is plain text. Free string; the viewer maps unknown values to plain text (same convention as ``Card.code_language``).",
+          "title": "Language"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional short heading shown above the example.",
+          "title": "Title"
+        }
+      },
+      "required": [
+        "content"
+      ],
+      "title": "InlineExample",
+      "type": "object"
+    },
+    "LessonResource": {
+      "additionalProperties": false,
+      "description": "One lesson-level supplementary-media entry (EXP-029 / MED-05).\n\nMirrors a ``media.yaml`` resource minus ``domain`` (inherited\nfrom the parent set). Surfaced in the \"Vertiefe das Thema\"\nsection after the lesson summary. Optional + additive, so\npre-EXP-029 lessons load unchanged. Added to the authoritative\nschema (EXP-039) so the JSON-Schema / generated TS types cover\nit — previously this shape lived only in the frontend\n``ContentLessonResource`` interface, and a lesson carrying\n``resources`` was rejected by ``extra=\"forbid\"`` here.",
+      "properties": {
+        "author": {
+          "anyOf": [
+            {
+              "maxLength": 300,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Author"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "duration": {
+          "anyOf": [
+            {
+              "maxLength": 40,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration"
+        },
+        "free": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Free"
+        },
+        "language": {
+          "anyOf": [
+            {
+              "maxLength": 35,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Language"
+        },
+        "level": {
+          "anyOf": [
+            {
+              "maxLength": 10,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Level"
+        },
+        "partnership": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Partnership"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 20,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "title": {
+          "description": "Human-readable title shown in the media list.",
+          "maxLength": 300,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "type": {
+          "description": "Resource kind ('video', 'podcast', 'article', ...).",
+          "maxLength": 40,
+          "minLength": 1,
+          "title": "Type",
+          "type": "string"
+        },
+        "url": {
+          "description": "Link to the resource.",
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "title",
+        "url"
+      ],
+      "title": "LessonResource",
+      "type": "object"
+    },
+    "LessonStep": {
+      "additionalProperties": false,
+      "description": "One step in the lesson sequence.\n\nTheory steps carry a Markdown body. Exercise steps carry\na fully-validated ``Exercise``. The viewer renders these\nin order; ``id`` lets deep-linking land on a specific\nstep.",
+      "properties": {
+        "body": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "THEORY: Markdown content. Rendered by the same react-markdown pipeline the help system uses.",
+          "title": "Body"
+        },
+        "example_label": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional display text for the example link. The viewer falls back to a localized 'View example' label when empty.",
+          "title": "Example Label"
+        },
+        "example_url": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional URL to an external example that illustrates the theory (article / video / interactive visualisation). Rendered as a link button under a THEORY step's content (schema v1.4, additive). Must be an http(s) URL.",
+          "title": "Example Url"
+        },
+        "examples": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/InlineExample"
+              },
+              "maxItems": 20,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "THEORY: optional inline worked examples rendered under the step body (schema v1.5, additive). DISTINCT from ``example_url``: that links OUT to an external illustration, ``examples`` carries the example content INLINE (a sample sentence, or a syntax-highlighted code snippet — see ``InlineExample.language``). The two may coexist on one step. Additive + optional; steps without ``examples`` validate unchanged.",
+          "title": "Examples"
+        },
+        "exercise": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Exercise"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "EXERCISE: the exercise payload."
+        },
+        "id": {
+          "description": "Slug-safe id, unique within the lesson.",
+          "title": "Id",
+          "$ref": "#/$defs/SlugId"
+        },
+        "review_lesson_id": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Set ONLY on synthesised SRS review steps (#673). Carries the source lesson_id the reviewed element belongs to, so the review recorder can address the exact stored ElementError row. Absent on real content lessons. Modeled here (EXP-039) so the schema covers the synthesised-review shape the frontend already emits.",
+          "title": "Review Lesson Id"
+        },
+        "theory_ref": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "EXERCISE: optional explicit reference to the theory step this exercise practices, by the theory step's id (preferred) or title. The viewer's 'Re-read theory' backlink resolves it exactly, falling back to the term-overlap heuristic when absent or unresolvable (additive, #709).",
+          "title": "Theory Ref"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional step title. Shown in the progress bar / step list (Phase 44 viewer).",
+          "title": "Title"
+        },
+        "type": {
+          "$ref": "#/$defs/StepType",
+          "description": "THEORY or EXERCISE."
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ],
+      "title": "LessonStep",
+      "type": "object"
+    },
+    "MultipleChoiceOption": {
+      "additionalProperties": false,
+      "description": "One answer option in a MULTIPLE_CHOICE exercise (schema v1.6).\n\nCorrectness is a per-option flag, so the type needs no separate\naccept/distractor lists and no disjointness rule - the structure\nmakes that class of authoring error impossible. Grading contract:\nwith ``multiple: false`` exactly one option carries ``correct``\nand a single pick is graded; with ``multiple: true`` the learner\nmust select the exact set of correct options (no partial credit,\nmirroring the cloze multiselect grading).",
+      "properties": {
+        "correct": {
+          "default": false,
+          "description": "Set to true on the correct option(s). Exactly one with ``multiple: false``; at least one with ``multiple: true``.",
+          "title": "Correct",
+          "type": "boolean"
+        },
+        "stable_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SlugId"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stable Id",
+          "description": "engine#91 - schema 1.12 (additive). Element-level counterpart to the exercise/card stable_id (engine#90): identifies THIS option for progress/SRS joins below the exercise level. Once published it NEVER changes. Shares the SAME per-set stable_id namespace as card/exercise ids (checked the same way: collectStableIds set-wide, the schema's E-STABLE-ID-DUP rule per-document). Opaque mint-once value, NOT derived from content. Optional: content without it validates unchanged. Uses the strict $defs/SlugId shape (hyphens only) - unlike the card/exercise field, this is a brand-new field with no legacy underscore-bearing ids to grandfather."
+        },
+        "text": {
+          "description": "The option text shown to the learner. Unique within the exercise - the text IS the option, so a duplicate would be ambiguous.",
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "MultipleChoiceOption",
+      "type": "object"
+    },
+    "Pair": {
+      "additionalProperties": false,
+      "description": "One left↔right pair in a MATCHING exercise.\n\nEXP-039: modeled explicitly (was an inline ``dict[str, str]``)\nso the generated JSON-Schema / TS types carry the structured\n``{left, right}`` shape instead of a loose string map. The\n``extra=\"forbid\"`` config + the two required fields replace the\nformer per-pair key check in ``_validate_matching_fields``;\nvalidation semantics are unchanged (a pair must have exactly\n``left`` and ``right``).",
+      "properties": {
+        "left": {
+          "description": "The left-column item. The renderer shuffles before display.",
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Left",
+          "type": "string"
+        },
+        "right": {
+          "description": "The right-column item this pairs with.",
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Right",
+          "type": "string"
+        },
+        "stable_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SlugId"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stable Id",
+          "description": "engine#91 - schema 1.12 (additive). Element-level counterpart to the exercise/card stable_id (engine#90): identifies THIS pair for progress/SRS joins below the exercise level, so an answer-text correction (moving `left`/`right`) does not orphan its learner row. Once published it NEVER changes. Shares the SAME per-set stable_id namespace as card/exercise ids (checked the same way: collectStableIds set-wide, the schema's E-STABLE-ID-DUP rule per-document). Opaque mint-once value, NOT derived from content. Optional: content without it validates unchanged. Uses the strict $defs/SlugId shape (hyphens only) - unlike the card/exercise field, this is a brand-new field with no legacy underscore-bearing ids to grandfather."
+        }
+      },
+      "required": [
+        "left",
+        "right"
+      ],
+      "title": "Pair",
+      "type": "object"
+    },
+    "PictureImage": {
+      "additionalProperties": false,
+      "description": "One image option in a PICTURE_CHOICE exercise.\n\nEXP-039: modeled explicitly (was an inline ``dict[str, str]``)\nso the generated JSON-Schema / TS types carry the structured\n``{src, label, is_correct?}`` shape instead of a loose string\nmap. ``extra=\"forbid\"`` + the two required fields replace the\nformer key-subset / src+label-present checks; the\n\"exactly one correct\" rule stays in ``_validate_picture_choice_fields``.\n\n``is_correct`` stays a ``str`` (``\"true\"`` marks the answer) for\nbackward compatibility with authored content, not a ``bool``.",
+      "properties": {
+        "is_correct": {
+          "anyOf": [
+            {
+              "maxLength": 10,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Set to the string ``'true'`` on exactly one image to mark it the correct choice. Absent on the distractor images.",
+          "title": "Is Correct"
+        },
+        "label": {
+          "description": "Accessible label / alt text for the image option.",
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "src": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "maxLength": 250000,
+              "pattern": "^data:image/[a-z0-9.+-]+;base64,",
+              "type": "string"
+            }
+          ],
+          "description": "Image reference in one of two explicit formats (schema v1.8): a relative path inside the set's ``assets/`` directory ('assets/img/cat.png', <= 500 chars, resolved by the asset loader) OR an inline base64 data URI ('data:image/...;base64,...', its own 250000-char cap - sized for the reference consumer's 150-KiB upload compression: 153600 bytes -> 204800 base64 chars plus header). Repo content should prefer the assets/ path; the ``W-PIC-DATA-URI`` author lint flags inline data URIs.",
+          "title": "Src"
+        }
+      },
+      "required": [
+        "src",
+        "label"
+      ],
+      "title": "PictureImage",
+      "type": "object"
+    },
+    "SlugId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120,
+      "pattern": "^[\\p{Ll}\\p{Nd}]+(-[\\p{Ll}\\p{Nd}]+)*$",
+      "title": "SlugId",
+      "description": "Slug id: lowercase Unicode letters and digits in hyphen-separated runs (no leading/trailing/double hyphen, no underscore, no uppercase, no whitespace). Exactly the rule the reference consumer (adaptive-learner) enforces on import - an id that fails it is silently skipped there, so the engine rejects it up front (engine#105)."
+    },
+    "StepType": {
+      "description": "Closed enum for top-level step kinds.\n\nTHEORY = Markdown content step. EXERCISE = one of the\nExerciseType variants. The viewer (Phase 44) branches\non this; no other step kinds are valid in v1.0.",
+      "enum": [
+        "theory",
+        "exercise"
+      ],
+      "title": "StepType",
+      "type": "string"
+    },
+    "TokenRole": {
+      "description": "Closed enum of grammatical roles a card token can carry.\n\nPhase 52I / v1.35.0 / P-130. Annotates individual tokens\ninside a card's ``front`` so the v1.35.0+ cloze generator\ncan pick a semantically-meaningful blank instead of a\nposition-based one. Optional field on Card — old content\nwithout token_roles still validates and the generator\nfalls back to a positional heuristic.\n\nClosed enum to keep author input disciplined. Adding a\nrole (e.g. ``pronoun``, ``conjunction``, ``auxiliary``)\nis a minor schema_version bump — extending an open enum\nsilently would let typos masquerade as valid roles and\nthe generator would skip them without warning.",
+      "enum": [
+        "article",
+        "verb",
+        "noun",
+        "adjective",
+        "preposition",
+        "gender_marker",
+        "tense_marker"
+      ],
+      "title": "TokenRole",
+      "type": "string"
+    }
+  },
+  "$id": "https://astrapi69.github.io/learn-content-engine/schema/lesson.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One lesson in a content set (Phase 43 / 2B-lesson).\n\nA lesson is the unit a user works through end-to-end —\ntypically 5-15 minutes of content. The viewer (Phase 44)\nwalks the steps in order; SRS (Phase 46) tracks the\ncards referenced by each exercise.\n\nReferential integrity: every ``card_id`` referenced by\nany exercise step MUST exist in the lesson's ``cards``\nlist. Enforced by the model validator so the viewer can\ntrust the references later.",
+  "properties": {
+    "cards": {
+      "default": [],
+      "description": "Every card the lesson teaches.",
+      "items": {
+        "$ref": "#/$defs/Card"
+      },
+      "title": "Cards",
+      "type": "array"
+    },
+    "contributed_at": {
+      "anyOf": [
+        {
+          "maxLength": 40,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "ISO-8601 timestamp the lesson was contributed.",
+      "title": "Contributed At"
+    },
+    "contributed_by": {
+      "anyOf": [
+        {
+          "maxLength": 200,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Phase 64C-2 / schema 1.3 (additive). Optional author credit set when the learner opts in while sharing. Shown as a subtle viewer credit line + in the GitHub submission.",
+      "title": "Contributed By"
+    },
+    "description": {
+      "anyOf": [
+        {
+          "maxLength": 500,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional 1-2 sentence summary.",
+      "title": "Description"
+    },
+    "domain": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional content domain (schema v1.3). Mirrors the parent set's ``domain`` ('language' default, or 'psychology' / 'programming' / ...). Absent on language lessons; the parent set is authoritative.",
+      "title": "Domain"
+    },
+    "estimated_minutes": {
+      "default": 10,
+      "description": "Rough wall-clock estimate. Surfaced in the Set Browser so the user can pick a lesson that fits the time they have.",
+      "maximum": 240,
+      "minimum": 1,
+      "title": "Estimated Minutes",
+      "type": "integer"
+    },
+    "id": {
+      "description": "Slug id (see $defs/SlugId), unique within the parent set. The display order of a set's lessons is the LEXICOGRAPHIC sort of these ids: consumers sort the stored ``lessons/<id>.json`` filenames (the set manifest's ``metadata.lessons`` list only steers download discovery, never display order). The ``NN-slug`` prefix (e.g. ``01-greetings``) is therefore the ordering mechanism, not cosmetics - zero-pad it to one fixed width per set, or ``10-`` sorts before ``2-`` (engine#106).",
+      "title": "Id",
+      "$ref": "#/$defs/SlugId"
+    },
+    "requires_extensions": {
+      "description": "Extensions this lesson needs, each ``ext:<vendor>-<name>@<major>`` (e.g. ``ext:acme-ordering@1``). A consumer that has not registered a declared extension refuses the lesson loudly (E-EXT-UNSUPPORTED) rather than mis-rendering. Absent / empty on core lessons; additive, so pre-1.7 content validates unchanged.",
+      "items": {
+        "pattern": "^ext:[a-z0-9]+-[a-z0-9-]+@\\d+$",
+        "type": "string"
+      },
+      "title": "Requires Extensions",
+      "type": "array"
+    },
+    "resources": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/LessonResource"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "EXP-029 / MED-05 (additive). Optional lesson-specific supplementary media (videos / podcasts / articles), surfaced in the 'Vertiefe das Thema' section after the lesson summary.",
+      "title": "Resources"
+    },
+    "source_language": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional BCP-47 code of the language the learner already speaks (the language the card ``back`` / notes / theory are written in). Absent on pre-v1.2 lessons.",
+      "title": "Source Language"
+    },
+    "steps": {
+      "description": "Ordered sequence of theory + exercise steps. Must contain at least one step.",
+      "items": {
+        "$ref": "#/$defs/LessonStep"
+      },
+      "minItems": 1,
+      "title": "Steps",
+      "type": "array"
+    },
+    "target_language": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional BCP-47 code of the language taught (Phase 60 / v1.44.0). Mirrors the parent set's ``target_language``; lets an exported standalone lesson carry its own pair. Absent on pre-v1.2 lessons — the parent set is authoritative.",
+      "title": "Target Language"
+    },
+    "title": {
+      "description": "Human-readable title shown in the lesson list.",
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "variation_note": {
+      "anyOf": [
+        {
+          "maxLength": 500,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Phase 64B. Author's short note on how this variation differs.",
+      "title": "Variation Note"
+    },
+    "variation_of": {
+      "anyOf": [
+        {
+          "maxLength": 120,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Phase 64B / schema 1.3 (additive). When set, this lesson is a community VARIATION of another lesson (same topic, different exercises or perspective); holds the original lesson's id. Absent for ordinary lessons. Modeled here (EXP-039) so a shared variation lesson is no longer rejected by ``extra='forbid'``.",
+      "title": "Variation Of"
+    }
+  },
+  "required": [
+    "id",
+    "title",
+    "steps"
+  ],
+  "title": "Lesson",
+  "type": "object",
+  "x-schema-version": "1.13"
+}

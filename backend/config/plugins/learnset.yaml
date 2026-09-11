@@ -1,0 +1,27 @@
+display_name:
+  de: "Lernset-Export"
+  en: "Learn-Set Export"
+description:
+  de: "Exportiert ein Buch als Lernset für adaptive-learner (schema-validiertes ZIP im alc-Layout)."
+  en: "Exports a book as an adaptive-learner learn set (schema-validated ZIP in the alc layout)."
+settings:
+  # Chapter types excluded from lesson generation. Content-bearing
+  # matter (preface, introduction, appendix, glossary, ...) stays in;
+  # structural front/back matter and the marketing set are skipped.
+  # An empty list falls back to the built-in default set.
+  skip_chapter_types:
+    - toc
+    - imprint
+    - copyright
+    - title_page
+    - half_title
+    - dedication
+    - epigraph
+    - index
+    - endnotes
+    - acknowledgments
+    - about_author
+    - also_by_author
+    - excerpt
+    - call_to_action
+    - next_in_series

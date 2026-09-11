@@ -82,6 +82,7 @@ export const FEATURES = {
     AI_TRANSLATE: "ai-translate",
 
     GIT_SYNC: "git-sync",
+    LEARNSET_EXPORT: "learnset-export",
     GIT_BACKUP: "git-backup",
     TTS: "tts",
     LAN_MODE: "lan-mode",
@@ -212,6 +213,7 @@ const NEEDS_KEY_AND_NETWORK: readonly string[] = [FEATURES.AI_STORY_EXTRACTION];
 const DESKTOP_ONLY: readonly string[] = [
     FEATURES.GIT_SYNC,
     FEATURES.GIT_BACKUP,
+    FEATURES.LEARNSET_EXPORT,
     FEATURES.TTS,
     FEATURES.LAN_MODE,
     FEATURES.BACKUP_COMPARE,
