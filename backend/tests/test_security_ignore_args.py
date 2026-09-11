@@ -84,9 +84,10 @@ def test_non_mapping_top_level_fails_loud(tmp_path: Path) -> None:
 def test_committed_ignore_file_parses() -> None:
     """The real committed `.security-ignore.yml` is well-formed and parses."""
     args = security_ignore_args.build_ignore_args(REPO_ROOT / ".security-ignore.yml")
+    # CVE-2025-68616 dropped with the weasyprint 66 -> 70 bump (#444): the
+    # advisory is fixed in the shipped version, so deferring it would be a
+    # lie. The two survivors have no fixed version to upgrade to.
     assert args == [
-        "--ignore-vuln",
-        "CVE-2025-68616",
         "--ignore-vuln",
         "PYSEC-2026-3412",
         "--ignore-vuln",

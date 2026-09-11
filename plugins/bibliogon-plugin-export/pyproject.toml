@@ -21,7 +21,7 @@ pyyaml = "^6.0"
 # most Python Docker images. The chapter-based pipeline keeps using
 # manuscripta + Pandoc; the dispatcher in routes.py routes picture-
 # books to this new generator.
-weasyprint = "^66.0"
+weasyprint = "^70.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0"
