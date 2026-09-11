@@ -86,13 +86,29 @@ def import_assets(db: Session, book_id: str, assets_dir: Path) -> int:
 # quoted outer (from TipTap JSON) can still contain curly quotes inside the
 # captured value (e.g. `"src":"“assets/chapter_01_flimmern."` which TipTap's
 # HTML parser produced when the source HTML used smart quotes).
-# German typography opens with U+201E („) and U+201A (‚), which the
-# English-only alternation missed - 164 chapters across 19 imported
-# books kept an unrewritten src and failed every export (#789).
+#: Every typographic quotation mark that can wrap an attribute value in
+#: a manuscript, by language:
+#:
+#: - English  “ ”  U+201C U+201D, ‘ ’  U+2018 U+2019
+#: - German   „ “  U+201E U+201C, ‚ ‘  U+201A U+2018
+#: - French / Spanish / Italian  « »  U+00AB U+00BB, ‹ ›  U+2039 U+203A
+#: - Swiss    » «  the same characters inverted
+#:
+#: Each omission has the same consequence: an unquoted HTML attribute
+#: value ends at whitespace, so the parser keeps the opening mark and
+#: drops the extension, the rewrite never matches, and every export of
+#: that book fails with MissingImagesError. German cost 164 chapters
+#: across 19 books (#789); the guillemets were the French and Spanish
+#: half of the same gap (#802).
+_QUOTE_DOUBLE = "„“”«»"
+_QUOTE_SINGLE = "‚‘’‹›"
+QUOTE_CHARS = _QUOTE_DOUBLE + _QUOTE_SINGLE
+
 _SRC_RE = re.compile(
     r"""(?P<prefix>src\s*=\s*|"src"\s*:\s*)"""
     r"""(?:"(?P<v_dq>[^"]*)"|'(?P<v_sq>[^']*)'"""
-    r"""|[„“”](?P<v_cd>[^„“”]*)[„“”]|[‚‘’](?P<v_cs>[^‚‘’]*)[‚‘’])"""
+    rf"""|[{_QUOTE_DOUBLE}](?P<v_cd>[^{_QUOTE_DOUBLE}]*)[{_QUOTE_DOUBLE}]"""
+    rf"""|[{_QUOTE_SINGLE}](?P<v_cs>[^{_QUOTE_SINGLE}]*)[{_QUOTE_SINGLE}])"""
 )
 
 
@@ -103,12 +119,17 @@ def _extract_filename(value: str, known: set[str]) -> str | None:
     - leading/trailing whitespace and stray curly-quote leftovers
     - internal whitespace inserted by Markdown line-wrapping (e.g.
       ``foo. jpg`` -> ``foo.jpg``)
-    - the leading ``“`` that HTML parsers sometimes leave on a truncated
-      value (chapter 1 of the regression book had ``"src":"“assets/..."``
-      because TipTap's setContent parsed a smart-quoted <img> tag badly)
+    - a leading or trailing typographic quotation mark in any of the
+      language styles the import sanitizer emits - German ``„…“``,
+      English ``“…”``, French ``« … »``, Spanish/Greek ``«…»`` - which
+      an HTML parser keeps because an unquoted attribute value ends at
+      whitespace, not at a quote character
     - bare basenames as well as ``assets/<type>/<name>`` paths
     """
-    cleaned = value.strip("„“”‚‘’\"' \t\n")
+    # French typography puts a no-break space inside the marks
+    # (« text », U+00A0 or the narrow U+202F), so those belong in the
+    # strip set alongside the quotation marks themselves (#802).
+    cleaned = value.strip(QUOTE_CHARS + "\"' \t\n\u00a0\u202f")
     collapsed = re.sub(r"\s+", "", cleaned)
     basename = collapsed.rsplit("/", 1)[-1] if "/" in collapsed else collapsed
     if basename in known:

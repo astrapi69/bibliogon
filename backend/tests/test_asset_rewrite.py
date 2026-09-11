@@ -8,8 +8,6 @@ same artefacts after a post-import editor save.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
@@ -139,8 +137,7 @@ def test_truncated_src_stem_matched(db: Session) -> None:
             book_id=book_id,
             title="C1",
             content=(
-                '{"type":"imageFigure","attrs":'
-                '{"src":"“assets/chapter_01_flimmern.","alt":"x"}}'
+                '{"type":"imageFigure","attrs":{"src":"“assets/chapter_01_flimmern.","alt":"x"}}'
             ),
             position=1,
             chapter_type="chapter",
@@ -292,6 +289,129 @@ def test_german_quoted_rewrite_is_idempotent(db: Session) -> None:
             book_id=book_id,
             title="C1",
             content="<p><img src=„assets/figures/diagram.jpg“ alt=„Bild“ /></p>",
+            position=1,
+            chapter_type="chapter",
+        )
+    )
+    db.commit()
+
+    assert rewrite_image_paths(db, book_id) == 1
+    db.commit()
+    assert rewrite_image_paths(db, book_id) == 0
+
+
+def test_french_guillemet_src_rewrites(db: Session) -> None:
+    """French, Spanish and Italian typography uses « » (U+00AB/U+00BB).
+    The class covered only the German and English pairs, so a guillemet
+    src reproduced #789 exactly for those books (#802)."""
+    book_id = "book-fr-1"
+    api_url = _seed(db, book_id)
+    db.add(
+        Chapter(
+            book_id=book_id,
+            title="C1",
+            content="<p><img src=«assets/figures/diagram.jpg» alt=«Image» /></p>",
+            position=1,
+            chapter_type="chapter",
+        )
+    )
+    db.commit()
+
+    assert rewrite_image_paths(db, book_id) == 1
+    ch = db.query(Chapter).filter_by(book_id=book_id).one()
+    assert f'src="{api_url}"' in ch.content
+
+
+def test_swiss_inverted_guillemet_src_rewrites(db: Session) -> None:
+    """Swiss and some German typesetting inverts the marks: »...«."""
+    book_id = "book-ch-1"
+    api_url = _seed(db, book_id)
+    db.add(
+        Chapter(
+            book_id=book_id,
+            title="C1",
+            content="<p><img src=»assets/figures/diagram.jpg« alt=»Bild« /></p>",
+            position=1,
+            chapter_type="chapter",
+        )
+    )
+    db.commit()
+
+    assert rewrite_image_paths(db, book_id) == 1
+    ch = db.query(Chapter).filter_by(book_id=book_id).one()
+    assert f'src="{api_url}"' in ch.content
+
+
+def test_single_guillemet_src_rewrites(db: Session) -> None:
+    """Single-level guillemets ‹ › (U+2039/U+203A)."""
+    book_id = "book-fr-2"
+    api_url = _seed(db, book_id)
+    db.add(
+        Chapter(
+            book_id=book_id,
+            title="C1",
+            content="<p><img src=‹assets/figures/diagram.jpg› alt=‹Image› /></p>",
+            position=1,
+            chapter_type="chapter",
+        )
+    )
+    db.commit()
+
+    assert rewrite_image_paths(db, book_id) == 1
+    ch = db.query(Chapter).filter_by(book_id=book_id).one()
+    assert f'src="{api_url}"' in ch.content
+
+
+def test_guillemets_with_narrow_no_break_space_rewrite(db: Session) -> None:
+    """French typography puts a no-break space INSIDE the marks:
+    « assets/foo.png ». Both U+202F and U+00A0 occur in the wild."""
+    book_id = "book-fr-3"
+    api_url = _seed(db, book_id)
+    db.add(
+        Chapter(
+            book_id=book_id,
+            title="C1",
+            content=("<p><img src=« assets/figures/diagram.jpg » alt=« Image » /></p>"),
+            position=1,
+            chapter_type="chapter",
+        )
+    )
+    db.commit()
+
+    assert rewrite_image_paths(db, book_id) == 1
+    ch = db.query(Chapter).filter_by(book_id=book_id).one()
+    assert f'src="{api_url}"' in ch.content
+
+
+def test_guillemets_with_spaced_extension_rewrite(db: Session) -> None:
+    """The #789 shape in a French book: guillemets AND a space before
+    the extension."""
+    book_id = "book-fr-4"
+    api_url = _seed(db, book_id)
+    db.add(
+        Chapter(
+            book_id=book_id,
+            title="C1",
+            content="<p><img src=«assets/figures/diagram. jpg» alt=«Image» /></p>",
+            position=1,
+            chapter_type="chapter",
+        )
+    )
+    db.commit()
+
+    assert rewrite_image_paths(db, book_id) == 1
+    ch = db.query(Chapter).filter_by(book_id=book_id).one()
+    assert f'src="{api_url}"' in ch.content
+
+
+def test_guillemet_rewrite_is_idempotent(db: Session) -> None:
+    book_id = "book-fr-5"
+    _seed(db, book_id)
+    db.add(
+        Chapter(
+            book_id=book_id,
+            title="C1",
+            content="<p><img src=«assets/figures/diagram.jpg» alt=«Image» /></p>",
             position=1,
             chapter_type="chapter",
         )
