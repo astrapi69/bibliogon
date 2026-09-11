@@ -186,9 +186,7 @@ def _fake_generators(monkeypatch):
         epub_calls.append(True)
         return out
 
-    def fake_pdf(
-        book_data, chapters, out_dir, *, trim_size, margin, bleed_marks, failures=None
-    ):
+    def fake_pdf(book_data, chapters, out_dir, *, trim_size, margin, bleed_marks, failures=None):
         pdf_calls.append((trim_size, margin, bleed_marks))
         out = out_dir / "manuscript-paperback.pdf"
         out.write_bytes(b"pdf")
@@ -390,3 +388,80 @@ class TestManuscriptFailureReporting:
         response = client.post(f"/api/kdp/package/{book_id}")
         assert response.status_code == 400, response.text
         assert "assets/broken-01.png" in response.json()["detail"]
+
+
+class TestChaptersToHtmlContentShapes:
+    """#806: manuscript_pdf._chapters_to_html branched on
+    isinstance(content, dict) and emitted an empty section body for
+    everything else - so the print PDF of an imported book silently lost
+    every chapter's text while the EPUB (routed through the export
+    plugin's real converter) kept it. Same shape as #787, different
+    plugin, no crash.
+    """
+
+    def _render(self, chapters: list[dict]) -> str:
+        from bibliogon_kdp.manuscript_pdf import _chapters_to_html
+
+        return _chapters_to_html(chapters)
+
+    def test_html_content_appears_in_the_rendered_body(self) -> None:
+        html = self._render(
+            [{"title": "Vorwort", "position": 0, "content": "<p>Ein ganzer Satz.</p>"}]
+        )
+        assert "Ein ganzer Satz." in html
+
+    def test_tiptap_json_dict_content_still_renders(self) -> None:
+        doc = {
+            "type": "doc",
+            "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Aus JSON."}]}],
+        }
+        html = self._render([{"title": "K1", "position": 0, "content": doc}])
+        assert "Aus JSON." in html
+
+    def test_tiptap_json_string_content_still_renders(self) -> None:
+        doc_json = (
+            '{"type":"doc","content":[{"type":"paragraph",'
+            '"content":[{"type":"text","text":"Aus JSON-String."}]}]}'
+        )
+        html = self._render([{"title": "K1", "position": 0, "content": doc_json}])
+        assert "Aus JSON-String." in html
+
+    def test_plain_text_content_still_renders(self) -> None:
+        html = self._render([{"title": "K1", "position": 0, "content": "Nur Text."}])
+        assert "Nur Text." in html
+
+    def test_empty_content_does_not_raise(self) -> None:
+        self._render([{"title": "K1", "position": 0, "content": ""}])
+        self._render([{"title": "K1", "position": 0, "content": None}])
+
+    def test_an_html_chapter_reaches_the_real_pdf_via_the_endpoint(
+        self, client, monkeypatch
+    ) -> None:
+        """The real path: a hardcover/paperback package request renders
+        via WeasyPrint. Assert the manuscript PDF actually contains the
+        chapter text, not just that the endpoint returned 200."""
+        book_id = _create_book(client)
+        response = client.post(
+            f"/api/books/{book_id}/chapters",
+            json={"title": "Kapitel Eins", "content": "<p>Ein unverwechselbarer Satz.</p>"},
+        )
+        assert response.status_code in (200, 201), response.text
+        _patch_book_for_kdp(client, book_id)
+
+        package_response = client.post(f"/api/kdp/package/{book_id}", json={"format": "paperback"})
+        assert package_response.status_code == 200, package_response.text
+
+        import io
+        import subprocess
+        import zipfile
+
+        archive = zipfile.ZipFile(io.BytesIO(package_response.content))
+        pdf_name = next(name for name in archive.namelist() if name.endswith(".pdf"))
+        pdf_bytes = archive.read(pdf_name)
+
+        # pdftotext (poppler-utils) is already a system dependency alongside
+        # Pandoc - no new Python package needed to read the PDF back out.
+        result = subprocess.run(
+            ["pdftotext", "-", "-"], input=pdf_bytes, capture_output=True, check=True
+        )
+        assert "unverwechselbarer" in result.stdout.decode("utf-8", errors="replace")
