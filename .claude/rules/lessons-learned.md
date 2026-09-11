@@ -5607,3 +5607,88 @@ lingering job, a colliding upload filename) are latent, not live — pin them wi
 a shuffled-order CI variant rather than rewriting the harness. Same "measure
 before you restructure" discipline as the "Audit findings need
 production-vs-dev environment classification" rule.
+
+## A plugin test suite that reads Chapter.content needs an HTML-imported-chapter fixture
+
+`Chapter.content` is documented as TipTap JSON, but the write-book-template
+importer deliberately stores HTML there - the editor parses it via
+`setContent` and only writes JSON back on the first save. Measured on the
+production dev library: 833 chapters, **zero** carrying TipTap JSON - 778
+HTML, 55 empty. Every imported book is HTML-shaped content until a human
+opens and saves each chapter, which for most books never happens.
+
+Bug #787 shipped because plugin-learnset's tests used TipTap-JSON fixtures
+exclusively. A bare `json.loads(chapter.content)` crashed with "Expecting
+value: line 1 column 1 (char 0)" for every imported book, and the suite
+stayed green throughout because it never exercised the shape 100% of real
+data actually has.
+
+A follow-up audit (workflow, #806) swept every plugin that reads chapter
+content and found the SAME class of gap in four more places, none of which
+crash - they silently corrupt output, which is worse because nobody notices
+until a user compares two exports of the same book and finds one of them
+short a chapter:
+
+- **plugin-kdp**: the print-PDF renderer (`manuscript_pdf._chapters_to_html`)
+  branches on `isinstance(content, dict)` and emits an empty section
+  otherwise. The EPUB (routed through the export plugin's proper converter)
+  and the print PDF of the SAME imported book disagree - one has the chapter
+  text, the other doesn't.
+- **plugin-audiobook** (and **plugin-ms-tools**, which imports the same
+  function): `extract_plain_text` does `json.loads(content)` and on
+  `JSONDecodeError` returns the **raw string unchanged**. TTS reads HTML tags
+  aloud; the style checker's word/sentence counts include markup.
+- **plugin-translation**: `extract_plain_text_from_tiptap` /
+  `rebuild_tiptap_with_translation` both assume JSON, so an HTML chapter's
+  translation is lost or malformed on rebuild.
+- **plugin-story-bible**: `autodetect._tiptap_to_text` returns empty text for
+  HTML content, so entity auto-detection silently produces zero proposals for
+  every imported book - a false negative that looks like "no entities found",
+  not a bug report.
+
+### Rule
+
+Any plugin test suite exercising a function that reads `Chapter.content` (or
+a chapter dict's `"content"` key, however it arrived - an ORM row, a router
+payload, a service argument) MUST include, at minimum:
+
+1. An **HTML-content fixture** - the shape every imported, never-opened
+   chapter actually has.
+2. A **plain-text fixture** - legacy rows and hand-written test data.
+3. An **empty-or-whitespace fixture** - `""` and `"   "` are NOT equivalent
+   inputs to a naive `if not content` guard combined with `json.loads`; see
+   the #787 PR, where the whitespace case was the one that survived an
+   incomplete fix.
+
+TipTap-JSON fixtures remain correct and necessary - they are what the editor
+actually writes after a first save - but they must never be the ONLY shape a
+suite exercises. The canonical converter for all four shapes already exists:
+`bibliogon_export.scaffolder.content_to_markdown` (promoted from a private
+helper in the #787 fix). A plugin reading chapter content should prefer
+calling it over reimplementing a JSON-only parse, per Library-First; when a
+plugin genuinely needs its own extraction (plain-text-only, no Markdown), it
+still owes itself the same four-shape test coverage.
+
+### Detection recipe
+
+```bash
+grep -rln "\.content\b" plugins/*/bibliogon_*/*.py \
+  | xargs grep -l "json.loads\|json\.load(" \
+  | grep -v /tests/
+```
+
+For each hit, check whether its plugin's test suite (`tests/test_*.py`)
+constructs a Chapter/chapter-dict fixture whose `content` is an HTML string,
+not just a `json.dumps({...})` doc. A suite with zero HTML fixtures across
+every content-reading test is the #787 shape recurring.
+
+### Pairs with
+
+- "End-to-end behavior tests are not 'kwarg passes through' tests" - same
+  family: the test asserts the shape of the INPUT space is covered, not just
+  that the code runs once with a convenient input.
+- "Coverage Illusion: passing tests != working feature" - a green suite that
+  never constructs the real-world input shape proves nothing about the
+  real-world behavior.
+- Library-First (`.claude/rules/library-first.md`) - the fix for four of the
+  five gaps was "call the existing converter", not "write a fourth parser".
