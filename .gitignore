@@ -102,3 +102,8 @@ tmp/
 # ux-audit-group{1,2,3} manual-automation specs). Evidence artifacts,
 # not source — never committed.
 /docs/audits/ux-full-audit-2026-05-14-screenshots/
+
+# Personal book catalog for scripts/bulk_import_books.py (#758) —
+# local working file; the committed template is
+# scripts/book-catalog.example.yaml.
+/book-catalog.yaml

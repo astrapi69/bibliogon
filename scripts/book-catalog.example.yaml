@@ -1,0 +1,23 @@
+# Book catalog for scripts/bulk_import_books.py (#758).
+#
+# Copy this file (e.g. to the repo root as book-catalog.yaml, which is
+# a local working file - do not commit your personal catalog unless you
+# want it shared) and list every manuscript repo that should exist as a
+# book in Bibliogon. Then run against a RUNNING backend:
+#
+#   make import-books CATALOG=book-catalog.yaml           # import missing
+#   make import-books-check CATALOG=book-catalog.yaml     # dry-run: report only
+#
+# Entry forms:
+#   - plain URL string (git_adoption defaults to adopt_with_remote, so
+#     the imported book keeps its .git + remote and the Git-Sync panel
+#     works immediately)
+#   - mapping with repo_url + optional git_adoption
+#     (start_fresh | adopt_with_remote | adopt_without_remote)
+#
+# The branch is always the repo's default branch (the backend clone
+# handler does not take a branch parameter).
+books:
+  - https://github.com/astrapi69/example-manuscript-one
+  - repo_url: https://github.com/astrapi69/example-manuscript-two
+    git_adoption: start_fresh

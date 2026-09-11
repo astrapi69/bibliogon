@@ -625,6 +625,12 @@ sync-versions-check: ## Exit non-zero if any subsystem version drifts from canon
 generate-seed-data: ## Regenerate offline-PWA seed JSON from backend YAML (run + commit after changing i18n/app.yaml/type registries)
 	@cd backend && poetry run python ../scripts/generate-seed-data.py
 
+import-books: ## Bulk-import missing books from a git-repo catalog against the running backend. Usage: make import-books CATALOG=book-catalog.yaml
+	@cd backend && poetry run python ../scripts/bulk_import_books.py --catalog "../$(CATALOG)"
+
+import-books-check: ## Dry-run of import-books: report present / would-import, create nothing. Usage: make import-books-check CATALOG=book-catalog.yaml
+	@cd backend && poetry run python ../scripts/bulk_import_books.py --catalog "../$(CATALOG)" --dry-run
+
 generate-trial-key: ## Generate 30-day trial key. Usage: make generate-trial-key AUTHOR="Name"
 	@cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run python -c \
 		"from app.licensing import *; \
