@@ -15,9 +15,8 @@
  */
 
 import { useCallback } from "react";
-import { toast } from "react-toastify";
-
 import { useI18n } from "../../hooks/useI18n";
+import { notify } from "../../utils/platform/notify";
 import { useStorageMode } from "../../storage/useStorageMode";
 
 export default function SyncStatusWatcher() {
@@ -27,7 +26,7 @@ export default function SyncStatusWatcher() {
     const { processSyncQueue } = await import("../../storage/sync-engine");
     const result = await processSyncQueue();
     if (result.synced > 0) {
-      toast.success(
+      notify.success(
         t("ui.offline.synced_toast", "Kapitel synchronisiert: {count}").replace(
           "{count}",
           String(result.synced),
@@ -35,7 +34,7 @@ export default function SyncStatusWatcher() {
       );
     }
     if (result.conflicts.length > 0) {
-      toast.warning(
+      notify.warning(
         t(
           "ui.offline.conflicts_found",
           "Konflikt gefunden. Bitte in den Einstellungen lösen.",
@@ -43,7 +42,7 @@ export default function SyncStatusWatcher() {
       );
     }
     if (result.failed > 0) {
-      toast.error(
+      notify.error(
         t(
           "ui.offline.sync_partial",
           "Einige Änderungen konnten nicht synchronisiert werden.",

@@ -131,6 +131,13 @@ jobs:
         working-directory: frontend
         run: npx tsc --noEmit
 
+      # notify is the single choke point for failure-level toasts: it carries
+      # the backendless-offline downgrade, the backend-unreachable suppression
+      # (#765) and the report button. A raw toast.error opts out of all three,
+      # which is the #769 bug class. Stdlib-only, so no extra setup step.
+      - name: Notify choke-point guard (no direct toast.error)
+        run: python3 scripts/check_direct_toast.py --enforce
+
       # Fail the build on any new circular dependency. Baseline is 0
       # (docs/audits/circular-deps-baseline.md). Run via npx (pinned
       # major): madge@8's optional typescript peer is <6.1 while the
