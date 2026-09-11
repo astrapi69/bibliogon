@@ -11,10 +11,10 @@
 
 import { useEffect, useState } from "react";
 import { CloudDownload, CloudOff, Loader2 } from "lucide-react";
-import { toast } from "react-toastify";
 
 import { isOfflineEnabled } from "../../storage/connectivity";
 import { useI18n } from "../../hooks/useI18n";
+import { notify } from "../../utils/platform/notify";
 
 interface Props {
   bookId: string;
@@ -46,10 +46,11 @@ export function OfflineToggleButton({ bookId }: Props) {
       const mod = await import("../../storage/offline-download");
       await mod.downloadBookOffline(bookId);
       setOffline(true);
-      toast.success(t("ui.offline.taken", "Buch ist jetzt offline verfügbar."));
+      notify.success(t("ui.offline.taken", "Buch ist jetzt offline verfügbar."));
     } catch (err) {
-      toast.error(
+      notify.error(
         `${t("ui.offline.error", "Offline-Aktion fehlgeschlagen.")} ${String(err)}`,
+        err,
       );
     } finally {
       setBusy(false);
@@ -62,12 +63,13 @@ export function OfflineToggleButton({ bookId }: Props) {
       const mod = await import("../../storage/offline-download");
       await mod.removeBookOffline(bookId);
       setOffline(false);
-      toast.success(
+      notify.success(
         t("ui.offline.removed", "Buch aus dem Offline-Speicher entfernt."),
       );
     } catch (err) {
-      toast.error(
+      notify.error(
         `${t("ui.offline.error", "Offline-Aktion fehlgeschlagen.")} ${String(err)}`,
+        err,
       );
     } finally {
       setBusy(false);

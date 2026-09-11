@@ -20,9 +20,11 @@ import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 
 import BookEditor from "./BookEditor";
 import type { BookDetail, BookTypeDef, Chapter } from "../api/client";
+import { ApiError } from "../api/errors";
 import { BookTypesProvider } from "../hooks/book/useBookTypes";
 import { FeatureTestProvider } from "../features/FeatureTestProvider";
 import { expectNoA11yViolations } from "../test-utils/a11y";
+import { notify } from "../utils/platform/notify";
 
 // BOOK-TYPES-SSOT-YAML-01 C6: BookEditor now reads the registry
 // to dispatch the editor component. Static snapshot covers
@@ -105,7 +107,16 @@ const editorOnSaveHolder: {
 // is undefined offline (menu item hidden) and defined online.
 const chapterSidebarPropsHolder: {
     onShowVersions: ((id: string) => void) | undefined;
-} = { onShowVersions: undefined };
+    onExportLearnset: (() => void | Promise<void>) | undefined;
+} = { onShowVersions: undefined, onExportLearnset: undefined };
+
+// Learnset export (#763) fetches a ZIP via api.learnset.download; the
+// #769 cases drive its failure paths to pin the notify-seam reporting.
+const learnsetDownloadMock = vi.fn();
+const downloadBlobMock = vi.fn();
+vi.mock("../shared/utils/downloadBlob", () => ({
+    downloadBlob: (...args: unknown[]) => downloadBlobMock(...args),
+}));
 
 vi.mock("react-router-dom", async () => {
     const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
@@ -174,6 +185,10 @@ vi.mock("../api/client", async () => {
                 ...actual.api.pages,
                 list: (...args: unknown[]) => listPagesMock(...args),
             },
+            learnset: {
+                ...actual.api.learnset,
+                download: (...args: unknown[]) => learnsetDownloadMock(...args),
+            },
             comics: {
                 ...actual.api.comics,
                 // ComicBookEditor (plugin-comics Session 1) fetches
@@ -216,8 +231,10 @@ vi.mock("../components/book/ChapterSidebar", () => ({
         onSelect: (id: string) => void;
         onMetadata?: () => void;
         onShowVersions?: (id: string) => void;
+        onExportLearnset?: () => void | Promise<void>;
     }) => {
         chapterSidebarPropsHolder.onShowVersions = props.onShowVersions;
+        chapterSidebarPropsHolder.onExportLearnset = props.onExportLearnset;
         return (
             <div data-testid="chapter-sidebar-stub">
                 {(props.chapters ?? []).map((ch) => (
@@ -787,5 +804,73 @@ describe("BookEditor - sidebar closes on view switch (narrow viewport, #293)", (
             setWidth(original);
             localStorage.clear();
         }
+    });
+});
+
+describe("learnset export reporting (#769)", () => {
+    /** Render the prose editor and invoke the real learnset handler. */
+    async function exportLearnset() {
+        renderEditor("b1");
+        await screen.findByTestId("book-editor");
+        await waitFor(() =>
+            expect(chapterSidebarPropsHolder.onExportLearnset).toBeTypeOf("function"),
+        );
+        await act(async () => {
+            await chapterSidebarPropsHolder.onExportLearnset!();
+        });
+    }
+
+    beforeEach(() => {
+        learnsetDownloadMock.mockReset();
+        downloadBlobMock.mockReset();
+        vi.mocked(notify.success).mockClear();
+        vi.mocked(notify.error).mockClear();
+        getBookMock.mockResolvedValue(
+            makeBook({ id: "b1", book_type: "prose", title: "Prose Book" }),
+        );
+    });
+
+    it("downloads and confirms through the notify seam", async () => {
+        const blob = new Blob(["zip"]);
+        learnsetDownloadMock.mockResolvedValue({ blob, filename: "b1-learnset.zip" });
+
+        await exportLearnset();
+
+        expect(downloadBlobMock).toHaveBeenCalledWith(blob, "b1-learnset.zip");
+        expect(notify.success).toHaveBeenCalledTimes(1);
+        expect(notify.error).not.toHaveBeenCalled();
+    });
+
+    it("reports an ApiError through notify.error with the error attached", async () => {
+        const apiError = new ApiError(422, "chapter 3 failed schema validation", "/api/learnset/b1", "GET");
+        learnsetDownloadMock.mockRejectedValue(apiError);
+
+        await exportLearnset();
+
+        expect(notify.error).toHaveBeenCalledTimes(1);
+        const [message, passed] = vi.mocked(notify.error).mock.calls[0];
+        expect(message).toBe("chapter 3 failed schema validation");
+        expect(passed).toBe(apiError);
+        expect(notify.success).not.toHaveBeenCalled();
+    });
+
+    it("reports a non-Api failure with the translated fallback", async () => {
+        const boom = new TypeError("Failed to fetch");
+        learnsetDownloadMock.mockRejectedValue(boom);
+
+        await exportLearnset();
+
+        expect(notify.error).toHaveBeenCalledTimes(1);
+        const [message, passed] = vi.mocked(notify.error).mock.calls[0];
+        expect(message).toBe("Lernset-Export fehlgeschlagen");
+        expect(passed).toBe(boom);
+    });
+
+    it("does not download a blob when the request failed", async () => {
+        learnsetDownloadMock.mockRejectedValue(new ApiError(500, "boom", "/api/learnset/b1", "GET"));
+
+        await exportLearnset();
+
+        expect(downloadBlobMock).not.toHaveBeenCalled();
     });
 });
