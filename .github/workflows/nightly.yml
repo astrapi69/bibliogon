@@ -33,6 +33,27 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
+  learnset-schema-drift:
+    name: Learnset schema drift (upstream engine)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+      # #775: plugin-learnset VENDORS the learn-content-engine schemas +
+      # validator because upstream ships no installable Python package
+      # (no PyPI distribution, no [project] table in its pyproject). The
+      # npm package does ship them, so compare against the pinned
+      # version nightly. Deliberately NOT a PR gate: an upstream release
+      # must not redden an unrelated PR.
+      - name: Compare vendored artifacts against the pinned engine
+        run: python scripts/check_learnset_schema_drift.py
+
   plugin-tests:
     name: Plugin Tests (${{ matrix.plugin }})
     runs-on: ubuntu-latest

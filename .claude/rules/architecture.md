@@ -318,8 +318,14 @@ feature resolves to one of three states:
     `git-backup`, `tts`, `lan-mode`, `backup-compare`, `backup-history`,
     `bgb-import`, `pandoc-export`, `version-history`, `translation-links`,
     `kdp-category-catalog`, `bulk-export`, `writing-history-csv`,
-    `book-templates`, `ai-template-file-io`. The user cannot act, but the
-    disabled control communicates that a desktop app exists.
+    `book-templates`, `ai-template-file-io`, `grammar`, `translation`,
+    `learnset-export`. The user cannot act, but the disabled control
+    communicates that a desktop app exists. `learnset-export` (#763/#775)
+    is a deliberate Maximal-Offline exception, not an oversight: the
+    export assembles a ZIP server-side and validates every lesson against
+    the vendored `learn-content-engine` JSON schemas with Python
+    `jsonschema` + `regex` (Unicode property escapes), so there is no
+    browser path to route through the storage seam.
   - `ui.feature.not_yet_available` — declared but not yet implemented.
 - **hidden:** ONLY for dev feature-flags during development (≈never in product
   UI). Nothing the user owns is hidden. The library's fail-closed default

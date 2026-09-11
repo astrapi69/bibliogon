@@ -25,11 +25,21 @@ import math
 import unicodedata
 import zipfile
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 import yaml
 
 MANIFEST_SCHEMA_VERSION = "1.6"
+
+#: learn-content-engine release the vendored schemas + validator were
+#: taken from. Read from the pin file rather than duplicated, so an
+#: upgrade cannot leave the stamp behind (#775). The nightly drift
+#: guard (scripts/check_learnset_schema_drift.py) compares the vendored
+#: artifacts against this exact npm version.
+ENGINE_VERSION = (
+    (Path(__file__).parent / "vendor" / "engine-version.txt").read_text(encoding="utf-8").strip()
+)
 SET_VERSION_INITIAL = "1.0.0"
 WORDS_PER_MINUTE = 200
 
@@ -162,6 +172,16 @@ def build_manifest(book: Any, lessons: list[dict[str, Any]]) -> dict[str, Any]:
     manifest: dict[str, Any] = {
         "schema_version": MANIFEST_SCHEMA_VERSION,
         "name": book.title,
+        # Free-form per the content-manifest schema. A set committed
+        # into an alc-* repo outlives the session that produced it, so
+        # it records which engine/schema version it was built against
+        # (#775) - otherwise a later validation failure gives no clue
+        # whether the set or the engine moved.
+        "metadata": {
+            "generated_by": "Bibliogon plugin-learnset",
+            "engine_version": ENGINE_VERSION,
+            "schema_version": MANIFEST_SCHEMA_VERSION,
+        },
         "sets": [content_set],
     }
     if getattr(book, "description", None):

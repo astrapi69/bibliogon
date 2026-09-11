@@ -150,6 +150,64 @@ this is the differentiation feature, and it doubles as a marketing funnel
   with the learnset link (needs the promotion track's link-management to
   know WHERE the set is published - cross-track dependency, keep last).
 
+## Phase 1 decisions of record (#763 / #775)
+
+Four points that the follow-up audit settled by measurement. Recorded here so
+the next reader does not re-derive them.
+
+### Vendored schemas plus a nightly drift guard, not a dependency
+
+`learn-content-engine` is published to npm only. `pip index versions
+learn-content-engine` and `lce-schema` both report no matching distribution,
+and the engine's `pyproject.toml` declares neither `[project]` nor
+`[build-system]`, so `pip install git+...@v0.23.0` cannot work either. A
+pinned Python dependency is therefore impossible; the three artifacts
+(`lesson.schema.json`, `content-manifest.schema.json`, `python/lce_schema.py`)
+stay vendored under `bibliogon_learnset/vendor/`.
+
+`scripts/check_learnset_schema_drift.py` closes the staleness risk: it runs
+`npm pack learn-content-engine@<pinned>` and byte-compares each vendored file
+against the packaged original. The pin lives in
+`bibliogon_learnset/vendor/engine-version.txt` and is the same string the
+export stamps into the manifest.
+
+The guard runs **nightly**, not as a PR gate (`.github/workflows/nightly.yml`,
+job `learnset-schema-drift`; locally `make verify-learnset-schema`). An
+upstream release is not a reason to redden an unrelated pull request, and the
+signal wanted here is "upstream moved", not "this change broke something".
+
+### Engine and schema version stamped into every export
+
+`content-manifest.metadata` is free-form (`additionalProperties: true`), so
+`build_manifest` writes `generated_by`, `engine_version`, and
+`schema_version` there. An exported set therefore carries the provenance
+needed to tell whether it predates a schema change.
+
+### Per-variant ASIN
+
+`build_manifest` reads `asin_ebook` from the Book being exported, so each
+translation-group variant carries its own. Pinned by tests: one variant's ASIN
+never appears in another's manifest, and a book with no ASIN still validates
+(`ContentSetBook.asin` is nullable).
+
+### Playwright smoke already runs in CI
+
+`e2e/playwright.config.ts` sets `testDir: "./smoke"` for the `smoke` project,
+so `e2e/smoke/learnset-export.spec.ts` is collected automatically and runs in
+`e2e-smoke.yml` (nightly cron 03:00 UTC plus `workflow_dispatch`). No wiring
+was needed.
+
+### Desktop gating is a deliberate exception
+
+`learnset-export` sits in the `DESKTOP_ONLY` set. That is a considered
+Maximal-Offline exception rather than an oversight: the export assembles the
+alc ZIP server-side and validates it with Python `jsonschema` (plus `regex`
+for the schemas' Unicode property escapes), so there is no browser
+implementation to route through the storage seam. In Dexie mode the control
+stays visible and disabled with the desktop-app reason, per policy #78. The
+rationale is recorded next to the other documented exceptions in
+`.claude/rules/architecture.md`.
+
 ## Open questions
 
 1. Set publication target: generated ZIP is committed by the user into an
