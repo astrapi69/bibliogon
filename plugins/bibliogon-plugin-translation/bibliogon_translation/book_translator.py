@@ -89,7 +89,7 @@ def extract_plain_text_from_tiptap(content: str) -> str:
         # (#806). Genuine plain text has no markup to strip.
         stripped = content.strip()
         if stripped.startswith("<"):
-            from bibliogon_export.html_to_markdown import html_to_plain_text
+            from app.services.html_text import html_to_plain_text
 
             return html_to_plain_text(content)
         return content

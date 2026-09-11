@@ -71,7 +71,7 @@ def _tiptap_to_text(content: str | None) -> str:
         walk(doc)
         return " ".join(parts)
     if stripped.startswith("<"):
-        from bibliogon_export.html_to_markdown import html_to_plain_text
+        from app.services.html_text import html_to_plain_text
 
         return html_to_plain_text(content)
     return content
