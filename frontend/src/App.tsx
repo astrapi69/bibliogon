@@ -25,6 +25,7 @@ const ChapterVersionsPage = lazyWithReload(() => import("./pages/ChapterVersions
 const GitBackupPage = lazyWithReload(() => import("./pages/GitBackupPage"));
 const GitSyncPage = lazyWithReload(() => import("./pages/GitSyncPage"));
 const ShortcutsPage = lazyWithReload(() => import("./pages/ShortcutsPage"));
+const PortfolioBoardPage = lazyWithReload(() => import("./pages/promotion/PortfolioBoardPage"));
 import ErrorBoundary from "./components/shared/ErrorBoundary";
 import { lazyWithReload } from "./lib/lazyWithReload";
 import { useTheme } from "./hooks/ui/useTheme";
@@ -302,6 +303,14 @@ export default function App() {
                                                         element={
                                                             <ErrorBoundary surface="writing-history">
                                                                 <WritingHistoryPage />
+                                                            </ErrorBoundary>
+                                                        }
+                                                    />
+                                                    <Route
+                                                        path="/portfolio"
+                                                        element={
+                                                            <ErrorBoundary surface="portfolio-board">
+                                                                <PortfolioBoardPage />
                                                             </ErrorBoundary>
                                                         }
                                                     />

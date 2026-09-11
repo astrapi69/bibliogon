@@ -3828,6 +3828,42 @@
       "arc_send_mail": "メールを作成",
       "conflict_banner": "前回のウィザードセッション以降に本のメタデータが変更されました。パッケージを作成する前に、メタデータとカバーを再度確認してください。",
       "conflict_dismiss": "通知を閉じる"
+    },
+    "portfolio": {
+      "title": "ポートフォリオ",
+      "intro": "どの本がどの形式で存在し、どの形式がまだないか。",
+      "column_book": "書籍",
+      "universal_link": "ユニバーサルリンク",
+      "universal_link_placeholder": "https://books2read.com/...",
+      "filter_author": "ペンネーム",
+      "filter_language": "言語",
+      "filter_all": "すべて",
+      "filter_gaps_only": "未対応のみ",
+      "filter_reset": "フィルターをリセット",
+      "status_label": "ステータス",
+      "store_url": "ストアリンク",
+      "store_url_placeholder": "https://...",
+      "open_store": "ストア",
+      "no_store_url": "リンクなし",
+      "edit_store_url": "ストアリンクを編集",
+      "no_gaps": "すべて完了",
+      "saved": "保存しました",
+      "save_failed": "保存に失敗しました",
+      "load_failed": "ポートフォリオを読み込めませんでした",
+      "empty_title": "ポートフォリオに書籍がまだありません",
+      "empty_body": "書籍を作成またはインポートすると、1冊ごとに1行で表示されます。",
+      "no_matches_title": "該当なし",
+      "no_matches_body": "このフィルターに一致する書籍はありません。",
+      "status": {
+        "live": "販売中",
+        "draft": "下書き",
+        "missing": "未作成"
+      },
+      "format": {
+        "ebook": "電子書籍",
+        "paperback": "ペーパーバック",
+        "hardcover": "ハードカバー"
+      }
     }
   }
 }

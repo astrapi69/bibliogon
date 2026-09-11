@@ -1,5 +1,5 @@
 /**
- * AI, KDP, settings, help, git, and system API namespaces.
+ * AI, KDP, promotion, settings, help, git, and system API namespaces.
  *
  * Part of the api/client.ts barrel split (Batch 2). Exposes the namespace
  * sub-object spread into the single `api` object in api/apiObject.ts.
@@ -15,9 +15,17 @@ import { settings, i18n, editorPluginStatus } from "./platform/settings";
 import { pluginInstall, licenses } from "./platform/plugins";
 import { help, getStarted } from "./platform/help";
 import { git, translations, gitSync, ssh } from "./platform/git";
+import { promotion } from "./platform/promotion";
 import { system } from "./platform/system";
 
 export type { KdpPackageFormat } from "./platform/kdp";
+export type {
+  PortfolioBoard,
+  PortfolioBookRow,
+  PortfolioFilters,
+  PortfolioFormatEntry,
+  PortfolioFormatStateUpdate,
+} from "./platform/promotion";
 
 export const platformApi = {
   ai,
@@ -33,5 +41,6 @@ export const platformApi = {
   translations,
   gitSync,
   ssh,
+  promotion,
   system,
 };

@@ -3828,6 +3828,42 @@
       "arc_send_mail": "E-posta yaz",
       "conflict_banner": "Kitap meta verileri son sihirbaz oturumundan bu yana değişti. Paketi oluşturmadan önce lütfen meta verileri + kapağı yeniden doğrulayın.",
       "conflict_dismiss": "Bildirimi kapat"
+    },
+    "portfolio": {
+      "title": "Portföy",
+      "intro": "Hangi kitap hangi formatta var - ve hangi format hâlâ eksik.",
+      "column_book": "Kitap",
+      "universal_link": "Evrensel bağlantı",
+      "universal_link_placeholder": "https://books2read.com/...",
+      "filter_author": "Takma ad",
+      "filter_language": "Dil",
+      "filter_all": "Tümü",
+      "filter_gaps_only": "Sadece eksikler",
+      "filter_reset": "Filtreleri sıfırla",
+      "status_label": "Durum",
+      "store_url": "Mağaza bağlantısı",
+      "store_url_placeholder": "https://...",
+      "open_store": "Mağaza",
+      "no_store_url": "bağlantı yok",
+      "edit_store_url": "Mağaza bağlantısını düzenle",
+      "no_gaps": "tamamlandı",
+      "saved": "Kaydedildi",
+      "save_failed": "Kaydetme başarısız",
+      "load_failed": "Portföy yüklenemedi",
+      "empty_title": "Portföyde henüz kitap yok",
+      "empty_body": "Kitaplar oluşturulduğunda veya içe aktarıldığında burada her kitap için bir satır olarak görünür.",
+      "no_matches_title": "Sonuç yok",
+      "no_matches_body": "Bu filtreye uyan kitap yok.",
+      "status": {
+        "live": "Satışta",
+        "draft": "Taslak",
+        "missing": "Eksik"
+      },
+      "format": {
+        "ebook": "eBook",
+        "paperback": "Ciltsiz",
+        "hardcover": "Ciltli"
+      }
     }
   }
 }

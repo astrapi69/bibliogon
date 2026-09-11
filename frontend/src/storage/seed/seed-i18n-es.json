@@ -3828,6 +3828,42 @@
       "arc_send_mail": "Redactar correo",
       "conflict_banner": "Los metadatos del libro cambiaron desde la última sesión del asistente. Vuelve a validar los metadatos y la portada antes de crear el paquete.",
       "conflict_dismiss": "Descartar aviso"
+    },
+    "portfolio": {
+      "title": "Portafolio",
+      "intro": "Qué libro existe en qué formato y qué formato falta todavía.",
+      "column_book": "Libro",
+      "universal_link": "Enlace universal",
+      "universal_link_placeholder": "https://books2read.com/...",
+      "filter_author": "Seudónimo",
+      "filter_language": "Idioma",
+      "filter_all": "Todos",
+      "filter_gaps_only": "Solo huecos",
+      "filter_reset": "Restablecer filtros",
+      "status_label": "Estado",
+      "store_url": "Enlace de la tienda",
+      "store_url_placeholder": "https://...",
+      "open_store": "Tienda",
+      "no_store_url": "sin enlace",
+      "edit_store_url": "Editar el enlace de la tienda",
+      "no_gaps": "completo",
+      "saved": "Guardado",
+      "save_failed": "No se pudo guardar",
+      "load_failed": "No se pudo cargar el portafolio",
+      "empty_title": "Todavía no hay libros en el portafolio",
+      "empty_body": "Cuando crees o importes libros aparecerán aquí, una fila por libro.",
+      "no_matches_title": "Sin resultados",
+      "no_matches_body": "Ningún libro coincide con este filtro.",
+      "status": {
+        "live": "En venta",
+        "draft": "Borrador",
+        "missing": "Falta"
+      },
+      "format": {
+        "ebook": "eBook",
+        "paperback": "Tapa blanda",
+        "hardcover": "Tapa dura"
+      }
     }
   }
 }
