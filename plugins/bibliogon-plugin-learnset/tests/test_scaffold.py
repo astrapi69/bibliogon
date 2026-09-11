@@ -13,10 +13,12 @@ from __future__ import annotations
 import io
 import json
 import zipfile
+from pathlib import Path
 
 import yaml
 from bibliogon_learnset.scaffold import (
     DEFAULT_SKIP_CHAPTER_TYPES,
+    ENGINE_VERSION,
     ChapterInput,
     build_lessons,
     build_manifest,
@@ -134,3 +136,63 @@ class TestZip:
         assert manifest["sets"][0]["lesson_count"] == 2
         lesson = json.loads(archive.read(f"{base}/lessons/01-einleitung.json"))
         assert lesson["steps"][0]["type"] == "theory"
+
+
+class TestEngineVersionStamp:
+    """The export must say which engine/schema version produced it -
+    the vendored copies can drift from upstream, and a set committed
+    into an alc-* repo outlives the session that produced it (#775)."""
+
+    def test_manifest_records_the_engine_and_schema_version(self) -> None:
+        lessons = build_lessons([chapter("Einleitung")], language="de")
+        manifest = build_manifest(BookStub(), lessons)
+        metadata = manifest["metadata"]
+        assert metadata["engine_version"] == ENGINE_VERSION
+        assert "bibliogon" in metadata["generated_by"].lower()
+        assert metadata["schema_version"] == "1.6"
+
+    def test_stamped_manifest_still_validates(self) -> None:
+        lessons = build_lessons([chapter("Einleitung")], language="de")
+        assert validate_manifest(build_manifest(BookStub(), lessons)) == []
+
+    def test_engine_version_comes_from_the_vendored_pin(self) -> None:
+        pinned = (
+            Path(__file__).resolve().parent.parent
+            / "bibliogon_learnset"
+            / "vendor"
+            / "engine-version.txt"
+        )
+        assert ENGINE_VERSION == pinned.read_text(encoding="utf-8").strip()
+
+
+class TestBookBlockAsin:
+    """Each translation variant is its own Book row, so each must export
+    its own ASIN - and a book without one must stay valid (#775)."""
+
+    def test_each_variant_exports_its_own_asin(self) -> None:
+        de_manifest = build_manifest(
+            BookStub(title="Deutsche Fassung", asin_ebook="B0DE00001"),
+            build_lessons([chapter("Kapitel")], language="de"),
+        )
+        en_manifest = build_manifest(
+            BookStub(title="English Edition", asin_ebook="B0EN00002"),
+            build_lessons([chapter("Chapter")], language="en"),
+        )
+        assert de_manifest["sets"][0]["book"]["asin"] == "B0DE00001"
+        assert en_manifest["sets"][0]["book"]["asin"] == "B0EN00002"
+
+    def test_book_without_asin_stays_schema_valid(self) -> None:
+        lessons = build_lessons([chapter("Kapitel")], language="de")
+        manifest = build_manifest(BookStub(asin_ebook=None), lessons)
+        assert manifest["sets"][0]["book"]["asin"] is None
+        assert validate_manifest(manifest) == []
+
+    def test_book_block_survives_a_missing_attribute(self) -> None:
+        class Minimal:
+            title = "Ohne Felder"
+            language = "de"
+            author = "Autor"
+
+        manifest = build_manifest(Minimal(), build_lessons([chapter("K")], language="de"))
+        assert manifest["sets"][0]["book"]["asin"] is None
+        assert validate_manifest(manifest) == []

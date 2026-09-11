@@ -209,6 +209,12 @@ const NEEDS_KEY_AND_NETWORK: readonly string[] = [FEATURES.AI_STORY_EXTRACTION];
  * `ai-template-file-io` is in this bucket rather than the key-dependent one:
  * the `.biblio.yaml` Export/Import round-trip calls backend `/api` with no
  * offline path, so it stays desktop-only even with a configured AI key.
+ *
+ * `learnset-export` (#763/#775) is a deliberate Maximal-Offline exception,
+ * recorded in `.claude/rules/architecture.md`: the export assembles the alc
+ * ZIP server-side and validates it against the vendored learn-content-engine
+ * schemas with Python jsonschema, so it has no browser implementation to
+ * route through the storage seam.
  */
 const DESKTOP_ONLY: readonly string[] = [
     FEATURES.GIT_SYNC,
