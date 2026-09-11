@@ -107,3 +107,7 @@ tmp/
 # local working file; the committed template is
 # scripts/book-catalog.example.yaml.
 /book-catalog.yaml
+
+# Agent-local copy of the dev database (#794). Never commit a copy of
+# the user's library; `make agent-db` regenerates it on demand.
+.agent-data/

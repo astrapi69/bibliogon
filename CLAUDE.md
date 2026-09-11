@@ -66,6 +66,7 @@ Detailed rules live in `.claude/rules/`. Claude Code reads them on demand.
 - `quality-checks.md` - test strategy, mutmut/Stryker, pre-commit checklists
 - `ai-workflow.md` - order for features/plugins, prohibitions, docs protocol
 - `release-workflow.md` - release process (triggered by "release new version")
+- `dev-db-isolation.md` - agents work against their own database copy, never the live dev instance
 
 On a conflict between CLAUDE.md and the rules, the rules win.
 
