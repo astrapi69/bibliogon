@@ -50,6 +50,16 @@ jobs:
         working-directory: backend
         run: poetry install --no-interaction --no-ansi
 
+      # The backendless PWA seeds its i18n from generated JSON mirrors, and
+      # regenerating them is a manual step - a key added to the YAML but never
+      # mirrored falls back to the raw key OFFLINE ONLY (#699). Run as its own
+      # step rather than relying on the gate's pytest: testmon selects by
+      # import graph, and this check's inputs are read at runtime by path, so
+      # a YAML-only commit could otherwise skip it.
+      - name: Offline i18n seed mirror in sync
+        working-directory: backend
+        run: poetry run python ../scripts/check_seed_i18n_drift.py --enforce
+
       # TIA (#332): pytest-testmon is a CI-only selector, installed ad-hoc into
       # the cached Poetry venv (kept out of the lockfile so it never reaches a
       # release). It builds a per-test impact map (.testmondata) and on later
