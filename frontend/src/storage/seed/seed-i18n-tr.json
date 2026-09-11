@@ -259,6 +259,7 @@
       "book_no_author": "—",
       "confirm_delete": "Bu kitabi silmek istediginizden emin misiniz?",
       "backup": "Yedekleme",
+      "backup_preparing": "Yedek hazırlanıyor. Arşiv hazır olur olmaz indirme otomatik başlar; büyük kitaplıklarda daha uzun sürer.",
       "restore": "Geri yukle",
       "import": "Iceri aktar",
       "trash": "Cop kutusu",

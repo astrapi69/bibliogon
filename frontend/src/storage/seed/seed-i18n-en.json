@@ -259,6 +259,7 @@
       "book_no_author": "—",
       "confirm_delete": "Really delete this book?",
       "backup": "Backup",
+      "backup_preparing": "Preparing the backup. The download starts automatically once the archive is ready; larger libraries take longer.",
       "restore": "Restore",
       "import": "Import",
       "trash": "Trash",

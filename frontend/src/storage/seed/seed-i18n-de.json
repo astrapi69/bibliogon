@@ -259,6 +259,7 @@
       "book_no_author": "—",
       "confirm_delete": "Buch wirklich löschen?",
       "backup": "Backup",
+      "backup_preparing": "Backup wird erstellt. Der Download startet automatisch, sobald das Archiv fertig ist, bei großen Bibliotheken dauert das länger.",
       "restore": "Restore",
       "import": "Importieren",
       "trash": "Papierkorb",
