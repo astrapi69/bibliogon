@@ -4,9 +4,12 @@
  *
  * Event-driven, NOT poll-driven: `guardedFetch` reports every
  * network-level failure and every received response, so during normal
- * operation this module costs nothing. Only WHILE down does a light
- * `/api/health` probe run (every 10s) so the banner also clears when
- * the user is idle; it stops on the first success. This is deliberately
+ * operation this module costs nothing. A reported failure is CONFIRMED
+ * by one immediate `/api/health` probe before the banner goes up, so a
+ * single request's problem is never mistaken for a global outage (#770).
+ * Only WHILE down does a light `/api/health` probe keep running (every
+ * 10s) so the banner also clears when the user is idle; it stops on the
+ * first success. This is deliberately
  * NOT `storage/connectivity.ts`: that monitor drives the offline
  * STORAGE-ROUTING decision, is opt-in (offline-enabled devices only),
  * and polls while healthy - conflating the two would break its
@@ -20,6 +23,7 @@
  */
 
 import { BASE, isBackendlessOffline } from "./apiBase";
+import { isProxyGatewayFailure } from "./gatewayFailure";
 
 const PROBE_INTERVAL_MS = 10_000;
 
@@ -30,6 +34,8 @@ class BackendReachability {
   private listeners = new Set<Listener>();
   private probeTimer: ReturnType<typeof setInterval> | null = null;
   private onlineListener: (() => void) | null = null;
+  /** The in-flight confirm probe, so parallel failures share one. */
+  private confirming: Promise<boolean> | null = null;
 
   /** Subscribe to down/up transitions. Returns the unsubscribe. */
   subscribe(listener: Listener): () => void {
@@ -41,12 +47,46 @@ class BackendReachability {
     return this.down;
   }
 
-  /** Called by guardedFetch when a request died at the network level. */
-  reportNetworkFailure(): void {
-    if (this.down || isBackendlessOffline()) return;
+  /** Called by guardedFetch when a request died at the network level.
+   *
+   *  Does NOT flip to down on the first failure (#770). A request-specific
+   *  failure on a healthy backend - a reset on one oversized upload, a
+   *  stalled long-running export - would otherwise raise the global outage
+   *  banner AND have its own toast suppressed by the #765 dedup, so the
+   *  user saw a banner vanish without ever learning what failed. One
+   *  immediate `/api/health` probe decides instead; only if THAT fails is
+   *  the backend really gone.
+   *
+   *  Returns the verdict (true = confirmed down) so guardedFetch can stamp
+   *  it onto the ApiError it is about to reject with. `isDown()` stays
+   *  synchronous and unchanged, so the toast-suppression path is
+   *  untouched.
+   *
+   *  Parallel failures share ONE probe: during a real outage every
+   *  in-flight request fails at once, and each spawning its own probe
+   *  would multiply the traffic exactly when the backend is least able to
+   *  answer it.
+   */
+  async reportNetworkFailure(): Promise<boolean> {
+    if (isBackendlessOffline()) return false;
+    if (this.down) return true;
+    if (this.confirming !== null) return this.confirming;
+    this.confirming = this.confirmDown();
+    try {
+      return await this.confirming;
+    } finally {
+      this.confirming = null;
+    }
+  }
+
+  /** One probe decides whether a network failure is a global outage. */
+  private async confirmDown(): Promise<boolean> {
+    if (await this.probe()) return false;
+    if (this.down) return true;
     this.down = true;
     this.startProbe();
     this.emit();
+    return true;
   }
 
   /** Called by guardedFetch for EVERY received response - any HTTP
@@ -67,13 +107,22 @@ class BackendReachability {
   /** Test hook: back to the pristine reachable state. */
   resetForTests(): void {
     this.down = false;
+    this.confirming = null;
     this.stopProbe();
     this.listeners.clear();
   }
 
+  /** One /api/health round-trip. True only when the BACKEND answered.
+   *
+   *  A resolved fetch is not enough: with the backend dead behind a live
+   *  proxy the probe gets the proxy's non-JSON 502, which would otherwise
+   *  read as proof of life - the banner would never appear (confirm path)
+   *  and would clear itself while still down (interval path). The request
+   *  path already discriminates this; the probe must agree. */
   private async probe(): Promise<boolean> {
     try {
-      await globalThis.fetch(`${BASE}/health`);
+      const response = await globalThis.fetch(`${BASE}/health`);
+      if (isProxyGatewayFailure(response)) return false;
       this.reportBackendResponse();
       return true;
     } catch {

@@ -224,14 +224,19 @@ export const notify = {
       console.warn(`[offline] ${message} (${err.endpoint})`)
       return
     }
-    // Network-level failures (#765): the persistent backend-unreachable
-    // banner is the ONE surface. Per-call red toasts during an outage are
-    // noise (and each carried a useless TypeError issue report), so they
+    // Confirmed outages (#765): the persistent backend-unreachable banner
+    // is the ONE surface. Per-call red toasts during an outage are noise
+    // (and each carried a useless TypeError issue report), so they
     // downgrade to console warnings exactly like the offline guard above.
     // The store check also covers the ~22 call sites that pass a message
     // only (no error object) - per-error classification can never reach
     // those, and during an outage every one of them is a network failure.
-    if (err?.network || backendReachability.isDown()) {
+    //
+    // The gate is `backendDown`, NOT the raw `network` classification: a
+    // request-specific failure on a healthy backend must keep its toast,
+    // or the user is left with a banner that vanishes without ever saying
+    // what actually failed (#770).
+    if (err?.backendDown || backendReachability.isDown()) {
       console.warn(`[backend-unreachable] ${message}${err ? ` (${err.endpoint})` : ''}`)
       return
     }

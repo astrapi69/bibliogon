@@ -1,6 +1,7 @@
 import { ApiError } from "./errors";
 import { BASE, isBackendlessOffline } from "./apiBase";
 import { backendReachability } from "./backendReachability";
+import { isProxyGatewayFailure } from "./gatewayFailure";
 
 // Re-exported so the ~30 existing `import { BASE } from "./http"` and
 // `isBackendlessOffline` call sites keep working; the definitions moved to
@@ -17,24 +18,6 @@ export { BASE, isBackendlessOffline };
  * helpers from here; `client.ts` re-exports `guardedFetch` for the existing
  * `import { guardedFetch } from "./client"` call sites.
  */
-
-/** Gateway statuses a reverse proxy emits when the backend behind it is
- *  dead. Measured 2026-09-11 (#765): the Vite dev proxy answers 502
- *  `text/plain` with an empty body, nginx (docker-compose.prod) answers 502
- *  `text/html`. Only the "everything down" case (`make dev-down`) rejects
- *  the fetch outright, so without this branch the outage banner would never
- *  appear in the deployed topologies. */
-const GATEWAY_STATUSES = new Set([502, 503, 504]);
-
-/** True for a proxy-level gateway failure, false for a backend-authored one.
- *  Bibliogon's own `ExternalServiceError` (Pandoc / TTS / LanguageTool) maps
- *  to HTTP 502 too - but as `application/json` carrying a `detail` the user
- *  must see. The content-type is the discriminator; the body is never read
- *  here so the caller still owns the (unconsumed) response stream. */
-function isProxyGatewayFailure(response: Response): boolean {
-  if (!GATEWAY_STATUSES.has(response.status)) return false;
-  return !(response.headers.get("Content-Type") || "").includes("application/json");
-}
 
 /**
  * The single network egress for the whole client. Every `api.*` method - the
@@ -68,7 +51,6 @@ export async function guardedFetch(
         ? await globalThis.fetch(input)
         : await globalThis.fetch(input, init);
     if (isProxyGatewayFailure(response)) {
-      backendReachability.reportNetworkFailure();
       const gatewayError = new ApiError(
         response.status,
         `Backend unreachable: proxy returned ${response.status}`,
@@ -76,6 +58,7 @@ export async function guardedFetch(
         init?.method || "GET",
       );
       gatewayError.network = true;
+      gatewayError.backendDown = await backendReachability.reportNetworkFailure();
       throw gatewayError;
     }
     backendReachability.reportBackendResponse();
@@ -85,7 +68,6 @@ export async function guardedFetch(
     if (fetchFailure instanceof DOMException && fetchFailure.name === "AbortError") {
       throw fetchFailure;
     }
-    backendReachability.reportNetworkFailure();
     const networkError = new ApiError(
       0,
       `Backend unreachable: ${String(fetchFailure)}`,
@@ -93,6 +75,11 @@ export async function guardedFetch(
       init?.method || "GET",
     );
     networkError.network = true;
+    // Awaited so the caller's synchronous catch already knows whether this
+    // was a global outage (banner owns it, stay silent) or one request's
+    // problem (keep the toast). One extra /api/health round-trip, only on
+    // the failure path, and only until an outage is established (#770).
+    networkError.backendDown = await backendReachability.reportNetworkFailure();
     throw networkError;
   }
 }
