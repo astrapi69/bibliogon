@@ -150,6 +150,7 @@ def test_rediscover_stable_no_diff_after_lifespan(app_with_lifespan) -> None:
             "learnset",
             "medium-import",
             "ms-tools",
+            "promotion",
             "story-bible",
             "translation",
         ]

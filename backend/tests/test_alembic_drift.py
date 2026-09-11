@@ -85,8 +85,12 @@ def _migration_added_book_columns() -> dict[str, str]:
     Maps column -> migration filename for diagnostic clarity.
     """
     out: dict[str, str] = {}
+    # Both call shapes: ``batch_op.add_column(sa.Column("x", ...))`` and
+    # ``op.add_column("books", sa.Column("x", ...))``. The optional table
+    # argument was missing, so a migration in the second style passed the
+    # scope check below and then contributed no columns (#782).
     add_re = re.compile(
-        r"add_column\(\s*sa\.Column\(\s*['\"](\w+)['\"]",
+        r"add_column\(\s*(?:['\"]\w+['\"]\s*,\s*)?sa\.Column\(\s*['\"](\w+)['\"]",
         re.DOTALL,
     )
     for f in sorted(_MIGRATIONS_DIR.glob("*.py")):
@@ -98,6 +102,10 @@ def _migration_added_book_columns() -> dict[str, str]:
             "batch_alter_table('books'" in text
             or 'batch_alter_table("books"' in text
             or "op.add_column('books'" in text
+            # ruff-format rewrites string literals to double quotes, so a
+            # correctly formatted migration would have slipped past a
+            # single-quote-only scope check (#782).
+            or 'op.add_column("books"' in text
         ):
             continue
         for m in add_re.finditer(text):

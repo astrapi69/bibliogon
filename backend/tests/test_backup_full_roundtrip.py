@@ -37,6 +37,7 @@ from app.models import (
     Base,
     Book,
     BookImportSource,
+    BookFormatState,
     BookPublishingState,
     BookTemplate,
     BookTemplateChapter,
@@ -69,6 +70,7 @@ CONTENT_MODELS = [
     ComicBubble,
     StoryEntity,
     StoryEntityPageLink,
+    BookFormatState,
     BookPublishingState,
     ArcReviewer,
     Article,
@@ -299,6 +301,15 @@ def _build_graph(db: Session, tmp_upload: str) -> None:
         last_kdp_upload_at=datetime(2026, 5, 20, tzinfo=UTC),
     )
     db.add(state)
+    db.add(
+        BookFormatState(
+            id="bfs1",
+            book_id="bk1",
+            book_format="hardcover",
+            status="draft",
+            store_url="https://www.amazon.com/dp/B0FR1X1MVX",
+        )
+    )
     db.flush()
     db.add(
         ArcReviewer(
