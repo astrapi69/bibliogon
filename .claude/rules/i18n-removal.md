@@ -28,6 +28,12 @@ removal is safe:
    grep -rln "plugin_export" frontend/src/storage/seed/seed-i18n-*.json
    ```
 
+Greps (1)-(3) stay manual. Grep (4) is now also enforced: `make
+verify-seed-i18n` (`scripts/check_seed_i18n_drift.py`, a step in the CI
+backend job) fails when any catalog and its seed mirror disagree on a
+key, a value, or when one catalog carries a duplicate mapping key — so a
+forgotten `make generate-seed-data` can no longer ship (#699).
+
 A non-zero hit in (1) means a live consumer still needs the key — do
 not remove. A hit in (2)/(3) means a guard test asserts the key exists
 — update the guard in the same commit as the removal. A hit in (4)

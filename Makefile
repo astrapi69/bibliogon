@@ -15,7 +15,7 @@
        generate-trial-key \
        docs-install docs-build docs-serve \
        sync-mkdocs-nav verify-mkdocs-nav check-mkdocs-orphans verify-docs-discipline \
-       lock-all-plugins verify-plugin-locks verify-theme verify-components verify-notify check-cohesion check-complexity \
+       lock-all-plugins verify-plugin-locks verify-theme verify-components verify-notify verify-seed-i18n check-cohesion check-complexity \
        bump-version update-doc-headers finalize-changelog release-prepare release-finish \
        clean prod prod-down prod-logs help
 
@@ -781,6 +781,9 @@ verify-components: ## Advisory (non-blocking): CSS-module classes that re-declar
 verify-notify: ## Guard: no direct failure-level react-toastify calls outside notify (#769)
 	@python3 scripts/check_direct_toast.py --enforce
 
+verify-seed-i18n: ## Guard: the offline i18n seed mirror matches the YAML catalogs (#699)
+	@cd backend && poetry run python ../scripts/check_seed_i18n_drift.py --enforce
+
 check-cohesion: ## File-size cohesion guard: WARN >500, ERROR >1000 (blocks new God-files); see .filesize-whitelist + .filesize-baseline
 	@bash scripts/check-file-sizes.sh
 
@@ -849,6 +852,9 @@ release-test: test ## Aggregate pre-tag test gate (release-workflow.md Step 5)
 	@echo ""
 	@echo "=== notify choke-point guard (no direct toast.error) ==="
 	@$(MAKE) verify-notify
+	@echo ""
+	@echo "=== offline i18n seed mirror in sync with the YAML catalogs ==="
+	@$(MAKE) verify-seed-i18n
 	@echo ""
 	@echo "=== Launcher PyInstaller build smoke ==="
 	@cd launcher && poetry run pyinstaller bibliogon-launcher.spec --clean --noconfirm > /tmp/launcher-build.log 2>&1 && echo "Launcher build OK" || (tail -20 /tmp/launcher-build.log && exit 1)
