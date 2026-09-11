@@ -28,12 +28,15 @@ the only hard fail.
 from __future__ import annotations
 
 import io
+import shutil
 import zipfile
 
 import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
+
+PDFTOTEXT_AVAILABLE = shutil.which("pdftotext") is not None
 
 
 @pytest.fixture
@@ -434,6 +437,7 @@ class TestChaptersToHtmlContentShapes:
         self._render([{"title": "K1", "position": 0, "content": ""}])
         self._render([{"title": "K1", "position": 0, "content": None}])
 
+    @pytest.mark.skipif(not PDFTOTEXT_AVAILABLE, reason="pdftotext (poppler-utils) not installed")
     def test_an_html_chapter_reaches_the_real_pdf_via_the_endpoint(
         self, client, monkeypatch
     ) -> None:
