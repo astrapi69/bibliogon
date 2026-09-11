@@ -23,6 +23,11 @@ on:
     - cron: "0 3 * * *" # nightly at 03:00 UTC
   workflow_dispatch: {}
 
+# The alarm job files and closes the tracking issue (#779).
+permissions:
+  contents: read
+  issues: write
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
@@ -97,3 +102,26 @@ jobs:
           name: e2e-test-results
           path: e2e/test-results/
           retention-days: 7
+
+  smoke-alarm:
+    name: Red-nightly alarm
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: always()
+    needs: [smoke]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      # #779: this suite is not a required check, so a red run surfaces
+      # nowhere unless someone opens the Actions tab. One tracking issue per
+      # workflow, closed automatically on the next green run.
+      - name: Open, update or close the tracking issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JOB_RESULT: ${{ needs.smoke.result }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          python scripts/nightly_alarm.py \
+            --workflow "E2E Smoke Tests" --result "$JOB_RESULT" --run-url "$RUN_URL"
