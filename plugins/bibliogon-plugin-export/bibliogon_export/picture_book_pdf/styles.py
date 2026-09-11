@@ -219,16 +219,22 @@ html, body {
     object-fit: cover;
 }
 
+/* The caption STACKS on the image by sharing its grid cell and pins to the
+   bottom with align-self, rather than being taken out of flow with
+   position:absolute. An out-of-flow box inside a grid container is not
+   reliably tied to the page box across WeasyPrint versions: the previous
+   `position: absolute; bottom: 0` construct was clipped away entirely on
+   66 (the caption was MISSING from every exported PDF) and escaped onto a
+   second sheet from 67 onwards. A grid item cannot leave its cell, so the
+   caption renders in place on both. See #444. */
 .page--image_full_text_overlay .region-text {
-    grid-area: unset;
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    grid-area: image;
+    align-self: end;
     background: rgba(0, 0, 0, 0.45);
     color: white;
     padding: 14pt 18pt;
     max-height: 35%;
+    z-index: 1;
 }
 
 .page--speech_bubble .bubble-host {
@@ -247,8 +253,13 @@ html, body {
     border-radius: 16pt;
     box-shadow: 0 2pt 8pt rgba(0, 0, 0, 0.18);
     bottom: 16pt;
-    left: 50%;
-    transform: translateX(-50%);
+    /* Offset-centered for the declared 40% width, not `left: 50%` plus a
+       percentage translate: WeasyPrint 70 drops that transform and the
+       bubble ends up half its width off-centre (#444). The inline style
+       from _speech_bubble_style overrides this for configured bubbles;
+       this keeps the unconfigured default correct too. */
+    left: 30%;
+    transform: none;
 }
 
 .page--text_only {
@@ -604,16 +615,27 @@ def _speech_bubble_style(config: dict[str, Any] | None) -> str:
     # backend silently kept missing — would have rendered as
     # bottom-center in the PDF for those 3 anchors. Mirrors
     # the frontend switch in PageCanvas.tsx::speechBubbleInlineStyle.
+    # Centering is expressed as an OFFSET from the containing block's edge,
+    # not as ``left: 50%`` plus a percentage ``transform: translate(-50%)``.
+    # WeasyPrint 66 resolves that transform; 70 does not, which left every
+    # centered bubble shifted right / down by half its own size - verified
+    # from the PDF content stream, absolute x 264 -> 408 for a 40%-wide
+    # bottom-center bubble. The offset form needs no transform, resolves
+    # against the same containing block as the width/height percentages,
+    # and renders identically on both versions. It is also the idiom
+    # ``_image_layout_style`` already uses for its text container. (#444)
+    side_offset = (100 - width_pct) / 2
+    top_offset = (100 - height_pct) / 2
     positions = {
         "top-left": "top: 16pt; left: 16pt; transform: none;",
-        "top-center": ("top: 16pt; left: 50%; transform: translateX(-50%);"),
+        "top-center": f"top: 16pt; left: {side_offset:g}%; transform: none;",
         "top-right": "top: 16pt; right: 16pt; transform: none;",
-        "middle-left": ("top: 50%; left: 16pt; transform: translateY(-50%);"),
-        "center": ("top: 50%; left: 50%; transform: translate(-50%, -50%);"),
-        "middle-right": ("top: 50%; right: 16pt; transform: translateY(-50%);"),
+        "middle-left": f"top: {top_offset:g}%; left: 16pt; transform: none;",
+        "center": f"top: {top_offset:g}%; left: {side_offset:g}%; transform: none;",
+        "middle-right": f"top: {top_offset:g}%; right: 16pt; transform: none;",
         "bottom-left": "bottom: 16pt; left: 16pt; transform: none;",
-        "bottom-center": ("bottom: 16pt; left: 50%; transform: translateX(-50%);"),
-        "bottom-right": ("bottom: 16pt; right: 16pt; transform: none;"),
+        "bottom-center": f"bottom: 16pt; left: {side_offset:g}%; transform: none;",
+        "bottom-right": "bottom: 16pt; right: 16pt; transform: none;",
     }
     pos = positions.get(anchor, positions["bottom-center"])
     return f"{reset} {pos} background: {bg}; {width} {height} {tier1} {tier2}"
@@ -849,13 +871,18 @@ def _image_layout_style(layout: str, config: dict[str, Any] | None) -> dict[str,
         # text_container_height. Width defaults to 100%; height
         # defaults to position-derived (middle → 70%; top/bottom
         # → auto). Setting either overrides via explicit %.
+        # As a grid item the caption is sized with width + auto margins, not
+        # with left/right offsets - those only place a POSITIONED box, and
+        # the caption stopped being one when it moved into the image's grid
+        # cell (#444). Percentage margins resolve against the same
+        # containing block the old offsets did, so the geometry is
+        # unchanged.
         text_container_width_raw = config.get("text_container_width")
         if isinstance(text_container_width_raw, (int, float)):
             width_pct = max(30, min(100, int(text_container_width_raw)))
-            side_offset = (100 - width_pct) / 2
-            width_style = f"left: {side_offset}%; right: {side_offset}%; "
+            width_style = f"width: {width_pct}%; justify-self: center; "
         else:
-            width_style = "left: 0; right: 0; "
+            width_style = "width: 100%; "
 
         text_container_height_raw = config.get("text_container_height")
         if isinstance(text_container_height_raw, (int, float)):
@@ -864,21 +891,28 @@ def _image_layout_style(layout: str, config: dict[str, Any] | None) -> dict[str,
         else:
             explicit_max_height = None
 
+        # The caption is a GRID ITEM sharing the image's cell (see the
+        # .page--image_full_text_overlay rule), so its vertical placement
+        # comes from align-self, not from top/bottom offsets: the previous
+        # `top: 50%; transform: translateY(-50%)` form depended on a
+        # percentage transform that WeasyPrint 70 drops, and on the caption
+        # being out of flow - which is what escaped the page entirely from
+        # 67 onwards. align-self resolves without a transform and cannot
+        # leave the cell. (#444)
         if pos == "top":
             max_h = explicit_max_height or ""
             region_text_style = (
-                f"top: 0; bottom: auto; {width_style}{bg} {max_h} {tier_extras}"
+                f"align-self: start; {width_style}{bg} {max_h} {tier_extras}"
             ).strip()
         elif pos == "middle":
             max_h = explicit_max_height or "max-height: 70%;"
             region_text_style = (
-                f"top: 50%; bottom: auto; transform: translateY(-50%); "
-                f"{max_h} {width_style}{bg} {tier_extras}"
+                f"align-self: center; {max_h} {width_style}{bg} {tier_extras}"
             ).strip()
         else:
             max_h = explicit_max_height or ""
             region_text_style = (
-                f"top: auto; bottom: 0; {width_style}{bg} {max_h} {tier_extras}"
+                f"align-self: end; {width_style}{bg} {max_h} {tier_extras}"
             ).strip()
 
     return {

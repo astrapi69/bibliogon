@@ -16,23 +16,16 @@
 # Nothing is ignored silently: a removed entry makes the advisory block the
 # watcher again. Review the whole list at least quarterly.
 ignored:
-  - id: CVE-2025-68616
-    package: weasyprint
-    reason: >
-      weasyprint 66 -> 68 is a render-risky major bump (PDF layout
-      regressions across the export pipeline). The advisory is deferred
-      until the export output is re-validated against the new major.
-    tracking: "#47"
-    review_by: "2026-09-01"
   - id: PYSEC-2026-3412
     package: weasyprint
     reason: >
       CSS injection through unescaped presentational-hint attribute values.
-      Reachable only with presentational_hints=True; both WeasyPrint call
-      sites (bibliogon_export picture_book_pdf, bibliogon_comics
-      comic_book_pdf) construct HTML(string=..., base_url=...) and so keep
-      the default presentational_hints=False. Upstream has published no
-      fixed version, so there is nothing to upgrade to.
+      Reachable only with presentational_hints=True; all three WeasyPrint
+      call sites (bibliogon_export picture_book_pdf, bibliogon_comics
+      comic_book_pdf, bibliogon_kdp manuscript_pdf) construct
+      HTML(string=...) and so keep the default presentational_hints=False.
+      Still unfixed upstream as of weasyprint 70.0 - there is nothing to
+      upgrade to.
     tracking: "#717"
     review_by: "2026-11-16"
   - id: PYSEC-2026-2132
