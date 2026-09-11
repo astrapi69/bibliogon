@@ -68,7 +68,14 @@
   collaborators (AI tools, automation bots, MCP agents). Human
   co-authors are attributed via the standard GitHub mechanism.
   Exceptions require an explicit note in the commit body
-  stating who authorized the attribution.
+  stating who authorized the attribution - concretely a
+  `Co-Authored-By-Authorized-By: <name> (<reason>)` line.
+  ENFORCED (#768), not merely documented: the `commit-msg` hook
+  `no-ai-coauthor-trailer` (`scripts/check_no_ai_coauthor.py`)
+  refuses such a commit locally, and the `Commit trailers` CI job
+  re-checks every commit of a PR so a bypassed or uninstalled hook
+  is still caught. Install the stage once with `make install-hooks`
+  (plain `pre-commit install` does NOT cover `commit-msg`).
 
 ## Function design and cohesion
 

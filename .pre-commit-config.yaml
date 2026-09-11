@@ -61,6 +61,12 @@ repos:
 
   - repo: local
     hooks:
+      - id: no-ai-coauthor-trailer
+        name: no Co-Authored-By trailer crediting AI tools / bots
+        entry: scripts/check_no_ai_coauthor.py
+        language: script
+        stages: [commit-msg]
+
       - id: roadmap-archive-reminder
         name: Remind about ROADMAP archival
         entry: scripts/check_roadmap_for_done_items.sh

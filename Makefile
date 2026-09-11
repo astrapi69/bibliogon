@@ -550,6 +550,8 @@ install-hooks: ## Install scripts/git-hooks/* into .git/hooks (per-checkout, not
 		ln -sf ../../$$hook .git/hooks/$$name; \
 		echo "linked .git/hooks/$$name -> $$hook"; \
 	done
+	@cd backend && poetry run pre-commit install --hook-type commit-msg
+	@echo "installed pre-commit commit-msg stage (no-ai-coauthor-trailer, #768)"
 	@echo "Hooks installed. They run on every git push; tag pushes trigger pre-commit on all backend files."
 
 pre-commit: ## Run all pre-commit hooks on all files. Auto-fix hooks (ruff --fix, ruff-format, whitespace, EOF) rewrite files in place: stage the fixes with 'git add -u', then commit.
