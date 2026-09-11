@@ -206,6 +206,24 @@ jobs:
       - name: Directory size ratchet
         run: python scripts/check_directory_size.py
 
+  commit-trailers:
+    name: Commit trailers
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      # #768: coding-standards.md forbids Co-Authored-By trailers crediting
+      # AI tools / bots. The commit-msg hook catches them locally; this job
+      # catches a bypassed or uninstalled hook, over EVERY commit in the PR.
+      - name: Reject non-human Co-Authored-By trailers
+        run: |
+          git log --format='%B%x00' \
+            ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} \
+            | python scripts/check_no_ai_coauthor.py --stdin-messages
+
   lint-and-type-check:
     name: Backend ruff + mypy
     runs-on: ubuntu-latest
