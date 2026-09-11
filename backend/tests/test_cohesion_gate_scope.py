@@ -48,9 +48,7 @@ def run_gate(script: Path) -> subprocess.CompletedProcess:
 class TestWorktreeScope:
     def test_parallel_worktree_checkout_is_ignored(self, tmp_path):
         script = build_fake_repo(tmp_path)
-        write_oversized(
-            tmp_path / ".claude" / "worktrees" / "other-session" / "src" / "Huge.tsx"
-        )
+        write_oversized(tmp_path / ".claude" / "worktrees" / "other-session" / "src" / "Huge.tsx")
 
         result = run_gate(script)
 

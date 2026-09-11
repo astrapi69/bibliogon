@@ -86,7 +86,7 @@ class TestDetection:
             root = Path(raw)
             wrapper = root / "utils" / "platform"
             wrapper.mkdir(parents=True)
-            (wrapper / "notify.ts").write_text('toast.error(content);\n', encoding="utf-8")
+            (wrapper / "notify.ts").write_text("toast.error(content);\n", encoding="utf-8")
             guard.FRONTEND_SRC = root
             assert guard.find_violations() == []
 

@@ -38,9 +38,7 @@ def load_gate(tmp_path: Path | None = None, languages: tuple[str, ...] = ("de",)
 
 def write_pair(module, lang: str, catalog_yaml: str, seed_obj: object) -> None:
     (module.CATALOG_DIR / f"{lang}.yaml").write_text(catalog_yaml, encoding="utf-8")
-    (module.SEED_DIR / f"seed-i18n-{lang}.json").write_text(
-        json.dumps(seed_obj), encoding="utf-8"
-    )
+    (module.SEED_DIR / f"seed-i18n-{lang}.json").write_text(json.dumps(seed_obj), encoding="utf-8")
 
 
 IN_SYNC_YAML = """ui:

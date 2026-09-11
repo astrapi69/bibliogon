@@ -95,6 +95,5 @@ class TestPluginFloors:
                 names = ", ".join(str(p.relative_to(REPO_ROOT)) for p in users[:3])
                 offenders.append(f"{pyproject.parent.name}: {names}")
         assert not offenders, (
-            "Plugins using PEP 695 syntax must declare python >= 3.12: "
-            + "; ".join(offenders)
+            "Plugins using PEP 695 syntax must declare python >= 3.12: " + "; ".join(offenders)
         )

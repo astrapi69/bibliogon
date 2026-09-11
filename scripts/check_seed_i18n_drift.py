@@ -123,8 +123,7 @@ def check() -> list[str]:
             continue
         if not seed_path.exists():
             problems.append(
-                f"{lang}: seed mirror missing at {seed_path} "
-                "(run `make generate-seed-data`)"
+                f"{lang}: seed mirror missing at {seed_path} (run `make generate-seed-data`)"
             )
             continue
 
@@ -174,10 +173,7 @@ def main() -> int:
 
     problems = check()
     if not problems:
-        print(
-            f"Offline i18n seed mirror is in sync with all {len(LANGUAGES)} "
-            "YAML catalogs."
-        )
+        print(f"Offline i18n seed mirror is in sync with all {len(LANGUAGES)} YAML catalogs.")
         return 0
 
     print("Offline i18n seed mirror has drifted (#699):")
