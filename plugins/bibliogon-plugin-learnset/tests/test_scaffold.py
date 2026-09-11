@@ -86,6 +86,45 @@ class TestLessons:
         assert estimate_minutes(1) == 1
         assert estimate_minutes(400) == 2
 
+    def test_a_long_or_duplicated_title_produces_an_id_within_the_schema_cap(self) -> None:
+        """Real production failure: a chapter titled 'Teil 4: Der digitale
+        Geist - KI, Unsterblichkeit, die Zukunft der Realitaet - Teil 4:
+        Der digitale Geist - KI, Unsterblichkeit, die Zukunft der
+        Realitaet' (the author's title, verbatim) slugified past the
+        engine's 120-char SlugId cap and the export failed with
+        'Generated learnset failed schema validation'."""
+        long_title = (
+            "Teil 4: Der digitale Geist - KI, Unsterblichkeit, die Zukunft der "
+            "Realitaet - Teil 4: Der digitale Geist - KI, Unsterblichkeit, "
+            "die Zukunft der Realitaet"
+        )
+        lessons = build_lessons([chapter(long_title)], language="de")
+        assert len(lessons[0]["id"]) <= 120
+
+    def test_the_capped_id_still_matches_the_engine_slugid_pattern(self) -> None:
+        """Truncation must not leave a dangling hyphen or an empty
+        segment - both violate SlugId's pattern."""
+        long_title = "Ein-" * 60 + "Titel"
+        lessons = build_lessons([chapter(long_title)], language="de")
+        lesson_id = lessons[0]["id"]
+        assert not lesson_id.endswith("-")
+        assert "--" not in lesson_id
+
+    def test_truncation_keeps_the_ids_of_two_over_long_chapters_distinct(self) -> None:
+        """The NN- position prefix already disambiguates, but the test
+        pins it explicitly - a naive truncate-and-hope approach could
+        still collide if the prefix were ever dropped."""
+        long_title = "Ein-" * 60 + "Titel"
+        lessons = build_lessons(
+            [chapter(long_title, text="Erstes."), chapter(long_title, text="Zweites.")],
+            language="de",
+        )
+        assert lessons[0]["id"] != lessons[1]["id"]
+
+    def test_a_normal_length_title_is_not_truncated(self) -> None:
+        lessons = build_lessons([chapter("Kurzer Titel")], language="de")
+        assert lessons[0]["id"] == "01-kurzer-titel"
+
 
 class TestManifest:
     def test_manifest_carries_required_set_fields_and_book_block(self) -> None:
