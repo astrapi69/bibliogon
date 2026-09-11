@@ -105,6 +105,42 @@ def estimate_minutes(word_count: int) -> int:
     return max(1, math.ceil(word_count / WORDS_PER_MINUTE))
 
 
+#: The engine's SlugId schema caps every id at 120 characters. A long
+#: or accidentally-duplicated chapter title slugifies past that with
+#: no warning - the failure only surfaces as a 400 at export time,
+#: naming an id the user never typed. Reserve room for the "NN-"
+#: position prefix (2 digits is the common case; wider books get more,
+#: which _cap_slug accounts for via ``prefix_len``).
+_LESSON_ID_MAX_LENGTH = 120
+
+
+def _cap_slug(slug: str, prefix_len: int) -> str:
+    """Truncate ``slug`` so ``f"{prefix}-{slug}"`` fits the schema cap.
+
+    Cuts at the last hyphen boundary within budget rather than mid-word,
+    so a truncated id still reads as a (shorter) slug instead of a
+    ragged fragment. Falls back to a hard character cut only when no
+    hyphen exists in budget (a single very long word).
+
+    Args:
+        slug: The full slugify_ascii() output.
+        prefix_len: Length of ``"NN-"`` (the digits plus the hyphen)
+            that will precede this slug in the final id.
+
+    Returns:
+        A slug with no leading/trailing hyphen, short enough that the
+        combined id is at most 120 characters.
+    """
+    budget = _LESSON_ID_MAX_LENGTH - prefix_len
+    if len(slug) <= budget:
+        return slug
+    truncated = slug[:budget]
+    last_hyphen = truncated.rfind("-")
+    if last_hyphen > 0:
+        truncated = truncated[:last_hyphen]
+    return truncated.rstrip("-") or slug[:budget].rstrip("-")
+
+
 def build_lessons(
     chapters: list[ChapterInput],
     language: str,
@@ -113,17 +149,23 @@ def build_lessons(
     """One lesson dict per content chapter, in book order.
 
     Each lesson carries exactly one ``theory`` step with the chapter
-    Markdown as ``body`` (``lesson.steps`` has ``minItems: 1``).
+    Markdown as ``body`` (``lesson.steps`` has ``minItems: 1``). The id
+    is capped to the engine's 120-char SlugId limit (#806) - a long or
+    duplicated chapter title used to slugify past it with no warning,
+    surfacing only as a schema-validation 400 at export time. The
+    position prefix already disambiguates two chapters whose titles
+    truncate to the same slug.
     """
     lessons: list[dict[str, Any]] = []
     content_chapters = [ch for ch in chapters if ch.chapter_type not in skip_chapter_types]
     width = max(2, len(str(len(content_chapters))))
     for position, chapter_input in enumerate(content_chapters, start=1):
-        slug = slugify_ascii(chapter_input.title)
+        prefix = f"{position:0{width}d}-"
+        slug = _cap_slug(slugify_ascii(chapter_input.title), len(prefix))
         word_count = len(chapter_input.markdown.split())
         lessons.append(
             {
-                "id": f"{position:0{width}d}-{slug}",
+                "id": f"{prefix}{slug}",
                 "title": chapter_input.title,
                 "description": None,
                 "target_language": language,
