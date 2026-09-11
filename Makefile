@@ -10,7 +10,7 @@
        mutmut-backend mutmut-export mutmut-ms-tools mutmut-results \
        check-types check-types-backend check-types-frontend \
        lint-frontend format-frontend pre-commit \
-       check-blockers archive-task archive-task-dry install-hooks verify-learnset-schema verify-learnset-upstream import-portfolio import-portfolio-check \
+       check-blockers archive-task archive-task-dry install-hooks verify-learnset-schema verify-learnset-upstream import-portfolio import-portfolio-check repair-image-paths \
        sync-versions sync-versions-dry sync-versions-check \
        generate-trial-key \
        docs-install docs-build docs-serve \
@@ -648,6 +648,9 @@ import-books: ## Bulk-import missing books from a git-repo catalog against the r
 
 import-books-check: ## Dry-run of import-books: report present / would-import, create nothing. Usage: make import-books-check CATALOG=book-catalog.yaml
 	@cd backend && poetry run python ../scripts/bulk_import_books.py --catalog "../$(CATALOG)" --dry-run
+
+repair-image-paths: ## Repair unresolved <img> sources in imported chapters (#789). Add DRY=1 to preview.
+	@cd backend && poetry run python ../scripts/repair_image_paths.py $(if $(DRY),--dry-run,)
 
 import-portfolio: ## Seed the portfolio board from the author's books-list CSV. Usage: make import-portfolio CSV=/path/to/books-list.csv
 	@cd backend && poetry run python ../scripts/import_portfolio_csv.py --csv "$(CSV)"
