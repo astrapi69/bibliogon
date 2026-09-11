@@ -88,3 +88,53 @@ def test_auto_detect_unknown_book_404() -> None:
     with TestClient(app) as client:
         r = client.post("/api/story-bible/books/nope/auto-detect")
         assert r.status_code == 404
+
+
+class TestImportedHtmlContent:
+    """#806: an imported chapter's content is HTML until someone opens
+    and saves it (#787). _tiptap_to_text passed HTML through with its
+    tags still in place. A single-word name inside one tag still
+    matched (the word boundary held), but a multi-word name split
+    across two adjacent inline tags - a common shape for names with a
+    title or two given names - never matched the raw markup, and a
+    name appearing inside an href/attribute value produced a false
+    positive occurrence that was never really in the prose.
+    """
+
+    def test_a_multi_word_name_split_across_inline_tags_is_still_detected(self) -> None:
+        with TestClient(app) as client:
+            book_id = _book(client)
+            _chapter(
+                client,
+                book_id,
+                "One",
+                "<p><em>Frau</em> <strong>Mueller</strong> kam herein.</p>",
+            )
+            _entity(client, book_id, "Frau Mueller")
+            proposals = client.post(f"/api/story-bible/books/{book_id}/auto-detect").json()
+            by_name = {p["entity_name"]: p for p in proposals}
+            assert "Frau Mueller" in by_name
+            assert by_name["Frau Mueller"]["occurrences"] == 1
+
+    def test_a_name_inside_an_href_attribute_is_not_counted_as_a_mention(self) -> None:
+        with TestClient(app) as client:
+            book_id = _book(client)
+            _chapter(
+                client,
+                book_id,
+                "One",
+                '<p><a href="/alice-notes">Notizen</a> ueber Alice geschrieben.</p>',
+            )
+            _entity(client, book_id, "Alice")
+            proposals = client.post(f"/api/story-bible/books/{book_id}/auto-detect").json()
+            by_name = {p["entity_name"]: p for p in proposals}
+            assert by_name["Alice"]["occurrences"] == 1
+
+    def test_a_single_word_name_inside_a_tag_still_detects(self) -> None:
+        with TestClient(app) as client:
+            book_id = _book(client)
+            _chapter(client, book_id, "One", "<p>Hallo <strong>Alice</strong>.</p>")
+            _entity(client, book_id, "Alice")
+            proposals = client.post(f"/api/story-bible/books/{book_id}/auto-detect").json()
+            by_name = {p["entity_name"]: p for p in proposals}
+            assert by_name["Alice"]["occurrences"] == 1

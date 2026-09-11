@@ -35,12 +35,23 @@ MIN_NAME_LEN = 3
 
 
 def _tiptap_to_text(content: str | None) -> str:
-    """Flatten a TipTap JSON document (or legacy plain text) to plain
-    text. Never raises."""
+    """Flatten a TipTap JSON document, HTML, or plain text to plain
+    text. Never raises.
+
+    An imported chapter is HTML until someone opens and saves it
+    (#787). Passing the raw markup straight to the word-boundary
+    matcher below produced two failures on real content (#806): a
+    multi-word entity name split across two adjacent inline tags
+    (``<em>Frau</em> <strong>Mueller</strong>``) never matched the
+    literal string ``"Frau Mueller"``, and a name occurring inside an
+    href or other attribute value counted as a false-positive mention
+    that was never really in the prose. Stripping HTML first (rather
+    than leaving tags in place) fixes both at once.
+    """
     if not content:
         return ""
-    text = content
-    if content.lstrip().startswith("{"):
+    stripped = content.lstrip()
+    if stripped.startswith("{"):
         try:
             doc = json.loads(content)
         except (ValueError, TypeError):
@@ -58,8 +69,12 @@ def _tiptap_to_text(content: str | None) -> str:
                 parts.append("\n")
 
         walk(doc)
-        text = " ".join(parts)
-    return text
+        return " ".join(parts)
+    if stripped.startswith("<"):
+        from bibliogon_export.html_to_markdown import html_to_plain_text
+
+        return html_to_plain_text(content)
+    return content
 
 
 def _count_occurrences(name: str, text: str) -> int:
