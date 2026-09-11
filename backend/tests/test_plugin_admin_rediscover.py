@@ -2,8 +2,8 @@
 
 C4 of PLUGINFORGE-V060-ADOPTION-01. Pins:
 
-- Happy path: against the running test app (13 plugins
-  activated via lifespan), ``rediscover()`` reports all 13 as
+- Happy path: against the running test app (14 plugins
+  activated via lifespan), ``rediscover()`` reports all 14 as
   unchanged with empty ``added`` + ``removed`` (no entry-point
   set change since startup).
 - Severity discipline: when the underlying
@@ -26,9 +26,9 @@ from fastapi.testclient import TestClient
 from pluginforge import DiscoveryDiff, PluginError, PluginState
 
 
-def test_admin_rediscover_happy_path_reports_13_unchanged() -> None:
+def test_admin_rediscover_happy_path_reports_all_unchanged() -> None:
     """Against the test app's running manager (lifespan activated
-    all 13 plugins, entry-point set is stable in the same
+    all 14 plugins, entry-point set is stable in the same
     process), rediscover reports 13 unchanged with no diff."""
     from app.main import app
 
@@ -50,6 +50,7 @@ def test_admin_rediscover_happy_path_reports_13_unchanged() -> None:
             "help",
             "kdp",
             "kinderbuch",
+            "learnset",
             "medium-import",
             "ms-tools",
             "story-bible",

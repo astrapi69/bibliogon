@@ -1,5 +1,17 @@
 {
   "ui": {
+    "migration": {
+      "title": "Καλώς ήρθατε στο Bibliogon",
+      "intro": "Έχετε ήδη χρησιμοποιήσει την εφαρμογή online; Τα βιβλία και τα άρθρα σας μπορούν να μεταφερθούν.",
+      "step_open": "Ανοίξτε την online έκδοση.",
+      "step_settings": "Μεταβείτε στις Ρυθμίσεις → Δεδομένα → Πλήρες αντίγραφο (.bgb).",
+      "step_download": "Κατεβάστε το αρχείο .bgb.",
+      "step_import": "Κάντε κλικ εδώ στο «Εισαγωγή αντιγράφου».",
+      "skip": "Εκκίνηση χωρίς δεδομένα",
+      "open_online": "Άνοιγμα online έκδοσης",
+      "import": "Εισαγωγή αντιγράφου",
+      "settings_hint": "Μετεγκατάσταση από την online έκδοση; Εξάγετε εκεί ένα πλήρες αντίγραφο (.bgb) και εισαγάγετέ το εδώ με «Εισαγωγή αντιγράφου»."
+    },
     "ai_extraction": {
       "story_bible_button": "Δημιουργία από το κείμενο του βιβλίου",
       "storyboard_button": "Δημιουργία από το κείμενο του βιβλίου",
@@ -518,6 +530,9 @@
       "export_book": "Εξαγωγή βιβλίου",
       "toc_validate": "Επικύρωση πίνακα περιεχομένων",
       "save_as_template": "Αποθήκευση ως πρότυπο",
+      "export_learnset": "Εξαγωγή σετ μάθησης",
+      "learnset_export_success": "Το σετ μάθησης εξήχθη",
+      "learnset_export_failed": "Η εξαγωγή του σετ μάθησης απέτυχε",
       "save_template_tooltip": "Αποθήκευση της δομής του βιβλίου ως επαναχρησιμοποιήσιμο πρότυπο",
       "save_template_disabled": "Δημιουργήστε πρώτα ένα κεφάλαιο",
       "chapter_save_as_template": "Αποθήκευση ως πρότυπο",
@@ -891,6 +906,37 @@
         "description": "Προσωπικά απομνημονεύματα με πρόλογο και επίλογο, οκτώ αφηγηματικά κεφάλαια και ευχαριστίες."
       }
     },
+    "book_templates": {
+      "name": {
+        "roman_3act": "Μυθιστόρημα (3 πράξεις)",
+        "sachbuch": "Δοκίμιο",
+        "kurzgeschichte": "Διήγημα",
+        "lyrik": "Ποίηση",
+        "kinderbuch": "Εικονογραφημένο βιβλίο",
+        "comic": "Κόμικ"
+      },
+      "desc": {
+        "roman_3act": "Δομή μυθιστορήματος σε τρεις πράξεις με πρόλογο, τίτλους πράξεων, έντεκα κεφάλαια και επίλογο.",
+        "sachbuch": "Ένα δοκίμιο με προοίμιο, εισαγωγή, οκτώ κεφάλαια, περίληψη και παράρτημα.",
+        "kurzgeschichte": "Ένα μόνο διήγημα σε ένα κεφάλαιο.",
+        "lyrik": "Μια ποιητική συλλογή με είκοσι κεφάλαια ποιημάτων.",
+        "kinderbuch": "Ένα εικονογραφημένο βιβλίο με δώδεκα σελίδες (εικόνα και κείμενο).",
+        "comic": "Ένα κόμικ με είκοσι δύο σελίδες σε τυπική μορφή."
+      },
+      "title": {
+        "prologue": "Πρόλογος",
+        "epilogue": "Επίλογος",
+        "act": "Πράξη",
+        "chapter": "Κεφάλαιο",
+        "foreword": "Προοίμιο",
+        "introduction": "Εισαγωγή",
+        "summary": "Περίληψη",
+        "appendix": "Παράρτημα",
+        "poem": "Ποίημα",
+        "story": "Ιστορία"
+      },
+      "page_count": "{count} σελίδες"
+    },
     "save_template": {
       "title": "Αποθήκευση ως πρότυπο",
       "name": "Όνομα",
@@ -1016,8 +1062,19 @@
       "image_cache_empty": "Καμία εικόνα στην προσωρινή μνήμη."
     },
     "settings": {
+      "updates_section": "Ενημερώσεις",
+      "updates_description": "Αυτόματος έλεγχος για νέες εκδόσεις.",
+      "auto_check": "Αυτόματος έλεγχος ενημερώσεων",
+      "auto_check_hint": "Ελέγχει για νέες εκδόσεις στο παρασκήνιο.",
+      "check_interval": "Διάστημα ελέγχου",
+      "interval_daily": "Καθημερινά",
+      "interval_weekly": "Εβδομαδιαία",
+      "interval_monthly": "Μηνιαία",
+      "interval_never": "Ποτέ",
       "title": "Ρυθμίσεις",
       "tab_general": "Γενικά",
+      "notes": "Project notes",
+      "notes_placeholder": "Notes about the book project…",
       "tab_erscheinungsbild": "Εμφάνιση",
       "tab_verhalten": "Συμπεριφορά",
       "tab_editor": "Επεξεργαστής",
@@ -1265,16 +1322,7 @@
       "plugin_active_since": "Ενεργό από",
       "plugin_settings_applied": "Οι ρυθμίσεις εφαρμόστηκαν",
       "plugin_source_zip": "μέσω ZIP",
-      "read_only": "Ρυθμίσεις (μόνο ανάγνωση)",
-      "updates_section": "Ενημερώσεις",
-      "updates_description": "Αυτόματος έλεγχος για νέες εκδόσεις.",
-      "auto_check": "Αυτόματος έλεγχος ενημερώσεων",
-      "auto_check_hint": "Ελέγχει για νέες εκδόσεις στο παρασκήνιο.",
-      "check_interval": "Διάστημα ελέγχου",
-      "interval_daily": "Καθημερινά",
-      "interval_weekly": "Εβδομαδιαία",
-      "interval_monthly": "Μηνιαία",
-      "interval_never": "Ποτέ"
+      "read_only": "Ρυθμίσεις (μόνο ανάγνωση)"
     },
     "authors_database": {
       "title": "Βάση δεδομένων συγγραφέων",
@@ -1714,9 +1762,7 @@
       "asin_ebook": "ASIN e-book",
       "asin_paperback": "ASIN χαρτόδετο",
       "asin_hardcover": "ASIN σκληρόδετο",
-      "backpage_author_bio": "Σχετικά με τον συγγραφέα",
-      "notes": "Project notes",
-      "notes_placeholder": "Notes about the book project…"
+      "backpage_author_bio": "Σχετικά με τον συγγραφέα"
     },
     "cover": {
       "choose_file": "Επιλογή αρχείου",
@@ -2082,14 +2128,14 @@
     },
     "update_banner": {
       "needs_restart": "Κλείσε εντελώς την εφαρμογή και άνοιξέ την ξανά για να ολοκληρωθεί η ενημέρωση.",
-      "message": "Μια νέα έκδοση του Bibliogon είναι διαθέσιμη.",
-      "button": "Ενημέρωση τώρα",
-      "updating": "Αποθήκευση της εργασίας σας και ενημέρωση …",
-      "dismiss": "Κλείσιμο",
       "version_available": "Νέα έκδοση {version} διαθέσιμη",
       "whats_new": "Τι νέο υπάρχει;",
       "later": "Αργότερα",
-      "notes_title": "Τι νέο υπάρχει στην {version}"
+      "notes_title": "Τι νέο υπάρχει στην {version}",
+      "message": "Μια νέα έκδοση του Bibliogon είναι διαθέσιμη.",
+      "button": "Ενημέρωση τώρα",
+      "updating": "Αποθήκευση της εργασίας σας και ενημέρωση …",
+      "dismiss": "Κλείσιμο"
     },
     "versions": {
       "menu_item": "Ιστορικό εκδόσεων",
@@ -2827,6 +2873,7 @@
       "no_image": "Δεν υπάρχει ακόμη εικόνα",
       "upload_image": "Μεταφόρτωση εικόνας",
       "replace_image": "Αντικατάσταση εικόνας",
+      "drop_image": "Αφήστε την εικόνα εδώ",
       "no_secondary_image": "Δεν υπάρχει ακόμη δεύτερη εικόνα",
       "upload_secondary_image": "Μεταφόρτωση δεύτερης εικόνας",
       "replace_secondary_image": "Αντικατάσταση δεύτερης εικόνας",
@@ -3311,8 +3358,7 @@
             "italic": "Πλάγια"
           }
         }
-      },
-      "drop_image": "Αφήστε την εικόνα εδώ"
+      }
     },
     "chapter_status": {
       "label": "Κατάσταση",
@@ -3486,18 +3532,18 @@
       "col_synopsis": "Synopsis",
       "synopsis_placeholder": "Short summary…",
       "synopsis_auto": "Generate from first paragraph",
+      "col_notes": "Σημειώσεις",
+      "notes_placeholder": "Σημειώσεις εργασίας…",
       "collections_label": "Collections",
       "collection_all": "All chapters",
       "collection_new": "New collection",
       "collection_delete": "Delete",
+      "collection_color": "Χρώμα συλλογής",
       "collection_name": "Collection name",
       "collection_filter": "Filter to collection",
       "collection_default_name": "New collection",
       "collection_save_failed": "Could not save collection",
-      "col_in_collection": "In",
-      "col_notes": "Σημειώσεις",
-      "notes_placeholder": "Σημειώσεις εργασίας…",
-      "collection_color": "Χρώμα συλλογής"
+      "col_in_collection": "In"
     },
     "storyboard": {
       "title": "Storyboard",
@@ -3564,6 +3610,7 @@
     "comic_book_editor": {
       "panel_upload_image": "Μεταφόρτωση εικόνας",
       "panel_replace_image": "Αντικατάσταση εικόνας",
+      "panel_drop_image": "Αφήστε την εικόνα εδώ",
       "back": "Πίσω",
       "overflow_title": "Πάρα πολλά καρέ για αυτό το πρότυπο",
       "overflow_message": "Το επιλεγμένο πρότυπο επιτρέπει μόνο {target} καρέ, αλλά αυτή η σελίδα έχει {current}. {excess} επιπλέον καρέ πρέπει να μετακινηθούν ή να διαγραφούν.",
@@ -3600,8 +3647,7 @@
         "grid_2x2": "Τυπικό πλέγμα (4 καρέ)",
         "grid_2x3": "Δύο επιπέδων (6 καρέ)",
         "grid_3x2": "Τριών επιπέδων (6 καρέ)"
-      },
-      "panel_drop_image": "Αφήστε την εικόνα εδώ"
+      }
     },
     "lan_access": {
       "heading": "Πρόσβαση LAN",
@@ -3620,7 +3666,13 @@
       "client_hint": "Εξαγωγή εκτός σύνδεσης απευθείας στο πρόγραμμα περιήγησης. Για PDF μέσω Pandoc χρησιμοποιήστε την εφαρμογή υπολογιστή.",
       "client_engine_hint": "Η εξαγωγή προγράμματος περιήγησης είναι επιλεγμένη στις Ρυθμίσεις. Για PDF μέσω Pandoc, ορίστε τη μηχανή εξαγωγής σε «Backend»."
     },
+    "preview_banner": {
+      "title": "Έκδοση προεπισκόπησης/δοκιμής",
+      "message": "Χρησιμοποιείτε μια έκδοση προεπισκόπησης/δοκιμής. Δεν είναι σταθερή και μπορεί να περιέχει σφάλματα."
+    },
     "about": {
+      "next_check": "Επόμενος αυτόματος έλεγχος: {time}",
+      "next_check_disabled": "Ο αυτόματος έλεγχος είναι απενεργοποιημένος",
       "heading": "Σχετικά με το Bibliogon",
       "description": "Έκδοση, πληροφορίες συστήματος, εγκατεστημένα plugins και κανάλια δωρεών.",
       "loading": "Φόρτωση πληροφοριών ...",
@@ -3630,6 +3682,21 @@
       "build_label": "Build",
       "branch_label": "Branch",
       "build_date_label": "Ημερομηνία build",
+      "commit_label": "Commit",
+      "preview_heading": "Έκδοση προεπισκόπησης/δοκιμής",
+      "share_heading": "Κοινή χρήση της εφαρμογής",
+      "share_production_heading": "Κύρια έκδοση (σταθερή)",
+      "share_production_description": "Μοιραστείτε τη σταθερή εφαρμογή μέσω κωδικού QR ώστε να μπορούν να την ανοίξουν άλλοι.",
+      "share_preview_heading": "Τελευταία έκδοση (δοκιμή)",
+      "share_preview_description": "Αυτή είναι μια έκδοση προεπισκόπησης/δοκιμής. Δεν είναι σταθερή και μπορεί να περιέχει σφάλματα. Μοιραστείτε την μόνο με δοκιμαστές.",
+      "share_qr_show": "Εμφάνιση κωδικού QR",
+      "share_qr_hide": "Απόκρυψη κωδικού QR",
+      "share_open": "Άνοιγμα συνδέσμου",
+      "share_copy": "Αντιγραφή συνδέσμου",
+      "share_copied": "Ο σύνδεσμος αντιγράφηκε!",
+      "share_copy_failed": "Δεν ήταν δυνατή η αντιγραφή του συνδέσμου.",
+      "share_native": "Κοινή χρήση",
+      "share_text": "Πλατφόρμα ανοιχτού κώδικα για συγγραφείς",
       "check_update_button": "Έλεγχος για νέα έκδοση",
       "check_update_checking": "Έλεγχος …",
       "update_up_to_date": "Χρησιμοποιείτε την πιο πρόσφατη έκδοση.",
@@ -3669,24 +3736,7 @@
       "ai_assistance_label": "Βοήθεια ΤΝ",
       "ai_assistance_value": "Claude (Anthropic) - αρχιτεκτονική, κώδικας, περιεχόμενο, τεκμηρίωση",
       "resources_heading": "Άδεια χρήσης & Πόροι",
-      "docs_label": "Τεκμηρίωση",
-      "next_check": "Επόμενος αυτόματος έλεγχος: {time}",
-      "next_check_disabled": "Ο αυτόματος έλεγχος είναι απενεργοποιημένος",
-      "commit_label": "Commit",
-      "preview_heading": "Έκδοση προεπισκόπησης/δοκιμής",
-      "share_heading": "Κοινή χρήση της εφαρμογής",
-      "share_production_heading": "Κύρια έκδοση (σταθερή)",
-      "share_production_description": "Μοιραστείτε τη σταθερή εφαρμογή μέσω κωδικού QR ώστε να μπορούν να την ανοίξουν άλλοι.",
-      "share_preview_heading": "Τελευταία έκδοση (δοκιμή)",
-      "share_preview_description": "Αυτή είναι μια έκδοση προεπισκόπησης/δοκιμής. Δεν είναι σταθερή και μπορεί να περιέχει σφάλματα. Μοιραστείτε την μόνο με δοκιμαστές.",
-      "share_qr_show": "Εμφάνιση κωδικού QR",
-      "share_qr_hide": "Απόκρυψη κωδικού QR",
-      "share_open": "Άνοιγμα συνδέσμου",
-      "share_copy": "Αντιγραφή συνδέσμου",
-      "share_copied": "Ο σύνδεσμος αντιγράφηκε!",
-      "share_copy_failed": "Δεν ήταν δυνατή η αντιγραφή του συνδέσμου.",
-      "share_native": "Κοινή χρήση",
-      "share_text": "Πλατφόρμα ανοιχτού κώδικα για συγγραφείς"
+      "docs_label": "Τεκμηρίωση"
     },
     "kdp_publishing_wizard": {
       "open_button": "Δημοσίευση στο KDP",
@@ -3696,6 +3746,27 @@
       "step_metadata": "Μεταδεδομένα",
       "step_cover": "Εξώφυλλο",
       "step_export": "Πακέτο",
+      "step_format": "Μορφή",
+      "format_intro": "Επίλεξε τη μορφή δημοσίευσης. Το eBook είναι EPUB· το χαρτόδετο και το σκληρόδετο είναι PDF εκτύπωσης με τελείωμα κοπής.",
+      "format_kind_label": "Μορφή",
+      "format_kind_ebook": "eBook (EPUB/KPF)",
+      "format_kind_paperback": "Χαρτόδετο (PDF με τελείωμα κοπής)",
+      "format_kind_hardcover": "Σκληρόδετο (PDF με τελείωμα κοπής)",
+      "format_trim_label": "Μέγεθος κοπής",
+      "format_margin_label": "Περιθώρια",
+      "format_margin_narrow": "Στενά",
+      "format_margin_normal": "Κανονικά",
+      "format_margin_wide": "Πλατιά",
+      "guide_format_label": "Επιλεγμένη μορφή",
+      "step_guide": "Οδηγός",
+      "guide_intro": "Το Bibliogon δεν ανεβάζει για εσένα. Δες πώς να δημοσιεύσεις το πακέτο σου στο KDP:",
+      "guide_open_kdp": "Άνοιγμα KDP Bookshelf",
+      "guide_step_create": "Δημιούργησε έναν νέο τίτλο στο KDP (eBook ή χαρτόδετο/σκληρόδετο).",
+      "guide_step_manuscript": "Ανέβασε το αρχείο χειρογράφου από το ZIP: manuscript-ebook.epub για eBook, manuscript-paperback.pdf για εκτύπωση.",
+      "guide_step_cover": "Ανέβασε το αρχείο εξωφύλλου (cover.*).",
+      "guide_step_metadata": "Μετέφερε τα στοιχεία από το metadata.json (τίτλος, συγγραφέας, περιγραφή, κατηγορίες, λέξεις-κλειδιά).",
+      "guide_step_price": "Όρισε την τιμή (δες το βήμα Τιμές για δικαιώματα + ελάχιστη τιμή) και δημοσίευσε.",
+      "guide_note": "Έλεγξε την αναφορά επικύρωσης εξωφύλλου (cover-validation-report.json) στο ZIP αν το KDP απορρίψει το εξώφυλλο.",
       "metadata_loading": "Έλεγχος μεταδεδομένων…",
       "metadata_check_failed": "Ο έλεγχος μεταδεδομένων απέτυχε.",
       "metadata_hint": "Τα υποχρεωτικά πεδία πρέπει να συμπληρωθούν προτού αυτό το βιβλίο μπορέσει να μεταφορτωθεί στο KDP. Οι προειδοποιήσεις είναι συστάσεις.",
@@ -3752,75 +3823,7 @@
       "arc_mailto_subject": "Αίτημα ARC",
       "arc_send_mail": "Σύνταξη email",
       "conflict_banner": "Τα μεταδεδομένα του βιβλίου άλλαξαν από την τελευταία συνεδρία του οδηγού. Επικυρώστε ξανά τα μεταδεδομένα + το εξώφυλλο προτού δημιουργήσετε το πακέτο.",
-      "conflict_dismiss": "Απόρριψη ειδοποίησης",
-      "step_guide": "Οδηγός",
-      "guide_intro": "Το Bibliogon δεν ανεβάζει για εσένα. Δες πώς να δημοσιεύσεις το πακέτο σου στο KDP:",
-      "guide_open_kdp": "Άνοιγμα KDP Bookshelf",
-      "guide_step_create": "Δημιούργησε έναν νέο τίτλο στο KDP (eBook ή χαρτόδετο/σκληρόδετο).",
-      "guide_step_manuscript": "Ανέβασε το αρχείο χειρογράφου από το ZIP: manuscript-ebook.epub για eBook, manuscript-paperback.pdf για εκτύπωση.",
-      "guide_step_cover": "Ανέβασε το αρχείο εξωφύλλου (cover.*).",
-      "guide_step_metadata": "Μετέφερε τα στοιχεία από το metadata.json (τίτλος, συγγραφέας, περιγραφή, κατηγορίες, λέξεις-κλειδιά).",
-      "guide_step_price": "Όρισε την τιμή (δες το βήμα Τιμές για δικαιώματα + ελάχιστη τιμή) και δημοσίευσε.",
-      "guide_note": "Έλεγξε την αναφορά επικύρωσης εξωφύλλου (cover-validation-report.json) στο ZIP αν το KDP απορρίψει το εξώφυλλο.",
-      "step_format": "Μορφή",
-      "format_intro": "Επίλεξε τη μορφή δημοσίευσης. Το eBook είναι EPUB· το χαρτόδετο και το σκληρόδετο είναι PDF εκτύπωσης με τελείωμα κοπής.",
-      "format_kind_label": "Μορφή",
-      "format_kind_ebook": "eBook (EPUB/KPF)",
-      "format_kind_paperback": "Χαρτόδετο (PDF με τελείωμα κοπής)",
-      "format_kind_hardcover": "Σκληρόδετο (PDF με τελείωμα κοπής)",
-      "format_trim_label": "Μέγεθος κοπής",
-      "format_margin_label": "Περιθώρια",
-      "format_margin_narrow": "Στενά",
-      "format_margin_normal": "Κανονικά",
-      "format_margin_wide": "Πλατιά",
-      "guide_format_label": "Επιλεγμένη μορφή"
-    },
-    "migration": {
-      "title": "Καλώς ήρθατε στο Bibliogon",
-      "intro": "Έχετε ήδη χρησιμοποιήσει την εφαρμογή online; Τα βιβλία και τα άρθρα σας μπορούν να μεταφερθούν.",
-      "step_open": "Ανοίξτε την online έκδοση.",
-      "step_settings": "Μεταβείτε στις Ρυθμίσεις → Δεδομένα → Πλήρες αντίγραφο (.bgb).",
-      "step_download": "Κατεβάστε το αρχείο .bgb.",
-      "step_import": "Κάντε κλικ εδώ στο «Εισαγωγή αντιγράφου».",
-      "skip": "Εκκίνηση χωρίς δεδομένα",
-      "open_online": "Άνοιγμα online έκδοσης",
-      "import": "Εισαγωγή αντιγράφου",
-      "settings_hint": "Μετεγκατάσταση από την online έκδοση; Εξάγετε εκεί ένα πλήρες αντίγραφο (.bgb) και εισαγάγετέ το εδώ με «Εισαγωγή αντιγράφου»."
-    },
-    "preview_banner": {
-      "title": "Έκδοση προεπισκόπησης/δοκιμής",
-      "message": "Χρησιμοποιείτε μια έκδοση προεπισκόπησης/δοκιμής. Δεν είναι σταθερή και μπορεί να περιέχει σφάλματα."
-    },
-    "book_templates": {
-      "name": {
-        "roman_3act": "Μυθιστόρημα (3 πράξεις)",
-        "sachbuch": "Δοκίμιο",
-        "kurzgeschichte": "Διήγημα",
-        "lyrik": "Ποίηση",
-        "kinderbuch": "Εικονογραφημένο βιβλίο",
-        "comic": "Κόμικ"
-      },
-      "desc": {
-        "roman_3act": "Δομή μυθιστορήματος σε τρεις πράξεις με πρόλογο, τίτλους πράξεων, έντεκα κεφάλαια και επίλογο.",
-        "sachbuch": "Ένα δοκίμιο με προοίμιο, εισαγωγή, οκτώ κεφάλαια, περίληψη και παράρτημα.",
-        "kurzgeschichte": "Ένα μόνο διήγημα σε ένα κεφάλαιο.",
-        "lyrik": "Μια ποιητική συλλογή με είκοσι κεφάλαια ποιημάτων.",
-        "kinderbuch": "Ένα εικονογραφημένο βιβλίο με δώδεκα σελίδες (εικόνα και κείμενο).",
-        "comic": "Ένα κόμικ με είκοσι δύο σελίδες σε τυπική μορφή."
-      },
-      "title": {
-        "prologue": "Πρόλογος",
-        "epilogue": "Επίλογος",
-        "act": "Πράξη",
-        "chapter": "Κεφάλαιο",
-        "foreword": "Προοίμιο",
-        "introduction": "Εισαγωγή",
-        "summary": "Περίληψη",
-        "appendix": "Παράρτημα",
-        "poem": "Ποίημα",
-        "story": "Ιστορία"
-      },
-      "page_count": "{count} σελίδες"
+      "conflict_dismiss": "Απόρριψη ειδοποίησης"
     }
   }
 }

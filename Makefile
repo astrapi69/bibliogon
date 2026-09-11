@@ -3,7 +3,7 @@
        install install-backend install-frontend install-plugins install-e2e \
        test test-fast test-full test-nightly test-backend test-plugins test-e2e test-e2e-ui test-e2e-smoke test-e2e-smoke-retries test-e2e-manual test-e2e-all test-static-smoke test-visual test-visual-update capture-screenshots update-screenshots \
        tdd test-fail tdd-green tdd-refactor tdd-check test-only test-watch test-watch-backend \
-       test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync test-plugin-comics test-plugin-medium-import \
+       test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync test-plugin-comics test-plugin-medium-import test-plugin-learnset \
        test-coverage test-coverage-backend test-coverage-frontend test-coverage-plugins coverage-backend coverage-frontend test-cov-backend test-cov-frontend \
        audit audit-backend audit-frontend security-backend bandit-backend check-security circular-deps \
        test-coverage-plugin-audiobook test-coverage-plugin-export test-coverage-plugin-grammar test-coverage-plugin-kdp test-coverage-plugin-kinderbuch test-coverage-plugin-ms-tools test-coverage-plugin-translation test-coverage-plugin-help test-coverage-plugin-getstarted test-coverage-plugin-git-sync test-coverage-plugin-comics test-coverage-plugin-medium-import \
@@ -255,7 +255,7 @@ test-backend: ## Run backend tests
 	@echo "=== Backend Tests ==="
 	cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ -v
 
-test-plugins: test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync test-plugin-comics test-plugin-medium-import ## Run all plugin tests
+test-plugins: test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync test-plugin-comics test-plugin-medium-import test-plugin-learnset ## Run all plugin tests
 
 test-plugin-export: ## Run export plugin tests
 	@echo ""
@@ -316,6 +316,11 @@ test-plugin-medium-import: ## Run medium-import plugin tests
 	@echo ""
 	@echo "=== Medium-Import Plugin Tests ==="
 	cd plugins/bibliogon-plugin-medium-import && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ -v
+
+test-plugin-learnset: ## Run learnset plugin tests
+	@echo ""
+	@echo "=== Learnset Plugin Tests ==="
+	cd plugins/bibliogon-plugin-learnset && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ -v
 
 # --- Coverage (heavy, opt-in; runs nightly in CI - see .github/workflows/nightly.yml) ---
 

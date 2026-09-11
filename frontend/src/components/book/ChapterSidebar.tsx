@@ -63,6 +63,7 @@ interface Props {
   relationshipsActive?: boolean;
   onValidateToc?: () => void;
   onSaveAsTemplate?: () => void;
+  onExportLearnset?: () => void;
   onAddFromTemplate?: () => void;
   onSaveAsChapterTemplate?: (chapterId: string) => void;
   onShowVersions?: (chapterId: string) => void;
@@ -120,6 +121,7 @@ export default function ChapterSidebar({
   relationshipsActive,
   onValidateToc,
   onSaveAsTemplate,
+  onExportLearnset,
   onAddFromTemplate,
   onSaveAsChapterTemplate,
   onShowVersions,
@@ -387,6 +389,7 @@ export default function ChapterSidebar({
           hasToc={hasToc}
           onValidateToc={onValidateToc}
           onSaveAsTemplate={onSaveAsTemplate}
+          onExportLearnset={onExportLearnset}
           t={t}
         />
         <Tooltip

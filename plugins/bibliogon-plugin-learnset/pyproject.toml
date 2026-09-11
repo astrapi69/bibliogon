@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "bibliogon-plugin-learnset"
+version = "0.60.0"
+description = "Export a Bibliogon book as an adaptive-learner learn set (alc content-repo layout, schema-validated)"
+authors = ["astrapi69"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "bibliogon_learnset"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pluginforge = "^0.10.0"
+fastapi = "^0.136.0"
+pyyaml = "^6.0"
+jsonschema = "^4.23"
+regex = "^2025.9.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^9.0"
+pytest-cov = "^7.1.0"
+httpx = "^0.28.0"
+
+[tool.poetry.plugins."bibliogon.plugins"]
+learnset = "bibliogon_learnset.plugin:LearnsetPlugin"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
