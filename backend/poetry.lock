@@ -591,6 +591,24 @@ type = "directory"
 url = "../plugins/bibliogon-plugin-ms-tools"
 
 [[package]]
+name = "bibliogon-plugin-promotion"
+version = "0.60.0"
+description = "Author-promotion module: per-format portfolio board over a book's retail presence"
+optional = false
+python-versions = "^3.11"
+groups = ["main"]
+files = []
+develop = true
+
+[package.dependencies]
+fastapi = "^0.136.0"
+pluginforge = "^0.10.0"
+
+[package.source]
+type = "directory"
+url = "../plugins/bibliogon-plugin-promotion"
+
+[[package]]
 name = "bibliogon-plugin-story-bible"
 version = "0.60.0"
 description = "Story Bible plugin for Bibliogon - per-book fiction-writing entity database (characters, settings, plot points, items, lore) with @-mention cross-references (Session 1: scaffolding)"
@@ -9659,4 +9677,4 @@ test = ["pytest"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "85eea40ebf5a5549aec7da19f0579a53fe708a0117e6a9f3efd71f26f8388c7b"
+content-hash = "db0b7d0af9312e96f9a32fbdcb67cb2edc755006688629117887e5aa2065b8df"

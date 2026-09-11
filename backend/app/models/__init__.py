@@ -14,6 +14,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -147,6 +148,10 @@ class Book(Base):
     )  # Amazon book description
     backpage_description: Mapped[str | None] = mapped_column(Text, nullable=True)
     backpage_author_bio: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Promotion Phase 1 (#782): the one retail link an author hands out -
+    # a books2read / mybook.to style shortlink that resolves to the
+    # reader's local store. Books-only, like categories and BISAC.
+    universal_link: Mapped[str | None] = mapped_column(String(500), nullable=True)
     cover_image: Mapped[str | None] = mapped_column(String(500), nullable=True)
     custom_css: Mapped[str | None] = mapped_column(Text, nullable=True)
     # Project-level notes scratchpad (CHAPTER-SYNOPSIS-NOTES-01). Free-text
@@ -551,6 +556,55 @@ class BookImportSource(Base):
         return (
             f"<BookImportSource book={self.book_id!r} "
             f"identifier={self.source_identifier!r} type={self.source_type}>"
+        )
+
+
+class BookFormatState(Base):
+    """Per-book, per-format retail presence (promotion Phase 1, #782).
+
+    ``Book.status`` is ONE value for the whole book, so it cannot say
+    that a title is live as an eBook, still a draft as a paperback and
+    missing a hardcover entirely. That per-format truth used to live in
+    a hand-maintained CSV plus a Markdown gap list; this table is its
+    home.
+
+    Deliberately NOT storing the ASIN: ``Book.asin_ebook`` /
+    ``asin_paperback`` / ``asin_hardcover`` already exist and the KDP
+    plugin reads them, so duplicating the value here would create a
+    second source of truth that needs syncing. The API composes both
+    and every write goes through one service function.
+
+    ``book_format`` and ``status`` are validated at the Pydantic layer,
+    not by a DB constraint - the same convention as
+    ``Chapter.chapter_type`` and ``ComicBubble.bubble_type``.
+
+    Books-only by design, like categories and BISAC; Articles have
+    their own publication tracking (see the intentional-asymmetry
+    lessons-learned entry).
+    """
+
+    __tablename__ = "book_format_states"
+    __table_args__ = (UniqueConstraint("book_id", "book_format", name="uq_book_format"),)
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    book_id: Mapped[str] = mapped_column(
+        ForeignKey("books.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    #: "ebook" | "paperback" | "hardcover"
+    book_format: Mapped[str] = mapped_column(String(20), nullable=False)
+    #: "live" | "draft" | "missing"
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="missing")
+    #: Retail product page, e.g. https://www.amazon.com/dp/B0DWND11Y8
+    store_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<BookFormatState book={self.book_id!r} "
+            f"format={self.book_format!r} status={self.status!r}>"
         )
 
 

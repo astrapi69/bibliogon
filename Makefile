@@ -10,7 +10,7 @@
        mutmut-backend mutmut-export mutmut-ms-tools mutmut-results \
        check-types check-types-backend check-types-frontend \
        lint-frontend format-frontend pre-commit \
-       check-blockers archive-task archive-task-dry install-hooks verify-learnset-schema verify-learnset-upstream \
+       check-blockers archive-task archive-task-dry install-hooks verify-learnset-schema verify-learnset-upstream import-portfolio import-portfolio-check \
        sync-versions sync-versions-dry sync-versions-check \
        generate-trial-key \
        docs-install docs-build docs-serve \
@@ -255,7 +255,7 @@ test-backend: ## Run backend tests
 	@echo "=== Backend Tests ==="
 	cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ -v
 
-test-plugins: test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync test-plugin-comics test-plugin-medium-import test-plugin-learnset ## Run all plugin tests
+test-plugins: test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync test-plugin-comics test-plugin-medium-import test-plugin-learnset test-plugin-promotion ## Run all plugin tests
 
 test-plugin-export: ## Run export plugin tests
 	@echo ""
@@ -327,6 +327,11 @@ test-plugin-learnset: ## Run learnset plugin tests
 	@echo ""
 	@echo "=== Learnset Plugin Tests ==="
 	cd plugins/bibliogon-plugin-learnset && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ -v
+
+test-plugin-promotion: ## Run promotion plugin tests
+	@echo ""
+	@echo "=== Promotion Plugin Tests ==="
+	cd plugins/bibliogon-plugin-promotion && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ -v
 
 # --- Coverage (heavy, opt-in; runs nightly in CI - see .github/workflows/nightly.yml) ---
 
@@ -643,6 +648,12 @@ import-books: ## Bulk-import missing books from a git-repo catalog against the r
 
 import-books-check: ## Dry-run of import-books: report present / would-import, create nothing. Usage: make import-books-check CATALOG=book-catalog.yaml
 	@cd backend && poetry run python ../scripts/bulk_import_books.py --catalog "../$(CATALOG)" --dry-run
+
+import-portfolio: ## Seed the portfolio board from the author's books-list CSV. Usage: make import-portfolio CSV=/path/to/books-list.csv
+	@cd backend && poetry run python ../scripts/import_portfolio_csv.py --csv "$(CSV)"
+
+import-portfolio-check: ## Dry-run of import-portfolio: report matches and CSV drift, write nothing. Usage: make import-portfolio-check CSV=/path/to/books-list.csv
+	@cd backend && poetry run python ../scripts/import_portfolio_csv.py --csv "$(CSV)" --dry-run
 
 generate-trial-key: ## Generate 30-day trial key. Usage: make generate-trial-key AUTHOR="Name"
 	@cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run python -c \

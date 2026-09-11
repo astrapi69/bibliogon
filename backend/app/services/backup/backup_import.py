@@ -22,6 +22,7 @@ from app.models import (
     Asset,
     Author,
     Book,
+    BookFormatState,
     BookImportSource,
     BookPublishingState,
     BookTemplate,
@@ -421,6 +422,7 @@ def _restore_book_children(db: Session, book_dir: Path) -> None:
     _restore_simple(db, book_dir / "story_entities.json", StoryEntity)
     db.flush()
     _restore_simple(db, book_dir / "story_entity_page_links.json", StoryEntityPageLink)
+    _restore_simple(db, book_dir / "format_states.json", BookFormatState)
     _restore_simple(db, book_dir / "publishing_state.json", BookPublishingState)
     db.flush()
     _restore_simple(db, book_dir / "arc_reviewers.json", ArcReviewer)
