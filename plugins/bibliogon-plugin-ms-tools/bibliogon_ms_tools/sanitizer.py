@@ -5,6 +5,7 @@ HTML/Word artifacts that sneak in via copy-paste from external sources.
 """
 
 import re
+from html.parser import HTMLParser
 
 # Quote pairs per language: (opening, closing)
 QUOTE_STYLES: dict[str, tuple[str, str, str, str]] = {
@@ -190,6 +191,97 @@ def fix_html_artifacts(text: str) -> tuple[str, int]:
     return fixed, count
 
 
+class _TextNodeTransformer(HTMLParser):
+    """Applies ``transform`` to every text node, re-emitting every tag
+    byte-for-byte unchanged (#805).
+
+    fix_quotes and fix_whitespace originally walked the raw content
+    string with no concept of markup, so an imported chapter's own
+    ``<img>``/``<table>``/etc tags were mangled exactly like the prose:
+    an ASCII quote inside an attribute value became a typographic
+    quote, and the missing-space-after-punctuation rule inserted a
+    space right after the dot in a file extension. This walker is the
+    fix - it is the ONLY thing in this module that understands HTML
+    structure; ``fix_quotes``/``fix_whitespace`` themselves stay pure
+    string transforms so they still work standalone on genuine
+    non-HTML text (the ``/sanitize`` endpoint's normal case).
+
+    A quote opened in one text node and closed after an intervening
+    inline tag (``"Hello <em>world</em>"``) is not paired across the
+    tag boundary - each text node starts ``fix_quotes`` fresh. This is
+    a narrow, honest limitation, not a silent one: real manuscript
+    quotes essentially always close within the same text run.
+    """
+
+    def __init__(self, transform):
+        super().__init__(convert_charrefs=False)
+        self._transform = transform
+        self.chunks: list[str] = []
+        self.count = 0
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self.chunks.append(self.get_starttag_text() or "")
+
+    def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self.chunks.append(self.get_starttag_text() or "")
+
+    def handle_endtag(self, tag: str) -> None:
+        self.chunks.append(f"</{tag}>")
+
+    def handle_data(self, data: str) -> None:
+        fixed, n = self._transform(data)
+        self.chunks.append(fixed)
+        self.count += n
+
+    def handle_entityref(self, name: str) -> None:
+        self.chunks.append(f"&{name};")
+
+    def handle_charref(self, name: str) -> None:
+        self.chunks.append(f"&#{name};")
+
+    def handle_comment(self, data: str) -> None:
+        self.chunks.append(f"<!--{data}-->")
+
+    def handle_decl(self, decl: str) -> None:
+        self.chunks.append(f"<!{decl}>")
+
+
+_HTML_TAG_RE = re.compile(r"<[a-zA-Z/][^>]*>")
+
+
+def _looks_like_html(text: str) -> bool:
+    """Whether ``text`` contains HTML markup anywhere, not just at the
+    start.
+
+    Content reaching the sanitizer at import time is Markdown that can
+    freely embed RAW HTML mid-document - a write-book-template chapter
+    is typically prose with an occasional ``<img>`` or ``<table>`` tag
+    inline, not a document that itself starts with ``<`` (that stricter
+    check is right for ``scaffolder._content_to_markdown`` /
+    ``bibliogon_learnset.routes._chapter_markdown``, which classify a
+    WHOLE chapter's stored content, not a markdown source file with
+    embedded fragments). A tag search, not a startswith check, is what
+    catches those fragments so they route through the text-node-only
+    walker instead of the raw-string path (#805).
+    """
+    return bool(_HTML_TAG_RE.search(text))
+
+
+def _apply_html_aware(text: str, transform) -> tuple[str, int]:
+    """Run ``transform`` over every text node of ``text`` if it looks
+    like HTML, else over the whole string.
+
+    ``transform`` is a ``(text) -> (fixed_text, count)`` function -
+    exactly the shape ``fix_quotes``/``fix_whitespace`` already have.
+    """
+    if not _looks_like_html(text):
+        return transform(text)
+    parser = _TextNodeTransformer(transform)
+    parser.feed(text)
+    parser.close()
+    return "".join(parser.chunks), parser.count
+
+
 def sanitize(
     text: str,
     language: str = "de",
@@ -212,11 +304,11 @@ def sanitize(
         fixes["invisible_chars"] = n
 
     if fix_quote_marks:
-        result, n = fix_quotes(result, language)
+        result, n = _apply_html_aware(result, lambda t: fix_quotes(t, language))
         fixes["quotes"] = n
 
     if fix_spaces:
-        result, n = fix_whitespace(result)
+        result, n = _apply_html_aware(result, fix_whitespace)
         fixes["whitespace"] = n
 
     if fix_dash_marks:
