@@ -63,8 +63,8 @@ repos:
     hooks:
       - id: no-ai-coauthor-trailer
         name: no Co-Authored-By trailer crediting AI tools / bots
-        entry: scripts/check_no_ai_coauthor.py
-        language: script
+        entry: python3 scripts/check_no_ai_coauthor.py
+        language: system
         stages: [commit-msg]
 
       - id: roadmap-archive-reminder

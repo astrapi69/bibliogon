@@ -94,3 +94,36 @@ class TestCiRangeMode:
         result = run_on_stdin(["feat: one", f"fix: two\n\n{CLAUDE}", "chore: three"])
         assert result.returncode == 1
         assert "fix: two" in result.stdout + result.stderr
+
+
+def test_hook_script_is_executable() -> None:
+    """Regression: the hook shipped as 100644 with `language: script`,
+    which pre-commit refuses ("is not executable") - so EVERY commit on
+    every branch failed until the mode was fixed. The config now uses
+    `language: system` with an explicit interpreter, and the bit is
+    kept as belt-and-braces for direct invocation."""
+    import os
+    import stat
+
+    assert HOOK.exists()
+    mode = HOOK.stat().st_mode
+    assert mode & stat.S_IXUSR, f"{HOOK} must be executable (mode {oct(mode)})"
+    assert os.access(HOOK, os.X_OK)
+
+
+def test_hook_is_configured_with_an_explicit_interpreter() -> None:
+    """`language: script` executes the file directly and depends on the
+    mode bit surviving every checkout; `language: system` + `python3`
+    does not."""
+    import yaml
+
+    config = yaml.safe_load((REPO_ROOT / ".pre-commit-config.yaml").read_text())
+    hooks = [
+        hook
+        for repo in config["repos"]
+        for hook in repo.get("hooks", [])
+        if hook.get("id") == "no-ai-coauthor-trailer"
+    ]
+    assert len(hooks) == 1
+    assert hooks[0]["entry"].startswith("python3 ")
+    assert hooks[0]["language"] == "system"
