@@ -36,14 +36,27 @@ this is the differentiation feature, and it doubles as a marketing funnel
   source_language, estimated_minutes, cards: [], steps: []}` where steps are
   `{type: "theory", title, body}` prose blocks and `{type: "exercise",
   exercise: {type: "cloze"|..., prompt, sentence, blanks, ...}}`.
-- Machine-readable schemas exist at `adaptive-learner/schema/`:
-  `lesson.schema.json`, `lesson-step.schema.json`, `exercise.schema.json`,
-  `content-set.schema.json`, `content-manifest.schema.json`,
-  `quality-rules.json`, plus `engine-version.txt` (currently `0.23.0`).
-  Export output can and must be validated against these.
-- KEY CONSTRAINT: the schema SSoT stays in adaptive-learner /
-  learn-content-engine. Bibliogon consumes (vendors or reads) the schemas and
-  pins `schema_version`; it never redefines them.
+- Schema SSoT is the **learn-content-engine repo/npm package** (0.23.0,
+  published): `schema/lesson.schema.json` + `schema/content-manifest.schema.json`
+  (+ `quality-rules.json`); the adaptive-learner `schema/` copies are
+  byte-identical vendored splits (verified 2026-09-11). Vendor FROM the
+  engine, pin its version.
+- The engine ships `python/lce_schema.py` (engine#115) EXACTLY for Python
+  consumers: a jsonschema-based validator whose `pattern` keyword is backed
+  by the `regex` package, because the canonical SlugId rule uses
+  `\p{Ll}`-style Unicode property escapes that Python's `re` cannot compile
+  (a plain jsonschema run dies on every document). Requires
+  `jsonschema>=4` + `regex` - these become plugin dependencies, per the
+  user's 2026-09-11 direction to build on learn-content-engine.
+- VERIFY-FIRST CORRECTIONS (2026-09-11, against engine 0.23.0):
+  `lesson.steps` has `minItems: 1` - an "empty steps" scaffold is
+  schema-INVALID; Phase 1 emits one `theory` step per lesson carrying the
+  chapter text (Markdown body), which P2's AI fill later replaces.
+  `content-manifest` requires per-set `version` (semver) + `lesson_count`;
+  current `schema_version` default is "1.6" (the reference set's "1.5" is
+  older). The optional `sets[].book` block (engine#769: title/author/url/
+  asin) maps 1:1 onto Bibliogon's Book fields incl. `asin_ebook` - fill it
+  in Phase 1.
 
 ### Existing Bibliogon machinery to reuse
 
@@ -94,9 +107,10 @@ this is the differentiation feature, and it doubles as a marketing funnel
 
 1. **Scaffold export** (mechanical, no AI): from a book, generate the set
    directory - `manifest.yaml` from book metadata (title, language,
-   description), one `NN-slug.json` per content chapter (front/back matter
-   excluded via a skip-list defaulting to the audiobook skip set), each
-   lesson pre-filled with id/title/languages and EMPTY steps.
+   description, book block), one `NN-slug.json` per content chapter
+   (front/back matter excluded via a skip-list), each lesson pre-filled
+   with id/title/languages/estimated_minutes and ONE theory step carrying
+   the chapter text (schema forbids empty steps; see verify-first note).
 2. **AI fill** (three workflows, one format): a `lernset.biblio.yaml`-style
    template per lesson (or per book, chunked) embedding the chapter Markdown
    + the fill rules (summarize into 2-4 theory steps, generate N exercises of
