@@ -353,7 +353,7 @@ def _write_special_chapter(target_dir: Path, filename: str, chapter: dict[str, A
     title = chapter.get("title", "Untitled")
     content = chapter.get("content", "")
     ch_type = chapter.get("chapter_type", "chapter")
-    md_body = _content_to_markdown(content)
+    md_body = content_to_markdown(content)
     md = _prepend_title(title, md_body)
     # Wrap with chapter-type-specific div for Pandoc CSS targeting
     wrapper = _CHAPTER_TYPE_WRAPPERS.get(ch_type)
@@ -449,7 +449,7 @@ def _write_chapter(chapters_dir: Path, chapter: dict[str, Any]) -> None:
     filename = f"{position + 1:02d}-{_slugify(title)}.md"
     filepath = chapters_dir / filename
 
-    md_body = _content_to_markdown(content)
+    md_body = content_to_markdown(content)
 
     md = _prepend_title(title, md_body)
     wrapper = _CHAPTER_TYPE_WRAPPERS.get(ch_type)
@@ -466,8 +466,27 @@ def _prepend_title(title: str, md_body: str) -> str:
     return f"# {title}\n\n{md_body}\n"
 
 
-def _content_to_markdown(content: Any) -> str:
-    """Convert content (TipTap JSON, JSON string, HTML, or plain text) to Markdown."""
+def content_to_markdown(content: Any) -> str:
+    """Convert a chapter body to Markdown, whatever shape it is stored in.
+
+    ``Chapter.content`` is documented as TipTap JSON, but the
+    write-book-template importer deliberately stores HTML there (the
+    editor parses it through ``setContent`` and writes JSON back on the
+    first save), and older rows can hold plain text. Every consumer
+    therefore has to handle four shapes, which is why this lives here
+    once instead of in each plugin.
+
+    Args:
+        content: A TipTap doc dict, a JSON string, an HTML string, or
+            plain text.
+
+    Returns:
+        Markdown. Empty input yields an empty string rather than raising.
+
+    Example:
+        >>> content_to_markdown("<h1>Title</h1>")
+        '# Title\n'
+    """
     if isinstance(content, dict):
         return tiptap_to_markdown(content)
 
@@ -486,6 +505,9 @@ def _content_to_markdown(content: Any) -> str:
 
     return str(content)
 
+
+#: Backwards-compatible alias for the pre-#787 private name.
+_content_to_markdown = content_to_markdown
 
 _ASSET_TYPE_TO_DIR = {
     "cover": "assets/covers",
