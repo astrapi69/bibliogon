@@ -18,8 +18,14 @@ logger = logging.getLogger(__name__)
 # of their audiobook download. Users can always override per book via
 # Book.audiobook_skip_chapter_types.
 SKIP_TYPES = {
-    "toc", "imprint", "index", "bibliography", "endnotes",
-    "also_by_author", "excerpt", "call_to_action",
+    "toc",
+    "imprint",
+    "index",
+    "bibliography",
+    "endnotes",
+    "also_by_author",
+    "excerpt",
+    "call_to_action",
 }
 
 
@@ -61,14 +67,28 @@ _CHAPTER_WORD: dict[str, str] = {
 # with words instead of digits ("Erstes Kapitel" beats "Kapitel 1").
 _CHAPTER_ORDINALS: dict[str, list[str]] = {
     "de": [
-        "Erstes Kapitel", "Zweites Kapitel", "Drittes Kapitel", "Viertes Kapitel",
-        "Fuenftes Kapitel", "Sechstes Kapitel", "Siebtes Kapitel", "Achtes Kapitel",
-        "Neuntes Kapitel", "Zehntes Kapitel",
+        "Erstes Kapitel",
+        "Zweites Kapitel",
+        "Drittes Kapitel",
+        "Viertes Kapitel",
+        "Fuenftes Kapitel",
+        "Sechstes Kapitel",
+        "Siebtes Kapitel",
+        "Achtes Kapitel",
+        "Neuntes Kapitel",
+        "Zehntes Kapitel",
     ],
     "en": [
-        "First chapter", "Second chapter", "Third chapter", "Fourth chapter",
-        "Fifth chapter", "Sixth chapter", "Seventh chapter", "Eighth chapter",
-        "Ninth chapter", "Tenth chapter",
+        "First chapter",
+        "Second chapter",
+        "Third chapter",
+        "Fourth chapter",
+        "Fifth chapter",
+        "Sixth chapter",
+        "Seventh chapter",
+        "Eighth chapter",
+        "Ninth chapter",
+        "Tenth chapter",
     ],
 }
 
@@ -84,6 +104,7 @@ def _build_chapter_intro(index: int, language: str) -> str:
         return _CHAPTER_ORDINALS[lang][index - 1]
     word = _CHAPTER_WORD.get(lang, "Chapter")
     return f"{word} {index}"
+
 
 # Valid merge modes
 MERGE_MODES = ("separate", "merged", "both")
@@ -123,11 +144,21 @@ def extract_plain_text(content: object) -> str:
     if isinstance(content, dict):
         doc = content
     elif isinstance(content, str):
-        if not content.strip():
+        stripped = content.strip()
+        if not stripped:
             return ""
         try:
             doc = json.loads(content)
         except (json.JSONDecodeError, TypeError):
+            # An imported chapter is HTML until someone opens and saves
+            # it in the editor (#787). Reading the raw markup aloud is
+            # worse than reading nothing, so strip it to prose rather
+            # than returning it unchanged (#806). Genuine plain text
+            # (no tags) has no markup to strip and passes through.
+            if stripped.startswith("<"):
+                from bibliogon_export.html_to_markdown import html_to_plain_text
+
+                return html_to_plain_text(content)
             return content
     else:
         return ""
@@ -222,6 +253,7 @@ ChapterPersistedCallback = Callable[[Path, dict], Awaitable[None]] | None
 # Content-hash cache
 # ---------------------------------------------------------------------------
 
+
 def content_hash(plain_text: str) -> str:
     """SHA-256 of the plain text that goes to the TTS engine.
 
@@ -242,16 +274,25 @@ def _read_cache_meta(meta_path: Path) -> dict | None:
 
 
 def _write_cache_meta(
-    meta_path: Path, content_hash: str,
-    engine: str, voice: str, speed: str,
+    meta_path: Path,
+    content_hash: str,
+    engine: str,
+    voice: str,
+    speed: str,
 ) -> None:
     """Write the sidecar .meta.json next to the generated MP3."""
-    meta_path.write_text(json.dumps({
-        "content_hash": content_hash,
-        "engine": engine,
-        "voice": voice,
-        "speed": speed,
-    }, indent=2), encoding="utf-8")
+    meta_path.write_text(
+        json.dumps(
+            {
+                "content_hash": content_hash,
+                "engine": engine,
+                "voice": voice,
+                "speed": speed,
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
 
 
 def should_regenerate(
@@ -400,7 +441,11 @@ async def generate_audiobook(
         # cache directory (the persistent uploads/{book_id}/audiobook/chapters/).
         expected_filename = f"{i:03d}-{_slugify(ch_title)}.mp3"
         if cache_dir and not should_regenerate(
-            plain_text, cache_dir / expected_filename, engine_id, voice, speed_str,
+            plain_text,
+            cache_dir / expected_filename,
+            engine_id,
+            voice,
+            speed_str,
         ):
             # Cache hit: copy the existing MP3 + sidecar into the
             # output dir so the rest of the pipeline (merge, bundle,
@@ -419,21 +464,22 @@ async def generate_audiobook(
             generated.append(expected_filename)
             reused.append(ch_title)
             await emit("chapter_reused", index=i, title=ch_title, filename=expected_filename)
-            await emit_persisted(dest_mp3, {
-                "title": ch_title,
-                "position": ch.get("position"),
-                "chapter_type": ch_type,
-                "reused": True,
-                "index": i,
-            })
+            await emit_persisted(
+                dest_mp3,
+                {
+                    "title": ch_title,
+                    "position": ch.get("position"),
+                    "chapter_type": ch_type,
+                    "reused": True,
+                    "index": i,
+                },
+            )
             continue
 
         await emit("chapter_start", index=i, title=ch_title)
         chapter_started_at = time.monotonic()
         try:
-            spoken_intro = (
-                _build_chapter_intro(i, language) if read_chapter_number else ""
-            )
+            spoken_intro = _build_chapter_intro(i, language) if read_chapter_number else ""
             result = await generate_chapter_audio(
                 title=spoken_intro,
                 content=raw_content,
@@ -451,20 +497,28 @@ async def generate_audiobook(
                 # Write the sidecar so the NEXT export can reuse this file.
                 _write_cache_meta(
                     result.with_suffix(".meta.json"),
-                    content_hash(plain_text), engine_id, voice, speed_str,
+                    content_hash(plain_text),
+                    engine_id,
+                    voice,
+                    speed_str,
                 )
                 await emit(
                     "chapter_done",
-                    index=i, title=ch_title, filename=result.name,
+                    index=i,
+                    title=ch_title,
+                    filename=result.name,
                     duration_seconds=duration,
                 )
-                await emit_persisted(result, {
-                    "title": ch_title,
-                    "position": ch.get("position"),
-                    "chapter_type": ch_type,
-                    "reused": False,
-                    "index": i,
-                })
+                await emit_persisted(
+                    result,
+                    {
+                        "title": ch_title,
+                        "position": ch.get("position"),
+                        "chapter_type": ch_type,
+                        "reused": False,
+                        "index": i,
+                    },
+                )
             else:
                 skipped.append(ch_title)
                 await emit("chapter_skipped", index=i, title=ch_title, reason="empty")
@@ -475,7 +529,11 @@ async def generate_audiobook(
 
     logger.info(
         "Audiobook '%s': %d generated (%d reused), %d skipped, %d errors",
-        book_title, len(generated), len(reused), len(skipped), len(errors),
+        book_title,
+        len(generated),
+        len(reused),
+        len(skipped),
+        len(errors),
     )
 
     # Merge chapter MP3s into single audiobook file (for "merged" or "both" modes)
@@ -503,6 +561,7 @@ async def generate_audiobook(
     reused_cost: float = 0.0
     try:
         from manuscripta.audiobook.tts import create_adapter as _create
+
         _cost_adapter = _create(engine_id, lang=language, voice=voice or "default")
         for ch in sorted_chapters:
             ch_type = ch.get("chapter_type", "chapter")
@@ -635,6 +694,7 @@ def merge_mp3_files(input_files: list[Path], output_path: Path) -> Path:
     if len(input_files) == 1:
         # Single file, just copy
         import shutil
+
         shutil.copy2(input_files[0], output_path)
         return output_path
 
@@ -649,11 +709,16 @@ def merge_mp3_files(input_files: list[Path], output_path: Path) -> Path:
     try:
         result = subprocess.run(
             [
-                "ffmpeg", "-y",
-                "-f", "concat",
-                "-safe", "0",
-                "-i", str(concat_file),
-                "-c", "copy",
+                "ffmpeg",
+                "-y",
+                "-f",
+                "concat",
+                "-safe",
+                "0",
+                "-i",
+                str(concat_file),
+                "-c",
+                "copy",
                 str(output_path),
             ],
             capture_output=True,
@@ -673,6 +738,7 @@ def merge_mp3_files(input_files: list[Path], output_path: Path) -> Path:
 def is_ffmpeg_available() -> bool:
     """Check if ffmpeg is installed and accessible."""
     import subprocess
+
     try:
         subprocess.run(["ffmpeg", "-version"], capture_output=True, timeout=5)
         return True
@@ -683,6 +749,7 @@ def is_ffmpeg_available() -> bool:
 def _slugify(text: str) -> str:
     """Simple slugify for filenames."""
     import re
+
     slug = text.lower().strip()
     slug = re.sub(r"[^a-z0-9\-]", "-", slug)
     slug = re.sub(r"-+", "-", slug)
