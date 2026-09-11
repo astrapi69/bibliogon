@@ -81,3 +81,57 @@ def test_export_streams_schema_valid_alc_zip(client: TestClient) -> None:
 def test_export_unknown_book_returns_404(client: TestClient) -> None:
     response = client.get("/api/learnset/does-not-exist/export")
     assert response.status_code == 404
+
+
+class TestImportedChapterContentShapes:
+    """#787: the write-book-template importer stores HTML in
+    ``Chapter.content`` (the editor parses it via ``setContent`` and
+    writes JSON back on first save), so a bare ``json.loads`` in the
+    export crashed with "Expecting value: line 1 column 1 (char 0)" for
+    every imported book - which was all of them.
+    """
+
+    def _export(self, client: TestClient, content: str | None) -> bytes:
+        book_id = client.post(
+            "/api/books",
+            json={"title": "Shape Probe", "author": "Test Autor", "language": "de"},
+        ).json()["id"]
+        created = client.post(
+            f"/api/books/{book_id}/chapters",
+            json={"title": "Kapitel", "content": content, "chapter_type": "chapter"},
+        )
+        assert created.status_code in (200, 201), created.text
+        response = client.get(f"/api/learnset/{book_id}/export")
+        assert response.status_code == 200, response.text
+        return response.content
+
+    def _lesson_bodies(self, payload: bytes) -> str:
+        archive = zipfile.ZipFile(io.BytesIO(payload))
+        lessons = [name for name in archive.namelist() if name.endswith(".json")]
+        return " ".join(archive.read(name).decode("utf-8") for name in lessons)
+
+    def test_html_content_exports_instead_of_raising(self, client: TestClient) -> None:
+        payload = self._export(client, "<h1>Vorwort</h1>\n<p>Ein ganzer Satz.</p>")
+        assert "Ein ganzer Satz." in self._lesson_bodies(payload)
+
+    def test_tiptap_json_content_still_exports(self, client: TestClient) -> None:
+        doc = json.dumps(
+            {
+                "type": "doc",
+                "content": [
+                    {"type": "paragraph", "content": [{"type": "text", "text": "Aus JSON."}]}
+                ],
+            }
+        )
+        assert "Aus JSON." in self._lesson_bodies(self._export(client, doc))
+
+    def test_plain_text_content_still_exports(self, client: TestClient) -> None:
+        assert "Nur Text." in self._lesson_bodies(self._export(client, "Nur Text."))
+
+    def test_whitespace_only_content_does_not_raise(self, client: TestClient) -> None:
+        """``json.loads(" ")`` raises the same message as on an empty
+        string, so the old emptiness guard let it through."""
+        self._export(client, "   ")
+
+    def test_empty_content_does_not_raise(self, client: TestClient) -> None:
+        self._export(client, "")

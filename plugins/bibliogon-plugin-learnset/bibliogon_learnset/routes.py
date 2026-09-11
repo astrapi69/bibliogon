@@ -42,17 +42,16 @@ def _skip_chapter_types() -> frozenset[str]:
 
 
 def _chapter_markdown(chapter: Chapter) -> str:
-    import json
+    """Chapter body as Markdown.
 
-    from bibliogon_export.tiptap_to_md import tiptap_to_markdown
+    Delegates to plugin-export's converter rather than parsing the
+    column here: an imported chapter holds HTML until the editor first
+    saves it, so a bare ``json.loads`` fails on every imported book
+    (#787).
+    """
+    from bibliogon_export.scaffolder import content_to_markdown
 
-    raw_content = chapter.content
-    if not raw_content:
-        return ""
-    doc = json.loads(raw_content) if isinstance(raw_content, str) else raw_content
-    if not isinstance(doc, dict):
-        return ""
-    return tiptap_to_markdown(doc)
+    return content_to_markdown(chapter.content)
 
 
 @router.get("/{book_id}/export")
