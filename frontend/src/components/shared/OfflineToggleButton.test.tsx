@@ -1,5 +1,10 @@
 /**
  * OfflineToggleButton (mobile-sync Phase 3, C3).
+ *
+ * The failure-path cases pin #769: the button must report through the
+ * ``notify`` seam, not react-toastify directly, so a failure during a
+ * backend outage is downgraded to a console warning instead of stacking
+ * a red toast next to the persistent banner (#765).
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
@@ -12,10 +17,15 @@ vi.mock("../../hooks/useI18n", () => ({
     setLang: vi.fn(),
   }),
 }));
-vi.mock("react-toastify", () => ({
-  toast: { success: vi.fn(), error: vi.fn() },
+vi.mock("../../utils/platform/notify", () => ({
+  notify: { success: vi.fn(), error: vi.fn() },
 }));
-vi.mock("../../storage/connectivity", () => ({ isOfflineEnabled: () => false }));
+// The component short-circuits to "not offline" unless offline capability
+// is enabled, so the removal case has to turn it on.
+const isOfflineEnabled = vi.fn(() => false);
+vi.mock("../../storage/connectivity", () => ({
+  isOfflineEnabled: () => isOfflineEnabled(),
+}));
 
 const downloadBookOffline = vi.fn().mockResolvedValue(undefined);
 const removeBookOffline = vi.fn().mockResolvedValue(undefined);
@@ -26,11 +36,15 @@ vi.mock("../../storage/offline-download", () => ({
   isBookOffline,
 }));
 
-import { toast } from "react-toastify";
+import { notify } from "../../utils/platform/notify";
 import { OfflineToggleButton } from "./OfflineToggleButton";
 
 beforeEach(() => {
   vi.clearAllMocks();
+  isOfflineEnabled.mockReturnValue(false);
+  isBookOffline.mockResolvedValue(false);
+  downloadBookOffline.mockResolvedValue(undefined);
+  removeBookOffline.mockResolvedValue(undefined);
 });
 afterEach(() => {
   vi.restoreAllMocks();
@@ -51,6 +65,64 @@ describe("OfflineToggleButton", () => {
         screen.getByTestId("offline-toggle").getAttribute("data-offline"),
       ).toBe("true"),
     );
-    expect(toast.success).toHaveBeenCalled();
+    expect(notify.success).toHaveBeenCalled();
+  });
+
+  it("reports a failed download through the notify seam (#769)", async () => {
+    const boom = new Error("disk full");
+    downloadBookOffline.mockRejectedValueOnce(boom);
+
+    render(<OfflineToggleButton bookId="b1" />);
+    fireEvent.click(await screen.findByTestId("offline-toggle"));
+
+    await waitFor(() => expect(notify.error).toHaveBeenCalledTimes(1));
+    expect(notify.success).not.toHaveBeenCalled();
+    expect(
+      screen.getByTestId("offline-toggle").getAttribute("data-offline"),
+    ).toBe("false");
+  });
+
+  it("passes the caught error to notify.error so it can be reported (#769)", async () => {
+    const boom = new Error("disk full");
+    downloadBookOffline.mockRejectedValueOnce(boom);
+
+    render(<OfflineToggleButton bookId="b1" />);
+    fireEvent.click(await screen.findByTestId("offline-toggle"));
+
+    await waitFor(() => expect(notify.error).toHaveBeenCalled());
+    expect(vi.mocked(notify.error).mock.calls[0][1]).toBe(boom);
+  });
+
+  it("reports a failed removal through the notify seam (#769)", async () => {
+    isOfflineEnabled.mockReturnValue(true);
+    isBookOffline.mockResolvedValue(true);
+    removeBookOffline.mockRejectedValueOnce(new Error("locked"));
+
+    render(<OfflineToggleButton bookId="b1" />);
+    await waitFor(() =>
+      expect(
+        screen.getByTestId("offline-toggle").getAttribute("data-offline"),
+      ).toBe("true"),
+    );
+    fireEvent.click(screen.getByTestId("offline-toggle"));
+
+    await waitFor(() => expect(notify.error).toHaveBeenCalledTimes(1));
+    expect(
+      screen.getByTestId("offline-toggle").getAttribute("data-offline"),
+    ).toBe("true");
+  });
+
+  it("re-enables the button after a failure so the user can retry", async () => {
+    downloadBookOffline.mockRejectedValueOnce(new Error("transient"));
+
+    render(<OfflineToggleButton bookId="b1" />);
+    fireEvent.click(await screen.findByTestId("offline-toggle"));
+
+    await waitFor(() => expect(notify.error).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(
+        (screen.getByTestId("offline-toggle") as HTMLButtonElement).disabled,
+      ).toBe(false),
+    );
   });
 });

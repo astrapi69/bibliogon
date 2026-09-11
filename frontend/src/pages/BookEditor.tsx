@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { api, ApiError, BookDetail } from "../api/client";
-import { toast } from "react-toastify";
 import { downloadBlob } from "../shared/utils/downloadBlob";
+import { notify } from "../utils/platform/notify";
 import ConflictResolutionDialog from "../components/import/ConflictResolutionDialog";
 import ChapterSidebar from "../components/book/ChapterSidebar";
 import { OfflineToggleButton } from "../components/shared/OfflineToggleButton";
@@ -170,13 +170,13 @@ export default function BookEditor() {
         try {
             const { blob, filename } = await api.learnset.download(bookId);
             downloadBlob(blob, filename);
-            toast.success(t("ui.sidebar.learnset_export_success", "Lernset exportiert"));
+            notify.success(t("ui.sidebar.learnset_export_success", "Lernset exportiert"));
         } catch (error) {
-            if (error instanceof ApiError) {
-                toast.error(error.detail);
-            } else {
-                toast.error(t("ui.sidebar.learnset_export_failed", "Lernset-Export fehlgeschlagen"));
-            }
+            const detail =
+                error instanceof ApiError
+                    ? error.detail
+                    : t("ui.sidebar.learnset_export_failed", "Lernset-Export fehlgeschlagen");
+            notify.error(detail, error);
         }
     };
 
