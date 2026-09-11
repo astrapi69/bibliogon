@@ -55,9 +55,7 @@ def _patch_git_repo(monkeypatch: pytest.MonkeyPatch, clone_impl):
     # sees _MockRepo instead of the real Repo class, causing spurious
     # AttributeError: '_MockRepo' has no attribute 'init' failures in
     # downstream tests that call Repo.init().
-    monkeypatch.setattr(
-        sys.modules["git"], "Repo", _MockRepo, raising=False
-    )
+    monkeypatch.setattr(sys.modules["git"], "Repo", _MockRepo, raising=False)
     monkeypatch.setattr(gh, "Repo", _MockRepo, raising=False)
 
 
@@ -75,9 +73,7 @@ def test_plugin_git_sync_handler_is_registered_at_lifespan(
     )
 
 
-def test_detect_plus_execute_end_to_end_with_mocked_clone(
-    client: TestClient, monkeypatch
-) -> None:
+def test_detect_plus_execute_end_to_end_with_mocked_clone(client: TestClient, monkeypatch) -> None:
     """Happy path: detect/git -> mocked clone into staging ->
     WbtImportHandler detect -> execute -> Book row with chapters.
     Covers the full orchestrator<->plugin<->handler contract."""
@@ -112,9 +108,7 @@ def test_detect_plus_execute_end_to_end_with_mocked_clone(
     assert any("Introduction" in ch["title"] for ch in book["chapters"])
 
 
-def test_detect_git_maps_clone_failure_to_502(
-    client: TestClient, monkeypatch
-) -> None:
+def test_detect_git_maps_clone_failure_to_502(client: TestClient, monkeypatch) -> None:
     """Any exception from ``Repo.clone_from`` must surface as a 502
     with the exception message in ``detail``, not a 500 with a raw
     traceback. Regression guard: a generic 500 here loses the
@@ -157,9 +151,7 @@ def test_detect_git_passes_branch_to_clone(client: TestClient, monkeypatch) -> N
     assert seen_branches == ["main-de"]
 
 
-def test_two_branches_of_same_url_import_as_two_books(
-    client: TestClient, monkeypatch
-) -> None:
+def test_two_branches_of_same_url_import_as_two_books(client: TestClient, monkeypatch) -> None:
     """#760: translation branches share the manuscript file layout, so
     without a branch-aware clone target they would collide in the
     folder-signature duplicate check. Both must import."""
@@ -173,14 +165,10 @@ def test_two_branches_of_same_url_import_as_two_books(
 
     created_ids = []
     for branch in ("main", "main-de"):
-        detect = client.post(
-            "/api/import/detect/git", json={"git_url": url, "branch": branch}
-        )
+        detect = client.post("/api/import/detect/git", json={"git_url": url, "branch": branch})
         assert detect.status_code == 200, detect.text
         body = detect.json()
-        assert body["duplicate"]["found"] is False, (
-            f"branch {branch} collided: {body['duplicate']}"
-        )
+        assert body["duplicate"]["found"] is False, f"branch {branch} collided: {body['duplicate']}"
         execute = client.post(
             "/api/import/execute",
             json={"temp_ref": body["temp_ref"], "duplicate_action": "create"},
@@ -190,9 +178,7 @@ def test_two_branches_of_same_url_import_as_two_books(
 
     assert len(set(created_ids)) == 2
 
-    reimport = client.post(
-        "/api/import/detect/git", json={"git_url": url, "branch": "main-de"}
-    )
+    reimport = client.post("/api/import/detect/git", json={"git_url": url, "branch": "main-de"})
     assert reimport.status_code == 200, reimport.text
     assert reimport.json()["duplicate"]["found"] is True
     client.post(
@@ -201,9 +187,7 @@ def test_two_branches_of_same_url_import_as_two_books(
     )
 
 
-def test_detect_git_rejects_leading_dash_branch(
-    client: TestClient, monkeypatch
-) -> None:
+def test_detect_git_rejects_leading_dash_branch(client: TestClient, monkeypatch) -> None:
     """A branch starting with '-' could be parsed as a git option
     (option-injection class); pydantic must reject it before any
     clone attempt."""
@@ -220,9 +204,7 @@ def test_detect_git_rejects_leading_dash_branch(
     assert resp.status_code == 422, resp.text
 
 
-def test_detect_git_rejects_malformed_url(
-    client: TestClient, monkeypatch
-) -> None:
+def test_detect_git_rejects_malformed_url(client: TestClient, monkeypatch) -> None:
     """can_handle() filters out inputs that are obviously not git
     URLs before we attempt a clone. Ends up as 415 (no remote
     handler recognises the input), not 502."""
@@ -234,7 +216,168 @@ def test_detect_git_rejects_malformed_url(
 
     _patch_git_repo(monkeypatch, _clone_panic)
 
-    resp = client.post(
-        "/api/import/detect/git", json={"git_url": "ftp://nope/repo"}
-    )
+    resp = client.post("/api/import/detect/git", json={"git_url": "ftp://nope/repo"})
     assert resp.status_code == 415, resp.text
+
+
+def test_git_identifier_alone_marks_a_duplicate(client: TestClient, monkeypatch) -> None:
+    """#762: the duplicate check must key on the stable (url, branch)
+    pair, not only on the WBT folder signature.
+
+    The signature hashes the staging directory NAME, so anything that
+    changes it silently makes an already-imported repo look new - the
+    slug fix in this change did exactly that to 5 of the author's 43
+    books. Books repaired by the backfill carry ONLY a ``git:`` row
+    (their original signature is unrecoverable), so detect must
+    recognise them from that row alone.
+    """
+    from app.database import SessionLocal
+    from app.models import Book, BookImportSource
+    from app.services.translation_import import git_source_identifier
+
+    def _clone(_url: str, to_path: str, **_kwargs) -> None:
+        _build_wbt(Path(to_path), title="Backfilled Book")
+
+    _patch_git_repo(monkeypatch, _clone)
+    url = "https://github.com/astrapi69/backfilled-identity"
+
+    session = SessionLocal()
+    book = Book(title="Backfilled Book", author="Test", language="en")
+    session.add(book)
+    session.flush()
+    book_id = book.id
+    session.add(
+        BookImportSource(
+            book_id=book_id,
+            source_identifier=git_source_identifier(url, "main"),
+            source_type="git",
+            format_name="wbt-zip",
+        )
+    )
+    session.commit()
+    session.close()
+
+    try:
+        detect = client.post("/api/import/detect/git", json={"git_url": url, "branch": "main"})
+        assert detect.status_code == 200, detect.text
+        duplicate = detect.json()["duplicate"]
+        assert duplicate["found"] is True, (
+            "a book carrying only the git: row must still be recognised"
+        )
+        assert duplicate["existing_book_id"] == book_id
+        client.post(
+            "/api/import/execute",
+            json={"temp_ref": detect.json()["temp_ref"], "duplicate_action": "cancel"},
+        )
+    finally:
+        session = SessionLocal()
+        for row in session.query(BookImportSource).filter(BookImportSource.book_id == book_id):
+            session.delete(row)
+        stale = session.get(Book, book_id)
+        if stale is not None:
+            session.delete(stale)
+        session.commit()
+        session.close()
+
+
+def test_same_repo_other_branch_is_not_a_duplicate(client: TestClient, monkeypatch) -> None:
+    """The branch is part of the identity: a sibling translation
+    branch of an imported repo is a new book, not a duplicate."""
+    from app.database import SessionLocal
+    from app.models import Book, BookImportSource
+    from app.services.translation_import import git_source_identifier
+
+    def _clone(_url: str, to_path: str, **kwargs) -> None:
+        _build_wbt(Path(to_path), title=f"Branch {kwargs.get('branch')}")
+
+    _patch_git_repo(monkeypatch, _clone)
+    url = "https://github.com/astrapi69/two-branch-identity"
+
+    session = SessionLocal()
+    book = Book(title="Branch main", author="Test", language="en")
+    session.add(book)
+    session.flush()
+    book_id = book.id
+    session.add(
+        BookImportSource(
+            book_id=book_id,
+            source_identifier=git_source_identifier(url, "main"),
+            source_type="git",
+            format_name="wbt-zip",
+        )
+    )
+    session.commit()
+    session.close()
+
+    try:
+        other = client.post("/api/import/detect/git", json={"git_url": url, "branch": "main-de"})
+        assert other.status_code == 200, other.text
+        assert other.json()["duplicate"]["found"] is False
+        client.post(
+            "/api/import/execute",
+            json={"temp_ref": other.json()["temp_ref"], "duplicate_action": "cancel"},
+        )
+    finally:
+        session = SessionLocal()
+        for row in session.query(BookImportSource).filter(BookImportSource.book_id == book_id):
+            session.delete(row)
+        stale = session.get(Book, book_id)
+        if stale is not None:
+            session.delete(stale)
+        session.commit()
+        session.close()
+
+
+def test_group_repo_without_branch_matches_any_imported_branch(
+    client: TestClient, monkeypatch
+) -> None:
+    """#762: a catalog entry without a branch means "import this repo's
+    whole translation group". Such a repo may have no `main` book at
+    all (Die-Geister-der-Zeit carries main-de + main-en), so the
+    duplicate check must match ANY already-imported branch of it rather
+    than looking for `#main`."""
+    from app.database import SessionLocal
+    from app.models import Book, BookImportSource
+    from app.services.translation_import import git_source_identifier
+
+    def _clone(_url: str, to_path: str, **_kwargs) -> None:
+        _build_wbt(Path(to_path), title="Group Repo Book")
+
+    _patch_git_repo(monkeypatch, _clone)
+    url = "https://github.com/astrapi69/group-no-main"
+
+    session = SessionLocal()
+    book = Book(title="Group Repo Book DE", author="Test", language="de")
+    session.add(book)
+    session.flush()
+    book_id = book.id
+    session.add(
+        BookImportSource(
+            book_id=book_id,
+            source_identifier=git_source_identifier(url, "main-de"),
+            source_type="git",
+            format_name="wbt-zip",
+        )
+    )
+    session.commit()
+    session.close()
+
+    try:
+        detect = client.post("/api/import/detect/git", json={"git_url": url})
+        assert detect.status_code == 200, detect.text
+        assert detect.json()["duplicate"]["found"] is True, (
+            "a branchless (whole-group) request must see the imported group"
+        )
+        client.post(
+            "/api/import/execute",
+            json={"temp_ref": detect.json()["temp_ref"], "duplicate_action": "cancel"},
+        )
+    finally:
+        session = SessionLocal()
+        for row in session.query(BookImportSource).filter(BookImportSource.book_id == book_id):
+            session.delete(row)
+        stale = session.get(Book, book_id)
+        if stale is not None:
+            session.delete(stale)
+        session.commit()
+        session.close()

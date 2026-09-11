@@ -180,15 +180,11 @@ def test_list_siblings_excludes_self_and_sorts_by_language(
     assert all(s.book_id != en.id for s in siblings)
 
 
-def test_list_siblings_returns_empty_when_unlinked(
-    db: Session, three_books: list[Book]
-) -> None:
+def test_list_siblings_returns_empty_when_unlinked(db: Session, three_books: list[Book]) -> None:
     assert list_siblings(db, book_id=three_books[0].id) == []
 
 
-def test_list_siblings_hides_soft_deleted_books(
-    db: Session, three_books: list[Book]
-) -> None:
+def test_list_siblings_hides_soft_deleted_books(db: Session, three_books: list[Book]) -> None:
     from datetime import UTC, datetime
 
     de, en, es = three_books
@@ -209,9 +205,7 @@ def test_get_siblings_returns_404_for_unknown_book() -> None:
     assert resp.status_code == 404
 
 
-def test_get_siblings_returns_empty_for_unlinked(
-    db: Session, three_books: list[Book]
-) -> None:
+def test_get_siblings_returns_empty_for_unlinked(db: Session, three_books: list[Book]) -> None:
     resp = client.get(f"/api/translations/{three_books[0].id}")
     assert resp.status_code == 200
     body = resp.json()
@@ -237,9 +231,7 @@ def test_link_endpoint_groups_books(db: Session, three_books: list[Book]) -> Non
     assert all(s["book_id"] != en.id for s in siblings)
 
 
-def test_link_endpoint_skips_unknown_book_ids(
-    db: Session, three_books: list[Book]
-) -> None:
+def test_link_endpoint_skips_unknown_book_ids(db: Session, three_books: list[Book]) -> None:
     resp = client.post(
         "/api/translations/link",
         json={"book_ids": [three_books[0].id, "ghost"]},
@@ -254,9 +246,7 @@ def test_link_endpoint_rejects_too_few_ids() -> None:
     assert resp.status_code == 422
 
 
-def test_unlink_endpoint_idempotent_returns_204(
-    db: Session, three_books: list[Book]
-) -> None:
+def test_unlink_endpoint_idempotent_returns_204(db: Session, three_books: list[Book]) -> None:
     link_books(db, book_ids=[three_books[0].id, three_books[1].id])
 
     resp = client.post(f"/api/translations/{three_books[0].id}/unlink")
@@ -302,17 +292,13 @@ def _seed_translation_repo(repo_root, branches: dict[str, str]) -> None:
             f"title: Bridge Book\nauthor: Aster\nlanguage: {language}\n",
             encoding="utf-8",
         )
-        (manuscript / "01-intro.md").write_text(
-            f"# Intro\n\n{language} body\n", encoding="utf-8"
-        )
+        (manuscript / "01-intro.md").write_text(f"# Intro\n\n{language} body\n", encoding="utf-8")
         repo.git.add(A=True)
         repo.index.commit(f"branch {branch_name}")
         repo.git.checkout("main")
 
 
-def test_import_translation_group_creates_one_book_per_branch(
-    db: Session, tmp_path
-) -> None:
+def test_import_translation_group_creates_one_book_per_branch(db: Session, tmp_path) -> None:
     """End-to-end: a 3-branch repo (main + main-fr + main-es) yields
     3 linked books, each with its own persisted clone + GitSyncMapping."""
     import shutil
@@ -330,7 +316,9 @@ def test_import_translation_group_creates_one_book_per_branch(
     uploads.mkdir()
 
     result = import_translation_group(
-        db, git_url=str(repo_root), uploads_dir=uploads,
+        db,
+        git_url=str(repo_root),
+        uploads_dir=uploads,
     )
     try:
         assert result.translation_group_id is not None
@@ -361,9 +349,7 @@ def test_import_translation_group_creates_one_book_per_branch(
         db.commit()
 
 
-def test_import_translation_group_raises_when_no_matching_branches(
-    db: Session, tmp_path
-) -> None:
+def test_import_translation_group_raises_when_no_matching_branches(db: Session, tmp_path) -> None:
     import git
 
     from app.services.translation_import import (
@@ -385,7 +371,9 @@ def test_import_translation_group_raises_when_no_matching_branches(
 
     with pytest.raises(NoMatchingBranchesError):
         import_translation_group(
-            db, git_url=str(repo_root), uploads_dir=uploads,
+            db,
+            git_url=str(repo_root),
+            uploads_dir=uploads,
         )
 
 
@@ -503,25 +491,19 @@ def _seed_repo_with_broken_branch(repo_root, branches: dict[str, str]) -> None:
         if language == "broken":
             # Wipe config dir so this branch lacks a WBT layout.
             (config / "metadata.yaml").unlink()
-            (manuscript / "01-intro.md").write_text(
-                "no metadata!\n", encoding="utf-8"
-            )
+            (manuscript / "01-intro.md").write_text("no metadata!\n", encoding="utf-8")
         else:
             (config / "metadata.yaml").write_text(
                 f"title: Bridge\nauthor: A\nlanguage: {language}\n",
                 encoding="utf-8",
             )
-            (manuscript / "01-intro.md").write_text(
-                f"# Intro\n\n{language}\n", encoding="utf-8"
-            )
+            (manuscript / "01-intro.md").write_text(f"# Intro\n\n{language}\n", encoding="utf-8")
         repo.git.add(A=True)
         repo.index.commit(f"branch {branch_name}")
         repo.git.checkout("main")
 
 
-def test_import_translation_group_records_skipped_no_wbt_layout(
-    db: Session, tmp_path
-) -> None:
+def test_import_translation_group_records_skipped_no_wbt_layout(db: Session, tmp_path) -> None:
     """Branch without config/metadata.yaml lands in skipped[] with
     reason='no_wbt_layout', and successful sibling branches still
     import + link normally."""
@@ -540,7 +522,9 @@ def test_import_translation_group_records_skipped_no_wbt_layout(
     uploads.mkdir()
 
     result = import_translation_group(
-        db, git_url=str(repo_root), uploads_dir=uploads,
+        db,
+        git_url=str(repo_root),
+        uploads_dir=uploads,
     )
     try:
         assert len(result.books) == 2
@@ -588,17 +572,24 @@ def test_import_translation_group_records_skipped_import_failed(
     # Force the WBT importer to raise for the FR branch only.
     real_import = ti._import_one_branch
 
-    def patched(db, *, repo, staging, branch, uploads_dir):
+    def patched(db, *, repo, staging, branch, uploads_dir, origin_url=""):
         if branch == "main-fr":
             raise RuntimeError("incompatible chapter structure")
         return real_import(
-            db, repo=repo, staging=staging, branch=branch, uploads_dir=uploads_dir,
+            db,
+            repo=repo,
+            staging=staging,
+            branch=branch,
+            uploads_dir=uploads_dir,
+            origin_url=origin_url,
         )
 
     monkeypatch.setattr(ti, "_import_one_branch", patched)
 
     result = import_translation_group(
-        db, git_url=str(repo_root), uploads_dir=uploads,
+        db,
+        git_url=str(repo_root),
+        uploads_dir=uploads,
     )
     try:
         assert len(result.books) == 1
@@ -622,9 +613,7 @@ def test_import_translation_group_records_skipped_import_failed(
         db.commit()
 
 
-def test_multi_branch_endpoint_payload_includes_skipped(
-    db: Session, tmp_path
-) -> None:
+def test_multi_branch_endpoint_payload_includes_skipped(db: Session, tmp_path) -> None:
     """HTTP smoke: skipped[] surfaces in the response body so the
     wizard can render it. Default for clean imports is empty list."""
     import shutil
@@ -666,9 +655,7 @@ def test_multi_branch_endpoint_payload_includes_skipped(
             shutil.rmtree(_P("uploads") / "git-sync" / book_id, ignore_errors=True)
 
 
-def test_multi_branch_endpoint_default_skipped_is_empty_list(
-    db: Session, tmp_path
-) -> None:
+def test_multi_branch_endpoint_default_skipped_is_empty_list(db: Session, tmp_path) -> None:
     """Clean import: skipped[] is the empty list, not missing/null."""
     import shutil
 

@@ -70,6 +70,15 @@ def test_can_handle_tolerates_non_string() -> None:
         # slug is a last-ditch safe-ascii transform, not a semantic one.
         ("https://example.invalid/", "example.invalid"),
         ("https://example.invalid/weird name with spaces.git", "weird-name-with-spaces"),
+        # Regression (#762): the old rstrip(".git") stripped CHARACTERS
+        # from the set {., g, i, t}, not the suffix - so a repo whose
+        # name ends in any of them lost letters. "Die-Geister-der-Zeit"
+        # became "Die-Geister-der-Ze" in the live staging dirs, which
+        # then poisoned GitSyncMapping.repo_url.
+        ("https://github.com/astrapi69/Die-Geister-der-Zeit", "Die-Geister-der-Zeit"),
+        ("https://github.com/astrapi69/Die-Geister-der-Zeit.git", "Die-Geister-der-Zeit"),
+        ("https://example.invalid/my-digit", "my-digit"),
+        ("https://example.invalid/plain-git", "plain-git"),
     ],
 )
 def test_slug_from_url(url: str, expected: str) -> None:
