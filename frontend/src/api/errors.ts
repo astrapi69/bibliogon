@@ -31,10 +31,18 @@ export class ApiError extends Error {
   offline = false;
   /** True when the request died at the NETWORK level (fetch TypeError:
    *  backend down, connection refused, DNS). Classified centrally in
-   *  `guardedFetch` (#765) with `status: 0`. Consumers must not toast
-   *  these - the persistent backend-unreachable banner is the one
-   *  surface; `notify.error` downgrades them like `offline`. */
+   *  `guardedFetch` (#765) with `status: 0`. Says nothing about WHY;
+   *  see `backendDown` for that. */
   network = false;
+  /** True when an immediate `/api/health` probe confirmed the backend
+   *  is gone, i.e. this network failure is a global outage rather than
+   *  one request's problem. Only then must the error stay silent: the
+   *  persistent banner is the one surface and `notify.error` downgrades
+   *  it like `offline`. A network failure the probe did NOT confirm
+   *  (a reset on one oversized upload, a stalled long-running export)
+   *  keeps its toast, because the banner would flicker away without
+   *  ever telling the user what failed (#770). */
+  backendDown = false;
 
   constructor(
     status: number,

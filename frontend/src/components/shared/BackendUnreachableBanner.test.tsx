@@ -5,6 +5,10 @@
  * itself is online (a device-offline situation belongs to the
  * existing OfflineBanner - both at once would be noise); disappears
  * on recovery without a reload.
+ *
+ * Since #770 the store confirms a reported failure with one /api/health
+ * probe before going down, so these cases keep the backend dead for
+ * that probe too.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
@@ -21,6 +25,14 @@ vi.mock("../../hooks/useI18n", () => ({
   }),
 }));
 
+/** Establish a CONFIRMED outage (#770): request and probe both fail. */
+async function goDown() {
+  vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
+  await act(async () => {
+    await backendReachability.reportNetworkFailure();
+  });
+}
+
 describe("BackendUnreachableBanner", () => {
   beforeEach(() => {
     backendReachability.resetForTests();
@@ -36,11 +48,9 @@ describe("BackendUnreachableBanner", () => {
     expect(screen.queryByTestId("backend-unreachable-banner")).toBeNull();
   });
 
-  it("appears on down and disappears again on recovery", () => {
+  it("appears on down and disappears again on recovery", async () => {
     render(<BackendUnreachableBanner />);
-    act(() => {
-      backendReachability.reportNetworkFailure();
-    });
+    await goDown();
     expect(screen.getByTestId("backend-unreachable-banner")).toBeTruthy();
 
     act(() => {
@@ -50,15 +60,14 @@ describe("BackendUnreachableBanner", () => {
   });
 
   it("offers a retry action that probes the backend", async () => {
+    render(<BackendUnreachableBanner />);
+    await goDown();
+
+    // The backend comes back; the retry button is what notices.
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(new Response("{}", { status: 200 })),
     );
-    render(<BackendUnreachableBanner />);
-    act(() => {
-      backendReachability.reportNetworkFailure();
-    });
-
     await act(async () => {
       fireEvent.click(screen.getByTestId("backend-unreachable-retry"));
     });
