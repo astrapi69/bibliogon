@@ -14,6 +14,7 @@
 import React from 'react'
 import {toast} from 'react-toastify'
 import {ApiError} from '../../api/client'
+import {backendReachability} from '../../api/backendReachability'
 
 // Truncate the visible error message so the toast stays readable.
 // The full detail is still embedded in the ErrorReportDialog body.
@@ -223,6 +224,17 @@ export const notify = {
       console.warn(`[offline] ${message} (${err.endpoint})`)
       return
     }
+    // Network-level failures (#765): the persistent backend-unreachable
+    // banner is the ONE surface. Per-call red toasts during an outage are
+    // noise (and each carried a useless TypeError issue report), so they
+    // downgrade to console warnings exactly like the offline guard above.
+    // The store check also covers the ~22 call sites that pass a message
+    // only (no error object) - per-error classification can never reach
+    // those, and during an outage every one of them is a network failure.
+    if (err?.network || backendReachability.isDown()) {
+      console.warn(`[backend-unreachable] ${message}${err ? ` (${err.endpoint})` : ''}`)
+      return
+    }
     recordToast('error', message)
     return toast.error(React.createElement(ErrorContent, {message, apiError: err}), {
       autoClose: 15000,
@@ -230,6 +242,14 @@ export const notify = {
     })
   },
   saveError: (message: string, onRetry: () => void, retryLabel: string) => {
+    // Autosave fires on a timer, so during an outage this persistent
+    // (autoClose:false) toast reappeared on every tick. The banner already
+    // states the cause and carries the retry; the editor keeps its own
+    // save-status indicator. (#765)
+    if (backendReachability.isDown()) {
+      console.warn(`[backend-unreachable] ${message}`)
+      return
+    }
     recordToast('error', message)
     return toast.error(
       React.createElement(SaveErrorContent, {message, onRetry, retryLabel}),

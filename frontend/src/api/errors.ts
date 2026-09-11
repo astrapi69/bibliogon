@@ -29,6 +29,12 @@ export class ApiError extends Error {
    *  it to a console warning instead of a user-facing error toast: a
    *  backend-only surface being unavailable offline is expected, not a fault. */
   offline = false;
+  /** True when the request died at the NETWORK level (fetch TypeError:
+   *  backend down, connection refused, DNS). Classified centrally in
+   *  `guardedFetch` (#765) with `status: 0`. Consumers must not toast
+   *  these - the persistent backend-unreachable banner is the one
+   *  surface; `notify.error` downgrades them like `offline`. */
+  network = false;
 
   constructor(
     status: number,
