@@ -15,7 +15,7 @@
   "backend/app/services/backup": 13,
   "backend/app/services/git": 12,
   "frontend/src/ai": 21,
-  "frontend/src/api": 20,
+  "frontend/src/api": 21,
   "frontend/src/components/articles": 39,
   "frontend/src/components/book": 52,
   "frontend/src/components/comics": 31,

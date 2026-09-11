@@ -19,7 +19,7 @@
  * BEFORE any fetch, and the probe additionally refuses to start there.
  */
 
-import { BASE, isBackendlessOffline } from "./http";
+import { BASE, isBackendlessOffline } from "./apiBase";
 
 const PROBE_INTERVAL_MS = 10_000;
 

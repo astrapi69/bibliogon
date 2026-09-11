@@ -1,5 +1,12 @@
 import { ApiError } from "./errors";
+import { BASE, isBackendlessOffline } from "./apiBase";
 import { backendReachability } from "./backendReachability";
+
+// Re-exported so the ~30 existing `import { BASE } from "./http"` and
+// `isBackendlessOffline` call sites keep working; the definitions moved to
+// the leaf module apiBase.ts to break the http <-> backendReachability cycle
+// the madge gate rejects (#765).
+export { BASE, isBackendlessOffline };
 
 /**
  * Shared HTTP transport core for the typed API client.
@@ -10,30 +17,6 @@ import { backendReachability } from "./backendReachability";
  * helpers from here; `client.ts` re-exports `guardedFetch` for the existing
  * `import { guardedFetch } from "./client"` call sites.
  */
-
-/** Base path for every backend route. */
-export const BASE = "/api";
-
-/**
- * Backendless offline build / explicit Dexie pin. True on the GitHub-Pages
- * app (built with VITE_STORAGE_MODE=dexie) and whenever a session explicitly
- * pins Dexie via the `bibliogon.storage_mode` localStorage override (used by
- * the offline E2E). Read inline here - importing the storage module would
- * create a client<->storage cycle that degrades the `typeof api.*` types.
- *
- * NOT the LAN auto-offline case (connectivity-driven): there the seam still
- * serves data from Dexie, direct api.* calls degrade gracefully (caught), and
- * the sync engine replays on reconnect. Those surfaces are UI-gated
- * via the feature registry (useFeature). This guard's job is the no-backend build.
- */
-export function isBackendlessOffline(): boolean {
-  try {
-    if (localStorage.getItem("bibliogon.storage_mode") === "dexie") return true;
-  } catch {
-    /* localStorage unavailable */
-  }
-  return import.meta.env.VITE_STORAGE_MODE === "dexie";
-}
 
 /** Gateway statuses a reverse proxy emits when the backend behind it is
  *  dead. Measured 2026-09-11 (#765): the Vite dev proxy answers 502
