@@ -30,6 +30,11 @@ TRAILER_RE = re.compile(r"^\s*co-authored-by:\s*(?P<who>.+?)\s*$", re.IGNORECASE
 #: Substrings that mark a co-author as non-human. Matched case-insensitively
 #: against the whole trailer value (name plus e-mail), so both the display
 #: name and a vendor no-reply address trigger.
+#:
+#: ``users.noreply.github.com`` is deliberately NOT in this list (#779):
+#: GitHub hands that domain to every HUMAN who keeps their address
+#: private, so matching on it would refuse a legitimate co-author. Bots
+#: using the same domain still carry the ``[bot]`` suffix.
 NON_HUMAN_MARKERS = (
     "claude",
     "anthropic",
@@ -44,7 +49,6 @@ NON_HUMAN_MARKERS = (
     "[bot]",
     "bot@",
     "noreply@anthropic.com",
-    "users.noreply.github.com",
 )
 
 AUTHORIZED_MARKER = "co-authored-by-authorized-by:"
