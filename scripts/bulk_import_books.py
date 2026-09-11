@@ -13,6 +13,8 @@ Catalog format (see scripts/book-catalog.example.yaml)::
       - https://github.com/astrapi69/some-book
       - repo_url: https://github.com/astrapi69/other-book
         git_adoption: start_fresh   # optional, default adopt_with_remote
+      - repo_url: https://github.com/astrapi69/translated-book
+        branch: main-de             # optional, default: remote default branch
 
 Usage::
 
@@ -33,6 +35,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import urllib.error
 import urllib.request
@@ -43,6 +46,7 @@ from pathlib import Path
 import yaml
 
 VALID_GIT_ADOPTIONS = ("start_fresh", "adopt_with_remote", "adopt_without_remote")
+_BRANCH_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]*$")
 DEFAULT_BASE_URL = "http://localhost:8000/api"
 DEFAULT_TIMEOUT_SECONDS = 600.0
 
@@ -69,10 +73,14 @@ class TransportError(Exception):
 
 @dataclass(frozen=True)
 class CatalogEntry:
-    """One repo the catalog wants present as a book."""
+    """One repo (or one branch of a repo) the catalog wants present
+    as a book. ``branch=None`` clones the remote's default branch;
+    language-variant books living on branches like ``main-de`` set
+    it explicitly (#760)."""
 
     repo_url: str
     git_adoption: str = "adopt_with_remote"
+    branch: str | None = None
 
 
 @dataclass
@@ -93,12 +101,14 @@ def load_catalog(catalog_path: Path) -> list[CatalogEntry]:
     """Parse the YAML catalog into validated entries.
 
     Accepts plain-string entries (just the URL) and mapping entries
-    (``repo_url`` + optional ``git_adoption``).
+    (``repo_url`` + optional ``git_adoption`` + optional ``branch``).
+    Identity is (repo_url, branch): the same URL may appear once per
+    branch, which is how language-variant books share one repo.
 
     Raises:
         CatalogError: On a missing/empty ``books`` list, an entry
             without ``repo_url``, an unknown ``git_adoption`` value,
-            or a duplicate URL.
+            an invalid branch ref, or a duplicate (URL, branch) pair.
     """
     parsed = yaml.safe_load(catalog_path.read_text(encoding="utf-8"))
     raw_books = (parsed or {}).get("books")
@@ -106,12 +116,16 @@ def load_catalog(catalog_path: Path) -> list[CatalogEntry]:
         raise CatalogError(f"Catalog {catalog_path} has an empty or missing 'books' list.")
 
     entries: list[CatalogEntry] = []
-    seen_urls: set[str] = set()
+    seen_sources: set[tuple[str, str | None]] = set()
     for position, raw_entry in enumerate(raw_books, start=1):
         entry = _parse_entry(raw_entry, position)
-        if entry.repo_url in seen_urls:
-            raise CatalogError(f"Duplicate repo_url in catalog: {entry.repo_url}")
-        seen_urls.add(entry.repo_url)
+        source_key = (entry.repo_url, entry.branch)
+        if source_key in seen_sources:
+            raise CatalogError(
+                f"Duplicate repo_url+branch in catalog: {entry.repo_url}"
+                f" (branch {entry.branch or '<default>'})"
+            )
+        seen_sources.add(source_key)
         entries.append(entry)
     return entries
 
@@ -131,7 +145,15 @@ def _parse_entry(raw_entry: object, position: int) -> CatalogEntry:
                 f"Entry #{position}: git_adoption {git_adoption!r} is not one of "
                 f"{VALID_GIT_ADOPTIONS}."
             )
-        return CatalogEntry(repo_url=repo_url, git_adoption=git_adoption)
+        branch = raw_entry.get("branch")
+        if branch is not None:
+            branch = str(branch).strip()
+            if not _BRANCH_RE.match(branch):
+                raise CatalogError(
+                    f"Entry #{position}: branch {branch!r} is not a valid git ref "
+                    "(must start with an alphanumeric character)."
+                )
+        return CatalogEntry(repo_url=repo_url, git_adoption=git_adoption, branch=branch)
     raise CatalogError(f"Entry #{position}: expected a URL string or a mapping, got {raw_entry!r}.")
 
 
@@ -192,8 +214,11 @@ def process_entry(
     staging directory is dropped; only a real run on a missing book
     executes with ``duplicate_action=create``.
     """
+    detect_payload: dict = {"git_url": entry.repo_url}
+    if entry.branch:
+        detect_payload["branch"] = entry.branch
     try:
-        detect_response = post(f"{base_url}/import/detect/git", {"git_url": entry.repo_url})
+        detect_response = post(f"{base_url}/import/detect/git", detect_payload)
     except TransportError as exc:
         return RepoOutcome(repo_url=entry.repo_url, status="error", detail=exc.detail)
 

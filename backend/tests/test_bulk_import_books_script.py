@@ -57,6 +57,40 @@ class TestLoadCatalog:
         assert entries[0].repo_url == "https://github.com/astrapi69/book-one"
         assert entries[0].git_adoption == "start_fresh"
 
+    def test_mapping_entries_with_branch(self, tmp_path: Path) -> None:
+        catalog_path = write_catalog(
+            tmp_path,
+            "books:\n"
+            "  - repo_url: https://github.com/astrapi69/book-one\n"
+            "    branch: main-de\n"
+            "  - repo_url: https://github.com/astrapi69/book-one\n"
+            "    branch: main-en\n",
+        )
+        entries = bib.load_catalog(catalog_path)
+        assert [entry.branch for entry in entries] == ["main-de", "main-en"]
+
+    def test_same_url_with_different_branches_is_not_a_duplicate(self, tmp_path: Path) -> None:
+        catalog_path = write_catalog(
+            tmp_path,
+            "books:\n"
+            "  - repo_url: https://github.com/astrapi69/book-one\n"
+            "    branch: main-de\n"
+            "  - repo_url: https://github.com/astrapi69/book-one\n"
+            "    branch: main-de\n",
+        )
+        with pytest.raises(bib.CatalogError, match="[Dd]uplicate"):
+            bib.load_catalog(catalog_path)
+
+    def test_rejects_leading_dash_branch(self, tmp_path: Path) -> None:
+        catalog_path = write_catalog(
+            tmp_path,
+            "books:\n"
+            "  - repo_url: https://github.com/astrapi69/book-one\n"
+            "    branch: --upload-pack=evil\n",
+        )
+        with pytest.raises(bib.CatalogError, match="branch"):
+            bib.load_catalog(catalog_path)
+
     def test_rejects_entry_without_repo_url(self, tmp_path: Path) -> None:
         catalog_path = write_catalog(tmp_path, "books:\n  - git_adoption: start_fresh\n")
         with pytest.raises(bib.CatalogError, match="repo_url"):
@@ -182,6 +216,30 @@ class TestRunBulkImport:
         execute_calls = [payload for endpoint, payload in transport.calls if "execute" in endpoint]
         assert [payload["duplicate_action"] for payload in execute_calls] == ["cancel"]
 
+    def test_branch_forwarded_to_detect_payload(self) -> None:
+        url = "https://github.com/astrapi69/book-one"
+        transport = FakeTransport({url: {"duplicate_found": False}})
+        bib.run_bulk_import(
+            [bib.CatalogEntry(repo_url=url, branch="main-de")],
+            base_url=BASE_URL,
+            dry_run=True,
+            post=transport,
+        )
+        detect_calls = [payload for endpoint, payload in transport.calls if "detect" in endpoint]
+        assert detect_calls[0]["branch"] == "main-de"
+
+    def test_branch_omitted_from_detect_payload_when_unset(self) -> None:
+        url = "https://github.com/astrapi69/book-one"
+        transport = FakeTransport({url: {"duplicate_found": False}})
+        bib.run_bulk_import(
+            [bib.CatalogEntry(repo_url=url)],
+            base_url=BASE_URL,
+            dry_run=True,
+            post=transport,
+        )
+        detect_calls = [payload for endpoint, payload in transport.calls if "detect" in endpoint]
+        assert "branch" not in detect_calls[0]
+
     def test_adoption_omitted_when_clone_has_no_git_repo(self) -> None:
         """execute rejects git_adoption=adopt_* with 400 when the
         detected source has no .git/; the script must degrade to
@@ -294,6 +352,31 @@ class TestAgainstRealOrchestrator:
         book_listing = client.get("/api/books").json()
         matching = [book for book in book_listing if book["title"] == "Bulk Cycle Book"]
         assert len(matching) == 1
+
+    def test_two_branches_of_one_repo_become_two_books(
+        self, client, monkeypatch, tmp_path: Path
+    ) -> None:
+        """The real 45-book catalog carries language variants as
+        branches of one repo (#760); both must import distinctly."""
+
+        def _clone(_url: str, to_path: str, **kwargs) -> None:
+            branch = kwargs.get("branch") or "default"
+            _build_wbt(Path(to_path), title=f"Variant Book {branch}")
+
+        _patch_git_repo(monkeypatch, _clone)
+        url = "https://github.com/astrapi69/variant-book"
+        entries = [
+            bib.CatalogEntry(repo_url=url, branch="main", git_adoption="start_fresh"),
+            bib.CatalogEntry(repo_url=url, branch="main-de", git_adoption="start_fresh"),
+        ]
+        post = self._client_post(client)
+
+        outcomes = bib.run_bulk_import(entries, base_url="/api", dry_run=False, post=post)
+        assert [outcome.status for outcome in outcomes] == ["imported", "imported"]
+        assert len({outcome.book_id for outcome in outcomes}) == 2
+
+        rerun = bib.run_bulk_import(entries, base_url="/api", dry_run=False, post=post)
+        assert [outcome.status for outcome in rerun] == ["present", "present"]
 
     def test_dry_run_creates_nothing(self, client, monkeypatch, tmp_path: Path) -> None:
         def _clone(_url: str, to_path: str, **_kwargs) -> None:

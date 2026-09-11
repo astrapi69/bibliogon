@@ -14,10 +14,15 @@
 #     works immediately)
 #   - mapping with repo_url + optional git_adoption
 #     (start_fresh | adopt_with_remote | adopt_without_remote)
+#     + optional branch (default: the repo's default branch)
 #
-# The branch is always the repo's default branch (the backend clone
-# handler does not take a branch parameter).
+# The same repo_url may appear once per branch - that is how
+# language-variant books (main-de / main-en / ...) share one repo.
 books:
   - https://github.com/astrapi69/example-manuscript-one
   - repo_url: https://github.com/astrapi69/example-manuscript-two
     git_adoption: start_fresh
+  - repo_url: https://github.com/astrapi69/example-translated-book
+    branch: main
+  - repo_url: https://github.com/astrapi69/example-translated-book
+    branch: main-de

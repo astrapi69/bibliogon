@@ -38,11 +38,17 @@ class RemoteSourceHandler(Protocol):
         """Return True when this handler recognises the URL shape."""
         ...
 
-    def clone(self, url: str, target_dir: Path) -> Path:
+    def clone(self, url: str, target_dir: Path, branch: str | None = None) -> Path:
         """Materialise the remote source into ``target_dir`` and
         return the path the orchestrator should dispatch through
         ``find_handler()``. Usually ``target_dir`` itself or a
-        single subdirectory inside it."""
+        single subdirectory inside it.
+
+        ``branch`` (#760) selects a non-default ref; ``None`` keeps
+        the remote's default. Handlers must make the returned path
+        branch-distinct (e.g. ``<slug>@<branch>``) so content
+        signatures of same-layout branches do not collide in the
+        duplicate check."""
         ...
 
 
