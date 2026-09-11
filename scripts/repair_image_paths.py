@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 """Repair image paths in already-imported chapters (#789).
 
-Some manuscripts carry raw HTML written with German typographic quotes
-and a stray space before the extension::
+Chapters can carry raw HTML whose attribute quotes were replaced with
+typographic ones, plus a stray space before the extension::
 
     <img src=„assets/ewigkeit-das-selbst-02. png“ alt=„Schleife“ />
+
+The mark depends on the book's language - German ``„…“``, English
+``“…”``, French ``« … »``, Spanish and Greek ``«…»`` - so the repair has
+to know all of them (#789 covered German, #802 the guillemets).
 
 Per the HTML spec an unquoted attribute value ends at whitespace, so a
 parser reads that source as ``„assets/ewigkeit-das-selbst-02.`` - quote
