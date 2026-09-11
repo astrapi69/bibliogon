@@ -6,7 +6,7 @@ extraction) want READABLE PROSE with no markup at all - not Markdown
 syntax, which a TTS engine or a word-counter would read/count literally.
 """
 
-from bibliogon_export.html_to_markdown import html_to_plain_text
+from app.services.html_text import html_to_plain_text
 
 
 def test_strips_tags_and_keeps_the_text() -> None:

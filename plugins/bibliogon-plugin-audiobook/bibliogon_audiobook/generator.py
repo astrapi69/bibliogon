@@ -156,7 +156,7 @@ def extract_plain_text(content: object) -> str:
             # than returning it unchanged (#806). Genuine plain text
             # (no tags) has no markup to strip and passes through.
             if stripped.startswith("<"):
-                from bibliogon_export.html_to_markdown import html_to_plain_text
+                from app.services.html_text import html_to_plain_text
 
                 return html_to_plain_text(content)
             return content
