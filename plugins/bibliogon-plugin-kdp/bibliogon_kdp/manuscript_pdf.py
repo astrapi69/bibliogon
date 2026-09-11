@@ -127,22 +127,27 @@ img { max-width: 100%; }
 
 
 def _chapters_to_html(chapters: list[dict[str, Any]]) -> str:
-    """Render TipTap-JSON chapters to an HTML body.
+    """Render chapters to an HTML body, whatever shape their content is in.
 
-    Reuses plugin-export's ``tiptap_to_markdown`` converter and the
-    ``markdown`` library (both already in the runtime), keeping a single
-    TipTap-to-markup path rather than a second bespoke converter.
-    Chapters are emitted in ``position`` order, each wrapped in a
-    ``<section>`` with an ``<h1>`` title.
+    Reuses plugin-export's ``content_to_markdown`` (handles a TipTap doc
+    dict, a JSON string, HTML, and plain text - see #806) plus the
+    ``markdown`` library, keeping a single markup path rather than a
+    second bespoke converter. Chapters are emitted in ``position`` order,
+    each wrapped in a ``<section>`` with an ``<h1>`` title.
+
+    Previously this branched on ``isinstance(content, dict)`` and emitted
+    an empty section for everything else, so an imported chapter's print
+    PDF silently lost its text while its EPUB - routed through the same
+    converter this function now calls - kept it (#806).
     """
     import markdown as markdown_lib
-    from bibliogon_export.tiptap_to_md import tiptap_to_markdown
+    from bibliogon_export.scaffolder import content_to_markdown
 
     sections: list[str] = []
     for chapter in sorted(chapters, key=lambda c: c.get("position") or 0):
         title = chapter.get("title") or ""
         content = chapter.get("content")
-        body_md = tiptap_to_markdown(content) if isinstance(content, dict) else ""
+        body_md = content_to_markdown(content)
         body_html = markdown_lib.markdown(body_md or "", extensions=["extra"])
         heading = f"<h1>{html_lib.escape(title)}</h1>" if title else ""
         sections.append(f"<section>{heading}\n{body_html}</section>")
