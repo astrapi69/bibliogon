@@ -69,9 +69,12 @@ def test_layout_class_falls_back_for_unknown_layout() -> None:
 
 def test_speech_bubble_default_bottom_center_when_config_is_none() -> None:
     style = _speech_bubble_style(None)
+    # A centred axis is an OFFSET from the edge (half the remaining
+    # space), not `50%` plus a percentage translate, which WeasyPrint 70
+    # drops (#444). Defaults 40% wide / 30% high -> 30% and 35%.
     assert "bottom: 16pt" in style
-    assert "left: 50%" in style
-    assert "translateX(-50%)" in style
+    assert "left: 30%" in style
+    assert "transform: none" in style
     assert "rgba(255, 255, 255, 1.0)" in style or "rgba(255, 255, 255, 1)" in style
     assert "width: 40%" in style
 
@@ -83,8 +86,10 @@ def test_speech_bubble_default_bottom_center_when_config_is_none() -> None:
         ("top-right", ["top: 16pt", "right: 16pt", "transform: none"]),
         ("bottom-left", ["bottom: 16pt", "left: 16pt", "transform: none"]),
         ("bottom-right", ["bottom: 16pt", "right: 16pt", "transform: none"]),
-        ("center", ["top: 50%", "left: 50%", "translate(-50%, -50%)"]),
-        ("bottom-center", ["bottom: 16pt", "left: 50%", "translateX(-50%)"]),
+        # Centred axes carry an edge offset, not a percentage translate
+        # (#444): defaults 40% wide / 30% high -> left 30%, top 35%.
+        ("center", ["top: 35%", "left: 30%", "transform: none"]),
+        ("bottom-center", ["bottom: 16pt", "left: 30%", "transform: none"]),
     ],
 )
 def test_speech_bubble_anchor_variants(anchor: str, must_contain: list[str]) -> None:
@@ -137,26 +142,29 @@ def test_speech_bubble_finding_a_anchors_now_emit_correct_positions() -> None:
     Bug 1 closes the parallel gap in the backend's positions
     dict: those 3 anchors must now emit their distinct CSS
     rather than silently falling back to bottom-center."""
+    # A centred axis is an OFFSET from the edge (half the remaining
+    # space), not `50%` plus a percentage translate, which WeasyPrint 70
+    # drops (#444). Defaults 40% wide / 30% high -> 30% and 35%.
     top_center = _speech_bubble_style({"anchor_position": "top-center"})
     assert "top: 16pt" in top_center
-    assert "left: 50%" in top_center
-    assert "translateX(-50%)" in top_center
+    assert "left: 30%" in top_center
+    assert "transform: none" in top_center
 
     middle_left = _speech_bubble_style({"anchor_position": "middle-left"})
-    assert "top: 50%" in middle_left
+    assert "top: 35%" in middle_left
     assert "left: 16pt" in middle_left
-    assert "translateY(-50%)" in middle_left
+    assert "transform: none" in middle_left
 
     middle_right = _speech_bubble_style({"anchor_position": "middle-right"})
-    assert "top: 50%" in middle_right
+    assert "top: 35%" in middle_right
     assert "right: 16pt" in middle_right
-    assert "translateY(-50%)" in middle_right
+    assert "transform: none" in middle_right
 
 
 def test_speech_bubble_unknown_anchor_falls_back_to_bottom_center() -> None:
     style = _speech_bubble_style({"anchor_position": "garbage"})
     assert "bottom: 16pt" in style
-    assert "left: 50%" in style
+    assert "left: 30%" in style
 
 
 # --- 4c-B-2 C1: bubbles[0] wrapper-shape (NQ2 scope-anticipate) ---
@@ -222,8 +230,10 @@ def test_flat_top_level_keys_still_work_when_bubbles_absent() -> None:
             "bubble_height": 40,
         }
     )
-    assert "top: 50%" in style
-    assert "translate(-50%, -50%)" in style
+    # 60% wide / 40% high -> centred at (100-60)/2 = 20% and (100-40)/2 = 30%.
+    assert "top: 30%" in style
+    assert "left: 20%" in style
+    assert "transform: none" in style
     assert "rgba(255, 255, 255, 0.5)" in style
     assert "width: 60%" in style
     assert "height: 40%" in style
@@ -534,22 +544,31 @@ def test_image_full_text_overlay_text_position_top() -> None:
     out = _image_layout_style(
         "image_full_text_overlay", {"text_position": "top"}
     )
-    assert "top: 0" in out["region_text_style"]
-    assert "bottom: auto" in out["region_text_style"]
+    # The caption is a grid item sharing the image's cell since #444, so
+    # its placement is align-self / width, not offsets + a percentage
+    # transform (dropped by WeasyPrint 70, and out-of-flow it escaped
+    # the page from 67 on).
+    assert "align-self: start" in out["region_text_style"]
 
 
 def test_image_full_text_overlay_text_position_middle() -> None:
     out = _image_layout_style(
         "image_full_text_overlay", {"text_position": "middle"}
     )
-    assert "top: 50%" in out["region_text_style"]
-    assert "translateY(-50%)" in out["region_text_style"]
+    # The caption is a grid item sharing the image's cell since #444, so
+    # its placement is align-self / width, not offsets + a percentage
+    # transform (dropped by WeasyPrint 70, and out-of-flow it escaped
+    # the page from 67 on).
+    assert "align-self: center" in out["region_text_style"]
 
 
 def test_image_full_text_overlay_text_position_default_bottom() -> None:
     out = _image_layout_style("image_full_text_overlay", None)
-    assert "bottom: 0" in out["region_text_style"]
-    assert "top: auto" in out["region_text_style"]
+    # The caption is a grid item sharing the image's cell since #444, so
+    # its placement is align-self / width, not offsets + a percentage
+    # transform (dropped by WeasyPrint 70, and out-of-flow it escaped
+    # the page from 67 on).
+    assert "align-self: end" in out["region_text_style"]
     assert "rgba(0, 0, 0, 0.45)" in out["region_text_style"]
 
 
@@ -719,8 +738,7 @@ def test_overlay_text_container_width_default_full() -> None:
     """No text_container_width set → left: 0; right: 0 (full width)."""
     out = _image_layout_style("image_full_text_overlay", {})
     style = out["region_text_style"]
-    assert "left: 0" in style
-    assert "right: 0" in style
+    assert "width: 100%" in style
 
 
 def test_overlay_text_container_width_centers_with_side_offsets() -> None:
@@ -729,8 +747,10 @@ def test_overlay_text_container_width_centers_with_side_offsets() -> None:
         "image_full_text_overlay", {"text_container_width": 60}
     )
     style = out["region_text_style"]
-    assert "left: 20.0%" in style
-    assert "right: 20.0%" in style
+    # 60% wide, centred in its cell by justify-self rather than by equal
+    # left/right offsets (which only place a positioned box).
+    assert "width: 60%" in style
+    assert "justify-self: center" in style
 
 
 def test_overlay_text_container_width_clamped_to_range() -> None:
@@ -738,11 +758,11 @@ def test_overlay_text_container_width_clamped_to_range() -> None:
     out_low = _image_layout_style(
         "image_full_text_overlay", {"text_container_width": 5}
     )
-    assert "left: 35.0%" in out_low["region_text_style"]  # 30 clamped
+    assert "width: 30%" in out_low["region_text_style"]  # clamped up to 30
     out_high = _image_layout_style(
         "image_full_text_overlay", {"text_container_width": 200}
     )
-    assert "left: 0" in out_high["region_text_style"]  # 100 clamped
+    assert "width: 100%" in out_high["region_text_style"]  # clamped to 100
 
 
 def test_overlay_text_container_height_default_for_middle_position() -> None:
@@ -1735,7 +1755,7 @@ def test_render_page_image_full_text_overlay_position_top() -> None:
         ),
         {"a1": "file:///tmp/img.png"},
     )
-    assert "top: 0" in html
+    assert "align-self: start" in html
     assert "rgba(0, 0, 0, 0.6)" in html
 
 
@@ -3165,7 +3185,7 @@ def test_render_page_image_full_text_overlay_reads_through_namespace() -> None:
         ),
         {"a1": "file:///tmp/img.png"},
     )
-    assert "top: 0; bottom: auto" in html
+    assert "align-self: start" in html
     assert "rgba(0, 0, 0, 0.7)" in html
 
 
@@ -3192,7 +3212,7 @@ def test_render_page_sibling_namespaces_dont_bleed() -> None:
     # Image_full overlay middle position emits transform:
     # translateY(-50%). The sibling speech_bubble namespace must NOT
     # contribute its 16pt anchor positions.
-    assert "translateY(-50%)" in html
+    assert "align-self: center" in html
     assert "top: 16pt" not in html
     assert "left: 16pt" not in html
 
@@ -3234,12 +3254,17 @@ def _bubble_painted_rect(
     anchor: str, bubble_width_pct: int, bubble_height_pct: int
 ) -> tuple[float, float, float, float]:
     """Render a single speech-bubble page to PDF and return the painted
-    bubble rectangle as (width, height, translate_x, translate_y) in
+    bubble rectangle as (width, height, absolute_x, absolute_y) in
     WeasyPrint content-stream CSS pixels.
 
     The bubble fill is the largest non-page-sized rectangle painted in
-    the content stream; its preceding ``cm`` matrix carries the CSS
-    ``transform: translate(...)`` offsets (matrix elements e, f).
+    the content stream. The absolute position is the rectangle's own
+    origin PLUS the translation carried by the preceding ``cm`` matrix,
+    because the two are interchangeable ways to place the same box:
+    WeasyPrint 66 emitted a ``cm`` translate for a percentage CSS
+    ``transform``, 70 does not (it dropped the transform entirely, which
+    is what #444 caught). Asserting on the sum measures where the reader
+    actually sees the bubble instead of which mechanism placed it.
     """
     import zlib
 
@@ -3278,8 +3303,14 @@ def _bubble_painted_rect(
                 ctm = [float(value) for value in parts[:6]]
             if line.endswith(" re") and len(parts) == 5:
                 width = float(parts[2])
-                if 100.0 < width < 700.0 and ctm is not None:
-                    best = (width, float(parts[3]), ctm[4], ctm[5])
+                if 100.0 < width < 700.0:
+                    offset_x, offset_y = (ctm[4], ctm[5]) if ctm else (0.0, 0.0)
+                    best = (
+                        width,
+                        float(parts[3]),
+                        float(parts[0]) + offset_x,
+                        float(parts[1]) + offset_y,
+                    )
     assert best is not None, "no bubble rectangle painted in the PDF"
     return best
 
@@ -3302,25 +3333,127 @@ def test_speech_bubble_pdf_geometry_matches_editor_percentages() -> None:
     (96dpi), so 7.5in = 720px is the percentage reference.
     """
     content_px = 720.0
-    width_px, height_px, translate_x, translate_y = _bubble_painted_rect(
-        "bottom-center", 40, 30
-    )
+    margin_px = 48.0  # 0.5in at 96dpi
+    width_px, height_px, abs_x, _abs_y = _bubble_painted_rect("bottom-center", 40, 30)
     expected_width = content_px * 0.40
     expected_height = content_px * 0.30
     assert width_px == pytest.approx(expected_width, abs=2.0)
     assert height_px == pytest.approx(expected_height, abs=2.0)
-    assert translate_x == pytest.approx(-expected_width / 2, abs=2.0)
-    assert translate_y == pytest.approx(0.0, abs=2.0)
+    # Horizontally centred: equal gutters left and right of the bubble.
+    expected_x = margin_px + (content_px - expected_width) / 2
+    assert abs_x == pytest.approx(expected_x, abs=2.0)
 
 
-def test_speech_bubble_pdf_geometry_center_anchor_translates_both_axes() -> None:
-    """The center anchor uses translate(-50%, -50%); both offsets are
-    -50% of the rendered border-box dimensions."""
+def test_speech_bubble_pdf_geometry_center_anchor_centers_both_axes() -> None:
+    """The center anchor lands the bubble in the middle of the page on
+    BOTH axes: equal gutters left/right and top/bottom."""
     content_px = 720.0
-    width_px, height_px, translate_x, translate_y = _bubble_painted_rect("center", 50, 40)
+    margin_px = 48.0  # 0.5in at 96dpi
+    width_px, height_px, abs_x, abs_y = _bubble_painted_rect("center", 50, 40)
     expected_width = content_px * 0.50
     expected_height = content_px * 0.40
     assert width_px == pytest.approx(expected_width, abs=2.0)
     assert height_px == pytest.approx(expected_height, abs=2.0)
-    assert translate_x == pytest.approx(-expected_width / 2, abs=2.0)
-    assert translate_y == pytest.approx(-expected_height / 2, abs=2.0)
+    expected_x = margin_px + (content_px - expected_width) / 2
+    expected_y = margin_px + (content_px - expected_height) / 2
+    assert abs_x == pytest.approx(expected_x, abs=2.0)
+    assert abs_y == pytest.approx(expected_y, abs=2.0)
+
+
+import zlib  # noqa: E402  (module-scope for the #444 PDF pins)
+
+
+# --- #444: rendered-output pins for the overlay caption ---------------------
+#
+# The CSS-string tests above pin WHICH declarations are emitted. They all
+# passed while the caption was missing from every exported PDF on WeasyPrint
+# 66 and escaped onto a second sheet from 67 on, because neither failure is
+# visible in the declaration text. These two pin the rendered artifact
+# instead (lessons-learned "Coverage Illusion"). They parse the PDF with the
+# same zlib + content-stream approach as _bubble_painted_rect, so no test
+# dependency is added.
+
+
+def _overlay_pdf_bytes(text_position: str | None = None) -> bytes:
+    """Render a one-page overlay picture-book and return the PDF bytes."""
+    import weasyprint
+
+    config: dict[str, object] = {}
+    if text_position is not None:
+        config["text_position"] = text_position
+    page = _make_page(
+        layout="image_full_text_overlay",
+        text_content="Der Drache flog davon.",
+        layout_config={"image_full_text_overlay": config} if config else {},
+    )
+    html = _build_html({"title": "T", "language": "de"}, [page], {})
+    return weasyprint.HTML(string=html).write_pdf()
+
+
+def _sheet_count(pdf_bytes: bytes) -> int:
+    """Number of page objects in the PDF (``/Type /Pages`` excluded).
+
+    WeasyPrint writes PDF 1.5+ compressed object streams, so the page
+    dictionaries are inside zlib-compressed streams rather than in the raw
+    bytes - hence the decompress pass.
+    """
+    count = 0
+    for match in re.finditer(rb"stream\r?\n(.*?)endstream", pdf_bytes, re.S):
+        try:
+            data = zlib.decompress(match.group(1).strip(b"\r\n"))
+        except zlib.error:
+            continue
+        count += len(re.findall(rb"/Type\s*/Page(?![s])", data))
+    return count
+
+
+def _painted_rects(pdf_bytes: bytes) -> list[tuple[float, float, float, float]]:
+    """Every ``re`` rectangle in the content streams as (x, y, w, h)."""
+    rects: list[tuple[float, float, float, float]] = []
+    for match in re.finditer(rb"stream\r?\n(.*?)endstream", pdf_bytes, re.S):
+        raw = match.group(1)
+        try:
+            data = zlib.decompress(raw.strip(b"\r\n"))
+        except zlib.error:
+            data = raw
+        for line in data.decode("latin1", errors="replace").splitlines():
+            parts = line.split()
+            if line.endswith(" re") and len(parts) == 5:
+                try:
+                    rects.append(tuple(float(v) for v in parts[:4]))  # type: ignore[arg-type]
+                except ValueError:
+                    continue
+    return rects
+
+
+@pytest.mark.parametrize("text_position", [None, "top", "middle", "bottom"])
+def test_overlay_caption_renders_on_exactly_one_sheet(text_position: str | None) -> None:
+    """One picture-book page is one printed sheet, for every caption position.
+
+    From WeasyPrint 67 the out-of-flow caption escaped the page and produced
+    a SECOND sheet - fatal for a fixed-trim-size print book, where the sheet
+    count has to match the page count.
+    """
+    assert _sheet_count(_overlay_pdf_bytes(text_position)) == 1
+
+
+def test_overlay_caption_backdrop_is_painted_inside_the_page() -> None:
+    """The caption backdrop is actually painted, and within the page box.
+
+    On WeasyPrint 66 the absolutely-positioned caption was clipped away
+    entirely: the export silently dropped every overlay caption the author
+    had written. A painted backdrop rectangle of plausible caption size is
+    the evidence that the caption reached the page.
+    """
+    pdf_bytes = _overlay_pdf_bytes()
+    page_px = 720.0  # 8.5in trim less 0.5in margins, at 96dpi
+    backdrops = [
+        rect
+        for rect in _painted_rects(pdf_bytes)
+        if rect[2] > page_px * 0.5 and 0 < rect[3] < page_px * 0.5
+    ]
+    assert backdrops, "no caption backdrop painted - the caption never reached the page"
+    for x, y, width, height in backdrops:
+        assert x >= -1.0 and y >= -1.0
+        assert x + width <= page_px + 100.0
+        assert y + height <= page_px + 100.0
