@@ -141,6 +141,7 @@ nav:
 # AUTO-GENERATED-NAV-START (do not edit; regenerate via make sync-mkdocs-nav)
 - Erste Schritte: de/getting-started.md
 - Dialoge werden zu Seiten: de/dialog-to-pages.md
+- Portfolio: de/promotion/portfolio-board.md
 - Artikel:
   - Übersicht: de/articles.md
   - Massen-Export: de/articles/bulk-export.md

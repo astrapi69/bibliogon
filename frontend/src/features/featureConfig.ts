@@ -83,6 +83,7 @@ export const FEATURES = {
 
     GIT_SYNC: "git-sync",
     LEARNSET_EXPORT: "learnset-export",
+    PORTFOLIO_BOARD: "portfolio-board",
     GIT_BACKUP: "git-backup",
     TTS: "tts",
     LAN_MODE: "lan-mode",
@@ -210,6 +211,12 @@ const NEEDS_KEY_AND_NETWORK: readonly string[] = [FEATURES.AI_STORY_EXTRACTION];
  * the `.biblio.yaml` Export/Import round-trip calls backend `/api` with no
  * offline path, so it stays desktop-only even with a configured AI key.
  *
+ * `portfolio-board` (#810) is in this bucket for the same reason as the
+ * server-bound review surfaces: the per-format retail state lives in the
+ * `book_format_states` table that the promotion plugin owns, with no Dexie
+ * mirror and no client-side source for it, so offline there is nothing to
+ * read. It stays visible and explained rather than silently empty.
+ *
  * `learnset-export` (#763/#775) is a deliberate Maximal-Offline exception,
  * recorded in `.claude/rules/architecture.md`: the export assembles the alc
  * ZIP server-side and validates it against the vendored learn-content-engine
@@ -220,6 +227,7 @@ const DESKTOP_ONLY: readonly string[] = [
     FEATURES.GIT_SYNC,
     FEATURES.GIT_BACKUP,
     FEATURES.LEARNSET_EXPORT,
+    FEATURES.PORTFOLIO_BOARD,
     FEATURES.TTS,
     FEATURES.LAN_MODE,
     FEATURES.BACKUP_COMPARE,

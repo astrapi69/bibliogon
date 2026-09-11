@@ -39,6 +39,7 @@ import {
     Menu,
     Search,
     FileText,
+    LayoutGrid,
 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ImportWizardModal } from "../components/import-wizard";
@@ -407,6 +408,15 @@ export default function Dashboard() {
                             <div className={styles.headerSeparator} />
                             <button
                                 className="btn-icon"
+                                data-testid="portfolio-nav-btn"
+                                onClick={() => navigate("/portfolio")}
+                                title={t("ui.portfolio.title", "Portfolio")}
+                                aria-label={t("ui.portfolio.title", "Portfolio")}
+                            >
+                                <LayoutGrid size={18} />
+                            </button>
+                            <button
+                                className="btn-icon"
                                 onClick={() => navigate("/get-started")}
                                 title={t("ui.get_started.title", "Erste Schritte")}
                             >
@@ -500,6 +510,14 @@ export default function Dashboard() {
                                             {t("ui.dashboard.import", "Importieren")}
                                         </DropdownMenu.Item>
                                         <DropdownMenu.Separator className="hamburger-menu-separator" />
+                                        <DropdownMenu.Item
+                                            className="hamburger-menu-item"
+                                            data-testid="dashboard-hamburger-portfolio"
+                                            onSelect={() => navigate("/portfolio")}
+                                        >
+                                            <LayoutGrid size={16} />{" "}
+                                            {t("ui.portfolio.title", "Portfolio")}
+                                        </DropdownMenu.Item>
                                         <DropdownMenu.Item
                                             className="hamburger-menu-item"
                                             onSelect={() => navigate("/get-started")}

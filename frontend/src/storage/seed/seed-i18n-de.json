@@ -3828,6 +3828,42 @@
       "arc_send_mail": "E-Mail verfassen",
       "conflict_banner": "Die Buchmetadaten wurden seit der letzten Wizard-Sitzung geändert. Bitte Metadaten + Cover erneut bestätigen, bevor du das Paket erstellst.",
       "conflict_dismiss": "Hinweis schließen"
+    },
+    "portfolio": {
+      "title": "Portfolio",
+      "intro": "Welches Buch existiert in welchem Format - und welches Format fehlt noch.",
+      "column_book": "Buch",
+      "universal_link": "Universal-Link",
+      "universal_link_placeholder": "https://books2read.com/...",
+      "filter_author": "Pen Name",
+      "filter_language": "Sprache",
+      "filter_all": "Alle",
+      "filter_gaps_only": "Nur Lücken",
+      "filter_reset": "Filter zurücksetzen",
+      "status_label": "Status",
+      "store_url": "Shop-Link",
+      "store_url_placeholder": "https://...",
+      "open_store": "Shop",
+      "no_store_url": "kein Link",
+      "edit_store_url": "Shop-Link bearbeiten",
+      "no_gaps": "vollständig",
+      "saved": "Gespeichert",
+      "save_failed": "Speichern fehlgeschlagen",
+      "load_failed": "Portfolio konnte nicht geladen werden",
+      "empty_title": "Noch kein Buch im Portfolio",
+      "empty_body": "Sobald Bücher angelegt oder importiert sind, erscheinen sie hier mit einer Zeile pro Buch.",
+      "no_matches_title": "Keine Treffer",
+      "no_matches_body": "Kein Buch passt zu diesem Filter.",
+      "status": {
+        "live": "Im Verkauf",
+        "draft": "Entwurf",
+        "missing": "Fehlt"
+      },
+      "format": {
+        "ebook": "eBook",
+        "paperback": "Taschenbuch",
+        "hardcover": "Hardcover"
+      }
     }
   }
 }

@@ -19,6 +19,12 @@ navigation:
     icon: layout
 
   - title:
+      de: Portfolio
+      en: Portfolio
+    slug: promotion/portfolio-board
+    icon: layout-grid
+
+  - title:
       de: Artikel
       en: Articles
     slug: articles

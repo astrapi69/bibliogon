@@ -31,6 +31,18 @@ describe("featureRegistry", () => {
         }
     });
 
+    it("gates the portfolio board as desktop-only (server table, no Dexie mirror) (#810)", () => {
+        expect(featureRegistry.getState(FEATURES.PORTFOLIO_BOARD, API)).toBe("active");
+        expect(featureRegistry.getState(FEATURES.PORTFOLIO_BOARD, DEXIE_NO_KEY)).toBe("disabled");
+        // A configured AI key is irrelevant: the board reads a backend table.
+        expect(featureRegistry.getState(FEATURES.PORTFOLIO_BOARD, DEXIE_WITH_KEY)).toBe("disabled");
+        expect(featureRegistry.getReason(FEATURES.PORTFOLIO_BOARD, DEXIE_NO_KEY)).toBe(
+            FEATURE_REASON.REQUIRES_DESKTOP_APP,
+        );
+        // Policy #78: visible + explained, never hidden.
+        expect(featureRegistry.getState(FEATURES.PORTFOLIO_BOARD, DEXIE_NO_KEY)).not.toBe("hidden");
+    });
+
     it("gates the offline AI grammar/translation tools as key-dependent (#661)", () => {
         for (const id of [FEATURES.AI_GRAMMAR, FEATURES.AI_TRANSLATE]) {
             // Online the strategy abstains (the backend LanguageTool/DeepL path

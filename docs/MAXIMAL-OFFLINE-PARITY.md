@@ -33,6 +33,7 @@ See [`frontend/src/modules/README.md`](../frontend/src/modules/README.md) and
 | **translation** | DeepL / LMStudio translation + AI translation | _(no module)_ | `ai/text-tools/aiTextTools.ts` (browser-direct) + `components/TranslationLinks.tsx` (links) | **Yes** via the configured AI provider (browser-direct, key required, #661/#669); DeepL/LMStudio server path No | `ai-translate` (`REQUIRES_AI_KEY`); execution server: `translation` (`DESKTOP_ONLY`) |
 | **help** | In-app help | _(no module)_ | `storage/seed/seed-help*.json` | **Yes (static)** | active |
 | **getstarted** | Onboarding + sample book | _(no module)_ | `storage/seed/seed-getstarted.json` | **Yes (static)** | active |
+| **promotion** | Portfolio board: per-format retail state | _(no module)_ | — | **No** — the `book_format_states` table has no Dexie mirror and no client-side source | `portfolio-board` (`DESKTOP_ONLY`) |
 
 > The 11 `module-*` directories cover the plugins named in the #34 module plan.
 > Plugins whose offline behaviour is purely storage-seam CRUD (story-bible) or
