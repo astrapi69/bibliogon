@@ -85,6 +85,62 @@ class TestCommitMsgMode:
         assert result.returncode == 0, result.stdout + result.stderr
 
 
+class TestTrailerVariants:
+    """#779: the hook was merged untested and then blocked every commit.
+    These pin the shapes a real commit message can take."""
+
+    def test_trailer_in_the_middle_of_the_body_is_rejected(self, tmp_path: Path) -> None:
+        message = (
+            "feat(x): add a thing\n\n"
+            f"{CLAUDE}\n\n"
+            "More prose after the trailer, so it is not the last block.\n"
+        )
+        result = run_on_message(tmp_path, message)
+        assert result.returncode == 1
+
+    def test_indented_trailer_is_rejected(self, tmp_path: Path) -> None:
+        result = run_on_message(tmp_path, f"fix(y): thing\n\n    {CLAUDE}\n")
+        assert result.returncode == 1
+
+    def test_all_lowercase_trailer_key_is_rejected(self, tmp_path: Path) -> None:
+        message = "fix(y): thing\n\nco-authored-by: claude <noreply@anthropic.com>\n"
+        assert run_on_message(tmp_path, message).returncode == 1
+
+    def test_crlf_line_endings_are_rejected(self, tmp_path: Path) -> None:
+        result = run_on_message(tmp_path, f"fix(y): thing\r\n\r\n{CLAUDE}\r\n")
+        assert result.returncode == 1
+
+    def test_every_offender_is_reported_not_just_the_first(self, tmp_path: Path) -> None:
+        message = (
+            "feat(x): add a thing\n\n"
+            f"{CLAUDE}\n"
+            "Co-Authored-By: GitHub Copilot <copilot@github.com>\n"
+        )
+        result = run_on_message(tmp_path, message)
+        assert result.returncode == 1
+        output = result.stdout + result.stderr
+        assert "Claude" in output
+        assert "Copilot" in output
+
+    def test_human_with_a_github_privacy_address_passes(self, tmp_path: Path) -> None:
+        """`<id>+<user>@users.noreply.github.com` is what GitHub hands a
+        HUMAN who keeps their address private. Rejecting it would refuse
+        a legitimate co-author; bots are caught by the `[bot]` suffix."""
+        trailer = "Co-Authored-By: Jane Doe <1234567+janedoe@users.noreply.github.com>"
+        result = run_on_message(tmp_path, f"feat(x): pair work\n\n{trailer}\n")
+        assert result.returncode == 0, result.stdout + result.stderr
+
+    def test_bot_with_a_github_privacy_address_is_still_rejected(self, tmp_path: Path) -> None:
+        trailer = (
+            "Co-Authored-By: github-actions[bot] "
+            "<41898282+github-actions[bot]@users.noreply.github.com>"
+        )
+        assert run_on_message(tmp_path, f"chore: bump\n\n{trailer}\n").returncode == 1
+
+    def test_trailing_whitespace_after_the_value_is_ignored(self, tmp_path: Path) -> None:
+        assert run_on_message(tmp_path, f"fix(y): thing\n\n{CLAUDE}   \n").returncode == 1
+
+
 class TestCiRangeMode:
     def test_clean_range_passes(self) -> None:
         result = run_on_stdin(["feat: one", "fix: two\n\nBody"])

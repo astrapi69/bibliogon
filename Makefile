@@ -10,7 +10,7 @@
        mutmut-backend mutmut-export mutmut-ms-tools mutmut-results \
        check-types check-types-backend check-types-frontend \
        lint-frontend format-frontend pre-commit \
-       check-blockers archive-task archive-task-dry install-hooks verify-learnset-schema \
+       check-blockers archive-task archive-task-dry install-hooks verify-learnset-schema verify-learnset-upstream \
        sync-versions sync-versions-dry sync-versions-check \
        generate-trial-key \
        docs-install docs-build docs-serve \
@@ -319,6 +319,9 @@ test-plugin-medium-import: ## Run medium-import plugin tests
 
 verify-learnset-schema: ## Compare the vendored learn-content-engine artifacts against the pinned npm release (#775)
 	@python3 scripts/check_learnset_schema_drift.py
+
+verify-learnset-upstream: ## Report whether learn-content-engine published a newer release than the pin (#779)
+	@python3 scripts/check_learnset_upstream_release.py
 
 test-plugin-learnset: ## Run learnset plugin tests
 	@echo ""

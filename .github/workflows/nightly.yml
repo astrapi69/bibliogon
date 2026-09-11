@@ -29,6 +29,12 @@ on:
     - cron: "0 3 * * *"  # daily, 03:00 UTC
   workflow_dispatch:
 
+# The alarm + release-watcher jobs file and close issues (#779); everything
+# else only reads the repository.
+permissions:
+  contents: read
+  issues: write
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
@@ -53,6 +59,27 @@ jobs:
       # must not redden an unrelated PR.
       - name: Compare vendored artifacts against the pinned engine
         run: python scripts/check_learnset_schema_drift.py
+
+  learnset-upstream-release:
+    name: Learnset upstream release watcher
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+      # #779: the drift guard above compares against the PINNED version, so
+      # it only ever detects local tampering and stays green while the pin
+      # goes stale. This asks the registry whether upstream moved and files
+      # ONE deduplicated issue per new version. Advisory: never fails.
+      - name: Compare the pin against the published release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/check_learnset_upstream_release.py --open-issue
 
   plugin-tests:
     name: Plugin Tests (${{ matrix.plugin }})
@@ -283,3 +310,41 @@ jobs:
         run: |
           chmod +x scripts/check-file-sizes.sh
           scripts/check-file-sizes.sh
+
+  nightly-alarm:
+    name: Red-nightly alarm
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: always()
+    needs:
+      - learnset-schema-drift
+      - learnset-upstream-release
+      - plugin-tests
+      - backend-coverage
+      - plugin-coverage
+      - frontend-coverage
+      - python-complexity
+      - typescript-complexity
+      - file-size-check
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      # #779: a red nightly blocks no PR, which is why it can rot unnoticed
+      # (the web-speech spec was red for 14 consecutive nights, #711). Keep
+      # ONE tracking issue per workflow: opened on the first failure,
+      # commented on repeats, closed on the next green run.
+      - name: Open, update or close the tracking issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JOB_RESULTS: ${{ join(needs.*.result, ' ') }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          result=success
+          case "$JOB_RESULTS" in
+            *failure*|*timed_out*) result=failure ;;
+          esac
+          echo "job results: $JOB_RESULTS -> $result"
+          python scripts/nightly_alarm.py \
+            --workflow "Nightly" --result "$result" --run-url "$RUN_URL"
