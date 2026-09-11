@@ -2,10 +2,14 @@
  * Leaf module for the API base path + the backendless-build pin.
  *
  * Extracted from `http.ts` (#765) so `backendReachability` can read
- * both without importing the transport - `http.ts -> backendReachability
+ * these without importing the transport - `http.ts -> backendReachability
  * -> http.ts` is a cycle the madge gate rejects. `http.ts` re-exports
- * these, so every existing `import { BASE } from "./http"` call site
- * keeps working unchanged.
+ * BASE + isBackendlessOffline, so every existing
+ * `import { BASE } from "./http"` call site keeps working unchanged.
+ *
+ * `isProxyGatewayFailure` joined them for the same reason (#770): the
+ * reachability probe must apply the same proxy-vs-backend rule as the
+ * request path, or it reads a proxy's 502 as proof the backend answered.
  *
  * Deliberately dependency-free: importing anything here would put that
  * module back inside the cycle.
@@ -33,4 +37,22 @@ export function isBackendlessOffline(): boolean {
     /* localStorage unavailable */
   }
   return import.meta.env.VITE_STORAGE_MODE === "dexie";
+}
+
+/** Gateway statuses a reverse proxy emits when the backend behind it is
+ *  dead. Measured 2026-09-11 (#765): the Vite dev proxy answers 502
+ *  `text/plain` with an empty body, nginx (docker-compose.prod) answers
+ *  502 `text/html`. Only the "everything down" case (`make dev-down`)
+ *  rejects the fetch outright, so without this branch the outage banner
+ *  would never appear in the deployed topologies. */
+const GATEWAY_STATUSES = new Set([502, 503, 504]);
+
+/** True for a proxy-level gateway failure, false for a backend-authored one.
+ *  Bibliogon's own `ExternalServiceError` (Pandoc / TTS / LanguageTool) maps
+ *  to HTTP 502 too - but as `application/json` carrying a `detail` the user
+ *  must see. The content-type is the discriminator; the body is never read
+ *  here so the caller still owns the (unconsumed) response stream. */
+export function isProxyGatewayFailure(response: Response): boolean {
+  if (!GATEWAY_STATUSES.has(response.status)) return false;
+  return !(response.headers.get("Content-Type") || "").includes("application/json");
 }
