@@ -64,13 +64,97 @@
   Promotion -> Bulk-Stage-2 (Blocker #762).
 - Commit: `c867bbca`
 
+## 7. Session 10 Phase 1: plugin-learnset (10:30)
+
+- Original prompt: Buch -> Lernset-Export, nur Phase 1, ohne AI, TDD,
+  Library-First pruefen.
+- Verify-First: `learn-content-engine` 0.23.0 liegt lokal, wird aber nur
+  ueber npm publiziert. Kein PyPI-Paket, kein `[project]`/`[build-system]`
+  in seiner `pyproject.toml` - also keine pinbare Python-Abhaengigkeit.
+  Schemas + `python/lce_schema.py` werden vendored.
+- Ergebnis: `plugins/bibliogon-plugin-learnset` exportiert ein Buch als
+  schema-validiertes alc-ZIP. PR #766 (Issue #763).
+- Fehler unterwegs: der Eintrag in `app.yaml.example` war ein stiller
+  No-op - die Beispieldatei nutzt 2 statt 4 Leerzeichen Listeneinrueckung,
+  mein Anker traf nie. CI startete ohne das Plugin.
+
+## 8. #765 Backend-offline-Banner (10:50)
+
+- Original prompt (CCW-Lane): ein persistenter Banner statt Toast-Sturm,
+  Netzwerkfehler von fachlichen Fehlern trennen, kein aggressives Polling.
+- `backendReachability` pollt `/api/health` nur solange down, plus sofort
+  bei `window online`. `guardedFetch` klassifiziert jetzt: AbortError bleibt
+  unberuehrt, echte Netzwerkfehler werden `ApiError{status:0, network:true}`.
+- Empirisch gemessen statt angenommen: der Vite-Proxy liefert bei totem
+  Upstream `502 text/plain` (nginx: `502 text/html`), keinen TypeError.
+  Ohne die Content-Type-Unterscheidung waere der Banner in Produktion nie
+  gefeuert.
+- Madge-Zyklus `http.ts <-> backendReachability.ts` aufgeloest ueber das
+  Blatt-Modul `apiBase.ts`. PR #767.
+- Out-of-scope-Funde als eigene Issues: #769 (4 Komponenten umgehen
+  `notify`), #770 (request-spezifischer Fehler kurz als globaler Ausfall).
+
+## 9. Backup-Feedback + Hook-Enforcement (11:20)
+
+- Original prompt: "Backup in Buechern geht nicht mehr", dann "oeffnet nur
+  about:blank", dann "es dauert und es fehlt die Fortschrittsanzeige".
+- Ursache war nicht der Export, sondern `window.open(url, "_blank")` an zwei
+  Stellen: der Tab oeffnet sofort leer und bleibt es, bis der Server nach
+  ~20s antwortet. RCU-Extraktion `downloadFromUrl` + `useBackupExport`,
+  beide Call-Sites migriert. PR #772 (Issue #771).
+- Kein-`Co-Authored-By` von Disziplin auf Enforcement umgestellt:
+  `commit-msg`-Hook + CI-Job ueber alle PR-Commits (#768/#773).
+- Der Hook hat danach jeden Commit blockiert: ausgeliefert mit
+  `language: script`, aber Modus `100644` - "is not executable". Hotfix
+  PR #776 (`language: system` + `python3`-Entry + Modusbit + 2 Tests).
+
+## 10. #762 Translation-Group-Idempotenz + Altbestand (11:45)
+
+- Befund: der Gruppen-Import legte pro `execute` die ganze Gruppe neu an -
+  41 Katalogeintraege ergaben 112 Buecher. Die WBT-Ordnersignatur hasht den
+  Staging-Verzeichnisnamen und ist fuer Git-Quellen zu fragil.
+- Fix: stabile Identitaet `(repo_url, branch)` ueber `git_source_identifier`,
+  `BookImportSource`-Zeile je importiertem Branch, `_existing_book_for()`
+  ueberspringt bereits importierte Branches. Branchlose Anfragen matchen
+  ueber Praefix.
+- Nebenfund: `rstrip(".git")` frass Zeichen aus der Menge `{.,g,i,t}` -
+  ersetzt durch `removesuffix`.
+- Altbestand: `scripts/backfill_import_sources.py` (idempotent, `--dry-run`,
+  Slug-Recovery ueber den Katalog). 21 Gruppenbuecher mit toten
+  `/tmp/bibliogon_import_staging/...`-URLs repariert. Vorher DB-Backup.
+- PR #774. Regressionsnachweis `make import-books-check`: 25/25 present,
+  0 would import, 0 errors.
+
+## 11. #775 Learnset-Follow-up (12:00)
+
+- Schema-Drift wurde gemessen entschieden, nicht bevorzugt: kein PyPI-Paket,
+  kein Build-Backend - also Nightly-Guard statt Dependency.
+  `scripts/check_learnset_schema_drift.py` holt die gepinnte npm-Version
+  ueber `npm pack` und vergleicht die drei vendorten Artefakte byteweise.
+  Bewusst kein PR-Gate: ein fremdes Upstream-Release darf keinen fremden
+  PR rot faerben.
+- Version-Stamp: Pin in `vendor/engine-version.txt`, Export schreibt
+  `generated_by`/`engine_version`/`schema_version` in die Manifest-Metadaten
+  (dort `additionalProperties: true`).
+- Zwei Punkte brauchten keinen Code: der Smoke-Lauf sammelt
+  `e2e/smoke/learnset-export.spec.ts` schon ueber `testDir: "./smoke"`
+  naechtlich ein, und das Desktop-Gating ist eine bewusste
+  Maximal-Offline-Ausnahme (serverseitiger ZIP-Bau + Python-`jsonschema`).
+  Beides dokumentiert, die `DESKTOP_ONLY`-Liste in der Architektur-Regel
+  war ausserdem um drei Eintraege veraltet.
+- PR #777.
+
 ## Summary
 
-- PR #759 (squash `408250a8` auf develop, vom User gemergt): Script +
-  Branch-Support + author-Fix + 3 Exploration-Docs.
-- Issues: #758/#760/#761 geschlossen; offen: #762 (Translation-Group-
-  Idempotenz, Stage-2-Blocker).
-- Tests: Backend-Suite 2794 passed + mypy clean beim letzten vollen Lauf;
-  28 neue Tests auf dem Importpfad.
+- Gemergt auf develop: #759 (Bulk-Import-Script), #767 (#765 Banner),
+  #766 (#763 plugin-learnset Phase 1), #773 + #776 (#768 Hook-Enforcement
+  plus Hotfix), #774 (#762 Idempotenz), #777 (#775 Drift-Guard), #772
+  (#771 Backup-Feedback).
+- Offen: #769 und #770 (beide Frontend, CCW-Lane, bewusst aus #765
+  herausgehalten). Lernset-Phase 2 bleibt blockiert bis zum
+  Akzeptanztest mit zwei exportierten Lernsets in adaptive-learner.
+- Regressionsnachweis nach dem Altbestands-Backfill:
+  `make import-books-check CATALOG=book-catalog.yaml` meldet 25/25 present,
+  0 would import, 0 errors.
 - Offene CSV-Korrekturen (book-collection, Nutzer-Repo): Jaeger-Zeilen,
   political-profile-international, Titel-Drift eternity + ai-designs.
