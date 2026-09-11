@@ -44,8 +44,13 @@ NON_HUMAN_MARKERS = (
     "[bot]",
     "bot@",
     "noreply@anthropic.com",
-    "users.noreply.github.com",
 )
+
+#: NOT a marker: ``users.noreply.github.com``. That domain is how a HUMAN
+#: hides their e-mail address on GitHub, so treating it as non-human
+#: rejected legitimate co-authors (#779). GitHub App accounts share the
+#: domain but carry ``[bot]`` in the local part, so the ``[bot]`` marker
+#: above still catches them.
 
 AUTHORIZED_MARKER = "co-authored-by-authorized-by:"
 

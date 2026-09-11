@@ -127,3 +127,75 @@ def test_hook_is_configured_with_an_explicit_interpreter() -> None:
     assert len(hooks) == 1
     assert hooks[0]["entry"].startswith("python3 ")
     assert hooks[0]["language"] == "system"
+
+
+class TestTrailerVariants:
+    """#779 part 3: the hook shipped untested and blocked every commit in
+    the repo (#776). These pin the placement variants an agent or a
+    contributor can produce, plus the one false positive worth caring
+    about."""
+
+    def test_trailer_in_the_middle_of_a_body_is_rejected(self, tmp_path: Path) -> None:
+        message = (
+            "feat(x): thing\n\n"
+            "Body paragraph explaining the change.\n"
+            f"{CLAUDE}\n"
+            "More body after the trailer.\n"
+        )
+        result = run_on_message(tmp_path, message)
+        assert result.returncode == 1
+
+    def test_indented_trailer_is_rejected(self, tmp_path: Path) -> None:
+        result = run_on_message(tmp_path, f"feat(x): thing\n\n    {CLAUDE}\n")
+        assert result.returncode == 1
+
+    def test_several_offenders_are_all_reported(self, tmp_path: Path) -> None:
+        message = (
+            "feat(x): thing\n\n"
+            f"{CLAUDE}\n"
+            "Co-Authored-By: GitHub Copilot <copilot@github.com>\n"
+            f"{HUMAN}\n"
+        )
+        result = run_on_message(tmp_path, message)
+        assert result.returncode == 1
+        output = result.stdout + result.stderr
+        assert "Claude" in output
+        assert "Copilot" in output
+
+    def test_human_github_privacy_address_is_accepted(self, tmp_path: Path) -> None:
+        """GitHub's ``users.noreply.github.com`` is how a HUMAN hides their
+        e-mail, so it must not read as a bot marker. App accounts that use
+        the same domain carry ``[bot]`` in the local part and are still
+        caught by that marker (asserted below)."""
+        private_human = (
+            "Co-Authored-By: Asterios Raptis "
+            "<1822320+astrapi69@users.noreply.github.com>"
+        )
+        result = run_on_message(tmp_path, f"feat(x): thing\n\n{private_human}\n")
+        assert result.returncode == 0, result.stdout + result.stderr
+
+    def test_bot_on_the_github_privacy_domain_is_still_rejected(
+        self, tmp_path: Path
+    ) -> None:
+        bot = (
+            "Co-Authored-By: dependabot[bot] "
+            "<49699333+dependabot[bot]@users.noreply.github.com>"
+        )
+        result = run_on_message(tmp_path, f"feat(x): thing\n\n{bot}\n")
+        assert result.returncode == 1
+
+    def test_trailing_whitespace_after_the_trailer_is_rejected(
+        self, tmp_path: Path
+    ) -> None:
+        result = run_on_message(tmp_path, f"feat(x): thing\n\n{CLAUDE}   \n")
+        assert result.returncode == 1
+
+    def test_offender_in_a_later_commit_of_a_range_fails(self) -> None:
+        result = run_on_stdin(
+            [
+                f"feat(a): clean\n\n{HUMAN}",
+                "fix(b): also clean",
+                f"chore(c): offender\n\n{CLAUDE}",
+            ]
+        )
+        assert result.returncode == 1

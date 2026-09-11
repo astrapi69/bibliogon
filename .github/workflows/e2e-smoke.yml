@@ -97,3 +97,54 @@ jobs:
           name: e2e-test-results
           path: e2e/test-results/
           retention-days: 7
+
+  # #779 part 2: a red nightly can go unnoticed for weeks - the web-speech
+  # spec was red for 14 consecutive nights before anyone looked (#711/#712).
+  # This job holds ONE tracking issue per workflow: it opens or comments on
+  # failure and closes it on the next green run, so the signal is never
+  # spam and never silent. It is the only job allowed to touch issues, and
+  # `if: always()` means it reports even when an upstream job was cancelled.
+  nightly-alarm:
+    name: Report nightly status
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [smoke]
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      TITLE: "Nightly E2E smoke suite is red"
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      FAILED: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+    steps:
+      - name: Open, comment on, or close the tracking issue
+        run: |
+          set -euo pipefail
+          open_number=$(gh issue list --state open --limit 100 \
+            --search "$TITLE in:title" --json title,number \
+            --jq "map(select(.title == env.TITLE)) | .[0].number // empty")
+          if [ "$FAILED" = "true" ]; then
+            if [ -n "$open_number" ]; then
+              gh issue comment "$open_number" \
+                --body "Still red: $RUN_URL"
+              echo "Commented on #$open_number."
+            else
+              printf '%s\n' \
+                "The nightly E2E smoke suite went red. This issue tracks it and closes" \
+                "automatically on the next green run." \
+                "" \
+                "First failing run: $RUN_URL" \
+                "" \
+                "Opened by the red-nightly alarm (#779)." > /tmp/alarm.md
+              gh issue create --title "$TITLE" --body-file /tmp/alarm.md
+            fi
+          else
+            if [ -n "$open_number" ]; then
+              gh issue close "$open_number" \
+                --comment "Green again: $RUN_URL"
+              echo "Closed #$open_number."
+            else
+              echo "Green, and nothing was open."
+            fi
+          fi

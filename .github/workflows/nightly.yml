@@ -37,6 +37,8 @@ jobs:
     name: Learnset schema drift (upstream engine)
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      issues: write
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -53,6 +55,52 @@ jobs:
       # must not redden an unrelated PR.
       - name: Compare vendored artifacts against the pinned engine
         run: python scripts/check_learnset_schema_drift.py
+
+      # #779 part 1: the drift guard above only checks the PINNED version,
+      # so a new upstream release leaves the pin stale in silence. A newer
+      # release is NOT a failure (the pin is deliberate and an upstream
+      # publish must not redden this run) - it opens one tracking issue,
+      # deduplicated on a title that is stable per version so the same
+      # release never files twice.
+      - name: Check for a newer learn-content-engine release
+        id: upstream
+        run: python scripts/check_upstream_release.py --github-output
+
+      - name: File a tracking issue for the new release
+        if: steps.upstream.outputs.behind == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TITLE: ${{ steps.upstream.outputs.title }}
+          PINNED: ${{ steps.upstream.outputs.pinned }}
+          LATEST: ${{ steps.upstream.outputs.latest }}
+        run: |
+          set -euo pipefail
+          existing=$(gh issue list --state all --limit 100 \
+            --search "$TITLE in:title" --json title,number \
+            --jq "map(select(.title == env.TITLE)) | .[0].number // empty")
+          if [ -n "$existing" ]; then
+            echo "Already filed as #$existing; nothing to do."
+            exit 0
+          fi
+          {
+            echo "plugin-learnset vendors the learn-content-engine schemas +"
+            echo "validator (#775). The vendored copies still match the pin, so"
+            echo "the drift guard is green - but upstream has published a newer"
+            echo "release."
+            echo
+            echo "| | version |"
+            echo "|---|---|"
+            echo "| pinned (\`vendor/engine-version.txt\`) | \`$PINNED\` |"
+            echo "| latest on npm | \`$LATEST\` |"
+            echo
+            echo "This is not automatically action: the pin is deliberate. Check"
+            echo "whether the new release changed the lesson schemas; if it did,"
+            echo "re-vendor from the new tag, bump \`vendor/engine-version.txt\`"
+            echo "and confirm \`make verify-learnset-schema\` is green."
+            echo
+            echo "Filed by the nightly upstream-release watcher (#779)."
+          } > /tmp/upstream-issue.md
+          gh issue create --title "$TITLE" --body-file /tmp/upstream-issue.md
 
   plugin-tests:
     name: Plugin Tests (${{ matrix.plugin }})
@@ -283,3 +331,54 @@ jobs:
         run: |
           chmod +x scripts/check-file-sizes.sh
           scripts/check-file-sizes.sh
+
+  # #779 part 2: a red nightly can go unnoticed for weeks - the web-speech
+  # spec was red for 14 consecutive nights before anyone looked (#711/#712).
+  # This job holds ONE tracking issue per workflow: it opens or comments on
+  # failure and closes it on the next green run, so the signal is never
+  # spam and never silent. It is the only job allowed to touch issues, and
+  # `if: always()` means it reports even when an upstream job was cancelled.
+  nightly-alarm:
+    name: Report nightly status
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [learnset-schema-drift, plugin-tests, backend-coverage, plugin-coverage, frontend-coverage, python-complexity, typescript-complexity, file-size-check]
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      TITLE: "Nightly workflow is red"
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      FAILED: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+    steps:
+      - name: Open, comment on, or close the tracking issue
+        run: |
+          set -euo pipefail
+          open_number=$(gh issue list --state open --limit 100 \
+            --search "$TITLE in:title" --json title,number \
+            --jq "map(select(.title == env.TITLE)) | .[0].number // empty")
+          if [ "$FAILED" = "true" ]; then
+            if [ -n "$open_number" ]; then
+              gh issue comment "$open_number" \
+                --body "Still red: $RUN_URL"
+              echo "Commented on #$open_number."
+            else
+              printf '%s\n' \
+                "The Nightly workflow went red. This issue tracks it and closes" \
+                "automatically on the next green run." \
+                "" \
+                "First failing run: $RUN_URL" \
+                "" \
+                "Opened by the red-nightly alarm (#779)." > /tmp/alarm.md
+              gh issue create --title "$TITLE" --body-file /tmp/alarm.md
+            fi
+          else
+            if [ -n "$open_number" ]; then
+              gh issue close "$open_number" \
+                --comment "Green again: $RUN_URL"
+              echo "Closed #$open_number."
+            else
+              echo "Green, and nothing was open."
+            fi
+          fi
