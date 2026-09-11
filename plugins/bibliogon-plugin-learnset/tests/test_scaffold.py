@@ -125,6 +125,33 @@ class TestLessons:
         lessons = build_lessons([chapter("Kurzer Titel")], language="de")
         assert lessons[0]["id"] == "01-kurzer-titel"
 
+    def test_the_same_title_produces_the_same_capped_id_across_separate_exports(
+        self,
+    ) -> None:
+        """#813 verification (CC-Prompt-v3 Punkt 4): _cap_slug and
+        slugify_ascii are pure functions - no hash(), no randomness,
+        no dict-ordering dependency - so re-exporting the same book
+        (a fresh build_lessons call each time, exactly what happens on
+        every "Lernset exportieren" click) must yield byte-identical
+        ids. No hash-suffix scheme is needed; this pins that the
+        existing implementation already has the property."""
+        long_title = (
+            "Teil 4: Der digitale Geist - KI, Unsterblichkeit, die Zukunft der "
+            "Realitaet - Teil 4: Der digitale Geist - KI, Unsterblichkeit, "
+            "die Zukunft der Realitaet"
+        )
+        first_export = build_lessons([chapter(long_title)], language="de")
+        second_export = build_lessons([chapter(long_title)], language="de")
+        assert first_export[0]["id"] == second_export[0]["id"]
+
+    def test_capping_is_deterministic_across_many_repeated_calls(self) -> None:
+        """Same shape as above, run enough times that any hidden
+        non-determinism (set/dict iteration order, id() usage) would
+        show up as a flaky assertion rather than a lucky pass."""
+        long_title = "Ein-" * 60 + "Titel"
+        ids = {build_lessons([chapter(long_title)], language="de")[0]["id"] for _ in range(20)}
+        assert len(ids) == 1
+
 
 class TestManifest:
     def test_manifest_carries_required_set_fields_and_book_block(self) -> None:
