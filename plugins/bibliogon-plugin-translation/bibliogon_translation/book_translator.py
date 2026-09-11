@@ -82,7 +82,16 @@ def extract_plain_text_from_tiptap(content: str) -> str:
     try:
         doc = json.loads(content)
     except (json.JSONDecodeError, TypeError):
-        # Content might be HTML or plain text
+        # An imported chapter is HTML until someone opens and saves it
+        # in the editor (#787). Feeding raw markup to the translation
+        # provider as "plain text" degrades translation quality and
+        # risks mangled tags coming back, so strip it to prose first
+        # (#806). Genuine plain text has no markup to strip.
+        stripped = content.strip()
+        if stripped.startswith("<"):
+            from bibliogon_export.html_to_markdown import html_to_plain_text
+
+            return html_to_plain_text(content)
         return content
 
     texts: list[str] = []
@@ -112,9 +121,7 @@ def _extract_text_nodes(node: dict | list, texts: list[str]) -> None:
             texts.append("")
 
 
-def rebuild_tiptap_with_translation(
-    original_content: str, translated_text: str
-) -> str:
+def rebuild_tiptap_with_translation(original_content: str, translated_text: str) -> str:
     """Replace text nodes in TipTap JSON with translated text.
 
     Preserves the document structure (formatting, marks, attrs) but
