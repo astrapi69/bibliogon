@@ -214,3 +214,90 @@ def test_backfill_commits(db: Session) -> None:
     # New session sees the committed change.
     fresh_ch = db.query(Chapter).filter_by(book_id=book_id).one()
     assert "/api/books/" in fresh_ch.content
+
+
+def test_german_low_quoted_src_rewrites(db: Session) -> None:
+    """German typography opens a quote with U+201E („) and closes with
+    U+201C (“). The alternation only covered the English pair, so 164
+    chapters across 19 imported books kept an unrewritten src and every
+    export of those books failed with MissingImagesError (#789)."""
+    book_id = "book-de-1"
+    api_url = _seed(db, book_id)
+    db.add(
+        Chapter(
+            book_id=book_id,
+            title="C1",
+            content="<p><img src=„assets/figures/diagram.jpg“ alt=„Bild“ /></p>",
+            position=1,
+            chapter_type="chapter",
+        )
+    )
+    db.commit()
+
+    assert rewrite_image_paths(db, book_id) == 1
+    ch = db.query(Chapter).filter_by(book_id=book_id).one()
+    assert f'src="{api_url}"' in ch.content
+    assert "„" not in ch.content.split("alt=")[0]
+
+
+def test_german_quoted_src_with_spaced_extension_rewrites(db: Session) -> None:
+    """The real-world shape from the dev library: German quotes AND a
+    space before the extension, which ends the unquoted attribute value
+    at the dot."""
+    book_id = "book-de-2"
+    api_url = _seed(db, book_id)
+    db.add(
+        Chapter(
+            book_id=book_id,
+            title="C1",
+            content="<p><img src=„assets/figures/diagram. jpg“ alt=„Bild“ /></p>",
+            position=1,
+            chapter_type="chapter",
+        )
+    )
+    db.commit()
+
+    assert rewrite_image_paths(db, book_id) == 1
+    ch = db.query(Chapter).filter_by(book_id=book_id).one()
+    assert f'src="{api_url}"' in ch.content
+
+
+def test_german_single_quoted_src_rewrites(db: Session) -> None:
+    """Single German quotes (U+201A / U+2018) are the same class of
+    artefact as the double ones."""
+    book_id = "book-de-3"
+    api_url = _seed(db, book_id)
+    db.add(
+        Chapter(
+            book_id=book_id,
+            title="C1",
+            content="<p><img src=‚assets/figures/diagram.jpg‘ alt=‚Bild‘ /></p>",
+            position=1,
+            chapter_type="chapter",
+        )
+    )
+    db.commit()
+
+    assert rewrite_image_paths(db, book_id) == 1
+    ch = db.query(Chapter).filter_by(book_id=book_id).one()
+    assert f'src="{api_url}"' in ch.content
+
+
+def test_german_quoted_rewrite_is_idempotent(db: Session) -> None:
+    """A repaired chapter must not change again on a second run."""
+    book_id = "book-de-4"
+    _seed(db, book_id)
+    db.add(
+        Chapter(
+            book_id=book_id,
+            title="C1",
+            content="<p><img src=„assets/figures/diagram.jpg“ alt=„Bild“ /></p>",
+            position=1,
+            chapter_type="chapter",
+        )
+    )
+    db.commit()
+
+    assert rewrite_image_paths(db, book_id) == 1
+    db.commit()
+    assert rewrite_image_paths(db, book_id) == 0

@@ -86,10 +86,13 @@ def import_assets(db: Session, book_id: str, assets_dir: Path) -> int:
 # quoted outer (from TipTap JSON) can still contain curly quotes inside the
 # captured value (e.g. `"src":"“assets/chapter_01_flimmern."` which TipTap's
 # HTML parser produced when the source HTML used smart quotes).
+# German typography opens with U+201E („) and U+201A (‚), which the
+# English-only alternation missed - 164 chapters across 19 imported
+# books kept an unrewritten src and failed every export (#789).
 _SRC_RE = re.compile(
     r"""(?P<prefix>src\s*=\s*|"src"\s*:\s*)"""
     r"""(?:"(?P<v_dq>[^"]*)"|'(?P<v_sq>[^']*)'"""
-    r"""|[“”](?P<v_cd>[^“”]*)[“”]|[‘’](?P<v_cs>[^‘’]*)[‘’])"""
+    r"""|[„“”](?P<v_cd>[^„“”]*)[„“”]|[‚‘’](?P<v_cs>[^‚‘’]*)[‚‘’])"""
 )
 
 
@@ -105,7 +108,7 @@ def _extract_filename(value: str, known: set[str]) -> str | None:
       because TipTap's setContent parsed a smart-quoted <img> tag badly)
     - bare basenames as well as ``assets/<type>/<name>`` paths
     """
-    cleaned = value.strip("“”‘’\"' \t\n")
+    cleaned = value.strip("„“”‚‘’\"' \t\n")
     collapsed = re.sub(r"\s+", "", cleaned)
     basename = collapsed.rsplit("/", 1)[-1] if "/" in collapsed else collapsed
     if basename in known:
