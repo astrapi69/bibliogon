@@ -180,13 +180,15 @@ def _fake_generators(monkeypatch):
     epub_calls: list[bool] = []
     pdf_calls: list[tuple] = []
 
-    def fake_epub(book_data, chapters, assets, out_dir):
+    def fake_epub(book_data, chapters, assets, out_dir, *, failures=None):
         out = out_dir / "manuscript-ebook.epub"
         out.write_bytes(b"epub")
         epub_calls.append(True)
         return out
 
-    def fake_pdf(book_data, chapters, out_dir, *, trim_size, margin, bleed_marks):
+    def fake_pdf(
+        book_data, chapters, out_dir, *, trim_size, margin, bleed_marks, failures=None
+    ):
         pdf_calls.append((trim_size, margin, bleed_marks))
         out = out_dir / "manuscript-paperback.pdf"
         out.write_bytes(b"pdf")
@@ -311,3 +313,80 @@ def test_package_state_snapshot_carries_book_id(client):
     assert snap["id"] == book_id
     assert snap["title"] == "KDP State Snapshot"
     assert snap["book_type"] == "prose"
+
+
+class TestManuscriptFailureReporting:
+    """#788: when every manuscript generator failed, the package raised
+    "Manuscript generation produced no output. Check the server log for
+    the underlying error." The user cannot read the server log, so the
+    message was unactionable - and the real cause (missing images named
+    one by one) was already in hand.
+    """
+
+    def test_missing_images_are_named_in_the_message(self) -> None:
+        from bibliogon_kdp.package import _describe_failure
+
+        class FakeMissingImages(Exception):
+            unresolved = ["assets/one.png", "assets/two.jpeg"]
+
+        described = _describe_failure("EPUB", FakeMissingImages("missing"))
+        assert "assets/one.png" in described
+        assert "assets/two.jpeg" in described
+        assert "EPUB" in described
+
+    def test_a_long_missing_list_is_truncated_with_a_count(self) -> None:
+        from bibliogon_kdp.package import _describe_failure
+
+        class FakeMissingImages(Exception):
+            unresolved = [f"assets/{index}.png" for index in range(25)]
+
+        described = _describe_failure("EPUB", FakeMissingImages("missing"))
+        assert "+15 more" in described
+
+    def test_an_ordinary_exception_keeps_its_type_and_text(self) -> None:
+        from bibliogon_kdp.package import _describe_failure
+
+        described = _describe_failure("PDF", RuntimeError("pandoc exploded"))
+        assert "RuntimeError" in described
+        assert "pandoc exploded" in described
+
+    def test_every_collected_cause_reaches_the_final_message(self) -> None:
+        from bibliogon_kdp.package import _manuscript_failure_message
+
+        message = _manuscript_failure_message(["EPUB: boom", "PDF: splat"])
+        assert "EPUB: boom" in message
+        assert "PDF: splat" in message
+        assert "server log" not in message
+
+    def test_without_a_cause_the_message_says_so_instead_of_pretending(self) -> None:
+        from bibliogon_kdp.package import _manuscript_failure_message
+
+        message = _manuscript_failure_message([])
+        assert "no cause" in message.lower()
+
+    def test_a_failing_epub_surfaces_its_cause_through_the_endpoint(
+        self, client, monkeypatch
+    ) -> None:
+        """The real path: both generators fail, the endpoint must answer
+        with the cause rather than a pointer to a log the user has no
+        access to."""
+        from bibliogon_kdp import package as package_module
+
+        class FakeMissingImages(Exception):
+            unresolved = ["assets/broken-01.png"]
+
+        def explode(*_args, **kwargs):
+            failures = kwargs.get("failures")
+            if failures is not None:
+                failures.append(package_module._describe_failure("EPUB", FakeMissingImages("x")))
+            return None
+
+        monkeypatch.setattr(package_module, "_generate_prose_epub", explode)
+        monkeypatch.setattr(package_module, "_generate_prose_pdf", lambda *a, **k: None)
+
+        book_id = _create_book(client)
+        _add_chapter(client, book_id)
+        _patch_book_for_kdp(client, book_id)
+        response = client.post(f"/api/kdp/package/{book_id}")
+        assert response.status_code == 400, response.text
+        assert "assets/broken-01.png" in response.json()["detail"]
