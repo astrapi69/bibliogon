@@ -1,7 +1,6 @@
 import { ApiError } from "./errors";
-import { BASE, isBackendlessOffline } from "./apiBase";
+import { BASE, isBackendlessOffline, isProxyGatewayFailure } from "./apiBase";
 import { backendReachability } from "./backendReachability";
-import { isProxyGatewayFailure } from "./gatewayFailure";
 
 // Re-exported so the ~30 existing `import { BASE } from "./http"` and
 // `isBackendlessOffline` call sites keep working; the definitions moved to
