@@ -49,6 +49,48 @@ class KdpPackageError(Exception):
     """Raised on package-build failure with a user-readable message."""
 
 
+#: How many missing-image names the error message lists before it
+#: switches to a count. Enough to act on, short enough to read.
+_MAX_LISTED_CAUSES = 10
+
+
+def _describe_failure(label: str, exc: Exception) -> str:
+    """One readable sentence about why a manuscript format failed.
+
+    ``MissingImagesError`` carries the unresolved paths in
+    ``.unresolved``; naming them is the difference between an
+    actionable error and "check the server log".
+
+    Args:
+        label: Which manuscript format failed, e.g. ``"EPUB"``.
+        exc: The exception the generator raised.
+
+    Returns:
+        A message safe to show the user.
+    """
+    unresolved = list(getattr(exc, "unresolved", None) or [])
+    if unresolved:
+        listed = ", ".join(str(item) for item in unresolved[:_MAX_LISTED_CAUSES])
+        overflow = len(unresolved) - _MAX_LISTED_CAUSES
+        suffix = f" (+{overflow} more)" if overflow > 0 else ""
+        return (
+            f"{label}: the manuscript references images that do not exist: "
+            f"{listed}{suffix}. Fix the image paths in the affected chapters "
+            "and export again."
+        )
+    return f"{label}: {type(exc).__name__}: {exc}"
+
+
+def _manuscript_failure_message(failures: list[str]) -> str:
+    """Final error text when no manuscript format was produced."""
+    if not failures:
+        return (
+            "Manuscript generation produced no output and reported no cause. "
+            "Check the server log for the underlying error."
+        )
+    return "Manuscript generation failed. " + " ".join(failures)
+
+
 def _slugify(text: str) -> str:
     """Minimal slug: lowercase ASCII letters/digits, hyphens between."""
     slug = re.sub(r"[^a-zA-Z0-9]+", "-", text.lower()).strip("-")
@@ -249,9 +291,11 @@ def _generate_prose_epub(
     chapters: list[dict[str, Any]],
     assets: list[dict[str, Any]],
     out_dir: Path,
+    *,
+    failures: list[str] | None = None,
 ) -> Path | None:
     """Generate the prose EPUB into ``out_dir``. Returns its path or
-    ``None`` on failure.
+    ``None`` on failure, appending the reason to ``failures`` (#788).
 
     Uses the public ``scaffold_project`` + ``run_pandoc`` modules from
     plugin-export per A3 (direct import). The print PDF is generated
@@ -290,7 +334,9 @@ def _generate_prose_epub(
         shutil.copy2(output_path, staged)
         return staged
     except Exception as exc:  # noqa: BLE001
-        logger.warning("Prose EPUB generation failed: %s", exc)
+        logger.warning("Prose EPUB generation failed: %s", exc, exc_info=True)
+        if failures is not None:
+            failures.append(_describe_failure("EPUB", exc))
         return None
 
 
@@ -302,6 +348,7 @@ def _generate_prose_pdf(
     trim_size: str | None,
     margin: str | None,
     bleed_marks: bool,
+    failures: list[str] | None = None,
 ) -> Path | None:
     """Render the prose print PDF via WeasyPrint at the chosen KDP trim
     size + margin preset. Returns the PDF path or ``None`` on failure."""
@@ -319,7 +366,9 @@ def _generate_prose_pdf(
         )
         return out_path
     except Exception as exc:  # noqa: BLE001
-        logger.warning("Prose PDF generation failed: %s", exc)
+        logger.warning("Prose PDF generation failed: %s", exc, exc_info=True)
+        if failures is not None:
+            failures.append(_describe_failure("PDF", exc))
         return None
 
 
@@ -330,6 +379,7 @@ def _generate_picture_book_manuscript(
     *,
     picture_book_format: str | None = None,
     bleed_marks: bool = False,
+    failures: list[str] | None = None,
 ) -> Path | None:
     """Generate picture-book PDF via the public picture_book_pdf module.
 
@@ -392,7 +442,9 @@ def _generate_picture_book_manuscript(
         )
         return out_path
     except Exception as exc:  # noqa: BLE001
-        logger.warning("Picture-book PDF generation failed: %s", exc)
+        logger.warning("Picture-book PDF generation failed: %s", exc, exc_info=True)
+        if failures is not None:
+            failures.append(_describe_failure("PDF", exc))
         return None
 
 
@@ -403,6 +455,7 @@ def _generate_comic_book_manuscript(
     *,
     picture_book_format: str | None = None,
     bleed_marks: bool = False,
+    failures: list[str] | None = None,
 ) -> Path | None:
     """Generate comic-book PDF via plugin-comics public module.
 
@@ -482,7 +535,9 @@ def _generate_comic_book_manuscript(
         )
         return out_path
     except Exception as exc:  # noqa: BLE001
-        logger.warning("Comic-book PDF generation failed: %s", exc)
+        logger.warning("Comic-book PDF generation failed: %s", exc, exc_info=True)
+        if failures is not None:
+            failures.append(_describe_failure("PDF", exc))
         return None
 
 
@@ -657,11 +712,16 @@ def build_kdp_package(
             )
 
         manuscripts: dict[str, Path] = {}
+        # Each generator appends its reason here instead of letting it die
+        # in a log line the user cannot read (#788).
+        manuscript_failures: list[str] = []
         if book_type == "prose":
             assets = _assets_for_book(book_id, db, with_id=False)
             # Reflowable EPUB is the eBook deliverable; print kinds add
             # the WeasyPrint PDF at the chosen trim + margin (#583).
-            epub_path = _generate_prose_epub(book_data, chapters, assets, tmp_dir)
+            epub_path = _generate_prose_epub(
+                book_data, chapters, assets, tmp_dir, failures=manuscript_failures
+            )
             if epub_path:
                 manuscripts["epub"] = epub_path
             if is_print:
@@ -672,6 +732,7 @@ def build_kdp_package(
                     trim_size=trim_size,
                     margin=margin,
                     bleed_marks=True,
+                    failures=manuscript_failures,
                 )
                 if pdf_path:
                     manuscripts["pdf"] = pdf_path
@@ -685,6 +746,7 @@ def build_kdp_package(
                 tmp_dir,
                 picture_book_format=trim_size,
                 bleed_marks=is_print,
+                failures=manuscript_failures,
             )
             if path:
                 manuscripts["pdf"] = path
@@ -695,6 +757,7 @@ def build_kdp_package(
                 tmp_dir,
                 picture_book_format=trim_size,
                 bleed_marks=is_print,
+                failures=manuscript_failures,
             )
             if path:
                 manuscripts["pdf"] = path
@@ -705,10 +768,7 @@ def build_kdp_package(
             )
 
         if not manuscripts:
-            raise KdpPackageError(
-                "Manuscript generation produced no output. Check the"
-                " server log for the underlying error."
-            )
+            raise KdpPackageError(_manuscript_failure_message(manuscript_failures))
 
         cover_path, cover_report = _stage_cover(book_data, tmp_dir)
 
