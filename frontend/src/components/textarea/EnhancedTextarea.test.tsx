@@ -1,3 +1,12 @@
+// @vitest-environment jsdom
+//
+// happy-dom, the suite default, breaks DOMPurify >= 3.4.12: sanitize()
+// silently stops removing <script> and strips allowed tags instead, while
+// isSupported stays true so DOMPurify never reports the unsupported
+// environment (#718). Verified NOT a DOMPurify bug - 3.4.13 sanitizes
+// correctly in real Chromium and under jsdom, so only the happy-dom
+// backend is affected. This file asserts sanitizer behaviour, so it runs
+// on jsdom; the rest of the suite stays on happy-dom for speed.
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { EnhancedTextarea } from "./EnhancedTextarea";
