@@ -217,6 +217,11 @@ class BookUpdate(BaseModel):
     asin_ebook: str | None = None
     asin_paperback: str | None = None
     asin_hardcover: str | None = None
+    # Promotion (#782/#797): the one retail link an author hands out - a
+    # books2read / mybook.to style shortlink that resolves to the reader's
+    # local store. Capped at the column width so an over-long value is
+    # refused rather than silently truncated into a dead link.
+    universal_link: str | None = Field(default=None, max_length=500)
     keywords: list[str] | None = None
     # Bug 9: subject categorisation. ``categories`` is free-text
     # (KDP-style names + any string the user types); ``bisac_codes``
@@ -549,6 +554,7 @@ class BookOut(BaseModel):
     asin_ebook: str | None = None
     asin_paperback: str | None = None
     asin_hardcover: str | None = None
+    universal_link: str | None = None
     keywords: list[str] = []
     # Bug 9: subject categorisation. Same JSON-text-as-list convention
     # as keywords. The ``_decode_json_list`` validator below is
