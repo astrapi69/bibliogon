@@ -180,6 +180,11 @@ describe("featureRegistry", () => {
         // active in both modes.
         expect(featureRegistry.getState(FEATURES.EVENT_RECORDING, API)).toBe("active");
         expect(featureRegistry.getState(FEATURES.EVENT_RECORDING, DEXIE_NO_KEY)).toBe("active");
+        // Chapter version history writes + diffs through the storage seam
+        // (#728): active in both modes, and with no AI key either.
+        expect(featureRegistry.getState(FEATURES.VERSION_HISTORY, API)).toBe("active");
+        expect(featureRegistry.getState(FEATURES.VERSION_HISTORY, DEXIE_NO_KEY)).toBe("active");
+        expect(featureRegistry.getState(FEATURES.VERSION_HISTORY, DEXIE_WITH_KEY)).toBe("active");
     });
 
     it("gates network-dependent import features on connectivity, not storage mode", () => {

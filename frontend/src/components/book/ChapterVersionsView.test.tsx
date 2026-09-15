@@ -5,6 +5,8 @@
  * - Take Snapshot calls createSnapshot with the typed name + reloads.
  * - Restore confirms first; on cancel restoreVersion is never called.
  * - Delete is only offered for manual rows and confirms (danger).
+ * - Every call goes through the storage seam, so the surface works in
+ *   Dexie mode too (#728).
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
@@ -34,8 +36,12 @@ const createSnapshot = vi.fn();
 const restoreVersion = vi.fn();
 const deleteVersion = vi.fn();
 const diffVersion = vi.fn();
-vi.mock("../../api/client", () => ({
-  api: {
+// The view reads/writes through the storage seam (#728), so the same
+// mocks stand in for BOTH backends: the api delegate online and Dexie
+// offline. The seam-mode behaviour itself is pinned by
+// storage/dexie-storage.test.ts + the settingsSeamGuard source scan.
+vi.mock("../../storage", () => ({
+  getStorage: () => ({
     chapters: {
       listVersions: (...a: unknown[]) => listVersions(...a),
       createSnapshot: (...a: unknown[]) => createSnapshot(...a),
@@ -43,7 +49,7 @@ vi.mock("../../api/client", () => ({
       deleteVersion: (...a: unknown[]) => deleteVersion(...a),
       diffVersion: (...a: unknown[]) => diffVersion(...a),
     },
-  },
+  }),
 }));
 
 const AUTO: ChapterVersionSummary = {

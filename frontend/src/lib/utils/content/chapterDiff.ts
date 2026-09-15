@@ -161,7 +161,10 @@ export function lineDiff(textA: string, textB: string): DiffLine[] {
     }
     return [
         ...before.slice(0, head).map((text) => ({ type: "unchanged" as const, text })),
-        ...lcsDiff(before.slice(head, before.length - tail), after.slice(head, after.length - tail)),
+        ...lcsDiff(
+            before.slice(head, before.length - tail),
+            after.slice(head, after.length - tail),
+        ),
         ...before.slice(before.length - tail).map((text) => ({ type: "unchanged" as const, text })),
     ];
 }

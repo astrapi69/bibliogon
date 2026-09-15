@@ -552,7 +552,7 @@ export default function Editor({
     const handleTakeSnapshot = async () => {
         if (!bookId || !chapterId) return;
         try {
-            await api.chapters.createSnapshot(bookId, chapterId, null);
+            await getStorage().chapters.createSnapshot(bookId, chapterId, null);
             notify.success(t("ui.versions.snapshot_taken", "Snapshot erstellt."));
         } catch {
             notify.error(

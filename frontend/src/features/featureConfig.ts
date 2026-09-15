@@ -167,6 +167,12 @@ const ALWAYS_ACTIVE: readonly string[] = [
     // recorder consults the registry instead of mounting ungated, giving a
     // single kill-switch and an audit point.
     FEATURES.EVENT_RECORDING,
+    // Chapter version history + manual snapshots run through the storage
+    // seam: automatic versions are written on every chapter save and named
+    // snapshots on demand, both into the Dexie `chapterVersions` table, and
+    // the diff is computed client-side. No backend round-trip, so the whole
+    // surface is active in both modes (#728).
+    FEATURES.VERSION_HISTORY,
 ];
 
 /**
@@ -233,7 +239,6 @@ const DESKTOP_ONLY: readonly string[] = [
     FEATURES.BACKUP_COMPARE,
     FEATURES.BACKUP_HISTORY,
     FEATURES.PANDOC_EXPORT,
-    FEATURES.VERSION_HISTORY,
     FEATURES.TRANSLATION_LINKS,
     FEATURES.KDP_CATEGORY_CATALOG,
     FEATURES.BULK_EXPORT,

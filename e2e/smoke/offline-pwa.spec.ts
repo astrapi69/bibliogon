@@ -803,19 +803,63 @@ test.describe("Offline PWA (Dexie mode)", () => {
     // ExportPage forces the client engine - and the AITemplatePanel
     // Export/Import buttons live in the article/book editor sidebar. Their
     // hidden-offline behaviour is pinned by the Vitest component tests
-    // (ExportForm.test.tsx, AITemplatePanel.offline.test.tsx). The two gates
-    // below DO have a reachable offline surface and are asserted here.
+    // (ExportForm.test.tsx, AITemplatePanel.offline.test.tsx). The export-engine
+    // gate below DOES have a reachable offline surface and is asserted here.
+    // version-history used to sit in this bucket too; #728 ported it to the
+    // seam, so the test that follows exercises it as a working offline feature
+    // rather than a gate.
 
-    test("version-history (chapter snapshots) deep-link shows disabled notice offline, no /api", async ({
+    test("chapter snapshots work offline: take one, it appears in the list (#728)", async ({
         page,
     }) => {
-        // Chapter snapshots are backend-only; policy #78: the page chrome stays
-        // visible and resolves `version-history` to a disabled notice BEFORE
-        // mounting ChapterVersionsView, so a direct deep-link fires no /api.
-        await page.goto("/books/offline-x/chapters/offline-y/snapshots");
+        // Import a book with a chapter, then open its snapshots page. The
+        // feature used to resolve to a disabled notice here; since #728 the
+        // whole surface runs against the Dexie chapterVersions table, so the
+        // live view mounts and a snapshot round-trips - still with zero /api
+        // (the afterEach gate).
+        await page.goto("/");
+        await page.getByTestId("dashboard-empty-import").click();
+        await expect(page.getByTestId("offline-import-dialog")).toBeVisible();
+        await page.getByTestId("offline-import-input").setInputFiles({
+            name: "snapshot-novel.md",
+            mimeType: "text/markdown",
+            buffer: Buffer.from("# Snapshot Novel\n\nErste Fassung."),
+        });
+        await page.getByTestId("offline-import-confirm").click();
+        await expect(page.getByTestId("offline-import-dialog")).toHaveCount(0);
+        await page.getByText("Snapshot Novel").first().click();
+        await page.waitForURL(/\/book\//);
+        const bookId = page.url().match(/\/book\/([^/?]+)/)?.[1];
+        expect(bookId).toBeTruthy();
+        const chapterId = await page.evaluate(
+            async (id) =>
+                new Promise<string>((resolve, reject) => {
+                    const open = indexedDB.open("bibliogon-offline");
+                    open.onerror = () => reject(open.error);
+                    open.onsuccess = () => {
+                        const tx = open.result.transaction("chapters", "readonly");
+                        const req = tx.objectStore("chapters").index("book_id").getAll(id);
+                        req.onerror = () => reject(req.error);
+                        req.onsuccess = () =>
+                            resolve((req.result as { id: string }[])[0]?.id ?? "");
+                    };
+                }),
+            bookId,
+        );
+        expect(chapterId).toBeTruthy();
+
+        await page.goto(`/books/${bookId}/chapters/${chapterId}/snapshots`);
         await expect(page.getByTestId("chapter-versions-page")).toBeVisible();
-        await expect(page.getByTestId("chapter-versions-disabled")).toBeVisible();
-        // The afterEach zero-/api gate proves no snapshot fetch fired.
+        // The live view mounts instead of the disabled notice.
+        await expect(page.getByTestId("chapter-versions-view")).toBeVisible();
+        await expect(page.getByTestId("chapter-versions-disabled")).toHaveCount(0);
+        await expect(page.getByTestId("chapter-versions-empty")).toBeVisible();
+
+        await page.getByTestId("chapter-snapshot-name").fill("Offline-Fassung");
+        await page.getByTestId("chapter-snapshot-create").click();
+        // Read back from Dexie: the snapshot row renders with its name.
+        await expect(page.getByTestId("chapter-versions-list")).toBeVisible();
+        await expect(page.getByText("Offline-Fassung")).toBeVisible();
     });
 
     test("export-engine 'Backend (Pandoc/LaTeX)' option is hidden offline", async ({

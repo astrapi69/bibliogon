@@ -1,11 +1,13 @@
 /**
- * ChapterVersionsPage offline guard.
+ * ChapterVersionsPage feature gate.
  *
- * Chapter snapshots are backend-only (`version-history` resolves to `disabled`
- * in Dexie mode, policy #78). The page chrome stays visible offline but renders
- * a disabled notice instead of the live view, so a direct deep-link fires no
- * `/api`; online it renders normally. The layout + view + i18n are stubbed so
- * the test isolates the feature guard.
+ * Chapter snapshots run through the storage seam (#728), so the live view
+ * mounts in BOTH modes — the offline build keeps a real save history instead
+ * of a disabled notice. The registry check stays in place as the single
+ * kill-switch (chrome + a FeatureNotice instead of the live view, policy
+ * #78), but no evaluation context reaches that branch any more now that the
+ * feature is unconditionally active — FeatureNotice has its own tests. The
+ * layout + view + i18n are stubbed so the test isolates the gate.
  */
 
 import { describe, it, expect, vi } from "vitest";
@@ -47,21 +49,13 @@ function renderPage(mode: "api" | "dexie") {
     );
 }
 
-describe("ChapterVersionsPage offline guard", () => {
-    it("renders the snapshots page online (api mode)", () => {
-        renderPage("api");
+describe("ChapterVersionsPage feature gate", () => {
+    // The desktop path stays pinned alongside the offline one: the seam port
+    // must not change what online users see.
+    it.each(["api", "dexie"] as const)("renders the live snapshots view in %s mode", (mode) => {
+        renderPage(mode);
         expect(screen.getByTestId("chapter-versions-page")).toBeInTheDocument();
         expect(screen.getByTestId("cv-view")).toBeInTheDocument();
-    });
-
-    it("renders the disabled notice offline (no live view, no /api)", () => {
-        renderPage("dexie");
-        // Page chrome stays visible; the live snapshots view does NOT mount
-        // (it would fire /api), the disabled notice does.
-        expect(screen.getByTestId("chapter-versions-page")).toBeInTheDocument();
-        expect(screen.queryByTestId("cv-view")).toBeNull();
-        expect(
-            screen.getByTestId("chapter-versions-disabled"),
-        ).toBeInTheDocument();
+        expect(screen.queryByTestId("chapter-versions-disabled")).toBeNull();
     });
 });

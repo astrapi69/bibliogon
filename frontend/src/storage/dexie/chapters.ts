@@ -146,10 +146,14 @@ export const chapters: IStorageService["chapters"] = {
     delete: async (bookId, chapterId) => {
         // IndexedDB has no foreign keys, so the version rows the backend
         // drops via ON DELETE CASCADE have to be removed here (#728).
-        await offlineDb.transaction("rw", [offlineDb.chapters, offlineDb.chapterVersions], async () => {
-            await offlineDb.chapters.delete(chapterId);
-            await offlineDb.chapterVersions.where("chapter_id").equals(chapterId).delete();
-        });
+        await offlineDb.transaction(
+            "rw",
+            [offlineDb.chapters, offlineDb.chapterVersions],
+            async () => {
+                await offlineDb.chapters.delete(chapterId);
+                await offlineDb.chapterVersions.where("chapter_id").equals(chapterId).delete();
+            },
+        );
     },
 
     reorder: async (bookId, chapterIds) => {

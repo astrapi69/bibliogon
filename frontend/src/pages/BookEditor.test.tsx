@@ -706,48 +706,37 @@ function renderEditorWithMode(bookId: string, mode: "api" | "dexie") {
     );
 }
 
-describe("BookEditor - version-history gate on onShowVersions (#67)", () => {
-    it("online (api mode): passes an onShowVersions handler to the sidebar", async () => {
-        getBookMock.mockResolvedValue(
-            makeBook({ id: "b1", chapters: [makeChapterRow({ id: "c1" })] }),
-        );
-        renderEditorWithMode("b1", "api");
-        await waitFor(() => expect(screen.getByTestId("chapter-sidebar-stub")).toBeTruthy());
-        expect(chapterSidebarPropsHolder.onShowVersions).toBeTypeOf("function");
-    });
+describe("BookEditor - version-history wiring on onShowVersions (#67, #728)", () => {
+    // #67 gated the sidebar menu item on the desktop-only `version-history`
+    // feature; #728 ported the whole surface to the storage seam, so the
+    // handler is wired in BOTH modes. The api-mode cases stay as the
+    // desktop-path pin — the port must not change what online users get.
+    it.each(["api", "dexie"] as const)(
+        "passes an onShowVersions handler to the sidebar in %s mode",
+        async (mode) => {
+            getBookMock.mockResolvedValue(
+                makeBook({ id: "b1", chapters: [makeChapterRow({ id: "c1" })] }),
+            );
+            renderEditorWithMode("b1", mode);
+            await waitFor(() => expect(screen.getByTestId("chapter-sidebar-stub")).toBeTruthy());
+            expect(chapterSidebarPropsHolder.onShowVersions).toBeTypeOf("function");
+        },
+    );
 
-    it("offline (dexie mode): onShowVersions is undefined (menu item hidden)", async () => {
-        getBookMock.mockResolvedValue(
-            makeBook({ id: "b1", chapters: [makeChapterRow({ id: "c1" })] }),
-        );
-        renderEditorWithMode("b1", "dexie");
-        await waitFor(() => expect(screen.getByTestId("chapter-sidebar-stub")).toBeTruthy());
-        expect(chapterSidebarPropsHolder.onShowVersions).toBeUndefined();
-    });
-
-    it("online handler navigates to the chapter snapshots route", async () => {
-        getBookMock.mockResolvedValue(
-            makeBook({ id: "b1", chapters: [makeChapterRow({ id: "c1" })] }),
-        );
-        renderEditorWithMode("b1", "api");
-        await waitFor(() =>
-            expect(chapterSidebarPropsHolder.onShowVersions).toBeTypeOf("function"),
-        );
-        chapterSidebarPropsHolder.onShowVersions!("c1");
-        expect(navigateMock).toHaveBeenCalledWith("/books/b1/chapters/c1/snapshots");
-    });
-
-    it("offline build never wires a snapshot navigation (no leak)", async () => {
-        getBookMock.mockResolvedValue(
-            makeBook({ id: "b1", chapters: [makeChapterRow({ id: "c1" })] }),
-        );
-        renderEditorWithMode("b1", "dexie");
-        await waitFor(() => expect(screen.getByTestId("chapter-sidebar-stub")).toBeTruthy());
-        expect(chapterSidebarPropsHolder.onShowVersions).toBeUndefined();
-        expect(navigateMock.mock.calls.some((c) => String(c[0]).includes("/snapshots"))).toBe(
-            false,
-        );
-    });
+    it.each(["api", "dexie"] as const)(
+        "the %s-mode handler navigates to the chapter snapshots route",
+        async (mode) => {
+            getBookMock.mockResolvedValue(
+                makeBook({ id: "b1", chapters: [makeChapterRow({ id: "c1" })] }),
+            );
+            renderEditorWithMode("b1", mode);
+            await waitFor(() =>
+                expect(chapterSidebarPropsHolder.onShowVersions).toBeTypeOf("function"),
+            );
+            chapterSidebarPropsHolder.onShowVersions!("c1");
+            expect(navigateMock).toHaveBeenCalledWith("/books/b1/chapters/c1/snapshots");
+        },
+    );
 });
 
 describe("BookEditor - sidebar closes on view switch (narrow viewport, #293)", () => {
