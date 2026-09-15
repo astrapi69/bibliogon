@@ -2,7 +2,7 @@ import { useState } from "react";
 import DOMPurify from "dompurify";
 import { Sparkles } from "lucide-react";
 import { useI18n } from "../../hooks/useI18n";
-import { looksLikeHtml } from "../../lib/utils/contentShape";
+import { looksLikeHtml } from "../../lib/utils/content/contentShape";
 import { markdownToHtml } from "../../lib/utils/markdownToHtml";
 import styles from "../BookMetadataEditor.module.css";
 
