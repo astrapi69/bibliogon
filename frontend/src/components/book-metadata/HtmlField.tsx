@@ -2,6 +2,8 @@ import { useState } from "react";
 import DOMPurify from "dompurify";
 import { Sparkles } from "lucide-react";
 import { useI18n } from "../../hooks/useI18n";
+import { looksLikeHtml } from "../../lib/utils/contentShape";
+import { markdownToHtml } from "../../lib/utils/markdownToHtml";
 import styles from "../BookMetadataEditor.module.css";
 
 function CharCounter({ count, max, label }: { count: number; max: number; label: string }) {
@@ -42,6 +44,29 @@ const AMAZON_ALLOWED_TAGS = [
 /** Sanitize HTML to only Amazon-compatible tags. */
 export function sanitizeAmazonHtml(html: string): string {
     return DOMPurify.sanitize(html, { ALLOWED_TAGS: AMAZON_ALLOWED_TAGS, ALLOWED_ATTR: [] });
+}
+
+/**
+ * Render a marketing field's stored value as sanitized preview HTML.
+ *
+ * The three fields sharing this component hold either shape (#814):
+ * `html_description` arrives from a `.html` sidecar, the two backpage
+ * fields from `.md` sidecars stored verbatim, and the user can paste
+ * either into any of them. Detection therefore happens per value, not
+ * per field, and stays the permanent contract rather than being fixed
+ * at import time - the textarea in this very component writes raw user
+ * input back, so any import-time normalisation is one edit away from
+ * being wrong again. `EnhancedTextarea`'s explicit `language` prop is
+ * the right answer where the caller knows the shape; here it does not.
+ *
+ * Markdown headings above h3 do not survive the Amazon tag allowlist,
+ * so `# Titel` previews as unformatted text. That is honest: the
+ * allowlist is what KDP accepts, and showing the heading styled would
+ * promise formatting the store will not render.
+ */
+export function renderFieldPreview(value: string): string {
+    const html = looksLikeHtml(value) ? value : markdownToHtml(value);
+    return sanitizeAmazonHtml(html);
 }
 
 /** Integrated HTML field: toggle between editable textarea and sanitized preview. */
@@ -119,7 +144,8 @@ export function HtmlFieldWithPreview({
                         lineHeight: 1.6,
                         overflow: "auto",
                     }}
-                    dangerouslySetInnerHTML={{ __html: sanitizeAmazonHtml(text) }}
+                    data-testid="html-field-preview"
+                    dangerouslySetInnerHTML={{ __html: renderFieldPreview(text) }}
                 />
             ) : (
                 <textarea
