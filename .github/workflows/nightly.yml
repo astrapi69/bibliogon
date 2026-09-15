@@ -87,18 +87,29 @@ jobs:
     timeout-minutes: 15
     strategy:
       fail-fast: false
+      # Every plugin under plugins/ must be listed here. Enforced by
+      # backend/tests/test_ci_plugin_matrix.py - a plugin that exists
+      # on disk but not in this matrix has its isolated-install path
+      # (the one its own poetry.lock governs) untested, which is
+      # exactly the gap "Two installation paths diverge" in
+      # lessons-learned describes.
       matrix:
         plugin:
+          - bibliogon-plugin-aplus
           - bibliogon-plugin-audiobook
           - bibliogon-plugin-comics
           - bibliogon-plugin-export
           - bibliogon-plugin-getstarted
+          - bibliogon-plugin-git-sync
           - bibliogon-plugin-grammar
           - bibliogon-plugin-help
           - bibliogon-plugin-kdp
           - bibliogon-plugin-kinderbuch
           - bibliogon-plugin-learnset
+          - bibliogon-plugin-medium-import
           - bibliogon-plugin-ms-tools
+          - bibliogon-plugin-promotion
+          - bibliogon-plugin-story-bible
           - bibliogon-plugin-translation
     steps:
       - uses: actions/checkout@v5
@@ -166,8 +177,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      # Same completeness rule as plugin-tests above, same guard test.
       matrix:
         include:
+          - plugin: bibliogon-plugin-aplus
+            package: bibliogon_aplus
           - plugin: bibliogon-plugin-audiobook
             package: bibliogon_audiobook
           - plugin: bibliogon-plugin-comics
@@ -176,6 +190,8 @@ jobs:
             package: bibliogon_export
           - plugin: bibliogon-plugin-getstarted
             package: bibliogon_getstarted
+          - plugin: bibliogon-plugin-git-sync
+            package: bibliogon_git_sync
           - plugin: bibliogon-plugin-grammar
             package: bibliogon_grammar
           - plugin: bibliogon-plugin-help
@@ -184,8 +200,16 @@ jobs:
             package: bibliogon_kdp
           - plugin: bibliogon-plugin-kinderbuch
             package: bibliogon_kinderbuch
+          - plugin: bibliogon-plugin-learnset
+            package: bibliogon_learnset
+          - plugin: bibliogon-plugin-medium-import
+            package: bibliogon_medium_import
           - plugin: bibliogon-plugin-ms-tools
             package: bibliogon_ms_tools
+          - plugin: bibliogon-plugin-promotion
+            package: bibliogon_promotion
+          - plugin: bibliogon-plugin-story-bible
+            package: bibliogon_story_bible
           - plugin: bibliogon-plugin-translation
             package: bibliogon_translation
     steps:
