@@ -101,6 +101,26 @@ vi.mock("../../api/client", () => ({
     },
 }));
 
+// The hook reads settings / authors / templates through the storage seam, so
+// the seam is mocked with the SAME spies as the api mock above: in api mode
+// ApiStorage would delegate to exactly those api methods, and in dexie mode
+// the spies stand in for the Dexie backend (#730). Without this, the offline
+// describe's `getStorage()` would resolve to the real ApiStorage regardless
+// of the useStorageMode mock and the seam reads would be untestable.
+vi.mock("../../storage", () => ({
+    getStorage: () => ({
+        settings: { getApp: async () => mockAppConfig },
+        authors: {
+            list: (...args: unknown[]) => mockListAuthors(...args),
+            create: (...args: unknown[]) => mockCreateAuthor(...args),
+        },
+        templates: {
+            list: () => mockListTemplates(),
+            delete: (id: string) => mockDeleteTemplate(id),
+        },
+    }),
+}));
+
 vi.mock("../shared/AppDialog", () => ({
     useDialog: () => ({
         confirm: (...args: unknown[]) => mockConfirm(...args),
@@ -829,7 +849,9 @@ describe("CreateBookForm offline (client-side templates)", () => {
         onCreateFromTemplate.mockClear();
         mockStorageMode = "dexie";
         mockListTemplates.mockReset();
-        mockListTemplates.mockRejectedValue(new Error("must not call /api offline"));
+        // Offline the seam read hits the Dexie `bookTemplates` table; the
+        // default is "nothing saved yet", so only the built-ins show.
+        mockListTemplates.mockResolvedValue([]);
         mockAppConfig = { author: { name: "", pen_names: [] } };
         mockListAuthors.mockResolvedValue([]);
     });
@@ -869,7 +891,72 @@ describe("CreateBookForm offline (client-side templates)", () => {
             expect(screen.getByTestId("template-card-client-lyrik")).toBeTruthy();
         });
         expect(screen.getByText("Roman (3-Akt)")).toBeTruthy();
+        // The catalog read goes through the seam (Dexie offline), NOT the raw
+        // api client. Zero-`/api` is pinned by settingsSeamGuard + the
+        // offline E2E, which the seam mock here cannot express.
+        expect(mockListTemplates).toHaveBeenCalledTimes(1);
+    });
+
+    it("merges saved user templates in after the built-ins (#730)", async () => {
+        mockListTemplates.mockResolvedValue([
+            {
+                id: "user-1",
+                name: "Meine Fassung",
+                description: "Selbst gespeichert",
+                genre: "scifi",
+                language: "de",
+                is_builtin: false,
+                created_at: "2026-09-01T10:00:00Z",
+                updated_at: "2026-09-01T10:00:00Z",
+                chapters: [
+                    { position: 0, title: "K1", chapter_type: "chapter", content: null },
+                ],
+            },
+        ]);
+        renderForm("prose");
+        await clickTab("create-book-mode-template");
+        await waitFor(() => {
+            expect(screen.getByTestId("template-card-client-roman-3akt")).toBeTruthy();
+            expect(screen.getByTestId("template-card-user-1")).toBeTruthy();
+        });
+        expect(screen.getByText("Meine Fassung")).toBeTruthy();
+    });
+
+    it("keeps saved templates out of a page-based type's catalog (#730)", async () => {
+        mockListTemplates.mockResolvedValue([
+            {
+                id: "user-1",
+                name: "Prosa-Fassung",
+                description: "Kapitel, keine Seiten",
+                genre: "scifi",
+                language: "de",
+                is_builtin: false,
+                created_at: "2026-09-01T10:00:00Z",
+                updated_at: "2026-09-01T10:00:00Z",
+                chapters: [
+                    { position: 0, title: "K1", chapter_type: "chapter", content: null },
+                ],
+            },
+        ]);
+        renderForm("picture_book");
+        await clickTab("create-book-mode-template");
+        await waitFor(() =>
+            expect(screen.getByTestId("template-card-client-kinderbuch")).toBeTruthy(),
+        );
+        // A user template holds chapters, so it must not be offered for a
+        // page-based book; the built-in Kinderbuch template still is.
+        expect(screen.queryByTestId("template-card-user-1")).toBeNull();
         expect(mockListTemplates).not.toHaveBeenCalled();
+    });
+
+    it("falls back to the built-ins when the saved-template read fails", async () => {
+        mockListTemplates.mockRejectedValue(new Error("dexie down"));
+        renderForm("prose");
+        await clickTab("create-book-mode-template");
+        // Degrading to the built-ins beats dropping the whole tab.
+        await waitFor(() =>
+            expect(screen.getByTestId("template-card-client-roman-3akt")).toBeTruthy(),
+        );
     });
 
     it("submit hands a client- template_id to onCreateFromTemplate", async () => {

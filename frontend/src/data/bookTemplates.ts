@@ -8,6 +8,12 @@
  * ``getStorage()`` seam so the backendless PWA can start from a template with
  * zero ``/api`` calls.
  *
+ * USER-saved templates are a different thing and do NOT live here: they hold
+ * resolved strings rather than i18n keys, so they are stored in the Dexie
+ * ``bookTemplates`` table in the API's own ``BookTemplate`` shape and read
+ * back through ``getStorage().templates`` (#730). The create form merges the
+ * two lists.
+ *
  * Built-in catalog (Stufe 1):
  *   - Roman (3-Akt) — prose: Prolog, three acts (part headers + chapters), Epilog
  *   - Sachbuch — prose: Vorwort, Einleitung, 8 Kapitel, Zusammenfassung, Anhang
@@ -87,31 +93,6 @@ export interface ClientBookTemplate {
     /** Default language pre-filled into the create form. */
     language: string;
     body: ProseTemplateBody | PageTemplateBody;
-}
-
-/**
- * User-saved book template (Stufe 2 — interface prepared, no UI yet).
- *
- * The online "Save as template" flow persists to the backend
- * (``api.templates.create``). The offline counterpart would persist a
- * ``UserBookTemplate`` to a future Dexie ``userBookTemplates`` table behind a
- * new ``IStorageService`` member; it is intentionally NOT wired here to avoid a
- * half-wired (write-without-consumer) surface. This interface documents the
- * intended shape so the offline save path can be added later without churn.
- */
-export interface UserBookTemplate {
-    id: string;
-    name: string;
-    description: string;
-    bookType: BookType;
-    genre: string;
-    language: string;
-    /** Resolved (already-localized) chapter entries — user templates are not
-     *  i18n keys, they are concrete authored structures. */
-    chapters: Array<{ title: string; chapterType: ChapterType; content?: string }>;
-    /** Page count + layout for picture-book / comic user templates. */
-    pages?: { count: number; layout: PageLayout };
-    createdAt: string;
 }
 
 const TITLE = "ui.book_templates.title.";

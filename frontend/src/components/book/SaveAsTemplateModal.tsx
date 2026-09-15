@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
 import {
-  api,
   ApiError,
   BookDetail,
   BookTemplate,
@@ -134,7 +133,7 @@ export default function SaveAsTemplateModal({
     setNameError(null);
     try {
       const chapters = await buildChapters();
-      const created = await api.templates.create({
+      const created = await getStorage().templates.create({
         name: trimmedName,
         description: trimmedDescription,
         genre,
