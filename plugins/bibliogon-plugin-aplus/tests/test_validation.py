@@ -9,7 +9,6 @@ SAME word is only a warning outside that genre.
 from __future__ import annotations
 
 import pytest
-
 from bibliogon_aplus.rules import get_ruleset
 from bibliogon_aplus.schema import AplusMeta, AplusPackage, Bullet, ModuleHeader, ThreeImageEntry
 from bibliogon_aplus.validation import validate_package
@@ -168,11 +167,110 @@ class TestMarketingImperatives:
             ("es", "Un libro sobre el poder de los pequenos habitos."),
         ],
     )
-    def test_descriptive_prose_without_imperative_is_fine(
-        self, language: str, phrase: str
-    ) -> None:
+    def test_descriptive_prose_without_imperative_is_fine(self, language: str, phrase: str) -> None:
         pkg = _package(short_description=phrase, language=language)
         findings = validate_package(pkg, language=language, genre_key=None, rules=RULES)
+        assert _errors(findings) == []
+
+    def test_the_827_report_example_is_now_caught(self) -> None:
+        """Regression pin (#828): this exact sentence shipped in #827's
+        closing report as a generated example and was NOT flagged -
+        "Master" was missing from the EN word list."""
+        pkg = _package(
+            short_description="Master AI conversations without writing a single line of code.",
+            language="en",
+        )
+        findings = validate_package(pkg, language="en", genre_key=None, rules=RULES)
+        assert any(
+            f.field == "short_description" and "Master" in f.message for f in _errors(findings)
+        )
+
+    @pytest.mark.parametrize(
+        ("language", "phrase"),
+        [
+            ("de", "Erschliessen Sie neue Perspektiven mit jedem Kapitel."),
+            ("en", "Unlock a fresh perspective with every chapter."),
+            ("fr", "Debloquez de nouvelles perspectives a chaque chapitre."),
+            ("es", "Desbloquee nuevas perspectivas en cada capitulo."),
+        ],
+    )
+    def test_a_newly_added_imperative_word_is_an_error(self, language: str, phrase: str) -> None:
+        pkg = _package(short_description=phrase, language=language)
+        findings = validate_package(pkg, language=language, genre_key=None, rules=RULES)
+        assert any(f.field == "short_description" for f in _errors(findings))
+
+
+class TestLeadingImperativeHeuristic:
+    """A word list can never be exhaustive (#828). German and French
+    have imperative morphology a regex can catch even for a verb not
+    in the enumerated list; English/Spanish do not, and rely on the
+    list alone (documented limitation in validation.py)."""
+
+    def test_an_unlisted_german_verb_opening_with_sie_is_still_caught(self) -> None:
+        pkg = _package(
+            short_description="Erobern Sie neue Wissensgebiete mit diesem Buch.", language="de"
+        )
+        findings = validate_package(pkg, language="de", genre_key=None, rules=RULES)
+        assert any("Erobern Sie" in f.message for f in _errors(findings))
+
+    def test_german_prose_not_opening_with_an_imperative_is_fine(self) -> None:
+        pkg = _package(
+            short_description="Dieses Buch begleitet Sie durch vier Jahreszeiten.", language="de"
+        )
+        findings = validate_package(pkg, language="de", genre_key=None, rules=RULES)
+        assert _errors(findings) == []
+
+    def test_an_unlisted_french_vous_form_verb_opening_is_still_caught(self) -> None:
+        pkg = _package(short_description="Gagnez en clarte des le premier chapitre.", language="fr")
+        findings = validate_package(pkg, language="fr", genre_key=None, rules=RULES)
+        assert any("Gagnez" in f.message for f in _errors(findings))
+
+    def test_french_prose_not_opening_with_an_imperative_is_fine(self) -> None:
+        pkg = _package(
+            short_description="Ce livre explore quatre saisons dans une foret paisible.",
+            language="fr",
+        )
+        findings = validate_package(pkg, language="fr", genre_key=None, rules=RULES)
+        assert _errors(findings) == []
+
+    def test_the_french_heuristic_does_not_flag_a_known_non_verb_ez_word(self) -> None:
+        pkg = _package(
+            short_description="Assez de theorie, ce livre passe directement a la pratique.",
+            language="fr",
+        )
+        findings = validate_package(pkg, language="fr", genre_key=None, rules=RULES)
+        assert _errors(findings) == []
+
+    @pytest.mark.parametrize("word", ["Start", "Build", "Get", "Take"])
+    def test_a_leading_only_english_word_is_an_error_when_it_opens_the_field(
+        self, word: str
+    ) -> None:
+        """These words are too common to block anywhere in text (see
+        the anywhere-match regression this replaced: the shared test
+        fixture's own "Chapters build on each other" bullet body was
+        a false positive under the original anywhere-match design).
+        Opening a field with them is unambiguous, though."""
+        pkg = _package(short_description=f"{word} a new habit, one chapter at a time.")
+        findings = validate_package(pkg, language="en", genre_key=None, rules=RULES)
+        assert any(f.field == "short_description" for f in _errors(findings))
+
+    @pytest.mark.parametrize("word", ["start", "build", "get", "take"])
+    def test_a_leading_only_word_mid_sentence_is_not_an_error(self, word: str) -> None:
+        pkg = _package(short_description=f"Every chapter helps readers {word} lasting confidence.")
+        findings = validate_package(pkg, language="en", genre_key=None, rules=RULES)
+        assert _errors(findings) == []
+
+    def test_english_has_no_leading_heuristic_beyond_the_word_list(self) -> None:
+        """Documented limitation: an imperative-looking EN verb NOT on
+        the list is not caught by a heuristic - only by keeping the
+        list current. This pins the documented behavior so a future
+        change doesn't silently start (or silently fail to start)
+        catching these without an explicit decision."""
+        pkg = _package(
+            short_description="Conquer every chapter with confidence and curiosity.",
+            language="en",
+        )
+        findings = validate_package(pkg, language="en", genre_key=None, rules=RULES)
         assert _errors(findings) == []
 
 

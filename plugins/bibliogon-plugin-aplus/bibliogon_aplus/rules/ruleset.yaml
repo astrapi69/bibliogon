@@ -10,7 +10,7 @@
 # keys as the existing ones. Adding a genre-style override: add an
 # entry under `image_style.genres`.
 
-version: "1"
+version: "2"
 
 schema_limits:
   short_description: 300
@@ -26,6 +26,15 @@ languages:
       - "Meistern Sie"
       - "Erfahren Sie"
       - "Erleben Sie"
+      - "Erschliessen Sie"
+      - "Verwandeln Sie"
+      - "Steigern Sie"
+      - "Starten Sie"
+      - "Bauen Sie"
+      - "Erhalten Sie"
+      - "Nehmen Sie"
+      - "Tauchen Sie ein"
+      - "Erreichen Sie"
     price_shipping_terms:
       - "kostenlos"
       - "versandkostenfrei"
@@ -55,6 +64,22 @@ languages:
       - "Find out"
       - "Explore"
       - "Uncover"
+      - "Master"
+      - "Unlock"
+      - "Transform"
+      - "Boost"
+      - "Dive"
+      - "Achieve"
+    # English has no imperative-mood inflection: a bare "build"/"get"/
+    # "start"/"take" is indistinguishable from ordinary descriptive
+    # prose mid-sentence (e.g. "Chapters build on each other" is not
+    # a command). Checked only at the START of a field, where an
+    # opening bare verb IS specifically imperative. See #828.
+    leading_only_imperatives:
+      - "Start"
+      - "Build"
+      - "Get"
+      - "Take"
     price_shipping_terms:
       - "free shipping"
       - "discount"
@@ -82,6 +107,15 @@ languages:
       - "Decouvrez"
       - "Maitrisez"
       - "Explorez"
+      - "Debloquez"
+      - "Transformez"
+      - "Boostez"
+      - "Commencez"
+      - "Construisez"
+      - "Obtenez"
+      - "Prenez"
+      - "Plongez"
+      - "Atteignez"
     price_shipping_terms:
       - "gratuit"
       - "livraison"
@@ -108,6 +142,15 @@ languages:
       - "Descubra"
       - "Domine"
       - "Explore"
+      - "Desbloquee"
+      - "Transforme"
+      - "Impulse"
+      - "Comience"
+      - "Construya"
+      - "Obtenga"
+      - "Tome"
+      - "Sumerjase"
+      - "Logre"
     price_shipping_terms:
       - "gratis"
       - "envio"

@@ -26,6 +26,12 @@ class LanguageRules:
     price_shipping_terms: tuple[str, ...]
     soft_words_default: tuple[str, ...]
     genre_escalations: dict[str, tuple[str, ...]] = field(default_factory=dict)
+    #: Words too common to safely block ANYWHERE in text (English has
+    #: no imperative-mood inflection, so a bare verb like "build" or
+    #: "get" is indistinguishable from ordinary descriptive prose mid-
+    #: sentence - see #828). Checked only when the word IS the first
+    #: word of the field, where the imperative reading is unambiguous.
+    leading_only_imperatives: tuple[str, ...] = ()
 
     def escalated_words(self, genre_key: str | None) -> frozenset[str]:
         """Soft words that become hard errors for the given genre key."""
@@ -82,6 +88,7 @@ def _build_language_rules(raw: dict[str, Any]) -> LanguageRules:
         price_shipping_terms=tuple(raw.get("price_shipping_terms") or ()),
         soft_words_default=tuple((raw.get("soft_words") or {}).get("default") or ()),
         genre_escalations={key: tuple(value) for key, value in escalations.items()},
+        leading_only_imperatives=tuple(raw.get("leading_only_imperatives") or ()),
     )
 
 
