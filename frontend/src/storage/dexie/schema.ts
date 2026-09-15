@@ -20,6 +20,7 @@ import type {
     Article,
     ArticleComment,
     Author,
+    BookTemplate,
     BookTypeDef,
     Chapter,
     ChapterVersionRead,
@@ -185,6 +186,13 @@ class BibliogonOfflineDB extends Dexie {
     articleAssets!: Table<ArticleAssetRow, string>;
     articleComments!: Table<CommentRow, string>;
     eventLog!: Table<EventLogSnapshot, string>;
+    /** User-saved book templates (#730). Stores the API `BookTemplate` shape
+     *  verbatim, so an `api`-mode row and a Dexie row are interchangeable and
+     *  the seam's `typeof api.templates.*` typing holds. Built-in templates
+     *  are NOT rows here: offline they come from the client catalog in
+     *  `data/bookTemplates.ts`, which carries i18n keys rather than resolved
+     *  strings. */
+    bookTemplates!: Table<BookTemplate, string>;
 
     constructor() {
         // Separate DB from the crash-recovery drafts store ("bibliogon").
@@ -263,6 +271,12 @@ class BibliogonOfflineDB extends Dexie {
         // diagnostic log survives a tab-refresh / crash.
         this.version(11).stores({
             eventLog: "id",
+        });
+        // v12 (#730): user-saved book templates. `name` is indexed because
+        // create enforces the same exact-name uniqueness the endpoint's 409
+        // does, and list orders by it; `created_at` for future date ordering.
+        this.version(12).stores({
+            bookTemplates: "id, name, created_at",
         });
     }
 }

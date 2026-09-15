@@ -103,6 +103,22 @@ const GUARDED: readonly GuardedNamespace[] = [
         allowlist: IMPLEMENTATION_LAYER,
     },
     {
+        // Book templates: list/create/delete plus the create-from-template
+        // instantiation, all seam-backed since #730. `api.chapterTemplates`
+        // is a DIFFERENT namespace and not ported yet (#731), so the
+        // pattern stops at a word boundary after `templates`.
+        label: "api.templates",
+        pattern: /\bapi\.templates\b/,
+        remedy: "getStorage().templates (see #730)",
+        allowlist: IMPLEMENTATION_LAYER,
+    },
+    {
+        label: "api.books.createFromTemplate",
+        pattern: /\bapi\.books\s*\.\s*createFromTemplate\b/,
+        remedy: "getStorage().books.createFromTemplate (see #730)",
+        allowlist: IMPLEMENTATION_LAYER,
+    },
+    {
         // Chapter version history + snapshots. Guarded per-method rather
         // than all of api.chapters: the plain chapter CRUD has its own
         // seam members but several callers still go direct (epic #727).

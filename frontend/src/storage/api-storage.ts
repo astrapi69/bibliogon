@@ -36,6 +36,7 @@ import type {
     PublicationStorage,
     SettingsStorage,
     StoryBibleStorage,
+    TemplateStorage,
     WritingSessionsStorage,
     WritingStatsStorage,
 } from "./types";
@@ -143,5 +144,8 @@ export const apiStorage: IStorageService = {
                 throw new Error("comments.create is offline-only");
             },
         };
+    },
+    get templates(): TemplateStorage {
+        return api.templates;
     },
 };

@@ -48,6 +48,29 @@ export interface BookStorage {
     bulkRestore: typeof api.books.bulkRestore;
     bulkDelete: typeof api.books.bulkDelete;
     fromArticles: typeof api.books.fromArticles;
+    /**
+     * Instantiate a book from a saved template (#730). Routed through the
+     * seam so a template saved offline can actually be used offline — a
+     * write with no consumer would be purgatory, not a feature. The Dexie
+     * implementation resolves USER templates only; the client built-ins
+     * carry i18n keys, so the caller (which has `t`) instantiates those via
+     * `instantiateClientBookTemplate`.
+     */
+    createFromTemplate: typeof api.books.createFromTemplate;
+}
+
+/**
+ * User-saved book templates (#730). Built-in templates are not part of this
+ * namespace offline: they come from the client catalog in
+ * `data/bookTemplates.ts` (i18n keys, resolved by the caller), which is why
+ * `list` returns only what the user saved in Dexie mode while the API
+ * returns builtin + user rows.
+ */
+export interface TemplateStorage {
+    list: typeof api.templates.list;
+    get: typeof api.templates.get;
+    create: typeof api.templates.create;
+    delete: typeof api.templates.delete;
 }
 
 export interface ChapterStorage {
@@ -327,4 +350,5 @@ export interface IStorageService {
     articleAssets: ArticleAssetStorage;
     covers: CoverStorage;
     comments: CommentStorage;
+    templates: TemplateStorage;
 }

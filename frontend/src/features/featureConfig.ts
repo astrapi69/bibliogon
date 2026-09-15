@@ -96,7 +96,6 @@ export const FEATURES = {
     KDP_CATEGORY_CATALOG: "kdp-category-catalog",
     BULK_EXPORT: "bulk-export",
     WRITING_HISTORY_CSV: "writing-history-csv",
-    BOOK_TEMPLATES: "book-templates",
     // Server-bound review/translation surfaces with no browser path: the
     // grammar spellcheck proxies LanguageTool through the backend, and the
     // article translation executes DeepL/LMStudio via the backend plugin.
@@ -243,7 +242,6 @@ const DESKTOP_ONLY: readonly string[] = [
     FEATURES.KDP_CATEGORY_CATALOG,
     FEATURES.BULK_EXPORT,
     FEATURES.WRITING_HISTORY_CSV,
-    FEATURES.BOOK_TEMPLATES,
     FEATURES.AI_TEMPLATE_FILE_IO,
     FEATURES.GRAMMAR,
     FEATURES.TRANSLATION,

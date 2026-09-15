@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import {
-  api,
   ApiError,
   BookCreate,
   BookFromTemplateCreate,
@@ -151,7 +150,7 @@ export default function CreateBookPage() {
         return;
       }
       // Online backend templates are prose-only; always return to the dashboard.
-      await api.books.createFromTemplate(data);
+      await getStorage().books.createFromTemplate(data);
       navigate("/", { state: { bookCreated: true } });
     } catch (err) {
       notify.error(

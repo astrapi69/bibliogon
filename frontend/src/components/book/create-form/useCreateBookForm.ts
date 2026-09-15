@@ -8,7 +8,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  api,
   ApiError,
   Author,
   BookCreate,
@@ -117,7 +116,7 @@ export function useCreateBookForm({
     );
     if (!ok) return;
     try {
-      await api.templates.delete(tpl.id);
+      await getStorage().templates.delete(tpl.id);
       setTemplates((prev) => (prev ? prev.filter((t) => t.id !== tpl.id) : prev));
       if (selectedTemplateId === tpl.id) setSelectedTemplateId(null);
       notify.success(t("ui.template_picker.deleted", "Vorlage gelöscht"));
@@ -218,16 +217,37 @@ export function useCreateBookForm({
   useEffect(() => {
     if (templates !== null) return;
     if (dexie) {
-      setTemplates(clientTemplateCatalog(bookType, t));
-      setTemplatesError(null);
+      const builtins = clientTemplateCatalog(bookType, t);
+      // A user template holds CHAPTERS, so offering one for a page-based
+      // type would seed a comic with prose. Gate the merge on the same
+      // registry capability that gates the online catalog (prose-only
+      // today); the client built-ins stay unconditional because they carry
+      // a per-type body (#730).
+      if (!supportsTemplateCatalog) {
+        setTemplates(builtins);
+        setTemplatesError(null);
+        return;
+      }
+      getStorage()
+        .templates.list()
+        .then((saved) => {
+          setTemplates([...builtins, ...saved]);
+          setTemplatesError(null);
+        })
+        .catch((err) => {
+          // The built-ins still work without the saved ones, so degrade to
+          // them rather than dropping the whole tab.
+          setTemplates(builtins);
+          setTemplatesError(String(err?.message || err));
+        });
       return;
     }
     if (!supportsTemplateCatalog) {
       setTemplates([]);
       return;
     }
-    api.templates
-      .list()
+    getStorage()
+      .templates.list()
       .then((list) => {
         setTemplates(list);
         setTemplatesError(null);

@@ -20,7 +20,7 @@ import { articles } from "./articles";
 import { assets } from "./assets";
 import { authors } from "./authors";
 import { articlePlatforms, editorPluginStatus, publications } from "./backend-only";
-import { books } from "./books";
+import { books, templates } from "./books";
 import { chapterLabels } from "./chapter-labels";
 import { chapters } from "./chapters";
 import { comics } from "./comics";
@@ -34,6 +34,7 @@ import { writingSessions, writingStats } from "./writing";
 export const dexieStorage: IStorageService = {
     mode: "dexie",
     books,
+    templates,
     chapters,
     articles,
     articleAssets,

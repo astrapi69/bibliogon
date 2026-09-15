@@ -4,6 +4,11 @@
  * Covers: book title in header, name validation (required),
  * empty-placeholder vs preserve-content payload shape, 409 name
  * collision -> inline error, no-chapters disables submit.
+ *
+ * The modal saves through `getStorage().templates.create` (#730). The api
+ * mock below is what ApiStorage delegates to, so these cases are the
+ * DESKTOP-path pin; the Dexie backend (including its matching 409) is pinned
+ * in `storage/dexie-storage.test.ts`.
  */
 
 import {describe, it, expect, vi, beforeEach} from "vitest"
