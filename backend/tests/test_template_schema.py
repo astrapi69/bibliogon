@@ -45,7 +45,6 @@ from app.ai.template_schema import (
     serialize_template_to_yaml,
 )
 
-
 # ---------------------------------------------------------------------------
 # Empty templates
 # ---------------------------------------------------------------------------
@@ -238,10 +237,28 @@ def test_extract_body_text_walks_nested_tiptap_doc() -> None:
     assert extract_body_text(doc) == "Hello\nWorld"
 
 
-def test_extract_body_text_handles_malformed_json() -> None:
-    assert extract_body_text("not-json") == ""
+def test_extract_body_text_treats_unparseable_non_html_as_plain_text() -> None:
+    """#824: a value that isn't valid JSON and isn't HTML is legacy
+    plain text - passing it through (not silently emptying it) is
+    the same "don't lose content on parse failure" principle as the
+    HTML branch covered below."""
+    assert extract_body_text("not-json") == "not-json"
     assert extract_body_text(None) == ""
     assert extract_body_text("") == ""
+    assert extract_body_text("   ") == ""
+
+
+def test_extract_body_text_strips_html_instead_of_emptying_it() -> None:
+    """#824: a write-book-template-imported chapter is HTML until
+    someone opens and saves it (#787). The pre-fix behavior returned
+    "" for this shape, feeding the AI-fill path an empty body for
+    every never-opened imported article/chapter."""
+    html = "<p>Ein Buch <strong>über</strong> Bewusstsein.</p>"
+    result = extract_body_text(html)
+    assert "Ein Buch" in result
+    assert "über Bewusstsein" in result
+    assert "<p>" not in result
+    assert "<strong>" not in result
 
 
 def test_extract_body_preview_truncates_at_word_limit() -> None:
@@ -251,9 +268,7 @@ def test_extract_body_preview_truncates_at_word_limit() -> None:
             "content": [
                 {
                     "type": "paragraph",
-                    "content": [
-                        {"type": "text", "text": " ".join(["word"] * 1200)}
-                    ],
+                    "content": [{"type": "text", "text": " ".join(["word"] * 1200)}],
                 }
             ],
         }

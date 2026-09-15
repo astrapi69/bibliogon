@@ -51,8 +51,13 @@ def _flatten_tiptap(node: object) -> str:
 def count_words(content: str | None) -> int:
     """Word count of a chapter's stored content.
 
-    Content is TipTap JSON serialised as a string (or legacy plain
-    text); both are flattened to plain text, then whitespace-split.
+    Content is TipTap JSON serialised as a string, HTML (an
+    imported, never-opened chapter - #787), or legacy plain text;
+    all three are flattened to plain text, then whitespace-split.
+
+    Without the HTML branch, an imported chapter's raw markup got
+    word-counted as-is (tag names and attribute values included),
+    inflating every writing-stats total for that book (#824).
     """
     raw = (content or "").strip()
     if not raw:
@@ -63,6 +68,10 @@ def count_words(content: str | None) -> int:
             plain = _flatten_tiptap(json.loads(raw))
         except (ValueError, TypeError):
             plain = raw
+    elif raw.startswith("<"):
+        from app.services.html_text import html_to_plain_text
+
+        plain = html_to_plain_text(raw)
     return len(plain.split())
 
 

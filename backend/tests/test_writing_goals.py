@@ -43,6 +43,18 @@ class TestCountWords:
         doc = '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"alpha beta gamma"}]}]}'
         assert count_words(doc) == 3
 
+    def test_html_imported_chapter_counts_visible_words_not_markup(self):
+        """#824: an imported, never-opened chapter is HTML (#787).
+        Before the fix, the HTML branch was never taken (the guard
+        only checked for a leading "{"), so the raw markup - tag
+        names and attribute text included - was word-counted as-is,
+        inflating every writing-stats total for that book."""
+        html = '<p class="intro">Ein Buch über Bewusstsein.</p>'
+        # Raw whitespace-split of the markup yields 5 "words"
+        # ('<p', 'class="intro">Ein', 'Buch', 'über', 'Bewusstsein.</p>');
+        # the real prose is 4. The difference is what this pins.
+        assert count_words(html) == 4
+
 
 class TestChapterTarget:
     def test_default_null_and_roundtrip(self):

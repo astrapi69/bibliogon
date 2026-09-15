@@ -8,17 +8,30 @@ import json
 
 def extract_body_text(tiptap_json: str | None) -> str:
     """Walk a serialised TipTap doc and return concatenated plain
-    text. Returns ``""`` on parse failure so the caller can
-    decide what "empty" means. Origin: moved from
-    ``app.routers.articles._extract_plain_text`` so the AI
-    template module owns the helper that produces its own
-    body preview."""
+    text. Origin: moved from ``app.routers.articles._extract_plain_text``
+    so the AI template module owns the helper that produces its own
+    body preview.
+
+    An imported article/chapter is HTML until someone opens and
+    saves it in the editor (#787), so a bare ``json.loads`` failure
+    does not mean "no content" - it usually means "HTML content"
+    (#824). Route that case through the shared HTML stripper rather
+    than returning empty text, which fed the AI-fill/bulk-fill path
+    an empty body for every never-opened imported record.
+    """
     if not tiptap_json:
+        return ""
+    stripped = tiptap_json.strip()
+    if not stripped:
         return ""
     try:
         doc = json.loads(tiptap_json)
     except (ValueError, TypeError):
-        return ""
+        if stripped.startswith("<"):
+            from app.services.html_text import html_to_plain_text
+
+            return html_to_plain_text(tiptap_json)
+        return stripped
 
     parts: list[str] = []
 
