@@ -132,6 +132,11 @@ def create_commit(
             status_code=status.HTTP_409_CONFLICT,
             detail={"code": "nothing_to_commit", "message": str(exc)},
         ) from exc
+    except git_backup.WorkingTreeIncompleteError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "working_tree_incomplete", "message": str(exc)},
+        ) from exc
     except git_backup.GitBackupError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 

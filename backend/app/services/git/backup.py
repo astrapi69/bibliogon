@@ -47,6 +47,14 @@ class NothingToCommitError(GitBackupError):
     """Commit requested but the working tree has no changes."""
 
 
+class WorkingTreeIncompleteError(GitBackupError):
+    """Tracked files are absent from the working tree before serialization.
+
+    Committing would stage every one of them as a deletion. Raised
+    instead of committing (#841).
+    """
+
+
 class RemoteNotConfiguredError(GitBackupError):
     """A remote operation was requested but no remote has been configured."""
 
@@ -121,6 +129,41 @@ def init_repo(book_id: str, db: Session) -> dict[str, Any]:
     return status(book_id, db)
 
 
+_MISSING_FILE_EXAMPLES = 5
+
+
+def _refuse_if_working_tree_incomplete(repo: git.Repo, book_id: str) -> None:
+    """Raise when tracked files are absent from the working tree.
+
+    Must run BEFORE ``_write_book_state``. At that point a healthy backup
+    repo matches its HEAD exactly; the only deletions a Bibliogon commit
+    legitimately makes (a removed chapter's JSON) are introduced later,
+    by serialization's own pre-clean, so they never trip this check.
+
+    The repo that DOES trip it is an imported book's: ``import_adopter``
+    copies the upstream ``.git`` into ``uploads/{book_id}/`` without its
+    working tree, and ``is_initialized`` accepts it as a backup repo. A
+    ``git add -A`` there stages the author's entire upstream manuscript
+    as deleted (#841).
+
+    Raises:
+        WorkingTreeIncompleteError: naming how many files are missing and
+            the first few paths, so the refusal is actionable.
+    """
+    missing = [line for line in repo.git.ls_files("--deleted").splitlines() if line]
+    if not missing:
+        return
+    examples = ", ".join(missing[:_MISSING_FILE_EXAMPLES])
+    more = len(missing) - _MISSING_FILE_EXAMPLES
+    suffix = f" and {more} more" if more > 0 else ""
+    raise WorkingTreeIncompleteError(
+        f"Refusing to commit book {book_id}: {len(missing)} tracked file(s) are "
+        f"missing from the working tree ({examples}{suffix}). Committing would "
+        "record them as deleted. This usually means the repository was adopted "
+        "from a git import without its files checked out."
+    )
+
+
 def commit(
     book_id: str,
     message: str,
@@ -138,6 +181,7 @@ def commit(
         raise RepoNotInitializedError(f"Book {book_id} has no git repo. Initialize first.")
 
     repo = git.Repo(path)
+    _refuse_if_working_tree_incomplete(repo, book_id)
     _write_book_state(book, db, path)
 
     repo.git.add(A=True)
