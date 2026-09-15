@@ -44,9 +44,15 @@ PLUGINS_DIR = REPO_ROOT / "plugins"
 #:   hookspec cannot carry audiobook's async + SSE-streaming shape,
 #:   so plugin-export dispatches into plugin-audiobook's generator
 #:   directly instead of a hook.
-#: ms-tools -> audiobook: predates this test. ms-tools' metrics
-#:   endpoint reuses audiobook's ``extract_plain_text`` rather than a
-#:   third copy of the same TipTap-flattening logic.
+#:
+#: ms-tools -> audiobook was listed here until #835. It was never a
+#: declared dependency (no entry in ms-tools' pyproject.toml, no
+#: ``depends_on``), so it only worked because the backend installs
+#: every plugin into one venv - the per-plugin install path would
+#: have failed on it. Resolved rather than declared: the shared
+#: TipTap-flattening logic moved to
+#: ``app.services.html_text.content_to_plain_text`` (core, importable
+#: by any plugin), and both ms-tools handlers call that instead.
 ALLOWED_CROSS_PLUGIN_IMPORTS: frozenset[tuple[str, str]] = frozenset(
     {
         ("kdp", "export"),
@@ -54,7 +60,6 @@ ALLOWED_CROSS_PLUGIN_IMPORTS: frozenset[tuple[str, str]] = frozenset(
         ("learnset", "export"),
         ("kdp", "comics"),
         ("export", "audiobook"),
-        ("ms-tools", "audiobook"),
     }
 )
 

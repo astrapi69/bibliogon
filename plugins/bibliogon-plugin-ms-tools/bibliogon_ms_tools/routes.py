@@ -231,17 +231,14 @@ async def export_metrics(req: MetricsExportRequest) -> StreamingResponse:
             .all()
         )
 
-        from bibliogon_audiobook.generator import extract_plain_text
+        from app.services.html_text import content_to_plain_text
 
         from .readability import analyze_readability as _analyze
         from .style_checker import check_style as _check
 
         rows: list[dict[str, Any]] = []
         for ch in chapters:
-            try:
-                plain = extract_plain_text(ch.content)
-            except Exception:
-                plain = ch.content if isinstance(ch.content, str) else ""
+            plain = content_to_plain_text(ch.content)
             if not plain.strip():
                 continue
             lang = book.language or "de"
@@ -314,11 +311,11 @@ async def chapter_metrics(book_id: str) -> dict[str, Any]:
             db.query(Chapter).filter(Chapter.book_id == book_id).order_by(Chapter.position).all()
         )
 
-        from bibliogon_audiobook.generator import extract_plain_text
+        from app.services.html_text import content_to_plain_text
 
         rows: list[dict[str, Any]] = []
         for ch in chapters:
-            plain = extract_plain_text(ch.content)
+            plain = content_to_plain_text(ch.content)
             if not plain.strip():
                 rows.append(
                     {
