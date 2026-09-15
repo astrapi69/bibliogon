@@ -883,3 +883,92 @@ def test_pat_never_appears_on_disk_in_git_config(tmp_path):
     config_text = (git_backup.repo_path(book_id) / ".git" / "config").read_text()
     assert "secret-pat-value" not in config_text
     assert "x-access-token" not in config_text
+
+
+class TestRefusesCommitOnIncompleteWorkingTree:
+    """#841: an imported book's ``uploads/{id}/.git`` is the author's real
+    upstream history, adopted WITHOUT its working tree. ``commit`` used to
+    ``git add -A`` over that, staging every tracked-but-absent file - the
+    whole upstream manuscript - as a deletion.
+    """
+
+    @staticmethod
+    def _adopt_upstream_repo_without_worktree(book_id: str) -> tuple[git.Repo, str]:
+        """Reproduce what ``import_adopter.adopt_git_dir`` leaves on disk:
+        a ``.git`` holding real tracked files, none of them checked out."""
+        path = git_backup.repo_path(book_id)
+        path.mkdir(parents=True, exist_ok=True)
+        repo = git.Repo.init(path, initial_branch="main")
+        repo.git.config("user.name", "Upstream Author")
+        repo.git.config("user.email", "author@example.com")
+        chapters = path / "manuscript" / "chapters"
+        chapters.mkdir(parents=True)
+        (chapters / "introduction.md").write_text("# Introduction\n\nReal prose.\n", "utf-8")
+        (chapters / "chapter-one.md").write_text("# Chapter One\n\nMore prose.\n", "utf-8")
+        (path / "Makefile").write_text("all:\n\techo build\n", "utf-8")
+        repo.git.add(A=True)
+        head = repo.index.commit("feat: real upstream work").hexsha
+        (chapters / "introduction.md").unlink()
+        (chapters / "chapter-one.md").unlink()
+        (path / "Makefile").unlink()
+        return repo, head
+
+    def test_commit_is_refused_with_a_conflict_naming_the_missing_files(self) -> None:
+        book_id = _create_book()
+        _add_chapter(book_id, "Kapitel 1", content="<p>Importierter Text.</p>")
+        _repo, _head = self._adopt_upstream_repo_without_worktree(book_id)
+
+        resp = client.post(f"/api/books/{book_id}/git/commit", json={"message": "x"})
+
+        assert resp.status_code == 409, resp.text
+        detail = resp.json()["detail"]
+        assert detail["code"] == "working_tree_incomplete"
+        assert "3" in detail["message"]
+        assert "manuscript/chapters/" in detail["message"]
+
+    def test_refused_commit_leaves_the_upstream_history_untouched(self) -> None:
+        book_id = _create_book()
+        _add_chapter(book_id, "Kapitel 1", content="<p>Importierter Text.</p>")
+        repo, head = self._adopt_upstream_repo_without_worktree(book_id)
+
+        client.post(f"/api/books/{book_id}/git/commit", json={"message": "x"})
+
+        assert repo.head.commit.hexsha == head
+        tracked = repo.git.ls_tree("-r", "--name-only", "HEAD").splitlines()
+        assert "manuscript/chapters/introduction.md" in tracked
+        assert "Makefile" in tracked
+
+    def test_refused_commit_writes_nothing_into_the_working_tree(self) -> None:
+        """The check runs BEFORE serialization, so no Bibliogon JSON is
+        dropped into the adopted repo either."""
+        book_id = _create_book()
+        _add_chapter(book_id, "Kapitel 1", content="<p>Importierter Text.</p>")
+        self._adopt_upstream_repo_without_worktree(book_id)
+
+        client.post(f"/api/books/{book_id}/git/commit", json={"message": "x"})
+
+        manuscript = git_backup.repo_path(book_id) / "manuscript"
+        assert list(manuscript.rglob("*.json")) == []
+
+    def test_a_legitimate_chapter_removal_still_commits(self) -> None:
+        """The guard must not break the intended deletion path: removing a
+        chapter in Bibliogon drops its JSON from the backup repo. Those
+        deletions appear only AFTER serialization pre-cleans the section
+        dirs, so they are invisible to the pre-serialization check."""
+        book_id = _create_book()
+        keep = _add_chapter(book_id, "Bleibt")
+        drop = _add_chapter(book_id, "Fliegt raus")
+        assert client.post(f"/api/books/{book_id}/git/init").status_code in (200, 201)
+
+        client.delete(f"/api/books/{book_id}/chapters/{drop}")
+        resp = client.post(f"/api/books/{book_id}/git/commit", json={"message": "remove"})
+
+        assert resp.status_code == 200, resp.text
+        repo = git.Repo(git_backup.repo_path(book_id))
+        tracked = repo.git.ls_tree("-r", "--name-only", "HEAD").splitlines()
+        # JSON only: the serializer's pre-clean removes *.json but not
+        # *.md, so a removed chapter's Markdown side-file currently
+        # survives. That is a separate serializer bug, not this guard's.
+        assert not any(p.endswith("fliegt-raus.json") for p in tracked)
+        assert any(p.endswith("bleibt.json") for p in tracked)
+        assert keep
