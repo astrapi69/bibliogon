@@ -87,6 +87,47 @@ class TestBuildBookContext:
         context = build_book_context(_book(genre=None, bisac_codes=None))
         assert context.genre_key is None
 
+    def test_genre_key_falls_back_to_picture_book_type(self) -> None:
+        """#828: 0/44 live books carry a BISAC code; book_type is a
+        far more common explicit signal for a children's title."""
+        book = _book(genre=None, bisac_codes=None, book_type="picture_book")
+        context = build_book_context(book)
+        assert context.genre_key == "kinderbuch"
+
+    def test_genre_key_falls_back_to_a_juvenile_text_marker_in_the_description(self) -> None:
+        """#828: the real 'Die Abenteuer von Fips' catalog book has no
+        genre, no BISAC, and book_type='prose' - the only signal left
+        is the free-text description mentioning 'Kinderbuchserie'."""
+        book = _book(
+            title="Die Abenteuer von Fips",
+            genre=None,
+            bisac_codes=None,
+            book_type="prose",
+            description=("Kinderbuchserie über Fips, den kleinen Fuchs, und seine Freunde."),
+        )
+        context = build_book_context(book)
+        assert context.genre_key == "kinderbuch"
+
+    def test_genre_key_text_marker_is_also_checked_in_the_title(self) -> None:
+        book = _book(
+            title="My Favorite Picture Book",
+            genre=None,
+            bisac_codes=None,
+            book_type="prose",
+            description="A story for young readers.",
+        )
+        context = build_book_context(book)
+        assert context.genre_key == "kinderbuch"
+
+    def test_genre_key_text_marker_does_not_false_positive_on_unrelated_prose(self) -> None:
+        context = build_book_context(_book(genre=None, bisac_codes=None))
+        assert context.genre_key is None
+
+    def test_explicit_genre_field_wins_over_the_picture_book_type_fallback(self) -> None:
+        book = _book(genre="scifi", bisac_codes=None, book_type="picture_book")
+        context = build_book_context(book)
+        assert context.genre_key == "scifi"
+
     def test_bisac_and_categories_are_decoded_from_json_text(self) -> None:
         context = build_book_context(_book())
         assert context.bisac_codes == ["FIC022020"]

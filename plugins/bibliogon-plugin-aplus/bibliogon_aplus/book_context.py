@@ -26,6 +26,24 @@ from bibliogon_aplus.schema import MissingFieldFinding
 _JUVENILE_BISAC_PREFIX = "JUV"
 _JUVENILE_GENRE_KEY = "kinderbuch"
 
+#: Book.book_type value the picture-book editor uses (see
+#: backend/config/book-types.yaml, id "picture_book"). A picture-book
+#: is a children's title by construction, so it is a stronger and
+#: more common signal on the live catalog than BISAC (0/44 books on
+#: the live library carry a BISAC code at all, per #828's audit).
+_PICTURE_BOOK_TYPE = "picture_book"
+
+#: Last-resort text signal, checked in title + subtitle + description
+#: when neither `genre`, `book_type`, nor a JUV BISAC code fired. Every
+#: phrase must be specific enough to avoid false positives (bare
+#: "kids"/"child" is too broad; a compound noun phrase is not).
+_JUVENILE_TEXT_MARKERS: dict[str, tuple[str, ...]] = {
+    "de": ("kinderbuch", "bilderbuch"),
+    "en": ("children's book", "childrens book", "picture book"),
+    "fr": ("livre pour enfants", "album jeunesse", "livre jeunesse"),
+    "es": ("libro infantil", "libro para ninos", "libro para niños"),
+}
+
 
 @dataclass(frozen=True)
 class BookContext:
@@ -76,11 +94,38 @@ def _decode_json_list(raw: str | None) -> list[str]:
     return decoded if isinstance(decoded, list) else []
 
 
-def _resolve_genre_key(book: Any, bisac_codes: list[str]) -> str | None:
+def _looks_like_juvenile_text(*texts: str | None) -> bool:
+    """Scan title/subtitle/description for a children's-book marker
+    phrase, in any of the supported languages (not just the book's
+    own - a German "Kinderbuch" mention in an otherwise-undetected
+    book is worth catching regardless of `book.language`)."""
+    combined = " ".join(t for t in texts if t).lower()
+    if not combined:
+        return False
+    return any(
+        marker in combined for markers in _JUVENILE_TEXT_MARKERS.values() for marker in markers
+    )
+
+
+def _resolve_genre_key(book: Any, bisac_codes: list[str], description_text: str) -> str | None:
+    """Resolve a genre/style key with a fallback chain, since the
+    free-text `genre` field is unpopulated on the entire live library
+    (44/44 books) and BISAC codes are set on 0/44 (#828's audit).
+
+    Order: explicit `genre` field > `book_type == "picture_book"` >
+    a JUV-prefixed BISAC code > a children's-book phrase in the
+    title/subtitle/description text.
+    """
     genre = getattr(book, "genre", None)
     if genre and genre.strip():
         return genre.strip().lower()
+    if getattr(book, "book_type", None) == _PICTURE_BOOK_TYPE:
+        return _JUVENILE_GENRE_KEY
     if any(code.upper().startswith(_JUVENILE_BISAC_PREFIX) for code in bisac_codes):
+        return _JUVENILE_GENRE_KEY
+    if _looks_like_juvenile_text(
+        getattr(book, "title", None), getattr(book, "subtitle", None), description_text
+    ):
         return _JUVENILE_GENRE_KEY
     return None
 
@@ -100,18 +145,19 @@ def build_book_context(book: Any) -> BookContext:
         The normalised context.
     """
     bisac_codes = _decode_json_list(getattr(book, "bisac_codes", None))
+    description_text = _first_non_empty(
+        getattr(book, "description", None),
+        getattr(book, "html_description", None),
+        getattr(book, "backpage_description", None),
+    )
     return BookContext(
         book_id=book.id,
         title=book.title,
         subtitle=getattr(book, "subtitle", None),
         author=getattr(book, "author", None),
         language=getattr(book, "language", "en") or "en",
-        description_text=_first_non_empty(
-            getattr(book, "description", None),
-            getattr(book, "html_description", None),
-            getattr(book, "backpage_description", None),
-        ),
-        genre_key=_resolve_genre_key(book, bisac_codes),
+        description_text=description_text,
+        genre_key=_resolve_genre_key(book, bisac_codes, description_text),
         bisac_codes=bisac_codes,
         categories=_decode_json_list(getattr(book, "categories", None)),
         keywords=_decode_json_list(getattr(book, "keywords", None)),
