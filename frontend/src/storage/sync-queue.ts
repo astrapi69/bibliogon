@@ -121,6 +121,10 @@ export function makeQueueingStorage(base: IStorageService): IStorageService {
             // into Dexie; replay is deferred (like pages/comics), so it
             // passes through without a queue entry for now.
             fromArticles: base.books.fromArticles,
+            // Same shape for creating a book from a saved template (#730):
+            // it writes a book + its chapters into Dexie directly, and
+            // replay is deferred like the conversion above.
+            createFromTemplate: base.books.createFromTemplate,
         },
         chapters: {
             list: base.chapters.list,
@@ -218,5 +222,9 @@ export function makeQueueingStorage(base: IStorageService): IStorageService {
         // Comments: local-only offline writes (soft-delete / trash / reclassify);
         // replay deferred, passthrough.
         comments: base.comments,
+        // Book templates (#730): a saved template is local authoring state,
+        // not book content, and the queue models only book/chapter/article.
+        // Replay deferred like chapter labels; passthrough.
+        templates: base.templates,
     };
 }

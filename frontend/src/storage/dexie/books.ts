@@ -1,18 +1,23 @@
 /**
- * Books namespace for DexieStorage: CRUD, soft-delete trash lifecycle, and
- * the offline article-to-book conversion (`fromArticles`).
+ * Books namespace for DexieStorage: CRUD, soft-delete trash lifecycle, the
+ * offline article-to-book conversion (`fromArticles`), and the user-saved
+ * book templates plus instantiating a book from one (#730).
  */
 
 import type {
     Article,
     BookDetail,
+    BookTemplate,
     BulkDeleteResponse,
     BulkRestoreResponse,
     Chapter,
 } from "../../api/client";
+import { ApiError } from "../../api/client";
+import { isClientTemplateId } from "../../data/bookTemplates";
 import type { IStorageService } from "../types";
 import {
     buildBook,
+    EMPTY_DOC,
     hardDeleteBooks,
     newId,
     nowIso,
@@ -259,5 +264,112 @@ export const books: IStorageService["books"] = {
         await offlineDb.chapters.bulkAdd(chapters);
 
         return { ...book, chapters } as BookDetail;
+    },
+
+    /**
+     * Instantiate a book from a USER template (#730), mirroring
+     * `POST /books/from-template`: create the book, then its chapters in
+     * template `position` order.
+     *
+     * Client built-in templates are deliberately rejected: their titles are
+     * i18n keys, and resolving them needs `t`, which the storage layer must
+     * not carry. `CreateBookPage` branches on `isClientTemplateId` before it
+     * reaches the seam and calls `instantiateClientBookTemplate` instead.
+     */
+    createFromTemplate: async (payload) => {
+        if (isClientTemplateId(payload.template_id)) {
+            throw new Error(
+                `Built-in template ${payload.template_id} is instantiated by the ` +
+                    "caller (it needs i18n), not through the storage seam",
+            );
+        }
+        const template = await offlineDb.bookTemplates.get(payload.template_id);
+        if (!template) notFound("Book template", payload.template_id);
+
+        const book = buildBook(
+            {
+                title: payload.title,
+                author: payload.author,
+                language: payload.language,
+                genre: payload.genre,
+                subtitle: payload.subtitle,
+                description: payload.description,
+                series: payload.series,
+                series_index: payload.series_index,
+            },
+            newId(),
+        );
+        await offlineDb.books.add(book);
+
+        const ts = nowIso();
+        const chapters: Chapter[] = [...template.chapters]
+            .sort((a, b) => a.position - b.position)
+            .map((entry, index) => ({
+                id: newId(),
+                book_id: book.id,
+                title: entry.title,
+                // A template chapter saved in "empty" mode carries no body;
+                // seed the same empty doc `chapters.create` would.
+                content: entry.content || EMPTY_DOC,
+                position: index,
+                chapter_type: entry.chapter_type,
+                created_at: ts,
+                updated_at: ts,
+                version: 0,
+            }));
+        await offlineDb.chapters.bulkAdd(chapters);
+
+        return { ...book, chapters } as BookDetail;
+    },
+};
+
+/**
+ * User-saved book templates for DexieStorage (#730).
+ *
+ * Mirrors `backend/app/routers/templates.py`: `create` forces
+ * `is_builtin: false` and rejects a duplicate name with a 409, `list` orders
+ * by name, and `delete` 404s on an unknown id. Built-in templates are not
+ * rows here — offline they come from the client catalog in
+ * `data/bookTemplates.ts`, whose entries carry i18n keys.
+ */
+export const templates: IStorageService["templates"] = {
+    list: async () =>
+        (await offlineDb.bookTemplates.toArray()).sort((a, b) => a.name.localeCompare(b.name)),
+
+    get: async (id) => {
+        const template = await offlineDb.bookTemplates.get(id);
+        if (!template) notFound("Book template", id);
+        return template;
+    },
+
+    create: async (data) => {
+        const clash = await offlineDb.bookTemplates.where("name").equals(data.name).first();
+        if (clash) {
+            // The save modal branches on ApiError.status === 409 to show the
+            // inline "name taken" error, so the offline path raises the same
+            // shape rather than a plain Error the modal would only toast.
+            throw new ApiError(409, "Template name already exists", "/templates", "POST");
+        }
+        const ts = nowIso();
+        const template: BookTemplate = {
+            id: newId(),
+            name: data.name,
+            description: data.description,
+            genre: data.genre,
+            language: data.language,
+            // The endpoint forces this false on POST regardless of the body.
+            is_builtin: false,
+            created_at: ts,
+            updated_at: ts,
+            chapters: data.chapters.map((c) => ({ ...c })),
+        };
+        await offlineDb.bookTemplates.add(template);
+        return template;
+    },
+
+    delete: async (id) => {
+        const template = await offlineDb.bookTemplates.get(id);
+        if (!template) notFound("Book template", id);
+        await offlineDb.bookTemplates.delete(id);
     },
 };

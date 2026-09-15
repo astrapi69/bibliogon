@@ -319,6 +319,160 @@ describe("DexieStorage — chapter versions + snapshots (#728)", () => {
     });
 });
 
+describe("DexieStorage — book templates (#730)", () => {
+    const chapter = (position: number, title: string, content: string | null = null) => ({
+        position,
+        title,
+        chapter_type: "chapter" as const,
+        content,
+    });
+
+    it("create -> list -> get -> delete round-trip, user templates never builtin", async () => {
+        const created = await dexieStorage.templates.create({
+            name: "Mein Roman",
+            description: "Drei Akte",
+            genre: "scifi",
+            language: "de",
+            chapters: [chapter(0, "Prolog", '{"type":"doc"}'), chapter(1, "Kapitel 1")],
+        });
+        expect(created.id).toBeTruthy();
+        // The endpoint forces is_builtin false on POST; so does the seam.
+        expect(created.is_builtin).toBe(false);
+        expect(created.chapters).toHaveLength(2);
+        expect(created.created_at).toBeTruthy();
+
+        expect(await dexieStorage.templates.list()).toHaveLength(1);
+        const got = await dexieStorage.templates.get(created.id);
+        expect(got.name).toBe("Mein Roman");
+        // Chapter content survives the round-trip (the "preserve" save mode).
+        expect(got.chapters[0].content).toBe('{"type":"doc"}');
+
+        await dexieStorage.templates.delete(created.id);
+        expect(await dexieStorage.templates.list()).toEqual([]);
+    });
+
+    it("ignores a client-sent is_builtin: true", async () => {
+        const created = await dexieStorage.templates.create({
+            name: "Nicht builtin",
+            description: "d",
+            genre: "nonfiction",
+            language: "de",
+            is_builtin: true,
+            chapters: [chapter(0, "K1")],
+        });
+        expect(created.is_builtin).toBe(false);
+    });
+
+    it("rejects a duplicate name with a 409, like the endpoint", async () => {
+        const payload = {
+            name: "Doppelt",
+            description: "d",
+            genre: "nonfiction",
+            language: "de",
+            chapters: [chapter(0, "K1")],
+        };
+        await dexieStorage.templates.create(payload);
+        // The modal branches on ApiError.status === 409 to show the inline
+        // name-taken error, so the offline path must raise the same shape.
+        await expect(dexieStorage.templates.create(payload)).rejects.toMatchObject({
+            status: 409,
+        });
+        expect(await dexieStorage.templates.list()).toHaveLength(1);
+    });
+
+    it("lists by name and rejects an unknown id", async () => {
+        for (const name of ["Zeta", "Alpha", "Mitte"]) {
+            await dexieStorage.templates.create({
+                name,
+                description: "d",
+                genre: "nonfiction",
+                language: "de",
+                chapters: [chapter(0, "K1")],
+            });
+        }
+        expect((await dexieStorage.templates.list()).map((t) => t.name)).toEqual([
+            "Alpha",
+            "Mitte",
+            "Zeta",
+        ]);
+        await expect(dexieStorage.templates.get("nope")).rejects.toThrow();
+        await expect(dexieStorage.templates.delete("nope")).rejects.toThrow();
+    });
+
+    it("creates a book with the template's chapters via createFromTemplate", async () => {
+        const tpl = await dexieStorage.templates.create({
+            name: "Sachbuch",
+            description: "Struktur",
+            genre: "nonfiction",
+            language: "de",
+            chapters: [
+                chapter(0, "Vorwort", '{"type":"doc","content":[]}'),
+                chapter(1, "Einleitung"),
+            ],
+        });
+
+        const book = await dexieStorage.books.createFromTemplate({
+            template_id: tpl.id,
+            title: "Neues Sachbuch",
+            author: "Aster",
+            language: "de",
+            subtitle: "Untertitel",
+        });
+        expect(book.title).toBe("Neues Sachbuch");
+        expect(book.subtitle).toBe("Untertitel");
+
+        const chapters = await dexieStorage.chapters.list(book.id);
+        expect(chapters.map((c) => c.title)).toEqual(["Vorwort", "Einleitung"]);
+        expect(chapters.map((c) => c.position)).toEqual([0, 1]);
+        // Preserved content comes through; a null body seeds an empty doc.
+        expect(chapters[0].content).toBe('{"type":"doc","content":[]}');
+        expect(chapters[1].content).toBeTruthy();
+    });
+
+    it("createFromTemplate seeds chapters in template position order, not insert order", async () => {
+        const tpl = await dexieStorage.templates.create({
+            name: "Unsortiert",
+            description: "d",
+            genre: "nonfiction",
+            language: "de",
+            chapters: [chapter(2, "Drittes"), chapter(0, "Erstes"), chapter(1, "Zweites")],
+        });
+        const book = await dexieStorage.books.createFromTemplate({
+            template_id: tpl.id,
+            title: "B",
+            author: "A",
+            language: "de",
+        });
+        expect((await dexieStorage.chapters.list(book.id)).map((c) => c.title)).toEqual([
+            "Erstes",
+            "Zweites",
+            "Drittes",
+        ]);
+    });
+
+    it("createFromTemplate rejects an unknown id and a client builtin id", async () => {
+        await expect(
+            dexieStorage.books.createFromTemplate({
+                template_id: "nope",
+                title: "B",
+                author: "A",
+                language: "de",
+            }),
+        ).rejects.toThrow();
+        // Client built-ins carry i18n keys, so they are instantiated by the
+        // caller (which has `t`), never by the storage layer.
+        await expect(
+            dexieStorage.books.createFromTemplate({
+                template_id: "client-roman-3akt",
+                title: "B",
+                author: "A",
+                language: "de",
+            }),
+        ).rejects.toThrow();
+        expect(await dexieStorage.books.list()).toEqual([]);
+    });
+});
+
 describe("DexieStorage — writing stats (Finding 6)", () => {
     const doc = (text: string): string =>
         JSON.stringify({
