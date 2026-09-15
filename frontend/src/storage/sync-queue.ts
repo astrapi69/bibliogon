@@ -144,6 +144,21 @@ export function makeQueueingStorage(base: IStorageService): IStorageService {
             // positions also sync via the per-chapter update path), so it
             // passes straight through without a queue entry for now.
             reorder: base.chapters.reorder,
+            // Version history (#728): the three reads pass through like
+            // list/get. The three writes are local-only offline and are NOT
+            // queued — the queue only models book/chapter/article, and the
+            // automatic versions would double up anyway because replaying a
+            // chapter update makes the server write its own. Replaying a
+            // MANUAL snapshot needs its own model + conflict rule (the
+            // chapter may have moved on server-side by replay time), tracked
+            // separately; restore already replays through the chapter row it
+            // rewrites, which `update` above queues.
+            listVersions: base.chapters.listVersions,
+            getVersion: base.chapters.getVersion,
+            diffVersion: base.chapters.diffVersion,
+            createSnapshot: base.chapters.createSnapshot,
+            restoreVersion: base.chapters.restoreVersion,
+            deleteVersion: base.chapters.deleteVersion,
         },
         articles: {
             list: base.articles.list,

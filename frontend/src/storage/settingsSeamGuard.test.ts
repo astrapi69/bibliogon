@@ -103,6 +103,16 @@ const GUARDED: readonly GuardedNamespace[] = [
         allowlist: IMPLEMENTATION_LAYER,
     },
     {
+        // Chapter version history + snapshots. Guarded per-method rather
+        // than all of api.chapters: the plain chapter CRUD has its own
+        // seam members but several callers still go direct (epic #727).
+        label: "api.chapters version methods",
+        pattern:
+            /\bapi\.chapters\s*\.\s*(listVersions|getVersion|restoreVersion|createSnapshot|diffVersion|deleteVersion)\b/,
+        remedy: "getStorage().chapters.<same method> (see #728)",
+        allowlist: IMPLEMENTATION_LAYER,
+    },
+    {
         // The article-scoped comment read the editor panel uses. Guarded
         // on its own rather than all of api.articles: the remaining
         // api.articles surfaces are not ported yet (epic #727).

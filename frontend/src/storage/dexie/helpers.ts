@@ -219,6 +219,7 @@ export async function hardDeleteBooks(ids: string[]): Promise<void> {
         [
             offlineDb.books,
             offlineDb.chapters,
+            offlineDb.chapterVersions,
             offlineDb.pages,
             offlineDb.chapterLabels,
             offlineDb.writingSessions,
@@ -227,6 +228,12 @@ export async function hardDeleteBooks(ids: string[]): Promise<void> {
         ],
         async () => {
             await offlineDb.books.bulkDelete(ids);
+            // Versions hang off the chapter, not the book, so collect the
+            // chapter ids before deleting them (#728).
+            const chapterIds = (
+                await offlineDb.chapters.where("book_id").anyOf(ids).toArray()
+            ).map((c) => c.id);
+            await offlineDb.chapterVersions.where("chapter_id").anyOf(chapterIds).delete();
             await offlineDb.chapters.where("book_id").anyOf(ids).delete();
             await offlineDb.pages.where("book_id").anyOf(ids).delete();
             await offlineDb.chapterLabels.where("book_id").anyOf(ids).delete();

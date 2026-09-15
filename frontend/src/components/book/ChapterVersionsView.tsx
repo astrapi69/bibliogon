@@ -3,11 +3,15 @@
  * extracted from the former ChapterVersionsModal in the Dialog->Pages
  * migration (C6).
  *
- * Lists the backend `chapter_versions` rows: automatic version-history
+ * Lists the `chapter_versions` rows: automatic version-history
  * snapshots (retention = 20) AND Scrivener-style manual named snapshots
  * (kept until deleted). The user can take a named manual snapshot,
- * restore any row (the restore endpoint snapshots the current state
- * first), diff a row against current, and delete a manual snapshot.
+ * restore any row (restore snapshots the current state first), diff a
+ * row against current, and delete a manual snapshot.
+ *
+ * Reads and writes through the storage seam, so the whole surface works
+ * offline against the Dexie `chapterVersions` table instead of being a
+ * disabled page (#728).
  *
  * Chrome-free: the page (ChapterVersionsPage) supplies the PageLayout
  * shell + title + Back; this component self-fetches for the chapter. The
@@ -23,10 +27,10 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import {
-  api,
   type ChapterVersionSummary,
   type ChapterVersionDiff,
 } from "../../api/client";
+import { getStorage } from "../../storage";
 import { useI18n } from "../../hooks/useI18n";
 import { useDialog } from "../shared/AppDialog";
 import { notify } from "../../utils/platform/notify";
@@ -62,7 +66,7 @@ export default function ChapterVersionsView({
     if (!chapterId) return;
     setLoading(true);
     try {
-      const list = await api.chapters.listVersions(bookId, chapterId);
+      const list = await getStorage().chapters.listVersions(bookId, chapterId);
       setVersions(list);
     } catch {
       notify.error(
@@ -90,7 +94,7 @@ export default function ChapterVersionsView({
   const handleDiff = async (versionId: string) => {
     setDiffLoading(true);
     try {
-      const result = await api.chapters.diffVersion(
+      const result = await getStorage().chapters.diffVersion(
         bookId,
         chapterId,
         versionId,
@@ -109,7 +113,7 @@ export default function ChapterVersionsView({
     if (creating) return;
     setCreating(true);
     try {
-      await api.chapters.createSnapshot(
+      await getStorage().chapters.createSnapshot(
         bookId,
         chapterId,
         snapshotName.trim() || null,
@@ -140,7 +144,7 @@ export default function ChapterVersionsView({
     if (!ok) return;
     setBusyId(versionId);
     try {
-      await api.chapters.restoreVersion(bookId, chapterId, versionId);
+      await getStorage().chapters.restoreVersion(bookId, chapterId, versionId);
       notify.success(t("ui.versions.restored", "Version wiederhergestellt."));
       onRestored(chapterId);
     } catch {
@@ -164,7 +168,7 @@ export default function ChapterVersionsView({
     if (!ok) return;
     setBusyId(versionId);
     try {
-      await api.chapters.deleteVersion(bookId, chapterId, versionId);
+      await getStorage().chapters.deleteVersion(bookId, chapterId, versionId);
       notify.success(t("ui.versions.deleted", "Snapshot gelöscht."));
       await reload();
     } catch {

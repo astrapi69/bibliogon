@@ -151,6 +151,174 @@ describe("DexieStorage — chapters", () => {
     });
 });
 
+describe("DexieStorage — chapter versions + snapshots (#728)", () => {
+    const doc = (text: string): string =>
+        JSON.stringify({
+            type: "doc",
+            content: [{ type: "paragraph", content: [{ type: "text", text }] }],
+        });
+
+    it("snapshots the pre-update state on every chapter update, newest first", async () => {
+        const book = await dexieStorage.books.create({ title: "B" });
+        const ch = await dexieStorage.chapters.create(book.id, {
+            title: "K1",
+            content: doc("erste Fassung"),
+        });
+
+        const v1 = await dexieStorage.chapters.update(book.id, ch.id, {
+            version: ch.version,
+            content: doc("zweite Fassung"),
+        });
+        await dexieStorage.chapters.update(book.id, ch.id, {
+            version: v1.version,
+            content: doc("dritte Fassung"),
+        });
+
+        const versions = await dexieStorage.chapters.listVersions(book.id, ch.id);
+        expect(versions.map((v) => v.version)).toEqual([1, 0]);
+        expect(versions.every((v) => v.is_manual === false)).toBe(true);
+        expect(versions.every((v) => v.name === null)).toBe(true);
+
+        // The snapshot holds the PRE-update content, like the backend PATCH.
+        const oldest = await dexieStorage.chapters.getVersion(book.id, ch.id, versions[1].id);
+        expect(oldest.content).toBe(doc("erste Fassung"));
+    });
+
+    it("keeps only the last 20 automatic versions but never trims manual ones", async () => {
+        const book = await dexieStorage.books.create({ title: "B" });
+        let ch = await dexieStorage.chapters.create(book.id, { title: "K1" });
+        const manual = await dexieStorage.chapters.createSnapshot(book.id, ch.id, "Fassung A");
+        expect(manual.is_manual).toBe(true);
+        expect(manual.name).toBe("Fassung A");
+
+        for (let i = 0; i < 25; i++) {
+            ch = await dexieStorage.chapters.update(book.id, ch.id, {
+                version: ch.version,
+                content: doc(`Fassung ${i}`),
+            });
+        }
+
+        const versions = await dexieStorage.chapters.listVersions(book.id, ch.id);
+        const autos = versions.filter((v) => !v.is_manual);
+        const manuals = versions.filter((v) => v.is_manual);
+        expect(autos).toHaveLength(20);
+        expect(manuals.map((v) => v.name)).toEqual(["Fassung A"]);
+        // The trim drops the OLDEST autos, keeping the most recent saves.
+        expect(Math.min(...autos.map((v) => v.version))).toBe(5);
+    });
+
+    it("restores content + title and snapshots the current state first", async () => {
+        const book = await dexieStorage.books.create({ title: "B" });
+        const ch = await dexieStorage.chapters.create(book.id, {
+            title: "Alter Titel",
+            content: doc("alter Inhalt"),
+        });
+        await dexieStorage.chapters.update(book.id, ch.id, {
+            version: ch.version,
+            title: "Neuer Titel",
+            content: doc("neuer Inhalt"),
+        });
+        const [snapshot] = await dexieStorage.chapters.listVersions(book.id, ch.id);
+
+        const restored = await dexieStorage.chapters.restoreVersion(book.id, ch.id, snapshot.id);
+        expect(restored.title).toBe("Alter Titel");
+        expect(restored.content).toBe(doc("alter Inhalt"));
+        expect(restored.version).toBe(2);
+
+        // The pre-restore state is now itself a version, so the restore is undoable.
+        const versions = await dexieStorage.chapters.listVersions(book.id, ch.id);
+        expect(versions).toHaveLength(2);
+        const newest = await dexieStorage.chapters.getVersion(book.id, ch.id, versions[0].id);
+        expect(newest.content).toBe(doc("neuer Inhalt"));
+        expect(newest.title).toBe("Neuer Titel");
+    });
+
+    it("diffs a version against the chapter's current content", async () => {
+        const book = await dexieStorage.books.create({ title: "B" });
+        const ch = await dexieStorage.chapters.create(book.id, {
+            title: "Titel",
+            content: doc("gleiche Zeile"),
+        });
+        await dexieStorage.chapters.update(book.id, ch.id, {
+            version: ch.version,
+            title: "Titel neu",
+            content: JSON.stringify({
+                type: "doc",
+                content: [
+                    { type: "paragraph", content: [{ type: "text", text: "gleiche Zeile" }] },
+                    { type: "paragraph", content: [{ type: "text", text: "neue Zeile" }] },
+                ],
+            }),
+        });
+        const [snapshot] = await dexieStorage.chapters.listVersions(book.id, ch.id);
+
+        const diff = await dexieStorage.chapters.diffVersion(book.id, ch.id, snapshot.id);
+        expect(diff.version_id).toBe(snapshot.id);
+        expect(diff.title_changed).toBe(true);
+        expect(diff.snapshot_title).toBe("Titel");
+        expect(diff.current_title).toBe("Titel neu");
+        expect(diff.lines).toEqual([
+            { type: "unchanged", text: "gleiche Zeile" },
+            { type: "added", text: "neue Zeile" },
+        ]);
+    });
+
+    it("deletes only manual snapshots and rejects automatic versions", async () => {
+        const book = await dexieStorage.books.create({ title: "B" });
+        const ch = await dexieStorage.chapters.create(book.id, { title: "K1" });
+        const manual = await dexieStorage.chapters.createSnapshot(book.id, ch.id, null);
+        expect(manual.name).toBeNull();
+        await dexieStorage.chapters.update(book.id, ch.id, {
+            version: ch.version,
+            content: doc("geaendert"),
+        });
+        const auto = (await dexieStorage.chapters.listVersions(book.id, ch.id)).find(
+            (v) => !v.is_manual,
+        )!;
+
+        await expect(
+            dexieStorage.chapters.deleteVersion(book.id, ch.id, auto.id),
+        ).rejects.toThrow(/manual/i);
+        expect(await dexieStorage.chapters.listVersions(book.id, ch.id)).toHaveLength(2);
+
+        await dexieStorage.chapters.deleteVersion(book.id, ch.id, manual.id);
+        expect(await dexieStorage.chapters.listVersions(book.id, ch.id)).toHaveLength(1);
+    });
+
+    it("scopes every read to the owning book and chapter", async () => {
+        const bookA = await dexieStorage.books.create({ title: "A" });
+        const bookB = await dexieStorage.books.create({ title: "B" });
+        const chA = await dexieStorage.chapters.create(bookA.id, { title: "KA" });
+        const chB = await dexieStorage.chapters.create(bookB.id, { title: "KB" });
+        const snapA = await dexieStorage.chapters.createSnapshot(bookA.id, chA.id, "A1");
+        await dexieStorage.chapters.createSnapshot(bookB.id, chB.id, "B1");
+
+        expect(
+            (await dexieStorage.chapters.listVersions(bookA.id, chA.id)).map((v) => v.name),
+        ).toEqual(["A1"]);
+        // A version of chapter A is not reachable through book B or chapter B.
+        await expect(
+            dexieStorage.chapters.getVersion(bookB.id, chB.id, snapA.id),
+        ).rejects.toThrow();
+        await expect(dexieStorage.chapters.listVersions(bookB.id, chA.id)).rejects.toThrow();
+    });
+
+    it("drops a chapter's versions when the chapter or its book is deleted", async () => {
+        const book = await dexieStorage.books.create({ title: "B" });
+        const keep = await dexieStorage.chapters.create(book.id, { title: "bleibt" });
+        const drop = await dexieStorage.chapters.create(book.id, { title: "weg" });
+        await dexieStorage.chapters.createSnapshot(book.id, keep.id, "K");
+        await dexieStorage.chapters.createSnapshot(book.id, drop.id, "D");
+
+        await dexieStorage.chapters.delete(book.id, drop.id);
+        expect(await offlineDb.chapterVersions.count()).toBe(1);
+
+        await dexieStorage.books.delete(book.id);
+        await dexieStorage.books.permanentDelete(book.id);
+        expect(await offlineDb.chapterVersions.count()).toBe(0);
+    });
+});
+
 describe("DexieStorage — writing stats (Finding 6)", () => {
     const doc = (text: string): string =>
         JSON.stringify({

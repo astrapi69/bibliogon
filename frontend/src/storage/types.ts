@@ -57,6 +57,20 @@ export interface ChapterStorage {
     update: typeof api.chapters.update;
     delete: typeof api.chapters.delete;
     reorder: typeof api.chapters.reorder;
+    /**
+     * Version history + Scrivener-style manual snapshots (#728). Routed
+     * through the seam so the offline build keeps a real save history
+     * instead of a disabled page: `update` writes the pre-update state as
+     * an automatic version (trimmed to the last 20), `createSnapshot`
+     * writes a named one that is exempt from the trim, and `diffVersion`
+     * computes the line diff client-side rather than round-tripping.
+     */
+    listVersions: typeof api.chapters.listVersions;
+    getVersion: typeof api.chapters.getVersion;
+    restoreVersion: typeof api.chapters.restoreVersion;
+    createSnapshot: typeof api.chapters.createSnapshot;
+    diffVersion: typeof api.chapters.diffVersion;
+    deleteVersion: typeof api.chapters.deleteVersion;
 }
 
 export interface ArticleStorage {

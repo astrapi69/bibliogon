@@ -27,9 +27,10 @@ export default function ChapterVersionsPage() {
   const editorUrl =
     bookId && chapterId ? `/book/${bookId}?chapter=${chapterId}` : "/";
   const goBack = useGoBack(editorUrl);
-  // Chapter snapshots are backend-only. Offline (Dexie) the feature resolves
-  // to `disabled`: the page chrome stays visible and explains why, instead of
-  // a live view that would fire /api (policy #78). The UI trigger is gated too.
+  // Chapter snapshots run through the storage seam, so the feature is active
+  // in both modes (#728). The registry check stays: it is the single
+  // kill-switch, and it keeps the FeatureNotice path in place should the
+  // feature ever be disabled again.
   const versionHistory = useFeature(FEATURES.VERSION_HISTORY);
 
   return (
