@@ -22,6 +22,7 @@ import type {
     Author,
     BookTypeDef,
     Chapter,
+    ChapterVersionRead,
     ContentTypeDef,
     DiscoveredPlugin,
     StoryEntityTypeDef,
@@ -158,7 +159,12 @@ class BibliogonOfflineDB extends Dexie {
     books!: Table<OfflineBookRow, string>;
     chapters!: Table<Chapter, string>;
     articles!: Table<OfflineArticleRow, string>;
-    chapterVersions!: Table<GraphRow, string>;
+    /** Chapter snapshots (#728): typed as the API read shape rather than a
+     *  loose {@link GraphRow} now that the seam's version methods own the
+     *  table, so an `api`-mode row and a Dexie row are interchangeable.
+     *  `is_manual` is a boolean and therefore not IndexedDB-indexable; the
+     *  retention trim filters it in code and the v1 index list is unchanged. */
+    chapterVersions!: Table<ChapterVersionRead, string>;
     pages!: Table<GraphRow, string>;
     comicPanels!: Table<GraphRow, string>;
     comicBubbles!: Table<GraphRow, string>;
