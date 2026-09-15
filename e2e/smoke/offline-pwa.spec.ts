@@ -489,6 +489,55 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await expect(page.getByText("Kapitel 1").first()).toBeVisible();
     });
 
+    test("save-as-template works offline and the saved one creates a book (#730)", async ({
+        page,
+    }) => {
+        // The full round-trip: save a book's structure as a template into
+        // Dexie, then create a NEW book from it. "Als Vorlage speichern" used
+        // to be an un-gated live button here that failed on guardedFetch.
+        await page.goto("/books/new");
+        await page.getByTestId("create-book-mode-template").click();
+        await page.getByTestId("template-card-client-kurzgeschichte").click();
+        await page.getByTestId("create-book-title").fill("Vorlagen-Quelle");
+        await page.getByTestId("create-book-author").fill("Aster");
+        await page.getByTestId("create-book-submit").click();
+        await expect(page.getByText("Vorlagen-Quelle").first()).toBeVisible({
+            timeout: 10000,
+        });
+        await page.getByText("Vorlagen-Quelle").first().click();
+        await page.waitForURL(/\/book\//);
+
+        // Save as template (the button lives in the collapsible tools group).
+        const toolsToggle = page.getByTestId("chapter-sidebar-tools-toggle");
+        if ((await toolsToggle.getAttribute("data-state")) === "closed") {
+            await toolsToggle.click();
+        }
+        await page.getByTestId("sidebar-save-as-template").click();
+        await expect(page.getByTestId("save-template-modal")).toBeVisible();
+        await page.getByTestId("save-template-name").fill("Offline-Vorlage");
+        await page.getByTestId("save-template-description").fill("Offline gespeichert");
+        await page.getByTestId("save-template-submit").click();
+        await expect(page.getByTestId("save-template-modal")).toHaveCount(0);
+
+        // It now shows up in the create form's catalog next to the built-ins,
+        // read back from the Dexie bookTemplates table.
+        await page.goto("/books/new");
+        await page.getByTestId("create-book-mode-template").click();
+        await expect(page.getByText("Offline-Vorlage")).toBeVisible();
+        await expect(
+            page.getByTestId("template-card-client-kurzgeschichte"),
+        ).toBeVisible();
+
+        // Creating from it seeds the saved structure into a brand-new book.
+        await page.getByText("Offline-Vorlage").click();
+        await page.getByTestId("create-book-title").fill("Aus eigener Vorlage");
+        await page.getByTestId("create-book-author").fill("Aster");
+        await page.getByTestId("create-book-submit").click();
+        await expect(page.getByText("Aus eigener Vorlage").first()).toBeVisible({
+            timeout: 10000,
+        });
+    });
+
     test("picture-book template works offline: Kinderbuch seeds 12 pages", async ({
         page,
     }) => {
