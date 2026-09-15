@@ -19,7 +19,7 @@
 
 import {useEffect, useState} from "react";
 
-import {api, ApiError, type ArticleComment} from "../../api/client";
+import {ApiError, type ArticleComment} from "../../api/client";
 import {getStorage} from "../../storage";
 import {useI18n} from "../../hooks/useI18n";
 import {formatLocaleDate} from "../../utils/format/formatDate";
@@ -38,14 +38,14 @@ export default function ArticleCommentsPanel({articleId}: Props) {
     const [loadError, setLoadError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (getStorage().mode === "dexie") {
-            setComments([]);
-            return;
-        }
+        // Read through the storage seam, not api.articles directly (#729):
+        // the short-circuit that used to return [] in Dexie mode made a
+        // user's imported comments look like "no comments" offline, and a
+        // direct api call would be rejected by guardedFetch there anyway.
         let cancelled = false;
         setLoadError(null);
-        api.articles
-            .getComments(articleId)
+        getStorage()
+            .articles.getComments(articleId)
             .then((rows) => {
                 if (!cancelled) setComments(rows);
             })

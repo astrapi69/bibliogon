@@ -75,6 +75,14 @@ export interface ArticleStorage {
     emptyTrash: typeof api.articles.emptyTrash;
     bulkDelete: typeof api.articles.bulkDelete;
     bulkRestore: typeof api.articles.bulkRestore;
+    /**
+     * The article's imported comments. Article-scoped on purpose: the api
+     * puts this read on `articles` rather than `comments` because it belongs
+     * with the article, and `CommentStorage.list` is the cross-article admin
+     * view with no article filter. Routed through the seam so the editor's
+     * comments panel shows them offline instead of rendering empty (#729).
+     */
+    getComments: typeof api.articles.getComments;
 }
 
 /**

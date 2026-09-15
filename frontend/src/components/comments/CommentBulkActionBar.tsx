@@ -30,7 +30,7 @@ interface Props {
      *  to land in). */
     onBulkDelete: (permanent: false) => void;
     /** Permanent-delete path: opens TypeToConfirmDialog above the
-     *  parent; parent calls api.comments.bulkDelete(ids, true) on
+     *  parent; parent calls getStorage().comments.bulkDelete(ids, true) on
      *  confirm. */
     onBulkDeletePermanent: () => void;
     onClear: () => void;

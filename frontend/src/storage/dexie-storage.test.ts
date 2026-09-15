@@ -649,6 +649,45 @@ describe("DexieStorage — comments (admin + trash lifecycle)", () => {
         expect(await dexieStorage.comments.listTrashed()).toHaveLength(0);
     });
 
+    it("scopes getComments to one article, newest-first (#729)", async () => {
+        await dexieStorage.comments.create(
+            makeComment({ id: "mine-old", responds_to_article_id: "art-1" }),
+        );
+        await dexieStorage.comments.create(
+            makeComment({ id: "mine-new", responds_to_article_id: "art-1" }),
+        );
+        await dexieStorage.comments.create(
+            makeComment({ id: "theirs", responds_to_article_id: "art-2" }),
+        );
+        await dexieStorage.comments.create(
+            makeComment({ id: "orphan", responds_to_article_id: null }),
+        );
+
+        const rows = await dexieStorage.articles.getComments("art-1");
+
+        // Only this article's comments, and the same newest-first order the
+        // admin list uses, so the panel reads identically in both modes.
+        expect(rows.map((c) => c.id)).toEqual(["mine-new", "mine-old"]);
+        expect("deleted_at" in rows[0]).toBe(false);
+    });
+
+    it("getComments excludes trashed comments and unknown articles (#729)", async () => {
+        await dexieStorage.comments.create(
+            makeComment({ id: "kept", responds_to_article_id: "art-1" }),
+        );
+        await dexieStorage.comments.create(
+            makeComment({ id: "trashed", responds_to_article_id: "art-1" }),
+        );
+        await dexieStorage.comments.delete("trashed");
+
+        expect((await dexieStorage.articles.getComments("art-1")).map((c) => c.id)).toEqual([
+            "kept",
+        ]);
+        // An article nobody commented on reads as empty, not as an error -
+        // the panel's empty state is a legitimate answer.
+        expect(await dexieStorage.articles.getComments("art-unknown")).toEqual([]);
+    });
+
     it("filters by importedFrom + orphansOnly, orders newest-first, caps to limit", async () => {
         await dexieStorage.comments.create(
             makeComment({ id: "a", imported_from: "medium", responds_to_article_id: null }),

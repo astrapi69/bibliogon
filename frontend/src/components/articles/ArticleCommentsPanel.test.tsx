@@ -13,9 +13,16 @@
 
 import {describe, it, expect, vi, beforeEach, afterEach} from "vitest";
 import {render, screen, waitFor} from "@testing-library/react";
+import "fake-indexeddb/auto";
 
 import ArticleCommentsPanel from "./ArticleCommentsPanel";
 import type {ArticleComment} from "../../api/client";
+import {
+    __resetStorageForTests,
+    ensureDexieStorageLoaded,
+    setPersistedStorageMode,
+} from "../../storage";
+import {dexieStorage, offlineDb} from "../../storage/dexie-storage";
 
 // Lock the i18n hook to a t(key, fallback) -> fallback so the
 // tests don't depend on the YAML catalog state.
@@ -179,5 +186,112 @@ describe("ArticleCommentsPanel", () => {
         await waitFor(() => {
             expect(getCommentsMock).toHaveBeenCalledWith("art-2");
         });
+    });
+});
+
+/**
+ * Dexie-mode cases (#729, part of epic #727).
+ *
+ * The panel used to short-circuit to `comments = []` whenever the storage
+ * mode was `dexie`, so a user with imported comments saw a silently empty
+ * panel offline - indistinguishable from "no comments". The seam it needed
+ * already existed for the admin surface; only the article-scoped read was
+ * missing, which is what `ArticleStorage.getComments` now carries.
+ *
+ * These cases run against the REAL DexieStorage on fake-indexeddb and the
+ * real `getStorage()` factory, with the mode forced through the same
+ * localStorage override the app uses. Nothing on the path under test is
+ * mocked, so a regression to the old short-circuit - or to a direct
+ * `api.*` call, which `guardedFetch` would reject offline - fails here
+ * rather than only in the browser. The api-mode cases above are the
+ * desktop-path pin: they still pass through the same seam member.
+ */
+let seq = 0;
+
+function makeComment(over: Record<string, unknown> = {}) {
+    seq += 1;
+    const ts = `2026-01-${String(seq).padStart(2, "0")}T00:00:00Z`;
+    return {
+        id: `c${seq}`,
+        author: "Reader",
+        body_text: "Nice post!",
+        body_json: null,
+        language: "en",
+        published_at: ts,
+        canonical_url: null,
+        responds_to_article_id: "art-1",
+        responds_to_url: null,
+        imported_from: "medium",
+        imported_at: ts,
+        source_filename: "x.html",
+        created_at: ts,
+        updated_at: ts,
+        ...over,
+    };
+}
+
+describe("ArticleCommentsPanel offline (Dexie mode)", () => {
+    beforeEach(async () => {
+        seq = 0;
+        await Promise.all(offlineDb.tables.map((t) => t.clear()));
+        setPersistedStorageMode("dexie");
+        // getStorage() serves ApiStorage until the lazy Dexie instance is
+        // in place, so the test awaits the load the app's enabling path
+        // performs.
+        await ensureDexieStorageLoaded();
+    });
+
+    afterEach(() => {
+        setPersistedStorageMode("api");
+        __resetStorageForTests();
+    });
+
+    it("renders the article's comments instead of an empty panel", async () => {
+        await dexieStorage.comments.create(makeComment({ author: "Alice" }));
+        await dexieStorage.comments.create(makeComment({ author: "Bob" }));
+
+        render(<ArticleCommentsPanel articleId="art-1" />);
+
+        await screen.findByTestId("article-comments-panel-list");
+        expect(screen.getByText("Alice")).toBeInTheDocument();
+        expect(screen.getByText("Bob")).toBeInTheDocument();
+        expect(screen.getByTestId("article-comments-panel-count").textContent).toBe("(2)");
+    });
+
+    it("shows the empty state when this article has none", async () => {
+        await dexieStorage.comments.create(
+            makeComment({ responds_to_article_id: "some-other-article" }),
+        );
+
+        render(<ArticleCommentsPanel articleId="art-1" />);
+
+        await screen.findByTestId("article-comments-panel-empty");
+        expect(screen.queryByTestId("article-comments-panel-list")).toBeNull();
+    });
+
+    it("does not leak another article's comments into this panel", async () => {
+        await dexieStorage.comments.create(makeComment({ author: "Mine" }));
+        await dexieStorage.comments.create(
+            makeComment({ author: "Theirs", responds_to_article_id: "art-2" }),
+        );
+
+        render(<ArticleCommentsPanel articleId="art-1" />);
+
+        await screen.findByTestId("article-comments-panel-list");
+        expect(screen.getByText("Mine")).toBeInTheDocument();
+        expect(screen.queryByText("Theirs")).toBeNull();
+        expect(screen.getByTestId("article-comments-panel-count").textContent).toBe("(1)");
+    });
+
+    it("leaves a trashed comment out of the panel", async () => {
+        await dexieStorage.comments.create(makeComment({ id: "kept", author: "Kept" }));
+        await dexieStorage.comments.create(makeComment({ id: "gone", author: "Trashed" }));
+        await dexieStorage.comments.delete("gone");
+
+        render(<ArticleCommentsPanel articleId="art-1" />);
+
+        await screen.findByTestId("article-comments-panel-list");
+        expect(screen.getByText("Kept")).toBeInTheDocument();
+        expect(screen.queryByText("Trashed")).toBeNull();
     });
 });
