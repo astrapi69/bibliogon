@@ -218,7 +218,7 @@ export function useBookEditorData({
         if (childIds.length > 0) {
             try {
                 const children = await Promise.all(
-                    childIds.map((cid) => api.chapterTemplates.get(cid)),
+                    childIds.map((cid) => getStorage().chapterTemplates.get(cid)),
                 );
                 const created: import("../../api/client").Chapter[] = [];
                 for (const child of children) {

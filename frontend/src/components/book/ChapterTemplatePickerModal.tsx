@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { api, ApiError, ChapterTemplate } from "../../api/client";
+import { ApiError, ChapterTemplate } from "../../api/client";
+import { getStorage } from "../../storage";
 import { useI18n } from "../../hooks/useI18n";
 import { useDialog } from "../shared/AppDialog";
 import { notify } from "../../utils/platform/notify";
@@ -36,8 +37,8 @@ export default function ChapterTemplatePickerModal({
   const importInputRef = useRef<HTMLInputElement>(null);
 
   const refreshList = () => {
-    api.chapterTemplates
-      .list()
+    getStorage()
+      .chapterTemplates.list()
       .then((list) => {
         setTemplates(list);
         setTemplatesError(null);
@@ -50,7 +51,7 @@ export default function ChapterTemplatePickerModal({
 
   const handleExport = async (tpl: ChapterTemplate) => {
     try {
-      await api.chapterTemplates.exportJson(tpl.id);
+      await getStorage().chapterTemplates.exportJson(tpl.id);
       notify.success(
         t("ui.chapter_template_picker.exported", "Vorlage exportiert"),
       );
@@ -74,7 +75,7 @@ export default function ChapterTemplatePickerModal({
     const file = e.target.files?.[0];
     if (file) {
       try {
-        const created = await api.chapterTemplates.importJson(file);
+        const created = await getStorage().chapterTemplates.importJson(file);
         notify.success(
           t("ui.chapter_template_picker.imported", "Vorlage importiert"),
         );
@@ -128,7 +129,7 @@ export default function ChapterTemplatePickerModal({
     );
     if (!ok) return;
     try {
-      await api.chapterTemplates.delete(tpl.id);
+      await getStorage().chapterTemplates.delete(tpl.id);
       setTemplates((prev) =>
         prev ? prev.filter((t) => t.id !== tpl.id) : prev,
       );
