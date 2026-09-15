@@ -6,7 +6,7 @@
 
 import type { Article, BulkDeleteResponse, BulkRestoreResponse } from "../../api/client";
 import type { IStorageService } from "../types";
-import { buildArticle, newId, nowIso, notFound } from "./helpers";
+import { buildArticle, newId, nowIso, notFound, stripDeletedAt } from "./helpers";
 import { offlineDb } from "./schema";
 import { serializedUpdate } from "./serialized-update";
 
@@ -104,5 +104,20 @@ export const articles: IStorageService["articles"] = {
             failed: [],
         };
         return response;
+    },
+
+    getComments: async (id) => {
+        // `responds_to_article_id` is an index on articleComments, so this is
+        // a keyed read rather than a full-table scan. Trashed comments stay
+        // out, and the order matches the cross-article admin list so the
+        // editor panel reads the same in both storage modes.
+        const rows = await offlineDb.articleComments
+            .where("responds_to_article_id")
+            .equals(id)
+            .toArray();
+        return rows
+            .filter((c) => !c.deleted_at)
+            .sort((a, b) => b.created_at.localeCompare(a.created_at))
+            .map(stripDeletedAt);
     },
 };

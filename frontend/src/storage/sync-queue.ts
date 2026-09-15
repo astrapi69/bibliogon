@@ -168,6 +168,8 @@ export function makeQueueingStorage(base: IStorageService): IStorageService {
             emptyTrash: base.articles.emptyTrash,
             bulkRestore: base.articles.bulkRestore,
             bulkDelete: base.articles.bulkDelete,
+            // Read-only, so it passes through unqueued like list/get (#729).
+            getComments: base.articles.getComments,
         },
         settings: base.settings,
         i18n: base.i18n,

@@ -1,7 +1,9 @@
 /**
- * Static source-scan guard for #107: no component/hook/page may call
- * the raw ``api.settings.*`` client directly — settings reads/writes
- * go through the ``getStorage()`` seam so they work in Dexie mode.
+ * Static source-scan guard: no component/hook/page may call the raw
+ * ``api.*`` client directly for a namespace that has a ``getStorage()``
+ * seam equivalent — those reads/writes go through the seam so they work
+ * in Dexie mode. Started as the ``api.settings`` guard (#107); each PWA
+ * parity port (epic #727) adds its own namespace to ``GUARDED`` below.
  *
  * Background: ``guardedFetch`` rejects raw ``/api`` calls on the
  * backendless build BEFORE any network request fires, so the offline
@@ -14,10 +16,10 @@
  * The allowlist below carries the audited Category-B/C call sites
  * (the API implementation itself + genuinely backend-only surfaces
  * that are mode-guarded or never mount offline). Adding a NEW direct
- * ``api.settings`` caller fails this test: either route it through
- * ``getStorage().settings`` (the default), or — for genuinely
- * backend-only data — guard it on the storage mode and extend the
- * allowlist with a justification comment.
+ * caller for a guarded namespace fails this test: either route it
+ * through the seam (the default), or — for genuinely backend-only
+ * data — guard it on the storage mode and extend the allowlist with a
+ * justification comment.
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -46,6 +48,13 @@ const ALLOWLIST = new Set([
     "pages/Settings.tsx",
 ]);
 
+/** The api implementation + the seam itself: allowed for every namespace. */
+const IMPLEMENTATION_LAYER: ReadonlySet<string> = new Set([
+    "api/client.ts",
+    "storage/api-storage.ts",
+    "storage/types.ts",
+]);
+
 function collectSourceFiles(dir: string): string[] {
     const out: string[] = [];
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -61,29 +70,73 @@ function collectSourceFiles(dir: string): string[] {
     return out;
 }
 
-describe("settings seam guard (#107)", () => {
-    it("no direct api.settings.* callers outside the audited allowlist", () => {
-        const offenders: string[] = [];
-        for (const file of collectSourceFiles(SRC_ROOT)) {
-            const rel = path.relative(SRC_ROOT, file).replace(/\\/g, "/");
-            if (ALLOWLIST.has(rel)) continue;
-            const source = fs.readFileSync(file, "utf-8");
-            // Match both single-line ``api.settings.getApp`` and the
-            // prettier-split ``api.settings\n    .getApp`` shape, but
-            // ignore mentions inside comments referencing the rule.
-            const code = source
-                .split("\n")
-                .filter((line) => !/^\s*(\/\/|\*|\/\*)/.test(line))
-                .join("\n");
-            if (/\bapi\.settings\b/.test(code)) {
-                offenders.push(rel);
+/** One guarded api namespace: what to look for, and what to do instead. */
+interface GuardedNamespace {
+    /** Namespace label for the test name. */
+    label: string;
+    /**
+     * Matches the forbidden direct call in comment-stripped source. Both
+     * the single-line (``api.settings.getApp``) and the prettier-split
+     * (``api.settings\n    .getApp``) shapes must match, so the pattern
+     * stops at the namespace and does not spell out the method.
+     */
+    pattern: RegExp;
+    /** The seam member to use instead, named in the failure message. */
+    remedy: string;
+    /** Files audited as legitimate direct callers, relative to ``src/``. */
+    allowlist: ReadonlySet<string>;
+}
+
+const GUARDED: readonly GuardedNamespace[] = [
+    {
+        label: "api.settings",
+        pattern: /\bapi\.settings\b/,
+        remedy: "getStorage().settings (see #106/#107)",
+        allowlist: ALLOWLIST,
+    },
+    {
+        // Comments admin (list / trash lifecycle / reclassify) reads and
+        // writes through getStorage().comments; #729 closed the last gap.
+        label: "api.comments",
+        pattern: /\bapi\.comments\b/,
+        remedy: "getStorage().comments (see #729)",
+        allowlist: IMPLEMENTATION_LAYER,
+    },
+    {
+        // The article-scoped comment read the editor panel uses. Guarded
+        // on its own rather than all of api.articles: the remaining
+        // api.articles surfaces are not ported yet (epic #727).
+        label: "api.articles.getComments",
+        pattern: /\bapi\.articles\s*\.\s*getComments\b/,
+        remedy: "getStorage().articles.getComments (see #729)",
+        allowlist: IMPLEMENTATION_LAYER,
+    },
+];
+
+describe("storage seam guard (#107, #727)", () => {
+    for (const guarded of GUARDED) {
+        it(`no direct ${guarded.label} callers outside the audited allowlist`, () => {
+            const offenders: string[] = [];
+            for (const file of collectSourceFiles(SRC_ROOT)) {
+                const rel = path.relative(SRC_ROOT, file).replace(/\\/g, "/");
+                if (guarded.allowlist.has(rel)) continue;
+                const source = fs.readFileSync(file, "utf-8");
+                // Mentions inside comments (including this rule's own
+                // references to it) are not call sites.
+                const code = source
+                    .split("\n")
+                    .filter((line) => !/^\s*(\/\/|\*|\/\*)/.test(line))
+                    .join("\n");
+                if (guarded.pattern.test(code)) {
+                    offenders.push(rel);
+                }
             }
-        }
-        expect(
-            offenders,
-            `direct api.settings caller(s) outside the seam: ${offenders.join(", ")} — ` +
-                "route through getStorage().settings (see #106/#107) or " +
-                "mode-guard + allowlist with justification",
-        ).toEqual([]);
-    });
+            expect(
+                offenders,
+                `direct ${guarded.label} caller(s) outside the seam: ` +
+                    `${offenders.join(", ")} — route through ${guarded.remedy} ` +
+                    "or mode-guard + allowlist with justification",
+            ).toEqual([]);
+        });
+    }
 });
