@@ -11,6 +11,7 @@
 
 import type {
     BookTypeDef,
+    ChapterTemplate,
     ContentTypeDef,
     DiscoveredPlugin,
     StoryEntityTypeDef,
@@ -21,6 +22,7 @@ import seedBookTypes from "./seed-book-types.json";
 import seedContentTypes from "./seed-content-types.json";
 import seedStoryEntityTypes from "./seed-story-entity-types.json";
 import seedPluginMetadata from "./seed-plugin-metadata.json";
+import seedChapterTemplates from "./seed-chapter-templates.json";
 import i18nDe from "./seed-i18n-de.json";
 import i18nEn from "./seed-i18n-en.json";
 import i18nEs from "./seed-i18n-es.json";
@@ -54,6 +56,13 @@ export const SEED_STORY_ENTITY_TYPES = seedStoryEntityTypes as unknown as Record
 /** Standard visible plugins (mirrors GET /api/settings/plugins/discovered). */
 export const SEED_PLUGIN_METADATA =
     seedPluginMetadata as unknown as DiscoveredPlugin[];
+
+/** The 4 built-in chapter templates (mirrors what
+ *  `seed_builtin_chapter_templates` inserts server-side). Unlike the
+ *  reference blobs above these seed ROWS of a user-writable table, so the
+ *  picker shows one list of builtin + user templates. */
+export const SEED_CHAPTER_TEMPLATES =
+    seedChapterTemplates as unknown as ChapterTemplate[];
 
 /** Per-language i18n catalogs (mirrors GET /api/i18n/{lang}). */
 export const SEED_I18N: Record<string, Record<string, unknown>> = {

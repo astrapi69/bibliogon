@@ -73,6 +73,28 @@ export interface TemplateStorage {
     delete: typeof api.templates.delete;
 }
 
+/**
+ * Reusable single-chapter templates (#731): the 4 built-ins plus the user's
+ * own, the editor's "Aus Vorlage" picker and its save/JSON round-trip.
+ *
+ * Unlike {@link TemplateStorage}, the built-ins ARE rows here — they carry no
+ * i18n keys (the backend stores them English-only and the UI renders them
+ * verbatim), so offline they seed straight into the Dexie table from
+ * `seed-chapter-templates.json` with stable `builtin-*` ids.
+ *
+ * `exportJson` keeps the api's side-effect contract: it triggers a browser
+ * download rather than returning the text.
+ */
+export interface ChapterTemplateStorage {
+    list: typeof api.chapterTemplates.list;
+    get: typeof api.chapterTemplates.get;
+    create: typeof api.chapterTemplates.create;
+    update: typeof api.chapterTemplates.update;
+    delete: typeof api.chapterTemplates.delete;
+    exportJson: typeof api.chapterTemplates.exportJson;
+    importJson: typeof api.chapterTemplates.importJson;
+}
+
 export interface ChapterStorage {
     list: typeof api.chapters.list;
     get: typeof api.chapters.get;
@@ -351,4 +373,5 @@ export interface IStorageService {
     covers: CoverStorage;
     comments: CommentStorage;
     templates: TemplateStorage;
+    chapterTemplates: ChapterTemplateStorage;
 }

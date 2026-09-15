@@ -25,6 +25,7 @@ import type {
     BookTypesStorage,
     ChapterLabelStorage,
     ChapterStorage,
+    ChapterTemplateStorage,
     CommentStorage,
     ComicsStorage,
     ContentTypesStorage,
@@ -147,5 +148,8 @@ export const apiStorage: IStorageService = {
     },
     get templates(): TemplateStorage {
         return api.templates;
+    },
+    get chapterTemplates(): ChapterTemplateStorage {
+        return api.chapterTemplates;
     },
 };

@@ -22,7 +22,7 @@ import { authors } from "./authors";
 import { articlePlatforms, editorPluginStatus, publications } from "./backend-only";
 import { books, templates } from "./books";
 import { chapterLabels } from "./chapter-labels";
-import { chapters } from "./chapters";
+import { chapters, chapterTemplates } from "./chapters";
 import { comics } from "./comics";
 import { comments } from "./comments";
 import { covers } from "./covers";
@@ -35,6 +35,7 @@ export const dexieStorage: IStorageService = {
     mode: "dexie",
     books,
     templates,
+    chapterTemplates,
     chapters,
     articles,
     articleAssets,
@@ -68,7 +69,7 @@ export type {
     SyncQueueEntry,
     WritingSessionRow,
 } from "./schema";
-export { ensureSeeded, resetOfflineDatabase } from "./seed";
+export { __resetSeedForTests, ensureSeeded, resetOfflineDatabase } from "./seed";
 export { hasAssetBlob, storeArticleAssetBlob, storeAssetBlob } from "./helpers";
 export {
     ingestBookGraph,
