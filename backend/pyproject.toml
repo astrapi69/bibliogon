@@ -38,6 +38,7 @@ bibliogon-plugin-comics = {path = "../plugins/bibliogon-plugin-comics", develop 
 bibliogon-plugin-story-bible = {path = "../plugins/bibliogon-plugin-story-bible", develop = true}
 bibliogon-plugin-learnset = {path = "../plugins/bibliogon-plugin-learnset", develop = true}
 bibliogon-plugin-promotion = {path = "../plugins/bibliogon-plugin-promotion", develop = true}
+bibliogon-plugin-aplus = {path = "../plugins/bibliogon-plugin-aplus", develop = true}
 markdown = "^3.10.2"
 alembic = "^1.18.4"
 pillow = "^12.0.0"

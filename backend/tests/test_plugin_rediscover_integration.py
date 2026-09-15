@@ -98,9 +98,7 @@ def _stage_fixture_plugin(
 
     dist_info = tmp_path / f"{name.replace('-', '_')}-1.0.0.dist-info"
     dist_info.mkdir()
-    (dist_info / "METADATA").write_text(
-        f"Metadata-Version: 2.1\nName: {name}\nVersion: 1.0.0\n"
-    )
+    (dist_info / "METADATA").write_text(f"Metadata-Version: 2.1\nName: {name}\nVersion: 1.0.0\n")
     (dist_info / "entry_points.txt").write_text(
         f"[bibliogon.plugins]\n{name} = {pkg_name_py}.plugin:FixturePlugin\n"
     )
@@ -150,6 +148,7 @@ def test_rediscover_stable_no_diff_after_lifespan(app_with_lifespan) -> None:
             "learnset",
             "medium-import",
             "ms-tools",
+            "aplus",
             "promotion",
             "story-bible",
             "translation",
@@ -200,9 +199,7 @@ def test_rediscover_respects_not_enabled_filter(
     diff = manager.rediscover()
 
     state = diff.states.get("rediscover-not-enabled-fixture")
-    assert state is not None, (
-        "fixture missing from states; rediscover did not see it at all"
-    )
+    assert state is not None, "fixture missing from states; rediscover did not see it at all"
     assert state.filter_reason == "not_enabled", (
         f"expected filter_reason='not_enabled', got {state.filter_reason!r}"
     )
@@ -241,14 +238,11 @@ def test_rediscover_filters_wrong_target_application(
     # "wrong_application". The identity-gating path is exercised
     # only when the plugin makes it past the enabled-list filter.
     assert state.filter_reason in {"not_enabled", "wrong_application"}, (
-        f"expected not_enabled or wrong_application; got "
-        f"{state.filter_reason!r}"
+        f"expected not_enabled or wrong_application; got {state.filter_reason!r}"
     )
 
 
-def test_rediscover_is_idempotent(
-    app_with_lifespan, tmp_path, sys_path_cleanup
-) -> None:
+def test_rediscover_is_idempotent(app_with_lifespan, tmp_path, sys_path_cleanup) -> None:
     """Calling rediscover twice in succession against the same
     entry-point set returns equivalent diffs. The second call
     sees the fixture as already-discovered, so it does NOT
@@ -264,9 +258,7 @@ def test_rediscover_is_idempotent(
     # (The fixture lands in `states` with filter_reason="not_enabled"
     # because it's not in the test app config's enabled list. The
     # idempotency rule: the same input -> same shape.)
-    assert diff2.added == [], (
-        f"second rediscover should not re-add anything; got {diff2.added}"
-    )
+    assert diff2.added == [], f"second rediscover should not re-add anything; got {diff2.added}"
     # The same fixture appears in states for both calls.
     assert ("rediscover-idempotent-fixture" in diff1.states) == (
         "rediscover-idempotent-fixture" in diff2.states

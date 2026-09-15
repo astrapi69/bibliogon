@@ -72,6 +72,7 @@ plugins:
   - story-bible
   - learnset
   - promotion
+  - aplus
   entry_point_group: bibliogon.plugins
 ui:
   logo: assets/logo.svg

@@ -608,6 +608,45 @@ class BookFormatState(Base):
         )
 
 
+class AplusContent(Base):
+    """Cached A+ Content package for one book and language (#825).
+
+    Generation is an AI call plus a deterministic-validation pass, so
+    the result is cached rather than regenerated on every read.
+    ``source_hash`` fingerprints the book fields the prompt was built
+    from PLUS the ruleset version, following the audiobook
+    content-hash-sidecar pattern (see lessons-learned "Content-hash
+    sidecar files"): a change to either invalidates the cache without
+    a separate migration or a background job.
+
+    ``content_json`` holds the serialised
+    ``bibliogon_aplus.schema.AplusPackage`` (short description,
+    bullets, both image modules, validation findings, meta) - a
+    plugin-owned shape, not a core one, so it stays a JSON blob here
+    rather than a set of typed columns.
+    """
+
+    __tablename__ = "aplus_content"
+    __table_args__ = (UniqueConstraint("book_id", "language", name="uq_aplus_content_book_lang"),)
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    book_id: Mapped[str] = mapped_column(
+        ForeignKey("books.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    language: Mapped[str] = mapped_column(String(10), nullable=False)
+    ruleset_version: Mapped[str] = mapped_column(String(20), nullable=False)
+    source_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    model_name: Mapped[str] = mapped_column(String(200), nullable=False, default="")
+    content_json: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
+
+    def __repr__(self) -> str:
+        return f"<AplusContent book={self.book_id!r} language={self.language!r}>"
+
+
 class GitSyncMapping(Base):
     """plugin-git-sync per-book sync state (PGS-02).
 

@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "bibliogon-plugin-aplus"
+version = "1.0.0"
+description = "Generate an Amazon A+ Content package (short description, bullets, image modules) from a Bibliogon book"
+authors = ["astrapi69"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "bibliogon_aplus"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pluginforge = "^0.10.0"
+fastapi = "^0.136.0"
+pydantic = "^2.13.0"
+pyyaml = "^6.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^9.0"
+pytest-cov = "^7.1.0"
+httpx = "^0.28.0"
+
+[tool.poetry.plugins."bibliogon.plugins"]
+aplus = "bibliogon_aplus.plugin:AplusPlugin"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

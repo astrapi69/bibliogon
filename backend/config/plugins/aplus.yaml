@@ -1,0 +1,7 @@
+display_name:
+  de: "A+ Content"
+  en: "A+ Content"
+description:
+  de: "Erzeugt ein Amazon A+ Content Paket (Kurzbeschreibung, Bulletpoints, Bildmodule inkl. Bild-Prompts) aus einem vorhandenen Buch."
+  en: "Generates an Amazon A+ Content package (short description, bullets, image modules incl. image prompts) from an existing book."
+settings: {}

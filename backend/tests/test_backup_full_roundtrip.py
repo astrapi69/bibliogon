@@ -27,6 +27,7 @@ from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
 from app.models import (
+    AplusContent,
     ArcReviewer,
     Article,
     ArticleAsset,
@@ -36,8 +37,8 @@ from app.models import (
     Author,
     Base,
     Book,
-    BookImportSource,
     BookFormatState,
+    BookImportSource,
     BookPublishingState,
     BookTemplate,
     BookTemplateChapter,
@@ -71,6 +72,7 @@ CONTENT_MODELS = [
     StoryEntity,
     StoryEntityPageLink,
     BookFormatState,
+    AplusContent,
     BookPublishingState,
     ArcReviewer,
     Article,
@@ -308,6 +310,17 @@ def _build_graph(db: Session, tmp_upload: str) -> None:
             book_format="hardcover",
             status="draft",
             store_url="https://www.amazon.com/dp/B0FR1X1MVX",
+        )
+    )
+    db.add(
+        AplusContent(
+            id="apc1",
+            book_id="bk1",
+            language="en",
+            ruleset_version="1",
+            source_hash="deadbeef",
+            model_name="test-model",
+            content_json='{"short_description":"x"}',
         )
     )
     db.flush()
