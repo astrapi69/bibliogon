@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import pytest
 import yaml
-
 from bibliogon_aplus.rules import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, get_ruleset, load_ruleset
 
 
@@ -39,6 +38,26 @@ class TestForLanguage:
         rules = get_ruleset()
         fallback = rules.for_language("xx")
         assert fallback is rules.languages[DEFAULT_LANGUAGE]
+
+
+class TestLeadingOnlyImperatives:
+    """#828: words too common for an anywhere-match block get a
+    dedicated, opt-in leading_only_imperatives list instead."""
+
+    def test_english_leading_only_words_load_from_the_vendored_ruleset(self) -> None:
+        rules = get_ruleset()
+        en_rules = rules.for_language("en")
+        assert set(en_rules.leading_only_imperatives) == {"Start", "Build", "Get", "Take"}
+
+    def test_leading_only_words_are_not_duplicated_in_the_anywhere_match_list(self) -> None:
+        rules = get_ruleset()
+        en_rules = rules.for_language("en")
+        assert not set(en_rules.leading_only_imperatives) & set(en_rules.marketing_imperatives)
+
+    def test_a_language_without_the_key_defaults_to_an_empty_tuple(self) -> None:
+        rules = get_ruleset()
+        de_rules = rules.for_language("de")
+        assert de_rules.leading_only_imperatives == ()
 
 
 class TestEscalatedWords:

@@ -10,8 +10,6 @@ from __future__ import annotations
 
 import asyncio
 
-import pytest
-
 from bibliogon_aplus.book_context import BookContext
 from bibliogon_aplus.generator import compute_source_hash, generate_package
 from bibliogon_aplus.rules import get_ruleset
@@ -116,7 +114,9 @@ class TestRegeneration:
         client = _FakeClient([BAD_YAML_EM_DASH, GOOD_YAML])
         _run(generate_package(_context(), language="en", rules=RULES, client=client))
         second_call_user_message = client.calls[1][1]["content"]
-        assert "Em dash" in second_call_user_message or "em dash" in second_call_user_message.lower()
+        assert (
+            "Em dash" in second_call_user_message or "em dash" in second_call_user_message.lower()
+        )
 
     def test_after_the_retry_budget_the_result_is_returned_with_remaining_errors(self) -> None:
         client = _FakeClient([BAD_YAML_EM_DASH, BAD_YAML_EM_DASH, BAD_YAML_EM_DASH])

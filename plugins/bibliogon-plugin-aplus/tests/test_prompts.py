@@ -65,9 +65,7 @@ class TestUserPrompt:
 
     def test_prior_findings_are_surfaced_as_correction_guidance(self) -> None:
         findings = [
-            ValidationFinding(
-                field="short_description", severity="error", message="Em dash found."
-            )
+            ValidationFinding(field="short_description", severity="error", message="Em dash found.")
         ]
         prompt = build_user_prompt(_context(), rules=RULES, prior_findings=findings)
         assert "Em dash found." in prompt

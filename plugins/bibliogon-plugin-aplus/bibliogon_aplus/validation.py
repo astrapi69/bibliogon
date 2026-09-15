@@ -43,6 +43,80 @@ _EMOJI_RE = re.compile(
 
 _ALLOWED_CONTROL_CHARS = frozenset({"\n", "\t", "\r"})
 
+#: A pure word list can never be exhaustive - any future AI response
+#: using an unlisted imperative verb slips through silently (#828).
+#: These per-language patterns catch a field OPENING with a likely
+#: imperative verb even when the exact word is not in
+#: ``marketing_imperatives``, using morphology that is specific to
+#: each language's formal-imperative form:
+#:
+#: - German: the formal "Sie" imperative uses verb-first ("V1") word
+#:   order - "Verb Sie ..." (e.g. "Erobern Sie ..."). A declarative
+#:   German sentence about a book would put "Sie" first, not second
+#:   ("Sie erobert..."); a bare capitalized word immediately followed
+#:   by "Sie" at the very start of a field is specifically the
+#:   imperative/question word order, so this does not require the
+#:   verb to end in any particular suffix (many common verbs, e.g.
+#:   "meistern"/"erobern", have infinitives ending in "-ern"/"-eln",
+#:   not "-en").
+#: - French: the formal "vous" imperative for -er verbs (the largest
+#:   verb class) ends in "-ez" (e.g. "Gagnez ..."). A short exclusion
+#:   list keeps common non-verb "-ez" words (assez, chez, nez) from
+#:   false-positiving.
+#:
+#: English and Spanish have no comparable morphological marker that
+#: distinguishes an imperative verb from a noun/adjective/3rd-person
+#: form without a part-of-speech tagger (a new NLP dependency, out of
+#: scope here per Library-First - no existing dependency provides
+#: this). Detection for those two languages relies on the enumerated
+#: ``marketing_imperatives`` list staying current; that IS their
+#: heuristic, and its coverage gaps are closed by list maintenance,
+#: not by a doomed regex.
+_LEADING_IMPERATIVE_PATTERNS: dict[str, re.Pattern[str]] = {
+    "de": re.compile(r"^[A-ZÄÖÜ][a-zäöüß]{2,}\s+Sie\b"),
+    "fr": re.compile(r"^[A-ZÀ-Ü][a-zà-ÿ]{3,}ez\b"),
+}
+
+#: French words that end in "-ez" but are not verbs, excluded from
+#: the French leading-imperative heuristic to reduce false positives.
+_FR_LEADING_EZ_EXCEPTIONS = frozenset({"assez", "chez", "nez"})
+
+
+_LEADING_WORD_RE = re.compile(r"^\W*(\w+)", re.UNICODE)
+
+
+def _starts_with_imperative_verb(
+    text: str, language: str, leading_only_words: tuple[str, ...] = ()
+) -> str | None:
+    """Return the matched opening phrase if ``text`` looks like it
+    opens with an imperative verb for ``language``, else None.
+
+    Combines the per-language morphological regex (de/fr) with an
+    exact-match check against ``leading_only_words`` - words too
+    common to block anywhere in text but unambiguous as an opener
+    (English's "Build"/"Get"/"Start"/"Take"; see #828).
+    """
+    stripped = text.strip()
+
+    if leading_only_words:
+        leading_match = _LEADING_WORD_RE.match(stripped)
+        if leading_match:
+            first_word = leading_match.group(1)
+            for candidate in leading_only_words:
+                if first_word.lower() == candidate.lower():
+                    return first_word
+
+    pattern = _LEADING_IMPERATIVE_PATTERNS.get(language)
+    if pattern is None:
+        return None
+    match = pattern.match(stripped)
+    if match is None:
+        return None
+    matched = match.group(0)
+    if language == "fr" and matched.lower() in _FR_LEADING_EZ_EXCEPTIONS:
+        return None
+    return matched
+
 
 def _find_hidden_or_control_chars(text: str) -> list[str]:
     """Zero-width chars, plus any other C0/C1 control or format
@@ -131,6 +205,7 @@ def _check_text_field(
 
     lang_rules = rules.for_language(language)
 
+    matched_imperative = False
     for imperative in lang_rules.marketing_imperatives:
         if _contains_word(text, imperative):
             findings.append(
@@ -140,7 +215,22 @@ def _check_text_field(
                     message=f"Marketing imperative '{imperative}' is not allowed in A+ text.",
                 )
             )
+            matched_imperative = True
             break
+
+    if not matched_imperative:
+        leading = _starts_with_imperative_verb(text, language, lang_rules.leading_only_imperatives)
+        if leading is not None:
+            findings.append(
+                ValidationFinding(
+                    field=field,
+                    severity="error",
+                    message=(
+                        f"Text opens with an imperative verb form ('{leading}'); "
+                        "A+ copy must not command the reader."
+                    ),
+                )
+            )
 
     for term in lang_rules.price_shipping_terms:
         if _contains_word(text, term):
