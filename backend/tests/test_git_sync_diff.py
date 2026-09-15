@@ -29,6 +29,7 @@ from app.services.git.sync_diff import (
     ChapterIdentity,
     _classify,
     _normalize,
+    _read_local_chapters,
     diff_book,
 )
 
@@ -162,6 +163,48 @@ def _tiptap_paragraph(text: str) -> str:
             ],
         }
     )
+
+
+class TestReadLocalChaptersHtmlFixture:
+    """#824: an imported, never-opened chapter is HTML (#787), not
+    TipTap JSON. Before the fix, a bare ``json.loads`` failure
+    produced an empty local markdown body, so Git-Sync diffed every
+    such chapter as changed against its own imported base."""
+
+    def test_html_imported_chapter_produces_a_non_empty_markdown_body(
+        self, db: Session, book: Book
+    ) -> None:
+        chapter = Chapter(
+            book_id=book.id,
+            title="Imported Chapter",
+            content="<p>Ein Buch <strong>über</strong> Bewusstsein.</p>",
+            position=1,
+            chapter_type="chapter",
+        )
+        db.add(chapter)
+        db.commit()
+
+        local = _read_local_chapters(db, book.id)
+        (_title, markdown, _db_id) = next(iter(local.values()))
+        assert "Ein Buch" in markdown
+        assert "über Bewusstsein" in markdown or "**über** Bewusstsein" in markdown
+        assert "<p>" not in markdown
+        assert "<strong>" not in markdown
+
+    def test_real_tiptap_json_chapter_still_works(self, db: Session, book: Book) -> None:
+        chapter = Chapter(
+            book_id=book.id,
+            title="Saved Chapter",
+            content=_tiptap_paragraph("Already saved in the editor."),
+            position=1,
+            chapter_type="chapter",
+        )
+        db.add(chapter)
+        db.commit()
+
+        local = _read_local_chapters(db, book.id)
+        (_title, markdown, _db_id) = next(iter(local.values()))
+        assert "Already saved in the editor." in markdown
 
 
 def test_diff_classifies_every_case_end_to_end(db: Session, book: Book, tmp_path: Path) -> None:

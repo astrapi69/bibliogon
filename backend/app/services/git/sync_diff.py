@@ -34,7 +34,6 @@ Boundary:
 
 from __future__ import annotations
 
-import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
@@ -662,18 +661,20 @@ def _read_local_chapters(db: Session, book_id: str) -> dict[ChapterIdentity, tup
     flow uses, so a chapter that round-trips through Bibliogon
     without edits diffs as ``unchanged`` against its imported base.
     """
-    from bibliogon_export.tiptap_to_md import (  # type: ignore[import-untyped]
-        tiptap_to_markdown,
+    from bibliogon_export.scaffolder import (  # type: ignore[import-untyped]
+        content_to_markdown,
     )
 
     rows = db.query(Chapter).filter(Chapter.book_id == book_id).order_by(Chapter.position).all()
     out: dict[ChapterIdentity, tuple[str, str, str]] = {}
     for ch in rows:
-        try:
-            doc = json.loads(ch.content) if ch.content else {}
-            md_body = tiptap_to_markdown(doc) if isinstance(doc, dict) else ""
-        except (json.JSONDecodeError, TypeError, ValueError):
-            md_body = ""
+        # An imported, never-opened chapter is HTML, not TipTap JSON
+        # (#787); content_to_markdown handles that shape (and plain
+        # text) alongside real TipTap docs (#824). A bare json.loads
+        # + tiptap_to_markdown-only path silently produced an EMPTY
+        # local body for every such chapter, which made Git-Sync
+        # diff it as changed against its own imported base.
+        md_body = content_to_markdown(ch.content)
         # Match what the scaffolder writes: H1 of the chapter title
         # at the top, then the body. Without this the diff would
         # always classify as "local_changed" because the on-disk
