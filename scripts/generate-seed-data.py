@@ -353,7 +353,6 @@ def generate_chapter_templates() -> None:
     backend's, so a re-seed is stable and an exported file's child ids keep
     resolving across installs.
     """
-    sys.path.insert(0, str(BACKEND_DIR))
     from app.data.builtin_chapter_templates import BUILTIN_CHAPTER_TEMPLATES
 
     templates = [
