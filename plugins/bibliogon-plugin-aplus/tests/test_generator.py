@@ -130,6 +130,18 @@ class TestRegeneration:
         assert package.has_errors
         assert len(client.calls) == RULES.max_regeneration_retries + 1
 
+    def test_the_exhausted_attempt_count_is_1_initial_plus_the_configured_retries(self) -> None:
+        """#829: pins the decomposition explicitly (1 initial call +
+        max_regeneration_retries retries), not just the combined
+        total, so a future reader can't misread "3 calls" as "3
+        retries" the way #827's closing report did."""
+        assert RULES.max_regeneration_retries == 2
+        client = _FakeClient([BAD_YAML_EM_DASH] * 5)
+        _run(generate_package(_context(), language="en", rules=RULES, client=client))
+        initial_attempts = 1
+        assert len(client.calls) == initial_attempts + RULES.max_regeneration_retries
+        assert len(client.calls) == 3
+
 
 class TestKinderbuchEscalationAffectsRegeneration:
     def test_a_soft_word_that_escalates_for_kinderbuch_forces_a_retry(self) -> None:

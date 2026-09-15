@@ -2,9 +2,12 @@
 
 Prompt -> AI call -> YAML-fragment parse -> deterministic validation
 -> up to ``rules.max_regeneration_retries`` regenerations when hard
-errors survive. After the last attempt the package is returned WITH
-its remaining errors rather than silently swallowed - the caller
-(route) decides what to do with a package that still has errors.
+errors survive. Total attempts = 1 initial generation +
+``rules.max_regeneration_retries`` retries (see
+``_INITIAL_GENERATION_ATTEMPT``, #829). After the last attempt the
+package is returned WITH its remaining errors rather than silently
+swallowed - the caller (route) decides what to do with a package
+that still has errors.
 
 Needs ``app.ai`` (core), so - like ``book_context.py`` - this module
 is not exercised by the plugin's own isolated test venv; its tests
@@ -32,6 +35,12 @@ from bibliogon_aplus.schema import (
     ValidationFinding,
 )
 from bibliogon_aplus.validation import validate_package
+
+#: The generation loop always runs one initial attempt, then retries
+#: up to ``rules.max_regeneration_retries`` more times on hard
+#: errors - so the total call count is this constant PLUS the
+#: configured retry budget, never the retry budget alone (#829).
+_INITIAL_GENERATION_ATTEMPT = 1
 
 
 class ChatClient(Protocol):
@@ -172,7 +181,7 @@ async def generate_package(
     )
     model_used = ""
 
-    max_attempts = rules.max_regeneration_retries + 1
+    max_attempts = _INITIAL_GENERATION_ATTEMPT + rules.max_regeneration_retries
     for _attempt in range(max_attempts):
         system_prompt = build_system_prompt(language)
         user_prompt = build_user_prompt(context, rules=rules, prior_findings=prior_findings)
