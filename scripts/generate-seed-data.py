@@ -28,6 +28,7 @@ needs no Python.
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -343,6 +344,37 @@ def generate_getstarted() -> None:
     )
 
 
+def generate_chapter_templates() -> None:
+    """Emit the 4 builtin chapter templates for the offline seed.
+
+    The SSoT is `backend/app/data/builtin_chapter_templates.py` (Python, not
+    YAML, unlike the other generators here), so this imports it rather than
+    parsing a config file. Ids are DERIVED from the name, not random like the
+    backend's, so a re-seed is stable and an exported file's child ids keep
+    resolving across installs.
+    """
+    from app.data.builtin_chapter_templates import BUILTIN_CHAPTER_TEMPLATES
+
+    templates = [
+        {
+            "id": f"builtin-{_slug(spec['name'])}",
+            "name": spec["name"],
+            "description": spec["description"],
+            "chapter_type": spec["chapter_type"],
+            "content": spec["content"],
+            "language": "en",
+            "is_builtin": True,
+            "child_template_ids": None,
+        }
+        for spec in BUILTIN_CHAPTER_TEMPLATES
+    ]
+    _write_json("seed-chapter-templates.json", templates)
+
+
+def _slug(name: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+
+
 def main() -> None:
     print("Generating offline seed data from backend YAML sources...")
     generate_i18n()
@@ -354,6 +386,7 @@ def main() -> None:
     generate_help()
     generate_help_docs()
     generate_getstarted()
+    generate_chapter_templates()
     print("Done.")
 
 

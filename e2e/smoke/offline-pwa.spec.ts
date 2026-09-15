@@ -538,6 +538,51 @@ test.describe("Offline PWA (Dexie mode)", () => {
         });
     });
 
+    test("chapter templates work offline: seeded built-ins + insert (#731)", async ({
+        page,
+    }) => {
+        // The editor's "Aus Vorlage" picker used to reach api.chapterTemplates
+        // with no gate at all, so offline it failed with a raw transport
+        // error. The 4 built-ins now come from the seeded Dexie table.
+        await page.goto("/books/new");
+        await page.getByTestId("create-book-title").fill("Vorlagen-Buch");
+        await page.getByTestId("create-book-author").fill("Aster");
+        await page.getByTestId("create-book-submit").click();
+        await expect(page.getByText("Vorlagen-Buch").first()).toBeVisible({
+            timeout: 10000,
+        });
+        await page.getByText("Vorlagen-Buch").first().click();
+        await page.waitForURL(/\/book\//);
+
+        await page.getByTestId("chapter-add-trigger").click();
+        await page.getByTestId("chapter-dropdown-from-template").click();
+        await expect(page.getByTestId("chapter-template-picker")).toBeVisible();
+
+        // All four seeded built-ins are listed, with their read-only badge.
+        for (const name of ["Interview", "FAQ", "Recipe", "Photo Report"]) {
+            await expect(page.getByText(name, { exact: true })).toBeVisible();
+        }
+        const interview = page.getByTestId(
+            "chapter-template-card-builtin-interview",
+        );
+        await expect(interview).toBeVisible();
+        await expect(
+            page.getByTestId("chapter-template-builtin-badge-builtin-interview"),
+        ).toBeVisible();
+        // A built-in is read-only: no delete affordance offline either.
+        await expect(
+            page.getByTestId("chapter-template-delete-builtin-interview"),
+        ).toHaveCount(0);
+
+        // Inserting seeds a chapter from the template's content.
+        await interview.click();
+        await page.getByTestId("chapter-template-insert").click();
+        await expect(page.getByTestId("chapter-template-picker")).toHaveCount(0);
+        await expect(page.getByText("Interview").first()).toBeVisible({
+            timeout: 10000,
+        });
+    });
+
     test("picture-book template works offline: Kinderbuch seeds 12 pages", async ({
         page,
     }) => {

@@ -6,17 +6,61 @@
  * book->chapter cascade-on-delete and chapter reorder/version bump.
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import "fake-indexeddb/auto";
-import { dexieStorage, offlineDb } from "./dexie-storage";
+import {
+    __resetSeedForTests,
+    dexieStorage,
+    ensureSeeded,
+    offlineDb,
+} from "./dexie-storage";
 
 beforeEach(async () => {
     await Promise.all(offlineDb.tables.map((t) => t.clear()));
+    // The seed memo outlives the table contents, so clearing alone would
+    // leave every case after the first one un-seeded (#731).
+    __resetSeedForTests();
 });
 
 /** Read a (reconstructed) Blob's bytes as text via arrayBuffer. */
 const readText = async (blob: Blob): Promise<string> =>
     new TextDecoder().decode(await blob.arrayBuffer());
+
+/**
+ * Run a download-triggering call and capture what it handed the browser.
+ * `exportJson` mirrors the api contract (a download side effect, not a
+ * return value), so the assertion target is the blob + filename the anchor
+ * received. Same stub shape as `shared/utils/downloadBlob.test.ts`.
+ */
+async function captureDownload(
+    run: () => Promise<void>,
+): Promise<{ text: string; filename: string }> {
+    let blob: Blob | null = null;
+    let filename = "";
+    const createSpy = vi
+        .spyOn(URL, "createObjectURL")
+        .mockImplementation((source: Blob | MediaSource) => {
+            blob = source as Blob;
+            return "blob:mock-url";
+        });
+    const revokeSpy = vi
+        .spyOn(URL, "revokeObjectURL")
+        .mockImplementation(() => undefined);
+    const clickSpy = vi
+        .spyOn(HTMLAnchorElement.prototype, "click")
+        .mockImplementation(function (this: HTMLAnchorElement) {
+            filename = this.download;
+        });
+    try {
+        await run();
+    } finally {
+        createSpy.mockRestore();
+        revokeSpy.mockRestore();
+        clickSpy.mockRestore();
+    }
+    if (!blob) throw new Error("no download was triggered");
+    return { text: await readText(blob), filename };
+}
 
 describe("DexieStorage — books", () => {
     it("create -> get -> list -> update -> delete round-trip", async () => {
@@ -470,6 +514,157 @@ describe("DexieStorage — book templates (#730)", () => {
             }),
         ).rejects.toThrow();
         expect(await dexieStorage.books.list()).toEqual([]);
+    });
+});
+
+describe("DexieStorage — chapter templates (#731)", () => {
+    // The built-ins are seed ROWS of this table, so the cases below need a
+    // first-install state. Going through the real seed path also pins that
+    // ensureSeeded actually inserts them.
+    beforeEach(async () => {
+        await ensureSeeded();
+    });
+
+    const payload = (name: string, extra: Record<string, unknown> = {}) => ({
+        name,
+        description: `Beschreibung ${name}`,
+        chapter_type: "chapter" as const,
+        content: '{"type":"doc","content":[]}',
+        ...extra,
+    });
+
+    it("seeds the 4 builtins and keeps them read-only", async () => {
+        const list = await dexieStorage.chapterTemplates.list();
+        const builtins = list.filter((t) => t.is_builtin);
+        expect(builtins.map((t) => t.name).sort()).toEqual([
+            "FAQ",
+            "Interview",
+            "Photo Report",
+            "Recipe",
+        ]);
+        // Stable ids so an exported file's child ids keep resolving.
+        expect(builtins.every((t) => t.id.startsWith("builtin-"))).toBe(true);
+
+        const interview = builtins.find((t) => t.name === "Interview")!;
+        await expect(
+            dexieStorage.chapterTemplates.delete(interview.id),
+        ).rejects.toMatchObject({ status: 403 });
+        await expect(
+            dexieStorage.chapterTemplates.update(interview.id, { name: "Neu" }),
+        ).rejects.toMatchObject({ status: 403 });
+        expect(await dexieStorage.chapterTemplates.get(interview.id)).toMatchObject({
+            name: "Interview",
+        });
+    });
+
+    it("create -> get -> update -> delete round-trip for a user template", async () => {
+        const created = await dexieStorage.chapterTemplates.create(payload("Meine Vorlage"));
+        expect(created.is_builtin).toBe(false);
+        expect(created.language).toBe("en");
+        expect(created.child_template_ids).toBeNull();
+
+        const updated = await dexieStorage.chapterTemplates.update(created.id, {
+            description: "Geaendert",
+        });
+        expect(updated.description).toBe("Geaendert");
+        expect(updated.name).toBe("Meine Vorlage");
+        expect((await dexieStorage.chapterTemplates.get(created.id)).description).toBe(
+            "Geaendert",
+        );
+
+        await dexieStorage.chapterTemplates.delete(created.id);
+        await expect(dexieStorage.chapterTemplates.get(created.id)).rejects.toThrow();
+        // The builtins survive a user template's deletion.
+        expect(await dexieStorage.chapterTemplates.list()).toHaveLength(4);
+    });
+
+    it("rejects a duplicate name with a 409, builtin names included", async () => {
+        await dexieStorage.chapterTemplates.create(payload("Einzig"));
+        await expect(
+            dexieStorage.chapterTemplates.create(payload("Einzig")),
+        ).rejects.toMatchObject({ status: 409 });
+        await expect(
+            dexieStorage.chapterTemplates.create(payload("Interview")),
+        ).rejects.toMatchObject({ status: 409 });
+    });
+
+    it("lists builtins first, then user templates by name", async () => {
+        await dexieStorage.chapterTemplates.create(payload("Zeta"));
+        await dexieStorage.chapterTemplates.create(payload("Alpha"));
+        const names = (await dexieStorage.chapterTemplates.list()).map((t) => t.name);
+        expect(names.slice(0, 4).every((n) => !["Alpha", "Zeta"].includes(n))).toBe(true);
+        expect(names.slice(4)).toEqual(["Alpha", "Zeta"]);
+    });
+
+    it("validates child_template_ids: unknown, self-reference and cycles", async () => {
+        const a = await dexieStorage.chapterTemplates.create(payload("A"));
+        const b = await dexieStorage.chapterTemplates.create(
+            payload("B", { child_template_ids: [a.id] }),
+        );
+        expect(b.child_template_ids).toEqual([a.id]);
+
+        await expect(
+            dexieStorage.chapterTemplates.create(payload("C", { child_template_ids: ["nope"] })),
+        ).rejects.toThrow(/unknown child/i);
+        await expect(
+            dexieStorage.chapterTemplates.update(a.id, { child_template_ids: [a.id] }),
+        ).rejects.toThrow(/itself/i);
+        // a -> [b] would close the cycle b -> [a].
+        await expect(
+            dexieStorage.chapterTemplates.update(a.id, { child_template_ids: [b.id] }),
+        ).rejects.toThrow(/cycle/i);
+    });
+
+    it("imports a previously exported file and refuses a foreign one", async () => {
+        const source = await dexieStorage.chapterTemplates.create(payload("Export-Quelle"));
+        const exported = await captureDownload(() =>
+            dexieStorage.chapterTemplates.exportJson(source.id),
+        );
+        // Deleting the source frees the name, so the import is a clean insert.
+        await dexieStorage.chapterTemplates.delete(source.id);
+
+        const imported = await dexieStorage.chapterTemplates.importJson(
+            new File([exported.text], "t.json", { type: "application/json" }),
+        );
+        expect(imported.name).toBe("Export-Quelle");
+        expect(imported.content).toBe('{"type":"doc","content":[]}');
+        // A re-imported file always lands as a user template.
+        expect(imported.is_builtin).toBe(false);
+        expect(imported.id).not.toBe(source.id);
+
+        await expect(
+            dexieStorage.chapterTemplates.importJson(
+                new File(['{"hello":"world"}'], "x.json"),
+            ),
+        ).rejects.toThrow(/format/i);
+        // A name that already exists is a 409, same as create.
+        await expect(
+            dexieStorage.chapterTemplates.importJson(
+                new File([exported.text], "t.json"),
+            ),
+        ).rejects.toMatchObject({ status: 409 });
+    });
+
+    it("downloads a builtin as a portable user template", async () => {
+        const [builtin] = (await dexieStorage.chapterTemplates.list()).filter(
+            (t) => t.is_builtin,
+        );
+        const download = await captureDownload(() =>
+            dexieStorage.chapterTemplates.exportJson(builtin.id),
+        );
+        // The filename mirrors the backend's Content-Disposition.
+        expect(download.filename).toBe(
+            `${builtin.name.toLowerCase().replace(/ /g, "-")}.chapter-template.json`,
+        );
+        const parsed = JSON.parse(download.text);
+        expect(parsed.format).toBe("bibliogon-chapter-template");
+        expect(parsed.name).toBe(builtin.name);
+        // is_builtin is never serialized, so a re-import is a user template.
+        expect(parsed).not.toHaveProperty("is_builtin");
+    });
+
+    it("rejects exporting an unknown id", async () => {
+        await expect(dexieStorage.chapterTemplates.exportJson("nope")).rejects.toThrow();
     });
 });
 

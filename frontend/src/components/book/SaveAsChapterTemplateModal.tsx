@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, ApiError, Chapter, ChapterTemplate } from "../../api/client";
+import { ApiError, Chapter, ChapterTemplate } from "../../api/client";
 import { getStorage } from "../../storage";
 import { useI18n } from "../../hooks/useI18n";
 import { notify } from "../../utils/platform/notify";
@@ -23,7 +23,7 @@ interface Props {
   bookId?: string;
   /** When set, modal switches into edit mode: pre-fills name +
    *  description from the template, hides the contentMode toggle, and
-   *  calls ``api.chapterTemplates.update`` on save. TM-04b sub-item:
+   *  calls ``chapterTemplates.update`` through the seam on save. TM-04b sub-item:
    *  surface the existing PUT endpoint in the UI. */
   existingTemplate?: ChapterTemplate;
   onClose: () => void;
@@ -95,7 +95,7 @@ export default function SaveAsChapterTemplateModal({
     setNameError(null);
     try {
       if (isEdit && existingTemplate) {
-        await api.chapterTemplates.update(existingTemplate.id, {
+        await getStorage().chapterTemplates.update(existingTemplate.id, {
           name: trimmedName,
           description: trimmedDescription,
         });
@@ -113,7 +113,7 @@ export default function SaveAsChapterTemplateModal({
           const full = await getStorage().chapters.get(bookId, chapter.id);
           content = full.content;
         }
-        await api.chapterTemplates.create({
+        await getStorage().chapterTemplates.create({
           name: trimmedName,
           description: trimmedDescription,
           chapter_type: chapter.chapter_type,
