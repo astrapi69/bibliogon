@@ -53,6 +53,7 @@ def test_admin_rediscover_happy_path_reports_all_unchanged() -> None:
             "learnset",
             "medium-import",
             "ms-tools",
+            "aplus",
             "promotion",
             "story-bible",
             "translation",

@@ -1,0 +1,162 @@
+# A+ Content validation + image-style ruleset (#825).
+#
+# Versioned config, not hardcoded and not part of the AI prompt - the
+# validator runs deterministically against this file, independent of
+# which AI provider generated the text. Bump `version` whenever a rule
+# changes; a generated package's cache row stamps the version it was
+# validated against, so a bump invalidates every cached result.
+#
+# Adding a language: add an entry under `languages` with the same five
+# keys as the existing ones. Adding a genre-style override: add an
+# entry under `image_style.genres`.
+
+version: "1"
+
+schema_limits:
+  short_description: 300
+  bullet_heading: 160
+  bullet_body: 1000
+  alt_text: 200
+
+languages:
+  de:
+    marketing_imperatives:
+      - "Lernen Sie"
+      - "Entdecken Sie"
+      - "Meistern Sie"
+      - "Erfahren Sie"
+      - "Erleben Sie"
+    price_shipping_terms:
+      - "kostenlos"
+      - "versandkostenfrei"
+      - "rabatt"
+      - "prozent rabatt"
+      - "% rabatt"
+      - "preis"
+      - "gratis"
+    soft_words:
+      default:
+        - "Diebstahl"
+        - "Kampf"
+        - "Streit"
+        - "Gewalt"
+        - "Mord"
+        - "Waffe"
+    genre_escalations:
+      kinderbuch:
+        - "Diebstahl"
+        - "Gewalt"
+        - "Mord"
+        - "Waffe"
+  en:
+    marketing_imperatives:
+      - "Learn"
+      - "Discover"
+      - "Find out"
+      - "Explore"
+      - "Uncover"
+    price_shipping_terms:
+      - "free shipping"
+      - "discount"
+      - "% off"
+      - "price"
+      - "sale"
+      - "free"
+    soft_words:
+      default:
+        - "theft"
+        - "fight"
+        - "conflict"
+        - "violence"
+        - "murder"
+        - "weapon"
+    genre_escalations:
+      kinderbuch:
+        - "theft"
+        - "violence"
+        - "murder"
+        - "weapon"
+  fr:
+    marketing_imperatives:
+      - "Apprenez"
+      - "Decouvrez"
+      - "Maitrisez"
+      - "Explorez"
+    price_shipping_terms:
+      - "gratuit"
+      - "livraison"
+      - "prix"
+      - "reduction"
+      - "solde"
+    soft_words:
+      default:
+        - "vol"
+        - "combat"
+        - "conflit"
+        - "violence"
+        - "meurtre"
+        - "arme"
+    genre_escalations:
+      kinderbuch:
+        - "vol"
+        - "violence"
+        - "meurtre"
+        - "arme"
+  es:
+    marketing_imperatives:
+      - "Aprenda"
+      - "Descubra"
+      - "Domine"
+      - "Explore"
+    price_shipping_terms:
+      - "gratis"
+      - "envio"
+      - "precio"
+      - "descuento"
+      - "oferta"
+    soft_words:
+      default:
+        - "robo"
+        - "lucha"
+        - "conflicto"
+        - "violencia"
+        - "asesinato"
+        - "arma"
+    genre_escalations:
+      kinderbuch:
+        - "robo"
+        - "violencia"
+        - "asesinato"
+        - "arma"
+
+competitor_brands:
+  - "Kindle Unlimited"
+  - "Audible"
+  - "Barnes & Noble"
+  - "Apple Books"
+  - "Kobo"
+  - "Google Play Books"
+
+max_regeneration_retries: 2
+
+image_style:
+  aspect_ratios:
+    module_header: "97:60"
+    module_three_images: "1:1"
+  target_pixel_sizes:
+    module_header: "970x600"
+    module_three_images: "300x300"
+  default:
+    model_hint: "flux-1.1-pro"
+    style_flags:
+      - "photorealistic"
+      - "editorial"
+      - "no text overlay"
+  genres:
+    kinderbuch:
+      model_hint: "flux-1.1-pro"
+      style_flags:
+        - "friendly illustration"
+        - "warm colors"
+        - "children's book art style"
+        - "no text overlay"

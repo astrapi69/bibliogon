@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.backup_history import BackupHistory
 from app.models import (
+    AplusContent,
     ArcReviewer,
     Article,
     ArticleAsset,
@@ -196,6 +197,7 @@ def _write_book_children(db: Session, book_id: str, book_dir: Path) -> None:
         "format_states.json": db.query(BookFormatState)
         .filter(BookFormatState.book_id == book_id)
         .all(),
+        "aplus_content.json": db.query(AplusContent).filter(AplusContent.book_id == book_id).all(),
         "publishing_state.json": db.query(BookPublishingState)
         .filter(BookPublishingState.book_id == book_id)
         .all(),
