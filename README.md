@@ -216,7 +216,7 @@ make test       # Run all tests (backend + plugins + frontend)
 
 Bibliogon follows **gitflow**: `develop` is the active development branch (the GitHub default), `main` carries releases only. Branch `feature/*` / `fix/*` from `develop` and open pull requests against `develop`.
 
-Quality gates run in three tiers to keep PR CI fast (target < 15 min). **On every PR** (`ci.yml`): backend + plugin-core pytest and frontend Vitest (no coverage), `tsc --noEmit`, `ruff` + `mypy`, ESLint (flat config) + Prettier via pre-commit, `madge` circular-dependency detection, the frontend build, and a **cohesion** file-size watcher (`scripts/check-file-sizes.sh`, blocks new files >1000 lines). **Nightly** (`nightly.yml`, 03:00 UTC + `workflow_dispatch`): the 10-plugin test matrix, backend/plugin/frontend **coverage** (current numbers in [docs/audits/current-coverage.md](docs/audits/current-coverage.md)), and the **complexity** watcher (radon/ruff-C901/ESLint, warn-only). **Weekly** (`security-scan.yml` + `workflow_dispatch`): `bandit` SAST + `pip-audit` + `npm audit`, blocking on Critical/High. Plus theme/contrast gates (`make verify-theme`), a full backup acceptance gate (export → reset → import → verify), and Playwright E2E with visual-regression baselines and axe-core accessibility checks.
+Quality gates run in three tiers to keep PR CI fast (target < 15 min). **On every PR** (`ci.yml`): backend + plugin-core pytest and frontend Vitest (no coverage), `tsc --noEmit`, `ruff` + `mypy`, ESLint (flat config) + Prettier via pre-commit, `madge` circular-dependency detection, the frontend build, and a **cohesion** file-size watcher (`scripts/check-file-sizes.sh`, blocks new files >1000 lines). **Nightly** (`nightly.yml`, 03:00 UTC + `workflow_dispatch`): the per-plugin test matrix, backend/plugin/frontend **coverage** (current numbers in [docs/audits/current-coverage.md](docs/audits/current-coverage.md)), and the **complexity** watcher (radon/ruff-C901/ESLint, warn-only). **Weekly** (`security-scan.yml` + `workflow_dispatch`): `bandit` SAST + `pip-audit` + `npm audit`, blocking on Critical/High. Plus theme/contrast gates (`make verify-theme`), a full backup acceptance gate (export → reset → import → verify), and Playwright E2E with visual-regression baselines and axe-core accessibility checks.
 
 The **E2E smoke suite** (Playwright, `e2e/`) runs **nightly** (03:00 UTC) and on demand via `workflow_dispatch` — **not** on every PR, because the serial suite takes ~90 minutes against a live backend and is not a required check (same model as the security + mutation-testing workflows). Run it locally with `make test-e2e-smoke` (or `make test-e2e-smoke-retries` for the CI-style retry budget). Before a release, Aster runs it manually as part of the release checklist.
 
@@ -271,8 +271,11 @@ Browser --> nginx (static files + /api proxy) --> FastAPI (uvicorn)
 | story-bible | MIT | Per-book fiction-entity database (character / setting / plot point / item / lore) with relationships, @-mentions, Arc View, continuity checker, Markdown export |
 | git-sync | MIT | Book-as-git-repo: import, commit, smart-merge, multi-language linking |
 | medium-import | MIT | Medium HTML-export importer for articles with provenance tracking |
+| learnset | MIT | Export a book as an adaptive-learner learn set (schema-validated ZIP) |
+| promotion | MIT | Portfolio board: per-book retail-format status, store links, universal link |
+| aplus | MIT | AI-generated Amazon A+ Content package, validated against a versioned ruleset (backend only) |
 
-All 13 first-party plugins ship free under MIT. Third-party plugins can be installed as ZIP files via Settings > Plugins.
+All first-party plugins ship free under MIT. Third-party plugins can be installed as ZIP files via Settings > Plugins.
 
 ## Configuration
 

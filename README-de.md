@@ -262,8 +262,11 @@ Browser --> nginx (statische Dateien + /api-Proxy) --> FastAPI (uvicorn)
 | story-bible | MIT | Buchspezifische Fiktions-Entity-Datenbank (Figur / Schauplatz / Handlungspunkt / Gegenstand / Lore) mit Beziehungen, @-Erwähnungen, Arc-Ansicht, Kontinuitäts-Prüfer, Markdown-Export |
 | git-sync | MIT | Buch-als-Git-Repo: Import, Commit, Smart-Merge, Mehrsprachen-Verknüpfung |
 | medium-import | MIT | Medium-HTML-Export-Importer für Artikel mit Provenienz-Tracking |
+| learnset | MIT | Export eines Buchs als Lernset für Adaptive Learner (schemageprüftes ZIP) |
+| promotion | MIT | Portfolio-Board: Status der Verkaufsformate je Buch, Shop-Links, Universal-Link |
+| aplus | MIT | KI-generiertes Amazon-A+-Content-Paket, geprüft gegen ein versioniertes Regelwerk (nur Backend) |
 
-Alle 13 First-Party-Plugins sind kostenlos unter MIT. Drittanbieter-Plugins lassen sich als ZIP-Dateien über Einstellungen > Plugins installieren.
+Alle First-Party-Plugins sind kostenlos unter MIT. Drittanbieter-Plugins lassen sich als ZIP-Dateien über Einstellungen > Plugins installieren.
 
 ## Konfiguration
 

@@ -18,8 +18,13 @@ wrong thing.
 
 Every other multi-plugin operation in the Makefile (install, lock-all,
 verify-plugin-locks, sync-versions) iterates ``plugins/bibliogon-plugin-*`` and
-cannot drift, so only these aggregates need a guard. The CI side of the same
-invariant is ``test_ci_plugin_matrix.py``.
+cannot drift, so only these aggregates need a guard.
+
+Membership (every plugin listed, no stale entry) is checked for BOTH
+aggregates in ``test_plugin_handlists.py`` together with every other
+hand-maintained plugin list (#867). This module keeps what is specific to
+the Makefile: each target exists, runs its own plugin, measures its own
+package, and is ``.PHONY``.
 """
 
 from __future__ import annotations
@@ -72,17 +77,6 @@ def _package(plugin: str) -> str:
 
 
 @pytest.mark.parametrize(("aggregate", "prefix"), _AGGREGATES)
-def test_every_plugin_on_disk_is_in_the_aggregate(aggregate: str, prefix: str) -> None:
-    listed = {name.removeprefix(prefix) for name in _prerequisites(aggregate)}
-    missing = [plugin for plugin in _plugins_on_disk() if plugin not in listed]
-    assert not missing, (
-        f"These plugins exist under plugins/ but are not prerequisites of "
-        f"'{aggregate}', so running it never executes their tests - while "
-        "still reporting success:\n  " + "\n  ".join(f"{prefix}{name}" for name in missing)
-    )
-
-
-@pytest.mark.parametrize(("aggregate", "prefix"), _AGGREGATES)
 def test_every_per_plugin_target_runs_its_own_plugin(aggregate: str, prefix: str) -> None:
     """A listed target must exist AND ``cd`` into its own plugin. A recipe
     copied from a neighbour would otherwise run the neighbour's suite under
@@ -108,17 +102,6 @@ def test_every_coverage_target_measures_its_own_package() -> None:
         if f"--cov={_package(plugin)} " not in recipe:
             problems.append(f"test-coverage-plugin-{plugin}: expected --cov={_package(plugin)}")
     assert not problems, "\n  ".join(problems)
-
-
-@pytest.mark.parametrize(("aggregate", "prefix"), _AGGREGATES)
-def test_no_aggregate_lists_a_plugin_that_no_longer_exists(aggregate: str, prefix: str) -> None:
-    on_disk = set(_plugins_on_disk())
-    stale = [
-        name
-        for name in _prerequisites(aggregate)
-        if name.startswith(prefix) and name.removeprefix(prefix) not in on_disk
-    ]
-    assert not stale, f"'{aggregate}' lists plugins with no directory:\n  " + "\n  ".join(stale)
 
 
 def test_every_per_plugin_target_is_phony() -> None:

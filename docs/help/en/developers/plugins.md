@@ -305,6 +305,8 @@ make test-plugins
 
 The Makefile lists these targets by hand. A new plugin needs `test-plugin-{name}` and `test-coverage-plugin-{name}`, both added to `.PHONY` and to the `test-plugins` / `test-coverage-plugins` aggregates. Otherwise `make test` never runs the plugin's tests and still reports success. `backend/tests/test_makefile_plugin_targets.py` fails when one is missing.
 
+The same applies to every other file that enumerates plugins by hand: the plugin tables in `CLAUDE.md`, `README.md` and `docs/API.md`, the nightly CI matrices, `backend/pyproject.toml`, `app.yaml.example` and `backend/config/plugins/`. `backend/tests/test_plugin_handlists.py` checks each of them against `plugins/` in both directions. If you add a new file that lists plugins by hand, register it there; a list that is not registered will drift.
+
 ### Test pattern
 
 ```python
