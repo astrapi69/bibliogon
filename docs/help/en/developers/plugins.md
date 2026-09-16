@@ -307,6 +307,8 @@ The Makefile lists these targets by hand. A new plugin needs `test-plugin-{name}
 
 The same applies to every other file that enumerates plugins by hand: the plugin tables in `CLAUDE.md`, `README.md` and `docs/API.md`, the nightly CI matrices, `backend/pyproject.toml`, `app.yaml.example` and `backend/config/plugins/`. `backend/tests/test_plugin_handlists.py` checks each of them against `plugins/` in both directions. If you add a new file that lists plugins by hand, register it there; a list that is not registered will drift.
 
+Every module inside your package has to be imported by something outside its tests (`plugin.py`, `routes.py`, a sibling module, or core code). `backend/tests/test_plugin_module_wiring.py` fails on a module nothing imports: a helper with green tests and no caller never runs in production. Modules reached only by name (an entry point, `importlib`) go into that guard's allowlist with a written reason.
+
 ### Test pattern
 
 ```python

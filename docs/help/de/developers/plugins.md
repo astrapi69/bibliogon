@@ -272,6 +272,8 @@ Das Makefile führt diese Ziele von Hand. Ein neues Plugin braucht `test-plugin-
 
 Dasselbe gilt für jede andere Datei, die Plugins von Hand aufzählt: die Plugin-Tabellen in `CLAUDE.md`, `README.md` und `docs/API.md`, die nächtlichen CI-Matrizen, `backend/pyproject.toml`, `app.yaml.example` und `backend/config/plugins/`. `backend/tests/test_plugin_handlists.py` prüft jede davon in beide Richtungen gegen `plugins/`. Wer eine neue Datei anlegt, die Plugins von Hand auflistet, trägt sie dort ein; eine nicht eingetragene Liste driftet.
 
+Jedes Modul im Paket muss außerhalb seiner Tests von irgendetwas importiert werden (`plugin.py`, `routes.py`, ein Nachbarmodul oder Kerncode). `backend/tests/test_plugin_module_wiring.py` schlägt bei einem Modul fehl, das niemand importiert: ein Helfer mit grünen Tests und ohne Aufrufer läuft in Produktion nie. Module, die nur über ihren Namen erreicht werden (Entry Point, `importlib`), stehen mit schriftlicher Begründung in der Allowlist dieses Guards.
+
 ## Abhängigkeiten
 
 Benötigt dein Plugin eine Abhängigkeit, die nicht im Core ist, deklariere sie in deiner `pyproject.toml`. Für ZIP-verteilte Plugins müssen Abhängigkeiten gebündelt oder bereits in der Bibliogon-Umgebung verfügbar sein.
