@@ -18,11 +18,17 @@ from app.services.writing_stats import _flatten_tiptap
 def snapshot_plain_text(content: str | None) -> str:
     """Flatten a chapter's stored content to line-broken plain text.
 
-    Mirrors ``writing_stats.count_words`` parsing: TipTap JSON (a
-    string starting with ``{``) is flattened via ``_flatten_tiptap``,
-    which already inserts newlines between block nodes; legacy plain
-    text passes through. Empty/blank lines are dropped so the diff is
-    line-oriented over real content.
+    Mirrors ``writing_stats.count_words`` parsing across all three
+    shapes a chapter body arrives in: TipTap JSON (a string starting
+    with ``{``) is flattened via ``_flatten_tiptap``, which already
+    inserts newlines between block nodes; HTML (an imported chapter
+    stays HTML until someone opens and saves it, #787) is stripped to
+    prose; legacy plain text passes through. Empty/blank lines are
+    dropped so the diff is line-oriented over real content.
+
+    Without the HTML branch the version-history diff compared raw
+    markup: every tag counted as diff content, and a snapshot taken
+    before an edit diffed against tags rather than prose (#847).
     """
     raw = (content or "").strip()
     if not raw:
@@ -33,6 +39,10 @@ def snapshot_plain_text(content: str | None) -> str:
             plain = _flatten_tiptap(json.loads(raw))
         except (ValueError, TypeError):
             plain = raw
+    elif raw.startswith("<"):
+        from app.services.html_text import html_to_plain_text
+
+        plain = html_to_plain_text(raw)
     lines = [line.strip() for line in plain.split("\n")]
     return "\n".join(line for line in lines if line)
 
