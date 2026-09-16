@@ -14,7 +14,7 @@
        sync-versions sync-versions-dry sync-versions-check \
        generate-trial-key \
        docs-install docs-build docs-serve \
-       sync-mkdocs-nav verify-mkdocs-nav check-mkdocs-orphans verify-docs-discipline \
+       sync-mkdocs-nav verify-mkdocs-nav check-mkdocs-orphans verify-docs-discipline verify-external-hosts \
        lock-all-plugins verify-plugin-locks verify-theme verify-components verify-seed-i18n check-cohesion check-complexity \
        bump-version update-doc-headers finalize-changelog release-prepare release-finish \
        clean prod prod-down prod-logs help
@@ -641,6 +641,10 @@ test-e2e-manual: ## Run the manual-automation E2E project
 
 test-e2e-all: ## Run all E2E projects
 	cd e2e && npx playwright test
+
+verify-external-hosts: ## Guard (#874): the frontend fetches nothing from a third-party host (sources; plus frontend/dist when built)
+	python3 scripts/check_external_hosts.py --sources frontend --origin https://astrapi69.github.io
+	@if [ -d frontend/dist ]; then python3 scripts/check_external_hosts.py frontend/dist --origin https://astrapi69.github.io; else echo "frontend/dist not built - dist scan skipped (deploy-pages.yml runs it on the real artifact)"; fi
 
 test-static-smoke: ## Build the static/Dexie bundle + smoke-test it with NO backend (catches "works with backend, crashes static")
 	cd frontend && VITE_STORAGE_MODE=dexie npm run build
