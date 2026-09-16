@@ -84,6 +84,7 @@ always the plugin name:
 | getstarted     | `/api/get-started`  | Onboarding guide, sample book                    |
 | git-sync       | `/api/git-sync`     | Git-backed import + sync for write-book-template repos |
 | medium-import  | `/api/medium-import`| Bulk import of Medium HTML export ZIP            |
+| aplus          | `/api/aplus`        | AI-generated Amazon A+ Content package, validated + cached per book and language (see below) |
 
 Examples:
 
@@ -99,6 +100,84 @@ Examples:
   outcome summary (imported / skipped on canonical-URL dedup /
   errored). See [docs/help/en/import/medium.md](help/en/import/medium.md)
   for the user-facing recipe.
+
+### A+ Content (plugin-aplus, #825)
+
+Two endpoints. Source: `plugins/bibliogon-plugin-aplus/bibliogon_aplus/routes.py`,
+behaviour pinned by `backend/tests/test_aplus_endpoint.py`. There is no
+frontend for this yet; the contract below is what a UI has to consume.
+
+`POST /api/aplus/{book_id}/generate?language=<code>&force=<bool>`
+
+- `language` (optional): one of `de`, `en`, `fr`, `es`. Defaults to the
+  book's `language`. Anything else is a 400.
+- `force` (optional, default `false`): skip the cache and call the AI
+  again.
+- Order of checks: AI disabled in settings -> 400. Unknown or trashed
+  book -> 404. Required fields missing -> **200** with a
+  `MissingFieldsResponse` (`{book_id, missing_fields: [{field, reason}]}`)
+  and **no AI call**. Required today: `author`, and at least one of
+  `description` / `html_description` / `backpage_description`. This is a
+  structured response, not an error, so a UI can prompt for exactly
+  those fields.
+- Cache: the response is stored in `aplus_content` (one row per
+  `book_id` + `language`). A repeat call returns the stored package
+  when the `source_hash` (title, subtitle, author, language, resolved
+  description text, genre key, BISAC codes, categories, keywords) and the
+  ruleset version both still match. Editing any of those fields, or
+  bumping the ruleset version, invalidates it. `force=true` bypasses it.
+- AI provider unreachable, auth or timeout failure -> 502 naming the
+  cause (`ExternalServiceError`).
+- Generation runs up to 3 attempts (1 + `max_regeneration_retries: 2`
+  from the ruleset) while hard-error findings remain. After the last
+  attempt the package is returned **and cached** with its remaining
+  findings. A 200 therefore does not mean the copy is clean: read
+  `validation` and treat any entry with `severity: "error"` as
+  blocking.
+
+`GET /api/aplus/{book_id}?language=<code>`
+
+- Returns the last stored package for the book + language (default:
+  the book's language, else `en`), exactly as stored. It does not check
+  whether the book has changed since; only `POST .../generate` does.
+- 404 when the book is unknown or nothing was generated for that
+  language yet.
+
+Package shape (`bibliogon_aplus/schema.py`, `AplusPackage`):
+
+```
+short_description: str
+bullets: [{heading, body}]                       # exactly 3 expected
+module_header: {title, text, image_prompt, alt_text}
+module_three_images: [{title, text, image_prompt, alt_text}]   # exactly 3
+validation: [{field, severity: "error"|"warning", message}]
+meta: {book_id, language, model, ruleset_version, generated_at}
+```
+
+`validation[].field` names the offending slot (`short_description`,
+`bullets[1].body`, `module_three_images[0].alt_text`, ...). Limits and
+rules come from `bibliogon_aplus/rules/ruleset.yaml` (currently version
+`2`): 300 / 160 / 1000 / 200 characters for short description / bullet
+heading / bullet body / alt text; em or en dash, emoji, hidden or
+control characters, per-language marketing imperatives (a phrase list,
+plus an imperative opening: `... Sie` in German, `-ez` in French, a few
+bare verbs in English), price or shipping claims, competitor brand
+names and empty alt text are errors;
+tone words (violence, theft, ...) are warnings, escalated to errors
+when the resolved genre key is `kinderbuch`.
+
+Genre key resolution (`book_context._resolve_genre_key`):
+`Book.genre` (lowercased) > `book_type == "picture_book"` > a
+`JUV`-prefixed BISAC code > a children's-book phrase in title, subtitle
+or any description field. Only the first tier is reliable; the rest are
+fallbacks for books nobody has tagged (#830, #839, #854).
+
+Known gap: the ruleset's `image_style` block (aspect ratios, target
+pixel sizes, model hint, per-genre style flags) is not applied yet.
+`image_prompt` holds only the model's keywords, and the package carries
+no aspect ratio or pixel size per slot (#865).
+
+`aplus_content` rows are part of the `.bgb` backup (export + restore).
 
 ---
 

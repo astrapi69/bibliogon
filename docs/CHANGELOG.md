@@ -2,6 +2,25 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
+## [Unreleased]
+
+### Added
+- **A+ Content generator (plugin-aplus, backend only).** `POST
+  /api/aplus/{book_id}/generate` builds an Amazon A+ package (short
+  description, three bullets, header + three-image modules with alt
+  texts and image prompts) from the book's metadata via the configured
+  AI provider, validates it against a versioned per-language ruleset
+  (length limits, marketing imperatives, price/shipping claims,
+  competitor brands, dash/emoji/hidden-character checks, tone words
+  escalated to errors for children's books), retries on hard errors,
+  and caches the result per book + language in the new `aplus_content`
+  table (in `.bgb` backups). `GET /api/aplus/{book_id}` returns the
+  stored package. Books missing an author or every description field
+  get a structured missing-fields response instead of an AI call.
+  Children's-book detection falls back from `Book.genre` to
+  `book_type`, BISAC and description text. No UI yet
+  (#825, #827, #828, #830, #839). Migration: `aplus_content` table.
+
 ## [0.60.0] - 2026-08-15
 
 The **boot-resilience + PWA-update-flow + release-automation**
