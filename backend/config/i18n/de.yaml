@@ -1024,6 +1024,7 @@ ui:
     updates_description: "Automatische Prüfung auf neue Versionen."
     auto_check: "Automatische Update-Prüfung"
     auto_check_hint: "Prüft im Hintergrund auf neue Versionen."
+    auto_check_hint_web: "Fragt bei GitHub (api.github.com) nach neuen Versionen. In der Web-App standardmäßig aus: Updates kommen hier über den Service Worker."
     check_interval: "Prüfintervall"
     interval_daily: "Täglich"
     interval_weekly: "Wöchentlich"

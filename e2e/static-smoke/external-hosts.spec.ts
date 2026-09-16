@@ -17,18 +17,10 @@
 
 import {test, expect} from "@playwright/test";
 
-// host -> written reason. An entry here is a decision, not a fix: it says
-// the app knowingly contacts this host on its own, and why. Everything
-// else the build reaches is a user click or a user-started action (#874).
-const ALLOWED_HOSTS: Record<string, string> = {
-    "api.github.com":
-        "GitHub Releases check (useUpdateAutoCheck, #477/#697): one GET of " +
-        "/repos/astrapi69/bibliogon/releases/latest on app start, at most once " +
-        "per interval, default daily. No token, no app data. The user turns it " +
-        "off in Settings > Verhalten (auto_check / check_interval=never). Whether " +
-        "the Pages build needs it at all next to the service-worker update flow " +
-        "is an open decision recorded in #874.",
-};
+// host -> written reason. Empty: since #881 the web app sends nothing to a
+// third party on its own - the GitHub Releases check is off by default
+// there. An entry here is a decision with a reason, not a fix.
+const ALLOWED_HOSTS: Record<string, string> = {};
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
 
@@ -100,4 +92,78 @@ test("every allowlisted host carries a written reason", () => {
     for (const [host, reason] of Object.entries(ALLOWED_HOSTS)) {
         expect(reason.trim(), `${host} is allowlisted without a reason`).not.toBe("");
     }
+});
+
+test("switching the update check on is visible to this capture (positive control, #881)", async ({page, context}) => {
+    // Without a positive control, "zero third-party requests" above could
+    // also mean the capture sees nothing. Turn the check on the way a user
+    // does and require the one request it must send. The GitHub API is
+    // answered locally, so no real request leaves the test machine.
+    await context.addInitScript(() => {
+        try {
+            localStorage.setItem("bibliogon-donation-onboarding-seen", "true");
+            localStorage.setItem("bibliogon-ai-setup-dismissed", "true");
+            localStorage.setItem("bibliogon-migration-offered", "true");
+        } catch {
+            /* storage unavailable */
+        }
+    });
+    await context.route("https://api.github.com/**", (route) =>
+        route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({tag_name: "v0.0.1", html_url: "https://example.invalid/r", body: ""}),
+        }),
+    );
+    const githubRequests: string[] = [];
+    page.on("request", (request) => {
+        if (new URL(request.url()).hostname === "api.github.com") githubRequests.push(request.url());
+    });
+
+    await page.goto("/", {waitUntil: "networkidle"});
+    await expect(page.getByTestId("new-book-group")).toBeVisible({timeout: 20_000});
+    await page.waitForTimeout(2000);
+    expect(githubRequests, "default web profile must not call GitHub").toEqual([]);
+
+    await page.goto("/settings", {waitUntil: "networkidle"});
+    await page.getByTestId("settings-tab-verhalten").click();
+    const toggle = page.getByTestId("settings-auto-check");
+    await expect(toggle).not.toBeChecked();
+    await toggle.check();
+    // Deterministic: wait until the auto-save really committed to IndexedDB
+    // before the full navigation, instead of a fixed sleep.
+    await expect
+        .poll(
+            () =>
+                page.evaluate(
+                    () =>
+                        new Promise<boolean>((resolve) => {
+                            const open = indexedDB.open("bibliogon-offline");
+                            open.onerror = () => resolve(false);
+                            open.onsuccess = () => {
+                                try {
+                                    const read = open.result
+                                        .transaction("appSettings")
+                                        .objectStore("appSettings")
+                                        .getAll();
+                                    read.onsuccess = () =>
+                                        resolve(
+                                            JSON.stringify(read.result).includes(
+                                                '"web_auto_check":true',
+                                            ),
+                                        );
+                                    read.onerror = () => resolve(false);
+                                } catch {
+                                    resolve(false);
+                                }
+                            };
+                        }),
+                ),
+            {timeout: 10_000},
+        )
+        .toBe(true);
+
+    await page.goto("/", {waitUntil: "networkidle"});
+    await expect.poll(() => githubRequests.length, {timeout: 15_000}).toBeGreaterThan(0);
+    expect(githubRequests[0]).toContain("/repos/astrapi69/bibliogon/releases/latest");
 });

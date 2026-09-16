@@ -10,16 +10,19 @@
  *
  * Pure update logic (isCheckDue / shouldShowBanner / compareVersions) lives in
  * `lib/utils/updateChecker`; this hook only wires it to the settings seam +
- * the build-time `__APP_VERSION__`. It works in both modes: the GitHub
- * Releases API is a public endpoint (not `/api`), so the offline guard does
- * not block it.
+ * the build-time `__APP_VERSION__`. The GitHub Releases API is a public
+ * endpoint (not `/api`), so the offline guard does not block it - which is
+ * why the web app keeps it off by default (#881, `isAutoCheckEnabled`):
+ * there it would be the only automatic third-party request.
  */
 
 import { useCallback, useEffect, useState } from "react";
 
+import { isBackendlessOffline } from "../../api/apiBase";
 import { getStorage } from "../../storage";
 import {
   checkForUpdate,
+  isAutoCheckEnabled,
   isCheckDue,
   shouldShowBanner,
   type UpdateInterval,
@@ -39,6 +42,7 @@ export interface PendingUpdate {
 
 interface UpdatesSettings {
   auto_check?: boolean;
+  web_auto_check?: boolean;
   check_interval?: UpdateInterval;
   last_check_at?: string | null;
   dismissed_version?: string | null;
@@ -69,7 +73,10 @@ export function useUpdateAutoCheck(): {
         return;
       }
       if (cancelled) return;
-      const autoCheck = updates.auto_check !== false;
+      const autoCheck = isAutoCheckEnabled(
+        updates as Record<string, unknown>,
+        isBackendlessOffline(),
+      );
       const interval: UpdateInterval = updates.check_interval ?? "daily";
       if (!autoCheck || interval === "never") return;
       if (!isCheckDue(updates.last_check_at, interval, Date.now())) return;

@@ -110,6 +110,42 @@ export const UPDATE_INTERVALS_MS: Record<UpdateInterval, number> = {
   never: Infinity,
 };
 
+/** Setting keys for the automatic check, per deployment (#881). */
+export type AutoCheckSettingKey = "auto_check" | "web_auto_check";
+
+/**
+ * The `updates` key the Settings toggle reads and writes.
+ *
+ * The web app (backendless static build) has its own key because every
+ * existing web profile was seeded with `auto_check: true`: that seeded
+ * value is indistinguishable from a user's choice, so it must not keep the
+ * check on. Only `web_auto_check`, which nothing but the toggle writes,
+ * turns it on there.
+ */
+export function autoCheckSettingKey(isWebBuild: boolean): AutoCheckSettingKey {
+  return isWebBuild ? "web_auto_check" : "auto_check";
+}
+
+/**
+ * Whether the background GitHub-Releases check is switched on.
+ *
+ * Desktop/Docker: on unless `auto_check` is explicitly `false` (#477).
+ * Web app: off unless the user switched `web_auto_check` on (#881). On
+ * GitHub Pages updates arrive through the service worker, and this check
+ * is the only request the web app would otherwise send to a third party
+ * without a user action.
+ *
+ * @example
+ * isAutoCheckEnabled({ auto_check: true }, true); // false - seeded web profile
+ */
+export function isAutoCheckEnabled(
+  updates: Record<string, unknown> | undefined,
+  isWebBuild: boolean,
+): boolean {
+  if (isWebBuild) return updates?.web_auto_check === true;
+  return updates?.auto_check !== false;
+}
+
 /**
  * Whether an automatic update check is due. `never` is never due; a missing
  * `lastCheckAt` (or an unparseable one) is always due; otherwise due once the

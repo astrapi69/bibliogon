@@ -1086,6 +1086,7 @@
       "updates_description": "Yeni sürümler için otomatik kontrol.",
       "auto_check": "Otomatik güncelleme kontrolü",
       "auto_check_hint": "Arka planda yeni sürümleri denetler.",
+      "auto_check_hint_web": "GitHub'a (api.github.com) yeni sürüm olup olmadığını sorar. Web uygulamasında varsayılan olarak kapalıdır: güncellemeler burada service worker üzerinden gelir.",
       "check_interval": "Kontrol aralığı",
       "interval_daily": "Günlük",
       "interval_weekly": "Haftalık",

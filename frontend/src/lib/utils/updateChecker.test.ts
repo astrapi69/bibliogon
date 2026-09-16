@@ -8,8 +8,10 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 
 import {
+  autoCheckSettingKey,
   checkForUpdate,
   compareVersions,
+  isAutoCheckEnabled,
   isCheckDue,
   shouldShowBanner,
   RELEASE_TAG_BASE_URL,
@@ -132,5 +134,40 @@ describe("shouldShowBanner (dismissed_version)", () => {
   it("re-appears for a strictly newer version after a dismissal", () => {
     expect(shouldShowBanner("v0.58.0", "v0.57.0")).toBe(true);
     expect(shouldShowBanner("v0.56.0", "v0.57.0")).toBe(false);
+  });
+});
+
+describe("isAutoCheckEnabled (#881: off by default on the web app)", () => {
+  it("desktop: on unless explicitly switched off", () => {
+    expect(isAutoCheckEnabled(undefined, false)).toBe(true);
+    expect(isAutoCheckEnabled({}, false)).toBe(true);
+    expect(isAutoCheckEnabled({ auto_check: true }, false)).toBe(true);
+    expect(isAutoCheckEnabled({ auto_check: false }, false)).toBe(false);
+  });
+
+  it("web app: off by default, even when the seeded auto_check is true", () => {
+    expect(isAutoCheckEnabled(undefined, true)).toBe(false);
+    expect(isAutoCheckEnabled({}, true)).toBe(false);
+    expect(isAutoCheckEnabled({ auto_check: true }, true)).toBe(false);
+  });
+
+  it("web app: on only after the user switched on its own setting", () => {
+    expect(isAutoCheckEnabled({ auto_check: true, web_auto_check: true }, true)).toBe(true);
+    expect(isAutoCheckEnabled({ web_auto_check: false }, true)).toBe(false);
+  });
+
+  it("web app: the user's own switch wins over an auto_check:false left from before #881", () => {
+    expect(isAutoCheckEnabled({ auto_check: false, web_auto_check: true }, true)).toBe(true);
+  });
+
+  it("desktop ignores the web-only setting", () => {
+    expect(isAutoCheckEnabled({ auto_check: false, web_auto_check: true }, false)).toBe(false);
+  });
+});
+
+describe("autoCheckSettingKey", () => {
+  it("names the key the Settings toggle owns in each deployment", () => {
+    expect(autoCheckSettingKey(false)).toBe("auto_check");
+    expect(autoCheckSettingKey(true)).toBe("web_auto_check");
   });
 });

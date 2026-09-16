@@ -24,6 +24,12 @@ import {FeatureTestProvider} from "../../features/FeatureTestProvider";
 const render = (ui: ReactElement, opts?: {mode?: "api" | "dexie"}) =>
     rtlRender(<FeatureTestProvider mode={opts?.mode ?? "api"}>{ui}</FeatureTestProvider>);
 
+const build = vi.hoisted(() => ({ backendless: false }));
+vi.mock("../../api/apiBase", async () => {
+    const actual = await vi.importActual<typeof import("../../api/apiBase")>("../../api/apiBase");
+    return {...actual, isBackendlessOffline: () => build.backendless};
+});
+
 vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_key: string, fallback: string) => fallback,
@@ -177,6 +183,43 @@ describe("VerhaltenSettings — extracted Behavior tab", () => {
                 dismissed_version: "v0.50.0",
             });
         } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it("web app: the update toggle is off for a seeded profile and writes its own key (#881)", () => {
+        vi.useFakeTimers();
+        build.backendless = true;
+        try {
+            const onSave = vi.fn();
+            render(
+                <VerhaltenSettings
+                    config={{
+                        ...baseConfig,
+                        updates: {auto_check: true, check_interval: "daily", last_check_at: null},
+                    }}
+                    onSave={onSave}
+                    saving={false}
+                />,
+                {mode: "dexie"},
+            );
+            const toggle = screen.getByTestId("settings-auto-check");
+            expect(toggle).not.toBeChecked();
+            expect(screen.queryByTestId("settings-check-interval-trigger")).toBeNull();
+            expect(screen.getByTestId("settings-updates-section").textContent).toContain(
+                "api.github.com",
+            );
+            fireEvent.click(toggle);
+            vi.advanceTimersByTime(500);
+            expect(onSave).toHaveBeenCalledTimes(1);
+            expect(onSave.mock.calls[0][0].updates).toEqual({
+                auto_check: true,
+                web_auto_check: true,
+                check_interval: "daily",
+                last_check_at: null,
+            });
+        } finally {
+            build.backendless = false;
             vi.useRealTimers();
         }
     });

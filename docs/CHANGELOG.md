@@ -8,9 +8,9 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 - **Third-party host guard for the GitHub Pages build (#874).** An
   inventory of the built PWA found no resource loaded from a third
   party (fonts self-hosted, no analytics, no preconnects, service-worker
-  precache same-origin only). The one automatic third-party request is
-  the GitHub Releases update check on app start (default on, daily,
-  off via Settings > Verhalten); everything else is a user click or a
+  precache same-origin only). The GitHub Releases update check on app
+  start was the one automatic third-party request; it is off by default
+  on the web app since #881. Everything else is a user click or a
   user-started import/export. `scripts/check_external_hosts.py` now
   scans the artifact for stylesheets, scripts, images, media, CSS
   `url()`, service-worker `importScripts`/precache entries and manifest
@@ -38,6 +38,17 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
   `rendered` prompt string (#865). No UI yet
   (#825, #827, #828, #830, #839, #865). Migration: `aplus_content`
   table.
+
+### Changed
+- **Web app: GitHub Releases check off by default (#881).** On the
+  GitHub Pages build the background update check no longer runs unless
+  the user switches it on in Settings > Verhalten (its own
+  `updates.web_auto_check`, so the `auto_check: true` every web profile
+  was seeded with does not count). Updates reach the web app through
+  the service worker anyway, and the check was its only automatic
+  request to a third party. Desktop/Docker unchanged. The runtime host
+  capture now runs with an empty allowlist plus a positive control that
+  switches the check on and sees the request.
 
 ## [0.60.0] - 2026-08-15
 

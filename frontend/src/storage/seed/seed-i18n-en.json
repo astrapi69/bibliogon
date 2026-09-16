@@ -1067,6 +1067,7 @@
       "updates_description": "Automatic check for new versions.",
       "auto_check": "Automatic update check",
       "auto_check_hint": "Checks for new versions in the background.",
+      "auto_check_hint_web": "Asks GitHub (api.github.com) for new versions. Off by default in the web app: updates arrive here through the service worker.",
       "check_interval": "Check interval",
       "interval_daily": "Daily",
       "interval_weekly": "Weekly",

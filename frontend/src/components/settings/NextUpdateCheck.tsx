@@ -8,8 +8,10 @@
  * formats as "in X", a past one as "X ago".
  */
 
+import { isBackendlessOffline } from "../../api/apiBase";
 import { useI18n } from "../../hooks/useI18n";
 import {
+  isAutoCheckEnabled,
   UPDATE_INTERVALS_MS,
   type UpdateInterval,
 } from "../../lib/utils/updateChecker";
@@ -22,7 +24,7 @@ export function NextUpdateCheck({
 }) {
   const { t, lang } = useI18n();
   const u = updates ?? {};
-  const autoCheck = u.auto_check !== false;
+  const autoCheck = isAutoCheckEnabled(u, isBackendlessOffline());
   const interval = (u.check_interval as UpdateInterval) ?? "daily";
 
   if (!autoCheck || interval === "never") {

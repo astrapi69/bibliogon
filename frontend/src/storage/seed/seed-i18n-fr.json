@@ -1086,6 +1086,7 @@
       "updates_description": "Vérification automatique des nouvelles versions.",
       "auto_check": "Vérification automatique des mises à jour",
       "auto_check_hint": "Recherche les nouvelles versions en arrière-plan.",
+      "auto_check_hint_web": "Demande à GitHub (api.github.com) s'il existe de nouvelles versions. Désactivé par défaut dans l'application web : les mises à jour y arrivent via le service worker.",
       "check_interval": "Intervalle de vérification",
       "interval_daily": "Quotidien",
       "interval_weekly": "Hebdomadaire",

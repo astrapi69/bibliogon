@@ -1039,6 +1039,7 @@ ui:
     updates_description: "Comprobación automática de nuevas versiones."
     auto_check: "Comprobación automática de actualizaciones"
     auto_check_hint: "Busca nuevas versiones en segundo plano."
+    auto_check_hint_web: "Consulta a GitHub (api.github.com) si hay versiones nuevas. Desactivado por defecto en la aplicación web: aquí las actualizaciones llegan a través del service worker."
     check_interval: "Intervalo de comprobación"
     interval_daily: "Diariamente"
     interval_weekly: "Semanalmente"
