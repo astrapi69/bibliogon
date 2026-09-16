@@ -110,7 +110,7 @@ make clean                # remove build artifacts
 make help                 # all targets
 ```
 
-Plugin-specific: `make test-plugin-{export,grammar,kdp,kinderbuch,ms-tools,audiobook,translation}`
+Plugin-specific: `make test-plugin-<name>` for every plugin under `plugins/` (e.g. `make test-plugin-aplus`); `backend/tests/test_makefile_plugin_targets.py` fails when a plugin has no target or is missing from `test-plugins` / `test-coverage-plugins`.
 
 E2E tests: `npx playwright test --project=smoke` (fast, per feature) or `--project=full` (complete regression).
 

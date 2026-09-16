@@ -303,6 +303,8 @@ make test-plugin-{name}
 make test-plugins
 ```
 
+The Makefile lists these targets by hand. A new plugin needs `test-plugin-{name}` and `test-coverage-plugin-{name}`, both added to `.PHONY` and to the `test-plugins` / `test-coverage-plugins` aggregates. Otherwise `make test` never runs the plugin's tests and still reports success. `backend/tests/test_makefile_plugin_targets.py` fails when one is missing.
+
 ### Test pattern
 
 ```python

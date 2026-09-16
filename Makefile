@@ -3,10 +3,10 @@
        install install-backend install-frontend install-plugins install-e2e \
        test test-fast test-full test-nightly test-backend test-plugins test-e2e test-e2e-ui test-e2e-smoke test-e2e-smoke-retries test-e2e-manual test-e2e-all test-static-smoke test-visual test-visual-update capture-screenshots update-screenshots \
        tdd test-fail tdd-green tdd-refactor tdd-check test-only test-watch test-watch-backend \
-       test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync test-plugin-comics test-plugin-medium-import test-plugin-learnset \
+       test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync test-plugin-comics test-plugin-medium-import test-plugin-learnset test-plugin-promotion test-plugin-story-bible test-plugin-aplus \
        test-coverage test-coverage-backend test-coverage-frontend test-coverage-plugins coverage-backend coverage-frontend test-cov-backend test-cov-frontend \
        audit audit-backend audit-frontend security-backend bandit-backend check-security circular-deps \
-       test-coverage-plugin-audiobook test-coverage-plugin-export test-coverage-plugin-grammar test-coverage-plugin-kdp test-coverage-plugin-kinderbuch test-coverage-plugin-ms-tools test-coverage-plugin-translation test-coverage-plugin-help test-coverage-plugin-getstarted test-coverage-plugin-git-sync test-coverage-plugin-comics test-coverage-plugin-medium-import \
+       test-coverage-plugin-audiobook test-coverage-plugin-export test-coverage-plugin-grammar test-coverage-plugin-kdp test-coverage-plugin-kinderbuch test-coverage-plugin-ms-tools test-coverage-plugin-translation test-coverage-plugin-help test-coverage-plugin-getstarted test-coverage-plugin-git-sync test-coverage-plugin-comics test-coverage-plugin-medium-import test-coverage-plugin-learnset test-coverage-plugin-promotion test-coverage-plugin-story-bible test-coverage-plugin-aplus \
        mutmut-backend mutmut-export mutmut-ms-tools mutmut-results \
        check-types check-types-backend check-types-frontend \
        lint-frontend format-frontend pre-commit \
@@ -255,7 +255,7 @@ test-backend: ## Run backend tests
 	@echo "=== Backend Tests ==="
 	cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ -v
 
-test-plugins: test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync test-plugin-comics test-plugin-medium-import test-plugin-learnset test-plugin-promotion ## Run all plugin tests
+test-plugins: test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync test-plugin-comics test-plugin-medium-import test-plugin-learnset test-plugin-promotion test-plugin-story-bible test-plugin-aplus ## Run all plugin tests
 
 test-plugin-export: ## Run export plugin tests
 	@echo ""
@@ -332,6 +332,16 @@ test-plugin-promotion: ## Run promotion plugin tests
 	@echo ""
 	@echo "=== Promotion Plugin Tests ==="
 	cd plugins/bibliogon-plugin-promotion && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ -v
+
+test-plugin-story-bible: ## Run story-bible plugin tests
+	@echo ""
+	@echo "=== Story-Bible Plugin Tests ==="
+	cd plugins/bibliogon-plugin-story-bible && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ -v
+
+test-plugin-aplus: ## Run A+ Content plugin tests
+	@echo ""
+	@echo "=== A+ Content Plugin Tests ==="
+	cd plugins/bibliogon-plugin-aplus && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ -v
 
 # --- Coverage (heavy, opt-in; runs nightly in CI - see .github/workflows/nightly.yml) ---
 
@@ -457,7 +467,7 @@ check-security: ## Dependency + SAST scan (blocks on Critical/High; mirrors secu
 circular-deps: ## madge: fail on any circular TS dependency in frontend/src
 	cd frontend && npx --yes madge@8 --circular --extensions ts,tsx src/
 
-test-coverage-plugins: test-coverage-plugin-audiobook test-coverage-plugin-export test-coverage-plugin-grammar test-coverage-plugin-kdp test-coverage-plugin-kinderbuch test-coverage-plugin-ms-tools test-coverage-plugin-translation test-coverage-plugin-help test-coverage-plugin-getstarted test-coverage-plugin-git-sync test-coverage-plugin-comics test-coverage-plugin-medium-import ## Run plugin tests with coverage
+test-coverage-plugins: test-coverage-plugin-audiobook test-coverage-plugin-export test-coverage-plugin-grammar test-coverage-plugin-kdp test-coverage-plugin-kinderbuch test-coverage-plugin-ms-tools test-coverage-plugin-translation test-coverage-plugin-help test-coverage-plugin-getstarted test-coverage-plugin-git-sync test-coverage-plugin-comics test-coverage-plugin-medium-import test-coverage-plugin-learnset test-coverage-plugin-promotion test-coverage-plugin-story-bible test-coverage-plugin-aplus ## Run plugin tests with coverage
 
 test-coverage-plugin-audiobook: ## Audiobook plugin coverage
 	@echo ""
@@ -518,6 +528,26 @@ test-coverage-plugin-medium-import: ## Medium-import plugin coverage
 	@echo ""
 	@echo "=== Medium-Import Plugin Coverage ==="
 	cd plugins/bibliogon-plugin-medium-import && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ --cov=bibliogon_medium_import --cov-report=html --cov-report=term
+
+test-coverage-plugin-learnset: ## Learnset plugin coverage
+	@echo ""
+	@echo "=== Learnset Plugin Coverage ==="
+	cd plugins/bibliogon-plugin-learnset && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ --cov=bibliogon_learnset --cov-report=html --cov-report=term
+
+test-coverage-plugin-promotion: ## Promotion plugin coverage
+	@echo ""
+	@echo "=== Promotion Plugin Coverage ==="
+	cd plugins/bibliogon-plugin-promotion && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ --cov=bibliogon_promotion --cov-report=html --cov-report=term
+
+test-coverage-plugin-story-bible: ## Story-Bible plugin coverage
+	@echo ""
+	@echo "=== Story-Bible Plugin Coverage ==="
+	cd plugins/bibliogon-plugin-story-bible && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ --cov=bibliogon_story_bible --cov-report=html --cov-report=term
+
+test-coverage-plugin-aplus: ## A+ Content plugin coverage
+	@echo ""
+	@echo "=== A+ Content Plugin Coverage ==="
+	cd plugins/bibliogon-plugin-aplus && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ --cov=bibliogon_aplus --cov-report=html --cov-report=term
 
 # --- Mutation Testing ---
 
