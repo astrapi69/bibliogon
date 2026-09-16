@@ -7,6 +7,7 @@ mounts its router. The AI client is patched at
 
 from __future__ import annotations
 
+import json
 from unittest.mock import patch
 
 import pytest
@@ -239,3 +240,152 @@ class TestHtmlImportedBookFixture:
             response = client.post(f"/api/aplus/{book_id}/generate")
         assert response.status_code == 200, response.text
         assert response.json()["short_description"]
+
+
+class TestImageStyleInTheResponse:
+    """#865: the ruleset's ``image_style`` block has to reach the
+    package that the endpoints return - not just the builder module's
+    own unit tests. Every value below is asserted against the live
+    ruleset AND against the literal the ruleset carries today, so a
+    silent ruleset edit and a silent wiring regression both fail."""
+
+    def _generate(self, client: TestClient, **book_overrides) -> tuple[dict, dict]:
+        book = _create_book(client)
+        if book_overrides:
+            client.patch(f"/api/books/{book['id']}", json=book_overrides)
+        with patch("bibliogon_aplus.routes._get_client", return_value=_FakeClient()):
+            response = client.post(f"/api/aplus/{book['id']}/generate")
+        assert response.status_code == 200, response.text
+        return book, response.json()
+
+    def test_header_image_carries_the_97_60_ratio_and_970x600_size(
+        self, client: TestClient
+    ) -> None:
+        from bibliogon_aplus.rules import get_ruleset
+
+        _, body = self._generate(client)
+        image = body["module_header"]["image"]
+        assert image["prompt"] == "cinematic, warm lighting"
+        assert image["aspect_ratio"] == "97:60"
+        assert image["size"] == "970x600"
+        style = get_ruleset().image_style
+        assert image["aspect_ratio"] == style.aspect_ratios["module_header"]
+        assert image["size"] == style.target_pixel_sizes["module_header"]
+
+    def test_every_tile_image_carries_the_1_1_ratio_and_300x300_size(
+        self, client: TestClient
+    ) -> None:
+        _, body = self._generate(client)
+        tiles = body["module_three_images"]
+        assert len(tiles) == 3
+        for tile in tiles:
+            assert tile["image"]["prompt"] == "minimalist, flat colors"
+            assert tile["image"]["aspect_ratio"] == "1:1"
+            assert tile["image"]["size"] == "300x300"
+
+    def test_a_non_fiction_book_gets_the_default_style_flags(self, client: TestClient) -> None:
+        from bibliogon_aplus.rules import get_ruleset
+
+        _, body = self._generate(client, genre="Sachbuch")
+        flags = body["module_header"]["image"]["style_flags"]
+        assert flags == list(get_ruleset().image_style.default_style_flags)
+        assert "photorealistic" in flags
+        assert "friendly illustration" not in flags
+
+    def test_a_kinderbuch_gets_the_illustration_style_flags(self, client: TestClient) -> None:
+        """The genre detection has to change the IMAGES, not only the
+        text tone and the validator - the whole point of #830/#839/#854
+        for the picture modules."""
+        _, body = self._generate(client, genre="Kinderbuch")
+        header_flags = body["module_header"]["image"]["style_flags"]
+        assert "friendly illustration" in header_flags
+        assert "warm colors" in header_flags
+        assert "photorealistic" not in header_flags
+        for tile in body["module_three_images"]:
+            assert "friendly illustration" in tile["image"]["style_flags"]
+
+    def test_rendered_prompt_is_the_fields_joined_in_the_approved_form(
+        self, client: TestClient
+    ) -> None:
+        _, body = self._generate(client, genre="Kinderbuch")
+        images = [body["module_header"]["image"]] + [
+            tile["image"] for tile in body["module_three_images"]
+        ]
+        for image in images:
+            expected = (
+                f"{image['prompt']} --ar {image['aspect_ratio']} {' '.join(image['style_flags'])}"
+            )
+            assert image["rendered"] == expected
+        assert body["module_header"]["image"]["rendered"] == (
+            "cinematic, warm lighting --ar 97:60 friendly illustration warm colors "
+            "children's book art style no text overlay"
+        )
+
+    def test_rendered_is_derived_on_every_response_and_never_stored(
+        self, client: TestClient
+    ) -> None:
+        """A frozen string would go stale the moment the ruleset's
+        flags change; only the parts are persisted."""
+        from app.models import AplusContent
+
+        book, body = self._generate(client)
+        assert "rendered" in body["module_header"]["image"]
+        with SessionLocal() as db:
+            row = db.query(AplusContent).filter(AplusContent.book_id == book["id"]).one()
+            assert '"rendered"' not in row.content_json
+            assert '"aspect_ratio"' in row.content_json
+
+        fake = _FakeClient()
+        with patch("bibliogon_aplus.routes._get_client", return_value=fake):
+            cached = client.post(f"/api/aplus/{book['id']}/generate").json()
+        assert fake.call_count == 0, "second call must be served from the cache"
+        assert (
+            cached["module_header"]["image"]["rendered"]
+            == body["module_header"]["image"]["rendered"]
+        )
+        fetched = client.get(f"/api/aplus/{book['id']}").json()
+        assert (
+            fetched["module_header"]["image"]["rendered"]
+            == body["module_header"]["image"]["rendered"]
+        )
+        for tile in fetched["module_three_images"]:
+            assert tile["image"]["rendered"].startswith("minimalist, flat colors --ar 1:1 ")
+
+    def test_a_package_stored_before_the_image_block_existed_is_still_served(
+        self, client: TestClient
+    ) -> None:
+        """Rows cached under ruleset version 2 have no ``image`` key.
+        GET returns them as stored (plus nothing), instead of crashing
+        on the missing key; the next POST regenerates because the
+        ruleset version no longer matches."""
+        from app.models import AplusContent
+
+        book, _ = self._generate(client)
+        with SessionLocal() as db:
+            row = db.query(AplusContent).filter(AplusContent.book_id == book["id"]).one()
+            row.content_json = json.dumps(
+                {
+                    "short_description": "old",
+                    "bullets": [],
+                    "module_header": {"title": "", "text": "", "image_prompt": "x", "alt_text": ""},
+                    "module_three_images": [],
+                    "validation": [],
+                    "meta": {
+                        "book_id": book["id"],
+                        "language": "en",
+                        "model": "",
+                        "ruleset_version": "2",
+                        "generated_at": "",
+                    },
+                }
+            )
+            row.ruleset_version = "2"
+            db.commit()
+        fetched = client.get(f"/api/aplus/{book['id']}")
+        assert fetched.status_code == 200, fetched.text
+        assert "image" not in fetched.json()["module_header"]
+        fake = _FakeClient()
+        with patch("bibliogon_aplus.routes._get_client", return_value=fake):
+            regenerated = client.post(f"/api/aplus/{book['id']}/generate").json()
+        assert fake.call_count == 1
+        assert regenerated["module_header"]["image"]["aspect_ratio"] == "97:60"

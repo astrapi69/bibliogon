@@ -30,17 +30,31 @@ class Bullet(BaseModel):
     body: str = ""
 
 
+class AplusImage(BaseModel):
+    """One image slot: the model's keyword prompt plus the slot's
+    technical parameters from the ruleset's ``image_style`` block
+    (#865). These are the persisted parts. The copy-and-paste form
+    (``rendered``) is derived per response by
+    ``image_prompts.with_rendered_prompts`` and is deliberately not a
+    field here, so it can never be stored or cached."""
+
+    prompt: str = ""
+    aspect_ratio: str = ""
+    size: str = ""
+    style_flags: list[str] = Field(default_factory=list)
+
+
 class ModuleHeader(BaseModel):
     title: str = ""
     text: str = ""
-    image_prompt: str = ""
+    image: AplusImage = Field(default_factory=AplusImage)
     alt_text: str = ""
 
 
 class ThreeImageEntry(BaseModel):
     title: str = ""
     text: str = ""
-    image_prompt: str = ""
+    image: AplusImage = Field(default_factory=AplusImage)
     alt_text: str = ""
 
 

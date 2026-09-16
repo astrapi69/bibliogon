@@ -138,8 +138,9 @@ frontend for this yet; the contract below is what a UI has to consume.
 `GET /api/aplus/{book_id}?language=<code>`
 
 - Returns the last stored package for the book + language (default:
-  the book's language, else `en`), exactly as stored. It does not check
-  whether the book has changed since; only `POST .../generate` does.
+  the book's language, else `en`) as stored, plus the derived
+  `rendered` string per image slot. It does not check whether the book
+  has changed since; only `POST .../generate` does.
 - 404 when the book is unknown or nothing was generated for that
   language yet.
 
@@ -148,16 +149,37 @@ Package shape (`bibliogon_aplus/schema.py`, `AplusPackage`):
 ```
 short_description: str
 bullets: [{heading, body}]                       # exactly 3 expected
-module_header: {title, text, image_prompt, alt_text}
-module_three_images: [{title, text, image_prompt, alt_text}]   # exactly 3
+module_header: {title, text, image, alt_text}
+module_three_images: [{title, text, image, alt_text}]   # exactly 3
 validation: [{field, severity: "error"|"warning", message}]
 meta: {book_id, language, model, ruleset_version, generated_at}
 ```
 
+Each `image` (the header and every tile, #865):
+
+```
+image:
+  prompt: "<descriptive keywords from the model, comma-separated>"
+  aspect_ratio: "97:60"      # header; tiles "1:1"
+  size: "970x600"            # header; tiles "300x300"
+  style_flags: ["photorealistic", "editorial", "no text overlay"]
+  rendered: "<prompt> --ar <aspect_ratio> <style_flags joined by spaces>"
+```
+
+`aspect_ratio`, `size` and `style_flags` come from the ruleset's
+`image_style` block, resolved for the book's genre key: a `kinderbuch`
+gets the illustration flags (`friendly illustration`, `warm colors`,
+`children's book art style`, `no text overlay`), everything else the
+default set. `rendered` is derived on every response and never stored,
+so the form can change without a data migration; an empty `prompt`
+renders as `""`. Rows cached before the image block existed (ruleset
+version `2`) come back from `GET` without `image`; the next `POST`
+regenerates them because the ruleset version no longer matches.
+
 `validation[].field` names the offending slot (`short_description`,
 `bullets[1].body`, `module_three_images[0].alt_text`, ...). Limits and
 rules come from `bibliogon_aplus/rules/ruleset.yaml` (currently version
-`2`): 300 / 160 / 1000 / 200 characters for short description / bullet
+`3`): 300 / 160 / 1000 / 200 characters for short description / bullet
 heading / bullet body / alt text; em or en dash, emoji, hidden or
 control characters, per-language marketing imperatives (a phrase list,
 plus an imperative opening: `... Sie` in German, `-ez` in French, a few
@@ -171,11 +193,6 @@ Genre key resolution (`book_context._resolve_genre_key`):
 `JUV`-prefixed BISAC code > a children's-book phrase in title, subtitle
 or any description field. Only the first tier is reliable; the rest are
 fallbacks for books nobody has tagged (#830, #839, #854).
-
-Known gap: the ruleset's `image_style` block (aspect ratios, target
-pixel sizes, model hint, per-genre style flags) is not applied yet.
-`image_prompt` holds only the model's keywords, and the package carries
-no aspect ratio or pixel size per slot (#865).
 
 `aplus_content` rows are part of the `.bgb` backup (export + restore).
 

@@ -18,8 +18,12 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
   stored package. Books missing an author or every description field
   get a structured missing-fields response instead of an AI call.
   Children's-book detection falls back from `Book.genre` to
-  `book_type`, BISAC and description text. No UI yet
-  (#825, #827, #828, #830, #839). Migration: `aplus_content` table.
+  `book_type`, BISAC and description text, and drives the image
+  prompts too: each image slot carries the ruleset's aspect ratio,
+  target size and per-genre style flags plus a derived, never-stored
+  `rendered` prompt string (#865). No UI yet
+  (#825, #827, #828, #830, #839, #865). Migration: `aplus_content`
+  table.
 
 ## [0.60.0] - 2026-08-15
 

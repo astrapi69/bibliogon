@@ -2,7 +2,8 @@
 
 Generates an Amazon A+ Content package from a book already in Bibliogon:
 a short description, three bullets, a header module and a three-image
-module, each image slot with an alt text and an image prompt. The AI
+module, each image slot with an alt text and an image prompt carrying
+the slot's aspect ratio, target size and genre style flags. The AI
 drafts the copy; a deterministic validator decides whether it passes.
 Design and pre-audit findings: issue #825.
 
@@ -63,12 +64,16 @@ Bump `version` in the ruleset whenever a rule changes. Cached packages
 record the version they were validated against, so a bump invalidates
 all of them on the next `generate` call.
 
-## Image style: not wired yet
+## Image style
 
-`image_prompts.py` resolves aspect ratio, target pixel size, model hint
-and style flags per slot from the ruleset's `image_style` block, but no
-caller uses it. Generated packages carry the model's keywords only.
-Tracked in #865.
+The model returns only a keyword prompt per image. `image_prompts.py`
+resolves the slot's aspect ratio, target size and style flags from the
+ruleset's `image_style` block for the book's genre (Kinderbuch gets the
+illustration flags), and the generator stamps them into each `image`
+object. The copy-and-paste string `rendered` (`<prompt> --ar
+<aspect_ratio> <style_flags>`) is added by `with_rendered_prompts` on
+every response and never stored (#865). The ruleset's `model_hint` is
+parsed but not part of the response.
 
 ## Files
 
@@ -81,7 +86,7 @@ Tracked in #865.
 | `generator.py` | generate -> validate -> retry loop, source hash |
 | `validation.py` | deterministic rules |
 | `rules.py`, `rules/ruleset.yaml` | typed loader + the versioned rules |
-| `image_prompts.py` | per-slot image style (unused, #865) |
+| `image_prompts.py` | per-slot image parameters from the ruleset + the derived `rendered` string |
 | `schema.py` | `AplusPackage` and friends |
 
 Core side: `AplusContent` model (`backend/app/models/__init__.py`),

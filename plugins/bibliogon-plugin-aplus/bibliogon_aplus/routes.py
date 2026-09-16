@@ -23,6 +23,7 @@ from app.exceptions import ExternalServiceError, NotFoundError, ValidationError
 from app.models import AplusContent, Book
 from bibliogon_aplus.book_context import build_book_context, find_missing_fields
 from bibliogon_aplus.generator import compute_source_hash, generate_package
+from bibliogon_aplus.image_prompts import with_rendered_prompts
 from bibliogon_aplus.rules import SUPPORTED_LANGUAGES, get_ruleset
 from bibliogon_aplus.schema import AplusPackage, MissingFieldsResponse
 
@@ -56,6 +57,9 @@ async def generate_aplus_content(
     Returns either the generated/cached package, or a
     :class:`MissingFieldsResponse` when the book is missing a
     required field - no AI call happens in that case.
+
+    Each image slot's ``rendered`` prompt string is derived on the way
+    out (``with_rendered_prompts``) and never persisted (#865).
     """
     if not _is_ai_enabled():
         raise ValidationError("AI features are disabled")
@@ -80,7 +84,7 @@ async def generate_aplus_content(
     if not force:
         cached = _cached_row(db, book_id, resolved_language)
         if cached and cached.source_hash == source_hash and cached.ruleset_version == rules.version:
-            return json.loads(cached.content_json)
+            return with_rendered_prompts(json.loads(cached.content_json))
 
     client = _get_client()
     try:
@@ -110,7 +114,7 @@ async def generate_aplus_content(
         row.updated_at = datetime.now(UTC)
     db.commit()
 
-    return package.model_dump()
+    return with_rendered_prompts(package.model_dump())
 
 
 @router.get("/{book_id}")
@@ -122,6 +126,8 @@ def get_aplus_content(
     """Return the last generated package for the book (+ language).
 
     404 when nothing has ever been generated for that combination.
+    The stored JSON is returned as stored, plus the derived
+    ``rendered`` prompt per image slot where the row carries one.
     """
     book = _load_book(book_id, db)
     resolved_language = language or book.language or "en"
@@ -130,7 +136,7 @@ def get_aplus_content(
         raise NotFoundError(
             f"No A+ Content generated yet for book {book_id} in language {resolved_language!r}"
         )
-    return json.loads(row.content_json)
+    return with_rendered_prompts(json.loads(row.content_json))
 
 
 __all__ = ["router", "AplusPackage"]
