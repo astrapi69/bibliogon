@@ -277,6 +277,10 @@ Browser --> nginx (static files + /api proxy) --> FastAPI (uvicorn)
 
 All first-party plugins ship free under MIT. Third-party plugins can be installed as ZIP files via Settings > Plugins.
 
+## Privacy
+
+What leaves the device, when, and to whom, plus what the app stores locally and how to delete it: [PRIVACY.md](PRIVACY.md). Short version: no telemetry, no analytics, no cookies; manuscript text reaches a third party only through a service you configure and invoke yourself.
+
 ## Configuration
 
 Three-layer config: project `app.yaml` (defaults) ← user override file
