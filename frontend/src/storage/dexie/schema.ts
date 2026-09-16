@@ -23,6 +23,7 @@ import type {
     BookTemplate,
     BookTypeDef,
     Chapter,
+    ChapterTemplate,
     ChapterVersionRead,
     ContentTypeDef,
     DiscoveredPlugin,
@@ -193,6 +194,11 @@ class BibliogonOfflineDB extends Dexie {
      *  `data/bookTemplates.ts`, which carries i18n keys rather than resolved
      *  strings. */
     bookTemplates!: Table<BookTemplate, string>;
+    /** Reusable single-chapter templates (#731). Holds BOTH the 4 built-ins
+     *  (seeded from `seed-chapter-templates.json` with stable `builtin-*`
+     *  ids) and the user's own, exactly like the backend table — the picker
+     *  shows one list and `is_builtin` decides what is read-only. */
+    chapterTemplates!: Table<ChapterTemplate, string>;
 
     constructor() {
         // Separate DB from the crash-recovery drafts store ("bibliogon").
@@ -277,6 +283,11 @@ class BibliogonOfflineDB extends Dexie {
         // does, and list orders by it; `created_at` for future date ordering.
         this.version(12).stores({
             bookTemplates: "id, name, created_at",
+        });
+        // v13 (#731): chapter templates, built-in and user-created. `name` is
+        // indexed for the create/import 409 check and the list order.
+        this.version(13).stores({
+            chapterTemplates: "id, name, created_at",
         });
     }
 }

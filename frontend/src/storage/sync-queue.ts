@@ -226,5 +226,9 @@ export function makeQueueingStorage(base: IStorageService): IStorageService {
         // not book content, and the queue models only book/chapter/article.
         // Replay deferred like chapter labels; passthrough.
         templates: base.templates,
+        // Chapter templates (#731): same reasoning as book templates, plus
+        // the JSON round-trip is a pure browser file operation with nothing
+        // to replay. Passthrough.
+        chapterTemplates: base.chapterTemplates,
     };
 }

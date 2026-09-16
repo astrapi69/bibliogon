@@ -1,0 +1,42 @@
+[
+  {
+    "id": "builtin-interview",
+    "name": "Interview",
+    "description": "Structured interview with intro, questions, and closing",
+    "chapter_type": "chapter",
+    "content": "{\"type\": \"doc\", \"content\": [{\"type\": \"heading\", \"attrs\": {\"level\": 2}, \"content\": [{\"type\": \"text\", \"text\": \"Introduction\"}]}, {\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Brief introduction of the interviewee and the context of the conversation.\"}]}, {\"type\": \"heading\", \"attrs\": {\"level\": 2}, \"content\": [{\"type\": \"text\", \"text\": \"Questions\"}]}, {\"type\": \"orderedList\", \"attrs\": {\"start\": 1}, \"content\": [{\"type\": \"listItem\", \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"First question...\"}]}]}, {\"type\": \"listItem\", \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Second question...\"}]}]}, {\"type\": \"listItem\", \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Third question...\"}]}]}]}, {\"type\": \"heading\", \"attrs\": {\"level\": 2}, \"content\": [{\"type\": \"text\", \"text\": \"Closing\"}]}, {\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Closing thoughts and thanks.\"}]}]}",
+    "language": "en",
+    "is_builtin": true,
+    "child_template_ids": null
+  },
+  {
+    "id": "builtin-faq",
+    "name": "FAQ",
+    "description": "Frequently asked questions in Q&A format",
+    "chapter_type": "chapter",
+    "content": "{\"type\": \"doc\", \"content\": [{\"type\": \"heading\", \"attrs\": {\"level\": 3}, \"content\": [{\"type\": \"text\", \"text\": \"Question 1?\"}]}, {\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Answer to the first question.\"}]}, {\"type\": \"heading\", \"attrs\": {\"level\": 3}, \"content\": [{\"type\": \"text\", \"text\": \"Question 2?\"}]}, {\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Answer to the second question.\"}]}, {\"type\": \"heading\", \"attrs\": {\"level\": 3}, \"content\": [{\"type\": \"text\", \"text\": \"Question 3?\"}]}, {\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Answer to the third question.\"}]}]}",
+    "language": "en",
+    "is_builtin": true,
+    "child_template_ids": null
+  },
+  {
+    "id": "builtin-recipe",
+    "name": "Recipe",
+    "description": "Recipe with ingredients, preparation, and notes",
+    "chapter_type": "chapter",
+    "content": "{\"type\": \"doc\", \"content\": [{\"type\": \"heading\", \"attrs\": {\"level\": 2}, \"content\": [{\"type\": \"text\", \"text\": \"Ingredients\"}]}, {\"type\": \"bulletList\", \"content\": [{\"type\": \"listItem\", \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Ingredient 1\"}]}]}, {\"type\": \"listItem\", \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Ingredient 2\"}]}]}, {\"type\": \"listItem\", \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Ingredient 3\"}]}]}]}, {\"type\": \"heading\", \"attrs\": {\"level\": 2}, \"content\": [{\"type\": \"text\", \"text\": \"Preparation\"}]}, {\"type\": \"orderedList\", \"attrs\": {\"start\": 1}, \"content\": [{\"type\": \"listItem\", \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"First step...\"}]}]}, {\"type\": \"listItem\", \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Second step...\"}]}]}, {\"type\": \"listItem\", \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Third step...\"}]}]}]}, {\"type\": \"heading\", \"attrs\": {\"level\": 2}, \"content\": [{\"type\": \"text\", \"text\": \"Notes\"}]}, {\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Tips, variations, or serving suggestions.\"}]}]}",
+    "language": "en",
+    "is_builtin": true,
+    "child_template_ids": null
+  },
+  {
+    "id": "builtin-photo-report",
+    "name": "Photo Report",
+    "description": "Visual reportage with image placeholders and captions",
+    "chapter_type": "chapter",
+    "content": "{\"type\": \"doc\", \"content\": [{\"type\": \"heading\", \"attrs\": {\"level\": 2}, \"content\": [{\"type\": \"text\", \"text\": \"Location\"}]}, {\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Where and when this scene was captured.\"}]}, {\"type\": \"heading\", \"attrs\": {\"level\": 2}, \"content\": [{\"type\": \"text\", \"text\": \"Impressions\"}]}, {\"type\": \"paragraph\"}, {\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Describe the atmosphere, the people, the light.\"}]}, {\"type\": \"heading\", \"attrs\": {\"level\": 2}, \"content\": [{\"type\": \"text\", \"text\": \"Reflection\"}]}, {\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"What you take away from this visit.\"}]}]}",
+    "language": "en",
+    "is_builtin": true,
+    "child_template_ids": null
+  }
+]

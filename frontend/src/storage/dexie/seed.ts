@@ -8,6 +8,7 @@
 
 import {
     SEED_BOOK_TYPES,
+    SEED_CHAPTER_TEMPLATES,
     SEED_CONTENT_TYPES,
     SEED_I18N,
     SEED_PLUGIN_METADATA,
@@ -25,6 +26,14 @@ let seedPromise: Promise<void> | null = null;
 export function ensureSeeded(): Promise<void> {
     if (!seedPromise) seedPromise = doSeed();
     return seedPromise;
+}
+
+/** Test-only: forget that the seed already ran, so the next
+ *  {@link ensureSeeded} re-populates a cleared database. Without it a suite
+ *  that wipes the tables between cases leaves every later case un-seeded —
+ *  the module-level memo outlives the table contents. */
+export function __resetSeedForTests(): void {
+    seedPromise = null;
 }
 
 async function doSeed(): Promise<void> {
@@ -56,6 +65,17 @@ async function doSeed(): Promise<void> {
         if (!(await offlineDb.i18nCatalogs.get(lang))) {
             await offlineDb.i18nCatalogs.put({ lang, catalog });
         }
+    }
+    // Chapter templates seed ROWS of a user-writable table (#731), so the
+    // idempotency check mirrors the backend's: insert only when no builtin
+    // row exists yet. A user's own templates are never touched.
+    const builtinCount = await offlineDb.chapterTemplates
+        .filter((t) => t.is_builtin)
+        .count();
+    if (builtinCount === 0) {
+        await offlineDb.chapterTemplates.bulkPut(
+            SEED_CHAPTER_TEMPLATES.map((t) => ({ ...t })),
+        );
     }
 }
 

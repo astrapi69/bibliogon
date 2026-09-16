@@ -1,11 +1,25 @@
 /**
  * Chapters namespace for DexieStorage: per-book chapter CRUD, reorder,
- * version bump + offline writing-progress recording on content edits, and
- * the chapter version history / manual snapshots (#728).
+ * version bump + offline writing-progress recording on content edits, the
+ * chapter version history / manual snapshots (#728), and the reusable
+ * chapter templates with their JSON round-trip (#731).
  */
 
-import type { Chapter, ChapterVersionRead, ChapterVersionSummary } from "../../api/client";
+import type {
+    Chapter,
+    ChapterTemplate,
+    ChapterType,
+    ChapterVersionRead,
+    ChapterVersionSummary,
+} from "../../api/client";
+import { ApiError } from "../../api/client";
 import { lineDiff, snapshotPlainText } from "../../lib/utils/content/chapterDiff";
+import {
+    chapterTemplateFilename,
+    parseChapterTemplateJson,
+    serializeChapterTemplate,
+} from "../../lib/utils/content/chapterTemplateJson";
+import { downloadBlob } from "../../shared/utils/downloadBlob";
 import type { IStorageService } from "../types";
 import { countWords, EMPTY_DOC, newId, nowIso, notFound, recordWritingProgress } from "./helpers";
 import { offlineDb } from "./schema";
@@ -233,5 +247,185 @@ export const chapters: IStorageService["chapters"] = {
             throw new Error("Only manual snapshots can be deleted");
         }
         await offlineDb.chapterVersions.delete(versionId);
+    },
+};
+
+/** Raise the endpoint's error shape so consumers branch the same way in
+ *  both modes (the picker/save modals read `ApiError.status`). */
+function templateError(status: number, detail: string, method: string): ApiError {
+    return new ApiError(status, detail, "/chapter-templates", method);
+}
+
+/** Builtins first (seed order), then user templates by name — the backend's
+ *  `ORDER BY is_builtin DESC, name`. */
+function orderTemplates(rows: ChapterTemplate[]): ChapterTemplate[] {
+    return [...rows].sort(
+        (a, b) =>
+            Number(b.is_builtin) - Number(a.is_builtin) || a.name.localeCompare(b.name),
+    );
+}
+
+async function requireTemplate(id: string): Promise<ChapterTemplate> {
+    const template = await offlineDb.chapterTemplates.get(id);
+    if (!template) throw templateError(404, "Chapter template not found", "GET");
+    return template;
+}
+
+async function requireNameFree(name: string): Promise<void> {
+    const clash = await offlineDb.chapterTemplates.where("name").equals(name).first();
+    if (clash) {
+        throw templateError(409, "Chapter template name already exists", "POST");
+    }
+}
+
+/**
+ * Reject self-reference, unknown ids and reference cycles, mirroring
+ * `_validate_child_ids`. The cycle check walks the already-stored children
+ * depth-first, so setting `A -> [B]` while `B -> [A]` is refused before the
+ * new state lands.
+ */
+async function validateChildIds(
+    childIds: string[],
+    selfId: string | null = null,
+): Promise<void> {
+    if (selfId !== null && childIds.includes(selfId)) {
+        throw templateError(400, "A chapter template cannot reference itself.", "PUT");
+    }
+    if (!childIds.length) return;
+
+    const found = await offlineDb.chapterTemplates.bulkGet(childIds);
+    const missing = childIds.filter((_, i) => !found[i]);
+    if (missing.length) {
+        throw templateError(
+            400,
+            `Unknown child template id(s): ${missing.join(", ")}`,
+            "PUT",
+        );
+    }
+    if (selfId === null) return;
+
+    const stack = [...childIds];
+    const seen = new Set<string>();
+    while (stack.length) {
+        const current = stack.pop()!;
+        if (seen.has(current)) continue;
+        seen.add(current);
+        const row = await offlineDb.chapterTemplates.get(current);
+        const grandchildren = row?.child_template_ids ?? [];
+        if (grandchildren.includes(selfId)) {
+            throw templateError(400, "Cycle detected in child_template_ids.", "PUT");
+        }
+        stack.push(...grandchildren);
+    }
+}
+
+/**
+ * Reusable single-chapter templates for DexieStorage (#731).
+ *
+ * Mirrors `backend/app/routers/chapter_templates.py`: `create` forces
+ * `is_builtin: false` and 409s on a duplicate name, builtins are read-only
+ * (403 on update/delete), and the JSON round-trip uses the same portable
+ * format — which is why an exported file works in either mode.
+ *
+ * The 4 built-ins are seeded into the table by `ensureSeeded`, so `list`
+ * returns one merged catalog exactly like the endpoint.
+ */
+export const chapterTemplates: IStorageService["chapterTemplates"] = {
+    list: async () => orderTemplates(await offlineDb.chapterTemplates.toArray()),
+
+    get: async (id) => requireTemplate(id),
+
+    create: async (data) => {
+        await requireNameFree(data.name);
+        const childIds = data.child_template_ids ?? [];
+        await validateChildIds(childIds);
+        const ts = nowIso();
+        const template: ChapterTemplate = {
+            id: newId(),
+            name: data.name,
+            description: data.description,
+            chapter_type: data.chapter_type,
+            content: data.content ?? null,
+            language: data.language ?? "en",
+            // Forced false whatever the caller sent, like the endpoint.
+            is_builtin: false,
+            child_template_ids: childIds.length ? childIds : null,
+            created_at: ts,
+            updated_at: ts,
+        };
+        await offlineDb.chapterTemplates.add(template);
+        return template;
+    },
+
+    update: async (id, data) => {
+        const existing = await requireTemplate(id);
+        if (existing.is_builtin) {
+            throw templateError(403, "Builtin chapter templates are read-only", "PUT");
+        }
+        if (data.child_template_ids !== undefined) {
+            await validateChildIds(data.child_template_ids ?? [], id);
+        }
+        if (data.name !== undefined && data.name !== existing.name) {
+            await requireNameFree(data.name);
+        }
+        const merged: ChapterTemplate = {
+            ...existing,
+            ...data,
+            child_template_ids:
+                data.child_template_ids === undefined
+                    ? existing.child_template_ids
+                    : (data.child_template_ids?.length ?? 0)
+                      ? data.child_template_ids!
+                      : null,
+            id,
+            is_builtin: false,
+            updated_at: nowIso(),
+        };
+        await offlineDb.chapterTemplates.put(merged);
+        return merged;
+    },
+
+    delete: async (id) => {
+        const existing = await requireTemplate(id);
+        if (existing.is_builtin) {
+            throw templateError(403, "Builtin chapter templates cannot be deleted", "DELETE");
+        }
+        await offlineDb.chapterTemplates.delete(id);
+    },
+
+    exportJson: async (id) => {
+        const template = await requireTemplate(id);
+        const payload = JSON.stringify(serializeChapterTemplate(template), null, 2);
+        // Same side-effect contract as the api client: hand the browser a
+        // download rather than returning the text.
+        downloadBlob(
+            new Blob([payload], { type: "application/json" }),
+            chapterTemplateFilename(template.name),
+        );
+    },
+
+    importJson: async (file) => {
+        const parsed = parseChapterTemplateJson(await file.text());
+        await requireNameFree(parsed.name);
+        await validateChildIds(parsed.child_template_ids);
+        const ts = nowIso();
+        const template: ChapterTemplate = {
+            id: newId(),
+            name: parsed.name,
+            description: parsed.description,
+            // The wire format carries the backend's wider enum; the parse
+            // already rejected anything outside it (see chapterTemplateJson).
+            chapter_type: parsed.chapter_type as ChapterType,
+            content: parsed.content,
+            language: parsed.language,
+            is_builtin: false,
+            child_template_ids: parsed.child_template_ids.length
+                ? parsed.child_template_ids
+                : null,
+            created_at: ts,
+            updated_at: ts,
+        };
+        await offlineDb.chapterTemplates.add(template);
+        return template;
     },
 };
