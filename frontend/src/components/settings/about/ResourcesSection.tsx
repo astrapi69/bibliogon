@@ -10,7 +10,7 @@
 import { Bug, ExternalLink } from "lucide-react";
 import { sectionStyle, dlStyle, externalLinkStyle, type T } from "./styles";
 import { DOCS_URL, ISSUES_URL, LICENSE_URL, REPOSITORY_URL } from "./constants";
-import { legalPageHref } from "../../../lib/utils/legalPages";
+import { legalPageHref } from "../../../lib/utils/legal/legalPages";
 
 export function ResourcesSection({
   t,

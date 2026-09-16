@@ -6,7 +6,7 @@
  */
 
 import { useI18n } from "../../hooks/useI18n";
-import { legalPageHref } from "../../lib/utils/legalPages";
+import { legalPageHref } from "../../lib/utils/legal/legalPages";
 
 const LINK_CLASS =
   "inline-flex min-h-11 items-center px-2 underline-offset-2 hover:underline";
