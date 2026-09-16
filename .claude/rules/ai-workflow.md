@@ -59,7 +59,8 @@ Every GitHub issue is closed by its fix commit.
 6. routes.py for API endpoints.
 7. Frontend manifest via get_frontend_manifest() (UI slots).
 8. Tests in plugins/{name}/tests/.
-9. Enable the plugin in config/app.yaml under `enabled`.
+9. Makefile: define `test-plugin-{name}` and `test-coverage-plugin-{name}`, list both in `.PHONY` and in the `test-plugins` / `test-coverage-plugins` aggregates. Without this `make test` skips the suite and still reports green; `backend/tests/test_makefile_plugin_targets.py` enforces it.
+10. Enable the plugin in config/app.yaml under `enabled`.
 
 ## Order for changes
 
