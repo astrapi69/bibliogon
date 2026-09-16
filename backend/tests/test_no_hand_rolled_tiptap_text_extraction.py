@@ -375,3 +375,96 @@ def cleanup(path):
 """
     for source in (fixed, skip, unrelated):
         assert _destructive_on_empty_extraction(source) == []
+
+
+# ---------------------------------------------------------------------------
+# Third failure mode: shape dispatch with no HTML branch
+# ---------------------------------------------------------------------------
+#
+# #847 was the same class again - a chapter-content reader with no HTML
+# branch - and neither detector above caught it. The walker check keys on a
+# module parsing TipTap ITSELF (json.loads + both node keys in one file);
+# chapter_snapshots.py delegates the walk to writing_stats._flatten_tiptap,
+# so it had the json.loads and neither node-key access.
+#
+# The risk signature is not "walks nodes". It is DISPATCHING ON CONTENT
+# SHAPE - `if raw.startswith("{")` - while having no branch for the shape
+# that actually dominates the data: 779 of 834 chapters are HTML.
+
+#: A module dispatches on content shape when it tests for a leading "{".
+_JSON_SHAPE_DISPATCH_RE = re.compile(r"""startswith\(\s*["']\{["']""")
+
+#: Any of these means the HTML shape is handled somewhere in the module.
+_HANDLES_HTML_RE = re.compile(
+    r"""startswith\(\s*["']<["']|html_to_plain_text|content_to_plain_text|content_to_markdown"""
+)
+
+#: Modules that dispatch on shape but legitimately never see HTML.
+_SHAPE_DISPATCH_ALLOWLIST: dict[str, str] = {
+    "plugins/bibliogon-plugin-export/bibliogon_export/picture_book_pdf/page_renderer.py": (
+        "Reads Page.text_content, not Chapter.content. The "
+        "write-book-template importer writes HTML into prose chapters, "
+        "never into picture-book pages, so the '{' test here only has to "
+        "separate a TipTap doc from authored plain text."
+    ),
+}
+
+
+def test_every_shape_dispatch_also_handles_html() -> None:
+    offenders: list[str] = []
+    for path in _destructive_scan_files():
+        source = path.read_text(encoding="utf-8")
+        if not _JSON_SHAPE_DISPATCH_RE.search(source):
+            continue
+        relative = path.relative_to(_REPO_ROOT).as_posix()
+        if relative in _SHAPE_DISPATCH_ALLOWLIST:
+            continue
+        if not _HANDLES_HTML_RE.search(source):
+            offenders.append(relative)
+
+    assert not offenders, (
+        "These modules decide what chapter content is by testing for a "
+        "leading '{', but never handle the HTML shape - which is what 779 "
+        "of 834 chapters actually are (#787). That is how #847 shipped. "
+        "Add the HTML branch, or add the file to "
+        "_SHAPE_DISPATCH_ALLOWLIST with a reason:\n  " + "\n  ".join(offenders)
+    )
+
+
+def test_shape_dispatch_allowlist_has_no_stale_entries() -> None:
+    stale: list[str] = []
+    for relative in _SHAPE_DISPATCH_ALLOWLIST:
+        path = _REPO_ROOT / relative
+        if not path.is_file():
+            stale.append(f"{relative} (file no longer exists)")
+        elif not _JSON_SHAPE_DISPATCH_RE.search(path.read_text(encoding="utf-8")):
+            stale.append(f"{relative} (no longer dispatches on content shape)")
+    assert not stale, "Stale _SHAPE_DISPATCH_ALLOWLIST entries:\n  " + "\n  ".join(stale)
+
+
+def test_the_shape_dispatch_detector_recognises_the_847_shape() -> None:
+    """Pins the detector on the shape #847 shipped: dispatch on '{',
+    delegate the walk elsewhere, no HTML branch anywhere."""
+    shipped = """
+import json
+from app.services.writing_stats import _flatten_tiptap
+
+def snapshot_plain_text(content):
+    raw = (content or "").strip()
+    plain = raw
+    if raw.startswith("{"):
+        try:
+            plain = _flatten_tiptap(json.loads(raw))
+        except ValueError:
+            plain = raw
+    return plain
+"""
+    assert _JSON_SHAPE_DISPATCH_RE.search(shipped)
+    assert not _HANDLES_HTML_RE.search(shipped)
+
+    fixed = shipped.replace(
+        "    return plain",
+        '    elif raw.startswith("<"):\n        plain = html_to_plain_text(raw)\n    return plain',
+    )
+    assert _JSON_SHAPE_DISPATCH_RE.search(fixed)
+    assert _HANDLES_HTML_RE.search(fixed)
