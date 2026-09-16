@@ -20,9 +20,11 @@ Five plugins (aplus, git-sync, medium-import, promotion, story-bible)
 were missing when this guard was written, hiding 267 passing tests that
 nightly had never run.
 
-This test asserts the matrices are COMPLETE, not that they are
-non-empty: adding a plugin directory without adding it to both matrices
-fails here, at PR time, rather than silently never running.
+Membership of both matrices (every plugin on disk listed, no stale entry)
+is asserted in ``test_plugin_handlists.py`` together with every other
+hand-maintained plugin list (#867). This module keeps the matrix-specific
+check: the ``package:`` names feed ``--cov`` and must match the real
+packages.
 """
 
 from __future__ import annotations
@@ -34,15 +36,6 @@ import yaml
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _NIGHTLY = _REPO_ROOT / ".github" / "workflows" / "nightly.yml"
 _PLUGINS_DIR = _REPO_ROOT / "plugins"
-
-
-def _plugin_dirs_on_disk() -> set[str]:
-    """Directory names like ``bibliogon-plugin-kdp``."""
-    return {
-        path.name
-        for path in _PLUGINS_DIR.glob("bibliogon-plugin-*")
-        if path.is_dir() and (path / "pyproject.toml").is_file()
-    }
 
 
 def _workflow() -> dict:
@@ -58,39 +51,6 @@ def _matrix_plugins(job_name: str) -> set[str]:
     if "include" in matrix:
         return {entry["plugin"] for entry in matrix["include"]}
     return set(matrix["plugin"])
-
-
-def test_every_plugin_on_disk_runs_in_the_plugin_tests_matrix() -> None:
-    on_disk = _plugin_dirs_on_disk()
-    in_matrix = _matrix_plugins("plugin-tests")
-    missing = sorted(on_disk - in_matrix)
-    assert not missing, (
-        "These plugins exist under plugins/ but are not in nightly.yml's "
-        "'plugin-tests' matrix, so their isolated-install path is never "
-        "exercised:\n  " + "\n  ".join(missing)
-    )
-
-
-def test_every_plugin_on_disk_runs_in_the_plugin_coverage_matrix() -> None:
-    on_disk = _plugin_dirs_on_disk()
-    in_matrix = _matrix_plugins("plugin-coverage")
-    missing = sorted(on_disk - in_matrix)
-    assert not missing, (
-        "These plugins exist under plugins/ but are not in nightly.yml's "
-        "'plugin-coverage' matrix:\n  " + "\n  ".join(missing)
-    )
-
-
-def test_neither_matrix_lists_a_plugin_that_no_longer_exists() -> None:
-    """The open-set half: a renamed or deleted plugin left in the matrix
-    makes the nightly job fail on checkout instead of being caught here."""
-    on_disk = _plugin_dirs_on_disk()
-    for job_name in ("plugin-tests", "plugin-coverage"):
-        stale = sorted(_matrix_plugins(job_name) - on_disk)
-        assert not stale, (
-            f"nightly.yml's '{job_name}' matrix lists plugins with no "
-            "directory under plugins/:\n  " + "\n  ".join(stale)
-        )
 
 
 def test_the_coverage_matrix_package_names_match_the_real_packages() -> None:

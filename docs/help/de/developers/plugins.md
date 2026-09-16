@@ -270,6 +270,8 @@ make test-plugins
 
 Das Makefile führt diese Ziele von Hand. Ein neues Plugin braucht `test-plugin-{name}` und `test-coverage-plugin-{name}`, beide in `.PHONY` und in den Sammelzielen `test-plugins` / `test-coverage-plugins` eingetragen. Sonst führt `make test` die Tests des Plugins nie aus und meldet trotzdem Erfolg. `backend/tests/test_makefile_plugin_targets.py` schlägt fehl, wenn eines fehlt.
 
+Dasselbe gilt für jede andere Datei, die Plugins von Hand aufzählt: die Plugin-Tabellen in `CLAUDE.md`, `README.md` und `docs/API.md`, die nächtlichen CI-Matrizen, `backend/pyproject.toml`, `app.yaml.example` und `backend/config/plugins/`. `backend/tests/test_plugin_handlists.py` prüft jede davon in beide Richtungen gegen `plugins/`. Wer eine neue Datei anlegt, die Plugins von Hand auflistet, trägt sie dort ein; eine nicht eingetragene Liste driftet.
+
 ## Abhängigkeiten
 
 Benötigt dein Plugin eine Abhängigkeit, die nicht im Core ist, deklariere sie in deiner `pyproject.toml`. Für ZIP-verteilte Plugins müssen Abhängigkeiten gebündelt oder bereits in der Bibliogon-Umgebung verfügbar sein.

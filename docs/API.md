@@ -84,6 +84,10 @@ always the plugin name:
 | getstarted     | `/api/get-started`  | Onboarding guide, sample book                    |
 | git-sync       | `/api/git-sync`     | Git-backed import + sync for write-book-template repos |
 | medium-import  | `/api/medium-import`| Bulk import of Medium HTML export ZIP            |
+| comics         | `/api/comics` + `/api/books/{id}/comic-*` | Comic-book panels + per-panel speech bubbles (CRUD, reorder, cross-page move); identity probe `/api/comics/info` |
+| story-bible    | `/api/story-bible`  | Per-book fiction entities: type registry, CRUD, page/chapter links, relationships, auto-detect, continuity check, Markdown export |
+| learnset       | `/api/learnset`     | Export a book as an adaptive-learner learn set (schema-validated scaffold ZIP) |
+| promotion      | `/api/promotion`    | Portfolio board: per-book retail-format status, store URLs, ASIN, universal link, CSV import with dry-run |
 | aplus          | `/api/aplus`        | AI-generated Amazon A+ Content package, validated + cached per book and language (see below) |
 
 Examples:
