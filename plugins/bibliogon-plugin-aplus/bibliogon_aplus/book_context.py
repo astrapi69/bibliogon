@@ -33,15 +33,59 @@ _JUVENILE_GENRE_KEY = "kinderbuch"
 #: the live library carry a BISAC code at all, per #828's audit).
 _PICTURE_BOOK_TYPE = "picture_book"
 
-#: Last-resort text signal, checked in title + subtitle + description
-#: when neither `genre`, `book_type`, nor a JUV BISAC code fired. Every
-#: phrase must be specific enough to avoid false positives (bare
-#: "kids"/"child" is too broad; a compound noun phrase is not).
+#: Description columns, in the order ``build_book_context`` prefers them
+#: when picking the ONE it feeds to the prompt. The genre heuristic
+#: scans all three instead of only the winner (#839).
+_DESCRIPTION_FIELDS = ("description", "html_description", "backpage_description")
+
+#: Last-resort text signal, checked in the title, the subtitle and ALL
+#: description fields when neither `genre`, `book_type`, nor a JUV BISAC
+#: code fired.
+#:
+#: This is a fallback for a NEW book whose `genre` nobody has filled in
+#: yet - it is NOT a safety net. It reads free text an author is free to
+#: reword at any time, so a book that depends on it can silently stop
+#: being recognised. The reliable tier is `Book.genre`; #854 filled it
+#: for the nine children's books in the catalog precisely so the
+#: escalation no longer rests on this.
+#:
+#: Phrases are taken from the real catalog text (#839), not guessed, and
+#: each must be specific enough to avoid false positives: bare "kids",
+#: "child" or "niños" is too broad, a compound noun phrase is not.
 _JUVENILE_TEXT_MARKERS: dict[str, tuple[str, ...]] = {
-    "de": ("kinderbuch", "bilderbuch"),
-    "en": ("children's book", "childrens book", "picture book"),
-    "fr": ("livre pour enfants", "album jeunesse", "livre jeunesse"),
-    "es": ("libro infantil", "libro para ninos", "libro para niños"),
+    "de": (
+        "kinderbuch",
+        "bilderbuch",
+        "für kinder",
+        "fuer kinder",
+        "zum vorlesen",
+    ),
+    "en": (
+        "children's book",
+        "childrens book",
+        "picture book",
+        "for kids",
+        "for children",
+    ),
+    "fr": (
+        "livre pour enfants",
+        "livres pour enfants",
+        "album jeunesse",
+        "livre jeunesse",
+        "pour enfants",
+        "album illustré",
+    ),
+    "es": (
+        "libro infantil",
+        "libros infantiles",
+        "cuentos infantiles",
+        "cuento infantil",
+        "álbum ilustrado",
+        "album ilustrado",
+        "libro ilustrado",
+        "para niños",
+        "para ninos",
+    ),
 }
 
 
@@ -107,14 +151,25 @@ def _looks_like_juvenile_text(*texts: str | None) -> bool:
     )
 
 
-def _resolve_genre_key(book: Any, bisac_codes: list[str], description_text: str) -> str | None:
-    """Resolve a genre/style key with a fallback chain, since the
-    free-text `genre` field is unpopulated on the entire live library
-    (44/44 books) and BISAC codes are set on 0/44 (#828's audit).
+def _resolve_genre_key(book: Any, bisac_codes: list[str]) -> str | None:
+    """Resolve a genre/style key with a fallback chain.
 
-    Order: explicit `genre` field > `book_type == "picture_book"` >
-    a JUV-prefixed BISAC code > a children's-book phrase in the
-    title/subtitle/description text.
+    Order: explicit ``genre`` field > ``book_type == "picture_book"`` >
+    a JUV-prefixed BISAC code > a children's-book phrase in the text.
+
+    Only the first tier is reliable. The rest exist because ``genre``
+    was empty on all 44 catalog books and BISAC on 0 of them (#828);
+    #854 has since filled ``genre`` for the nine children's books, so
+    for those the chain stops at the first tier and never reaches the
+    text heuristic.
+
+    The text tier reads ALL description fields, not just the one
+    ``build_book_context`` resolves for the prompt. That resolution
+    takes the FIRST non-empty of description / html_description /
+    backpage_description, and scanning only it missed "Das lachende
+    Pferd", whose sole marker ("Bilderbuch") sits in
+    ``backpage_description`` while ``html_description`` wins the
+    resolution (#839).
     """
     genre = getattr(book, "genre", None)
     if genre and genre.strip():
@@ -124,7 +179,9 @@ def _resolve_genre_key(book: Any, bisac_codes: list[str], description_text: str)
     if any(code.upper().startswith(_JUVENILE_BISAC_PREFIX) for code in bisac_codes):
         return _JUVENILE_GENRE_KEY
     if _looks_like_juvenile_text(
-        getattr(book, "title", None), getattr(book, "subtitle", None), description_text
+        getattr(book, "title", None),
+        getattr(book, "subtitle", None),
+        *(_to_plain_text(getattr(book, attr, None)) for attr in _DESCRIPTION_FIELDS),
     ):
         return _JUVENILE_GENRE_KEY
     return None
@@ -146,9 +203,7 @@ def build_book_context(book: Any) -> BookContext:
     """
     bisac_codes = _decode_json_list(getattr(book, "bisac_codes", None))
     description_text = _first_non_empty(
-        getattr(book, "description", None),
-        getattr(book, "html_description", None),
-        getattr(book, "backpage_description", None),
+        *(getattr(book, attr, None) for attr in _DESCRIPTION_FIELDS)
     )
     return BookContext(
         book_id=book.id,
@@ -157,7 +212,7 @@ def build_book_context(book: Any) -> BookContext:
         author=getattr(book, "author", None),
         language=getattr(book, "language", "en") or "en",
         description_text=description_text,
-        genre_key=_resolve_genre_key(book, bisac_codes, description_text),
+        genre_key=_resolve_genre_key(book, bisac_codes),
         bisac_codes=bisac_codes,
         categories=_decode_json_list(getattr(book, "categories", None)),
         keywords=_decode_json_list(getattr(book, "keywords", None)),
