@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
+import pytest
 from bibliogon_aplus.book_context import build_book_context, find_missing_fields
 
 
@@ -122,6 +123,55 @@ class TestBuildBookContext:
     def test_genre_key_text_marker_does_not_false_positive_on_unrelated_prose(self) -> None:
         context = build_book_context(_book(genre=None, bisac_codes=None))
         assert context.genre_key is None
+
+    def test_marker_in_backpage_description_is_found_even_when_another_field_wins(self) -> None:
+        """#839: the heuristic used to scan only the description field
+        build_book_context picks for the prompt (the FIRST non-empty).
+        The real "Das lachende Pferd" has html_description winning while
+        its only marker, "Bilderbuch", sits in backpage_description."""
+        book = _book(
+            title="Das lachende Pferd",
+            genre=None,
+            bisac_codes=None,
+            book_type="prose",
+            description=None,
+            html_description="<p>Eine griechische Geschichte voller Humor.</p>",
+            backpage_description="<p>Dieses urkomische Bilderbuch waermt das Herz.</p>",
+        )
+        context = build_book_context(book)
+        assert context.genre_key == "kinderbuch"
+        # The prompt still gets the html_description, unchanged.
+        assert "griechische" in context.description_text
+
+    @pytest.mark.parametrize(
+        ("language", "text"),
+        [
+            ("es", "Serie de cuentos infantiles sobre Fips, el pequeno zorro."),
+            ("es", "Este album ilustrado contiene cuatro historias."),
+            ("fr", "Serie de livres pour enfants autour de Fips, le petit renard."),
+            ("fr", "Une histoire grecque pour enfants, drole et attendrissante."),
+            ("de", "Eine griechische Geschichte fuer Kinder."),
+            ("en", "A Greek tale for kids, funny and heartwarming."),
+        ],
+    )
+    def test_real_catalog_phrasings_are_recognised(self, language: str, text: str) -> None:
+        """#839: the Spanish and French marker lists were full phrases
+        ("libro infantil", "livre pour enfants") that the actual blurbs
+        never use. These strings come from the live catalog."""
+        book = _book(
+            language=language, genre=None, bisac_codes=None, book_type="prose", description=text
+        )
+        assert build_book_context(book).genre_key == "kinderbuch"
+
+    def test_ordinary_adult_prose_is_still_not_a_children_book(self) -> None:
+        for text in (
+            "Ein philosophischer Roman ueber Bewusstsein und Zeit.",
+            "A novel about sovereignty, power and the state.",
+            "Una novela sobre la conciencia y el tiempo.",
+            "Un roman sur la conscience et le temps.",
+        ):
+            book = _book(genre=None, bisac_codes=None, book_type="prose", description=text)
+            assert build_book_context(book).genre_key is None, text
 
     def test_explicit_genre_field_wins_over_the_picture_book_type_fallback(self) -> None:
         book = _book(genre="scifi", bisac_codes=None, book_type="picture_book")
