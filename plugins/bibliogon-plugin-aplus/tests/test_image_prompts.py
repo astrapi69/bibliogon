@@ -7,8 +7,13 @@ the output without touching this module.
 
 from __future__ import annotations
 
-from bibliogon_aplus.image_prompts import build_style_context
+from bibliogon_aplus.image_prompts import (
+    build_style_context,
+    render_image_prompt,
+    with_rendered_prompts,
+)
 from bibliogon_aplus.rules import get_ruleset
+from bibliogon_aplus.schema import AplusImage
 
 RULES = get_ruleset()
 
@@ -51,25 +56,99 @@ class TestUnknownGenreFallsBackToDefault:
         assert "friendly illustration" not in context.header.style_flags
 
 
-class TestPromptRendering:
-    def test_prompt_is_comma_separated_and_keyword_based(self) -> None:
-        context = build_style_context(genre_key=None, rules=RULES)
-        prompt = context.header.render_prompt(["reader at a desk", "morning light"])
-        assert "reader at a desk" in prompt
-        assert "morning light" in prompt
-        assert "," in prompt
+class TestRenderedPrompt:
+    """``rendered`` is a derivation of the persisted parts, in the form
+    approved for #865: ``<prompt> --ar <aspect_ratio> <style_flags>``.
+    It is computed for every response and never stored, so a change
+    to the form or to the ruleset's flags never leaves a stale string
+    behind."""
 
-    def test_prompt_never_contains_literal_text_instruction(self) -> None:
-        """The prompt itself must never ask for rendered text in the
-        image - the A+ text modules carry the copy, not the artwork."""
-        context = build_style_context(genre_key=None, rules=RULES)
-        prompt = context.header.render_prompt(["a cozy reading nook"])
-        assert "no text overlay" in prompt
+    def test_rendered_joins_prompt_ratio_and_flags(self) -> None:
+        image = AplusImage(
+            prompt="reader at a desk, morning light",
+            aspect_ratio="97:60",
+            size="970x600",
+            style_flags=["photorealistic", "editorial", "no text overlay"],
+        )
+        assert render_image_prompt(image) == (
+            "reader at a desk, morning light --ar 97:60 photorealistic editorial no text overlay"
+        )
 
-    def test_target_size_is_not_baked_into_the_prompt_string(self) -> None:
+    def test_an_empty_prompt_renders_as_empty(self) -> None:
+        image = AplusImage(prompt="", aspect_ratio="1:1", size="300x300", style_flags=["x"])
+        assert render_image_prompt(image) == ""
+
+    def test_a_whitespace_only_prompt_renders_as_empty(self) -> None:
+        image = AplusImage(prompt="   ", aspect_ratio="1:1", size="300x300", style_flags=["x"])
+        assert render_image_prompt(image) == ""
+
+    def test_a_missing_aspect_ratio_leaves_no_dangling_ar_flag(self) -> None:
+        """A ruleset without a slot's aspect ratio (build_style_context
+        falls back to "") must not render "--ar " with nothing after it."""
+        image = AplusImage(prompt="a fox", aspect_ratio="", size="", style_flags=["warm colors"])
+        assert render_image_prompt(image) == "a fox warm colors"
+
+    def test_target_size_is_not_baked_into_the_rendered_string(self) -> None:
         """Pixel sizes are metadata for the UI/production step, not
-        part of the keyword prompt itself - an image generator prompt
-        with a literal '970x600' in it is noise."""
-        context = build_style_context(genre_key=None, rules=RULES)
-        prompt = context.header.render_prompt(["a cozy reading nook"])
-        assert "970x600" not in prompt
+        part of the prompt - a literal '970x600' in it is noise."""
+        image = AplusImage(prompt="a cozy reading nook", aspect_ratio="97:60", size="970x600")
+        assert "970x600" not in render_image_prompt(image)
+
+    def test_style_context_builds_an_image_with_the_slot_parameters(self) -> None:
+        context = build_style_context(genre_key="kinderbuch", rules=RULES)
+        image = context.three_images.image("a fox cub in a meadow")
+        assert image.prompt == "a fox cub in a meadow"
+        assert image.aspect_ratio == "1:1"
+        assert image.size == "300x300"
+        assert "friendly illustration" in image.style_flags
+        assert "rendered" not in image.model_dump()
+
+
+class TestWithRenderedPrompts:
+    def test_adds_rendered_to_the_header_and_every_tile(self) -> None:
+        payload = {
+            "module_header": {
+                "image": {
+                    "prompt": "p",
+                    "aspect_ratio": "97:60",
+                    "size": "970x600",
+                    "style_flags": ["a"],
+                }
+            },
+            "module_three_images": [
+                {
+                    "image": {
+                        "prompt": "q",
+                        "aspect_ratio": "1:1",
+                        "size": "300x300",
+                        "style_flags": [],
+                    }
+                },
+                {
+                    "image": {
+                        "prompt": "",
+                        "aspect_ratio": "1:1",
+                        "size": "300x300",
+                        "style_flags": ["b"],
+                    }
+                },
+            ],
+        }
+        out = with_rendered_prompts(payload)
+        assert out["module_header"]["image"]["rendered"] == "p --ar 97:60 a"
+        assert out["module_three_images"][0]["image"]["rendered"] == "q --ar 1:1"
+        assert out["module_three_images"][1]["image"]["rendered"] == ""
+
+    def test_does_not_mutate_the_stored_dict(self) -> None:
+        payload = {
+            "module_header": {
+                "image": {"prompt": "p", "aspect_ratio": "1:1", "size": "", "style_flags": []}
+            }
+        }
+        with_rendered_prompts(payload)
+        assert "rendered" not in payload["module_header"]["image"]
+
+    def test_tolerates_a_package_without_image_blocks(self) -> None:
+        """Rows cached under ruleset version 2 predate the image block."""
+        payload = {"module_header": {"image_prompt": "x"}, "module_three_images": [{"title": "t"}]}
+        assert with_rendered_prompts(payload) == payload

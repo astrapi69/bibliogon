@@ -10,9 +10,10 @@ from __future__ import annotations
 
 import asyncio
 
+import yaml
 from bibliogon_aplus.book_context import BookContext
 from bibliogon_aplus.generator import compute_source_hash, generate_package
-from bibliogon_aplus.rules import get_ruleset
+from bibliogon_aplus.rules import RULESET_PATH, get_ruleset, load_ruleset
 
 RULES = get_ruleset()
 
@@ -184,3 +185,127 @@ class TestComputeSourceHash:
         first = compute_source_hash(_context(), "1")
         second = compute_source_hash(_context(), "2")
         assert first != second
+
+
+class TestImageStyleIsAppliedToThePackage:
+    """#865: the builder in image_prompts.py existed but nothing called
+    it, so no generated package ever carried the ruleset's image
+    parameters. These pin the wiring at the generator level; the
+    endpoint tests in backend/tests pin it at the response level."""
+
+    def test_header_and_tiles_get_their_slot_parameters_from_the_ruleset(self) -> None:
+        package = _run(
+            generate_package(
+                _context(), language="en", rules=RULES, client=_FakeClient([GOOD_YAML])
+            )
+        )
+        header = package.module_header.image
+        assert header.prompt == "cinematic, warm lighting"
+        assert header.aspect_ratio == RULES.image_style.aspect_ratios["module_header"] == "97:60"
+        assert header.size == RULES.image_style.target_pixel_sizes["module_header"] == "970x600"
+        for tile in package.module_three_images:
+            assert tile.image.prompt == "minimalist, flat colors"
+            assert tile.image.aspect_ratio == "1:1"
+            assert tile.image.size == "300x300"
+
+    def test_a_book_without_a_genre_gets_the_default_flags(self) -> None:
+        package = _run(
+            generate_package(
+                _context(), language="en", rules=RULES, client=_FakeClient([GOOD_YAML])
+            )
+        )
+        assert package.module_header.image.style_flags == list(
+            RULES.image_style.default_style_flags
+        )
+
+    def test_a_kinderbuch_gets_the_kinderbuch_flags_on_every_image(self) -> None:
+        package = _run(
+            generate_package(
+                _context(genre_key="kinderbuch"),
+                language="en",
+                rules=RULES,
+                client=_FakeClient([GOOD_YAML]),
+            )
+        )
+        expected = list(RULES.image_style.genre_style_flags["kinderbuch"])
+        assert package.module_header.image.style_flags == expected
+        assert [tile.image.style_flags for tile in package.module_three_images] == [expected] * 3
+        assert "friendly illustration" in expected
+
+    def test_the_persisted_package_has_no_rendered_string(self) -> None:
+        package = _run(
+            generate_package(
+                _context(), language="en", rules=RULES, client=_FakeClient([GOOD_YAML])
+            )
+        )
+        assert "rendered" not in package.model_dump_json()
+
+
+class TestImageParametersComeFromTheRuleset:
+    """The rule for #865 is "all values from the ruleset, nothing
+    hardcoded". Asserting the vendored values alone cannot prove that -
+    a Python literal equal to the YAML would pass. So this loads a
+    ruleset with DIFFERENT values and expects them in the package."""
+
+    def _custom_rules(self, tmp_path):
+        raw = yaml.safe_load(RULESET_PATH.read_text(encoding="utf-8"))
+        raw["image_style"]["aspect_ratios"] = {"module_header": "4:3", "module_three_images": "2:1"}
+        raw["image_style"]["target_pixel_sizes"] = {
+            "module_header": "400x300",
+            "module_three_images": "200x100",
+        }
+        raw["image_style"]["default"]["style_flags"] = ["custom-default"]
+        raw["image_style"]["genres"]["kinderbuch"]["style_flags"] = ["custom-kinderbuch"]
+        path = tmp_path / "ruleset.yaml"
+        path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+        return load_ruleset(path)
+
+    def test_default_slot_values_follow_the_loaded_ruleset(self, tmp_path) -> None:
+        rules = self._custom_rules(tmp_path)
+        package = _run(
+            generate_package(
+                _context(), language="en", rules=rules, client=_FakeClient([GOOD_YAML])
+            )
+        )
+        header = package.module_header.image
+        assert (header.aspect_ratio, header.size, header.style_flags) == (
+            "4:3",
+            "400x300",
+            ["custom-default"],
+        )
+        for tile in package.module_three_images:
+            assert (tile.image.aspect_ratio, tile.image.size) == ("2:1", "200x100")
+            assert tile.image.style_flags == ["custom-default"]
+
+    def test_kinderbuch_flags_follow_the_loaded_ruleset(self, tmp_path) -> None:
+        rules = self._custom_rules(tmp_path)
+        package = _run(
+            generate_package(
+                _context(genre_key="kinderbuch"),
+                language="en",
+                rules=rules,
+                client=_FakeClient([GOOD_YAML]),
+            )
+        )
+        assert package.module_header.image.style_flags == ["custom-kinderbuch"]
+
+
+class TestBrokenImagePromptShapes:
+    """A partially broken reply must not leak "None" or whitespace into
+    the prompt that later becomes the copy-and-paste string."""
+
+    def test_a_bare_image_prompt_key_becomes_an_empty_prompt(self) -> None:
+        broken = GOOD_YAML.replace(
+            "  image_prompt: cinematic, warm lighting\n", "  image_prompt:\n"
+        )
+        package = _run(
+            generate_package(_context(), language="en", rules=RULES, client=_FakeClient([broken]))
+        )
+        assert package.module_header.image.prompt == ""
+
+    def test_a_whitespace_only_image_prompt_becomes_an_empty_prompt(self) -> None:
+        broken = GOOD_YAML.replace("image_prompt: minimalist, flat colors", 'image_prompt: "   "')
+        package = _run(
+            generate_package(_context(), language="en", rules=RULES, client=_FakeClient([broken]))
+        )
+        assert [tile.image.prompt for tile in package.module_three_images] == ["", "", ""]

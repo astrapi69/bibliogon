@@ -10,7 +10,14 @@ from __future__ import annotations
 
 import pytest
 from bibliogon_aplus.rules import get_ruleset
-from bibliogon_aplus.schema import AplusMeta, AplusPackage, Bullet, ModuleHeader, ThreeImageEntry
+from bibliogon_aplus.schema import (
+    AplusImage,
+    AplusMeta,
+    AplusPackage,
+    Bullet,
+    ModuleHeader,
+    ThreeImageEntry,
+)
 from bibliogon_aplus.validation import validate_package
 
 RULES = get_ruleset()
@@ -46,19 +53,19 @@ def _package(
             ThreeImageEntry(
                 title="Concept one",
                 text="A supporting idea from the book.",
-                image_prompt="minimalist, flat colors",
+                image=AplusImage(prompt="minimalist, flat colors"),
                 alt_text="Icon representing concept one",
             ),
             ThreeImageEntry(
                 title="Concept two",
                 text="Another supporting idea.",
-                image_prompt="minimalist, flat colors",
+                image=AplusImage(prompt="minimalist, flat colors"),
                 alt_text="Icon representing concept two",
             ),
             ThreeImageEntry(
                 title="Concept three",
                 text="A final supporting idea.",
-                image_prompt="minimalist, flat colors",
+                image=AplusImage(prompt="minimalist, flat colors"),
                 alt_text="Icon representing concept three",
             ),
         ]
@@ -68,7 +75,7 @@ def _package(
         module_header=ModuleHeader(
             title="Overview",
             text=header_text,
-            image_prompt=header_prompt,
+            image=AplusImage(prompt=header_prompt),
             alt_text=header_alt,
         ),
         module_three_images=three_images,
@@ -406,7 +413,9 @@ class TestStructuralCounts:
     def test_fewer_than_three_image_entries_is_an_error(self) -> None:
         pkg = _package(
             three_images=[
-                ThreeImageEntry(title="One", text="Text", image_prompt="p", alt_text="a"),
+                ThreeImageEntry(
+                    title="One", text="Text", image=AplusImage(prompt="p"), alt_text="a"
+                ),
             ]
         )
         findings = validate_package(pkg, language="en", genre_key=None, rules=RULES)

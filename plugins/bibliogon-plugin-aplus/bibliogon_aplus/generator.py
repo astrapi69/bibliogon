@@ -24,6 +24,7 @@ from typing import Any, Protocol
 import yaml
 
 from bibliogon_aplus.book_context import BookContext
+from bibliogon_aplus.image_prompts import AplusImageStyleContext, build_style_context
 from bibliogon_aplus.prompts import build_system_prompt, build_user_prompt
 from bibliogon_aplus.rules import Ruleset
 from bibliogon_aplus.schema import (
@@ -97,10 +98,30 @@ def _parse_ai_yaml_fragment(text: str) -> dict[str, Any]:
     return parsed if isinstance(parsed, dict) else {}
 
 
-def _build_draft_package(parsed: dict[str, Any], meta: AplusMeta) -> AplusPackage:
+def _prompt_text(raw: Any) -> str:
+    """The model's image keywords as a clean string.
+
+    A bare ``image_prompt:`` line parses to None and must not become
+    the literal prompt "None"; whitespace-only is no prompt either.
+    Both collapse to "", which ``render_image_prompt`` renders as "".
+    """
+    if raw is None:
+        return ""
+    return str(raw).strip()
+
+
+def _build_draft_package(
+    parsed: dict[str, Any], meta: AplusMeta, styles: AplusImageStyleContext
+) -> AplusPackage:
     """Tolerant construction: any missing key becomes an empty
     string/list rather than raising, so a partially-broken AI
-    response still produces a draft the validator can report on."""
+    response still produces a draft the validator can report on.
+
+    The model supplies only the keyword prompt per image
+    (``image_prompt`` in its YAML); aspect ratio, size and style flags
+    come from ``styles`` - the ruleset resolved for the book's genre -
+    so the same prompt gets the Kinderbuch illustration style on a
+    children's book and the default style elsewhere (#865)."""
     bullets_raw = parsed.get("bullets")
     bullets = (
         [
@@ -116,7 +137,7 @@ def _build_draft_package(parsed: dict[str, Any], meta: AplusMeta) -> AplusPackag
     header = ModuleHeader(
         title=str(header_raw.get("title", "")),
         text=str(header_raw.get("text", "")),
-        image_prompt=str(header_raw.get("image_prompt", "")),
+        image=styles.header.image(_prompt_text(header_raw.get("image_prompt"))),
         alt_text=str(header_raw.get("alt_text", "")),
     )
 
@@ -126,7 +147,7 @@ def _build_draft_package(parsed: dict[str, Any], meta: AplusMeta) -> AplusPackag
             ThreeImageEntry(
                 title=str(entry.get("title", "")),
                 text=str(entry.get("text", "")),
-                image_prompt=str(entry.get("image_prompt", "")),
+                image=styles.three_images.image(_prompt_text(entry.get("image_prompt"))),
                 alt_text=str(entry.get("alt_text", "")),
             )
             for entry in images_raw
@@ -170,6 +191,7 @@ async def generate_package(
         which the route maps to ``ExternalServiceError``).
     """
     genre_key = context.genre_key
+    styles = build_style_context(genre_key=genre_key, rules=rules)
     prior_findings: list[ValidationFinding] | None = None
     draft = AplusPackage(
         meta=AplusMeta(
@@ -201,7 +223,7 @@ async def generate_package(
             ruleset_version=rules.version,
             generated_at=datetime.now(UTC).isoformat(),
         )
-        draft = _build_draft_package(parsed, meta)
+        draft = _build_draft_package(parsed, meta, styles)
         findings = validate_package(draft, language=language, genre_key=genre_key, rules=rules)
         draft.validation.extend(findings)
 

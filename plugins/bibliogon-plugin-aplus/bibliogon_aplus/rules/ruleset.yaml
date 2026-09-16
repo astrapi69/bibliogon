@@ -10,7 +10,7 @@
 # keys as the existing ones. Adding a genre-style override: add an
 # entry under `image_style.genres`.
 
-version: "2"
+version: "3"
 
 schema_limits:
   short_description: 300
