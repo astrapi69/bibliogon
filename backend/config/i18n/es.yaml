@@ -3492,6 +3492,9 @@ ui:
     title: "Versión de vista previa/prueba"
     message: "Estás usando una versión de vista previa/prueba. No es estable y puede contener errores."
   about:
+    imprint_link: "Aviso legal"
+    privacy_link: "Política de privacidad"
+    legal_label: "Información legal"
     next_check: "Próxima comprobación automática: {time}"
     next_check_disabled: "Comprobación automática desactivada"
     heading: "Acerca de Bibliogon"

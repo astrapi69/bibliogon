@@ -41,6 +41,7 @@ import BackendUnreachableBanner from "./components/shared/BackendUnreachableBann
 import PreviewBanner from "./components/preview/PreviewBanner";
 import AppUpdateBanner from "./components/shared/AppUpdateBanner";
 import AppVersionUpdateBanner from "./components/shared/AppVersionUpdateBanner";
+import { LegalFooter } from "./components/shared/LegalFooter";
 import { ReleaseBannerProvider } from "./components/shared/update-banner/ReleaseBannerContext";
 import SyncStatusWatcher from "./components/import/SyncStatusWatcher";
 import SkipToContentLink from "./components/shared/SkipToContentLink";
@@ -340,6 +341,8 @@ export default function App() {
                                                     />
                                                 </Routes>
                                             </Suspense>
+                                            {/* #876: Impressum + Datenschutz, one click from every route. */}
+                                            <LegalFooter />
                                             <EventRecorderSetup />
                                             <AudioExportGate />
                                             <MediumImportGate />

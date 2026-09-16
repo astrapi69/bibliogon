@@ -197,6 +197,10 @@ export default defineConfig({
         // SPA navigation fallback lives under the deploy base so deep
         // routes resolve to the right index.html on a sub-path host.
         navigateFallback: `${base}index.html`,
+        // The static legal pages (#876) are real files next to index.html.
+        // Without this, an active service worker answers a navigation to
+        // /impressum.html with the SPA shell and the page never shows.
+        navigateFallbackDenylist: [/\/(impressum|datenschutz|imprint|privacy)\.html$/],
         // clientsClaim so the activated worker takes control immediately
         // once the user applies the update (via the SKIP_WAITING message).
         // skipWaiting is deliberately OMITTED: with registerType "prompt" the

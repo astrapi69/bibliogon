@@ -3679,6 +3679,9 @@
       "message": "Bir önizleme/test sürümü kullanıyorsunuz. Kararlı değildir ve hatalar içerebilir."
     },
     "about": {
+      "imprint_link": "Künye",
+      "privacy_link": "Gizlilik politikası",
+      "legal_label": "Yasal bilgiler",
       "next_check": "Sonraki otomatik kontrol: {time}",
       "next_check_disabled": "Otomatik kontrol devre dışı",
       "heading": "Bibliogon Hakkında",

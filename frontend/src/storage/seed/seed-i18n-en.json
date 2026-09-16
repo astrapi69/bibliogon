@@ -3679,6 +3679,9 @@
       "message": "You are using a preview/test version. It is not stable and may contain bugs."
     },
     "about": {
+      "imprint_link": "Legal notice",
+      "privacy_link": "Privacy policy",
+      "legal_label": "Legal",
       "next_check": "Next automatic check: {time}",
       "next_check_disabled": "Automatic check disabled",
       "heading": "About Bibliogon",

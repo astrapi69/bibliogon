@@ -5,6 +5,17 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 ## [Unreleased]
 
 ### Added
+- **Impressum + Datenschutzerklärung scaffold for the web app (#876).**
+  Four static pages next to the SPA (`impressum.html`, `datenschutz.html`,
+  `imprint.html`, `privacy.html`), a footer with both links under every
+  route (language-aware, hidden in composition mode), the same links in
+  Settings > About, and a `navigateFallbackDenylist` so an active
+  service worker cannot answer those URLs with the app shell. Name and
+  address filled in; email and VAT id are visibly marked placeholders,
+  and the privacy pages carry a draft notice until the legal review.
+  Guarded by `e2e/static-smoke/legal-pages.spec.ts` (direct open,
+  reload, no app root, sibling links, footer navigation, denylist in
+  the built `sw.js`).
 - **Third-party host guard for the GitHub Pages build (#874).** An
   inventory of the built PWA found no resource loaded from a third
   party (fonts self-hosted, no analytics, no preconnects, service-worker

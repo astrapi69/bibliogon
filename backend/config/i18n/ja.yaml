@@ -3492,6 +3492,9 @@ ui:
     title: "プレビュー/テスト版"
     message: "プレビュー/テスト版を使用しています。安定しておらず、不具合が含まれる可能性があります。"
   about:
+    imprint_link: "運営者情報"
+    privacy_link: "プライバシーポリシー"
+    legal_label: "法的情報"
     next_check: "次回の自動確認: {time}"
     next_check_disabled: "自動確認は無効です"
     heading: "Bibliogon について"
