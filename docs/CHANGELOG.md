@@ -5,6 +5,20 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 ## [Unreleased]
 
 ### Added
+- **Third-party host guard for the GitHub Pages build (#874).** An
+  inventory of the built PWA found no resource loaded from a third
+  party (fonts self-hosted, no analytics, no preconnects, service-worker
+  precache same-origin only). The one automatic third-party request is
+  the GitHub Releases update check on app start (default on, daily,
+  off via Settings > Verhalten); everything else is a user click or a
+  user-started import/export. `scripts/check_external_hosts.py` now
+  scans the artifact for stylesheets, scripts, images, media, CSS
+  `url()`, service-worker `importScripts`/precache entries and manifest
+  icons pointing at another host and blocks the Pages deploy on a hit;
+  the same scan runs over the frontend sources in the PR gate, and
+  `e2e/static-smoke/external-hosts.spec.ts` records every request the
+  built app fires and fails on any third-party host. Allowlists start
+  empty and require a written reason per entry.
 - **A+ Content generator (plugin-aplus, backend only).** `POST
   /api/aplus/{book_id}/generate` builds an Amazon A+ package (short
   description, three bullets, header + three-image modules with alt
