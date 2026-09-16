@@ -4,7 +4,7 @@
  * only i18n (t returns the fallback so {time} substitution is observable).
  */
 
-import { describe, it, expect, vi } from "vitest";
+import { beforeEach, describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 
 import { NextUpdateCheck } from "./NextUpdateCheck";
@@ -16,6 +16,39 @@ vi.mock("../../hooks/useI18n", () => ({
     setLang: vi.fn(),
   }),
 }));
+
+const build = vi.hoisted(() => ({ backendless: false }));
+vi.mock("../../api/apiBase", () => ({
+  isBackendlessOffline: () => build.backendless,
+}));
+
+beforeEach(() => {
+  build.backendless = false;
+});
+
+describe("NextUpdateCheck on the web app (#881)", () => {
+  it("shows the disabled note for a seeded web-app profile", () => {
+    build.backendless = true;
+    render(<NextUpdateCheck updates={{ auto_check: true, check_interval: "daily" }} />);
+    expect(screen.getByTestId("about-next-check").textContent).toContain(
+      "Automatische Prüfung deaktiviert",
+    );
+    build.backendless = false;
+  });
+
+  it("shows the next check once the web-app check is switched on", () => {
+    build.backendless = true;
+    render(
+      <NextUpdateCheck
+        updates={{ web_auto_check: true, check_interval: "weekly", last_check_at: null }}
+      />,
+    );
+    expect(screen.getByTestId("about-next-check").textContent).not.toContain(
+      "deaktiviert",
+    );
+    build.backendless = false;
+  });
+});
 
 describe("NextUpdateCheck", () => {
   it("shows the disabled note when auto-check is off", () => {

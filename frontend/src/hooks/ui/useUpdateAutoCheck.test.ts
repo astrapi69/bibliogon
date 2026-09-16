@@ -22,6 +22,11 @@ vi.mock("../../storage", () => ({
   }),
 }));
 
+const build = vi.hoisted(() => ({ backendless: false }));
+vi.mock("../../api/apiBase", () => ({
+  isBackendlessOffline: () => build.backendless,
+}));
+
 const mockCheckForUpdate = vi.fn();
 vi.mock("../../lib/utils/updateChecker", async () => {
   const actual = await vi.importActual<
@@ -43,6 +48,7 @@ const UPDATE_RESULT = {
 };
 
 beforeEach(() => {
+  build.backendless = false;
   mockGetApp.mockReset();
   mockUpdateApp.mockReset().mockResolvedValue({});
   mockCheckForUpdate.mockReset().mockResolvedValue(UPDATE_RESULT);
@@ -151,5 +157,45 @@ describe("useUpdateAutoCheck", () => {
         ),
       ).toBe(true),
     );
+  });
+});
+
+describe("useUpdateAutoCheck on the web app (#881)", () => {
+  it("makes no request with the settings every web-app profile is seeded with", async () => {
+    build.backendless = true;
+    mockGetApp.mockResolvedValue(
+      appConfig({ auto_check: true, check_interval: "daily", last_check_at: null }),
+    );
+    renderHook(() => useUpdateAutoCheck());
+    await waitFor(() => expect(mockGetApp).toHaveBeenCalled());
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(mockCheckForUpdate).not.toHaveBeenCalled();
+    expect(mockUpdateApp).not.toHaveBeenCalled();
+  });
+
+  it("checks once the user switched the web-app check on", async () => {
+    build.backendless = true;
+    mockGetApp.mockResolvedValue(
+      appConfig({
+        auto_check: true,
+        web_auto_check: true,
+        check_interval: "daily",
+        last_check_at: null,
+      }),
+    );
+    const { result } = renderHook(() => useUpdateAutoCheck());
+    await waitFor(() => expect(mockCheckForUpdate).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(result.current.pending?.latestVersion).toBe("v9.9.9"));
+  });
+
+  it("still honours 'never' when switched on", async () => {
+    build.backendless = true;
+    mockGetApp.mockResolvedValue(
+      appConfig({ web_auto_check: true, check_interval: "never", last_check_at: null }),
+    );
+    renderHook(() => useUpdateAutoCheck());
+    await waitFor(() => expect(mockGetApp).toHaveBeenCalled());
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(mockCheckForUpdate).not.toHaveBeenCalled();
   });
 });

@@ -17,6 +17,8 @@ import {HelpText} from "./HelpText";
 import {SectionHeader} from "./SectionHeader";
 import {Toggle} from "./Toggle";
 import {useSettingsAutoSave} from "./useSettingsAutoSave";
+import {isBackendlessOffline} from "../../api/apiBase";
+import {autoCheckSettingKey, isAutoCheckEnabled} from "../../lib/utils/updateChecker";
 
 export function VerhaltenSettings({config, onSave}: {
     config: Record<string, unknown>;
@@ -65,8 +67,11 @@ export function VerhaltenSettings({config, onSave}: {
     // export pipeline already forces the client engine offline regardless of
     // the stored preference.
     const pandocExport = useFeature(FEATURES.PANDOC_EXPORT);
-    // #477 Phase 2: auto-update-check preferences.
-    const [autoCheck, setAutoCheck] = useState(updates.auto_check !== false);
+    // #477 Phase 2: auto-update-check preferences. #881: the web app owns
+    // its own key and is off by default (see isAutoCheckEnabled).
+    const isWebBuild = isBackendlessOffline();
+    const autoCheckKey = autoCheckSettingKey(isWebBuild);
+    const [autoCheck, setAutoCheck] = useState(isAutoCheckEnabled(updates, isWebBuild));
     const [checkInterval, setCheckInterval] = useState(
         (updates.check_interval as string) || "daily",
     );
@@ -96,7 +101,7 @@ export function VerhaltenSettings({config, onSave}: {
         setSkipNonDestructive(Boolean(b.skip_non_destructive_confirmations));
         setExportEngine(asExportEngine(b.export_engine));
         const u = (config.updates || {}) as Record<string, unknown>;
-        setAutoCheck(u.auto_check !== false);
+        setAutoCheck(isAutoCheckEnabled(u, isWebBuild));
         setCheckInterval((u.check_interval as string) || "daily");
         const uiBranch = (config.ui || {}) as Record<string, unknown>;
         const d = (uiBranch.defaults || {}) as Record<string, unknown>;
@@ -149,7 +154,7 @@ export function VerhaltenSettings({config, onSave}: {
         // are owned by this panel.
         updates: {
             ...updates,
-            auto_check: autoCheck,
+            [autoCheckKey]: autoCheck,
             check_interval: checkInterval,
         },
         // Preserve other ui.* branches (picture_book, dashboard, ...)
@@ -206,10 +211,15 @@ export function VerhaltenSettings({config, onSave}: {
                         checked={autoCheck}
                         onChange={onEdit(setAutoCheck)}
                         testId="settings-auto-check"
-                        description={t(
-                            "ui.settings.auto_check_hint",
-                            "Prüft im Hintergrund auf neue Versionen.",
-                        )}
+                        description={isWebBuild
+                            ? t(
+                                "ui.settings.auto_check_hint_web",
+                                "Fragt bei GitHub (api.github.com) nach neuen Versionen. In der Web-App standardmäßig aus: Updates kommen hier über den Service Worker.",
+                            )
+                            : t(
+                                "ui.settings.auto_check_hint",
+                                "Prüft im Hintergrund auf neue Versionen.",
+                            )}
                     />
                 </div>
                 {autoCheck && (

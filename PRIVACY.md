@@ -24,11 +24,14 @@ happen there.
   code reports usage anywhere. Licensing is validated offline
   (`backend/app/licensing.py`). Fonts, icons and scripts are shipped with
   the app; the page loads nothing from a CDN (guard: #874).
-- **On GitHub Pages, exactly one call happens without a user action:**
-  a GitHub Releases check on app start (section 2). It can be switched
-  off in Settings > Verhalten. Everything else leaves the device only
-  when the user starts an action that needs it: an AI request, a
-  translation, an import from a URL, a Git push.
+- **On GitHub Pages, no call to a third party happens without a user
+  action - except images of previously imported Medium articles (2.7).**
+  The GitHub Releases check (section 2) is off by default on the web app
+  (#881) and can be switched on in Settings > Verhalten. The runtime
+  capture in `e2e/static-smoke/external-hosts.spec.ts` measures this on
+  every static-smoke run for a fresh profile (no imported articles). Everything else leaves the
+  device only when the user starts an action that needs it: an AI
+  request, a translation, an import from a URL, a Git push.
 - **Manuscript text leaves the device only through features the user
   invokes with a service they configured**: an AI provider with their
   own key, DeepL with their own key, a LanguageTool server (the public
@@ -44,7 +47,7 @@ happen there.
 
 | # | Call | Deployment | When | What is sent | Off switch | Source |
 |---|---|---|---|---|---|---|
-| 2.1 | `GET https://api.github.com/repos/astrapi69/bibliogon/releases/latest` | web app **and** desktop | on app start, at most once per interval (default daily) | nothing beyond the request itself (IP, user agent); no token, no app data | Settings > Verhalten: automatic update check off, or interval "never" (`updates.auto_check`, `updates.check_interval`) | `frontend/src/hooks/ui/useUpdateAutoCheck.ts`, `frontend/src/lib/utils/updateChecker.ts` |
+| 2.1 | `GET https://api.github.com/repos/astrapi69/bibliogon/releases/latest` | **desktop** by default; web app **only after the user switches it on** (#881) | on app start, at most once per interval (default daily) | nothing beyond the request itself (IP, user agent); no token, no app data | desktop: Settings > Verhalten, automatic update check off or interval "never" (`updates.auto_check`); web app: off unless switched on there (`updates.web_auto_check`) | `frontend/src/hooks/ui/useUpdateAutoCheck.ts`, `frontend/src/lib/utils/updateChecker.ts` (`isAutoCheckEnabled`) |
 | 2.2 | Service-worker update check (`registration.update()`) | web app | on focus, on tab visibility, hourly | nothing; it re-fetches the app's own `sw.js` from the page's own origin | none (same origin, no third party) | `frontend/src/shared/utils/swUpdateManager.ts` |
 | 2.3 | Edge TTS voice list (`edge_tts.list_voices()`, Microsoft) | desktop | first backend start after install or after a data reset, when the voice table is empty | nothing beyond the request | none in the UI; does not run when `edge-tts` is not installed or the table is already filled; failure is logged and ignored | `backend/app/main.py` (lifespan), `backend/app/voice_store.py` |
 | 2.4 | AI provider health probe (`GET {base_url}/models`, Anthropic: `/messages` with a one-token "hi") | desktop | when the book editor loads (`GET /api/editor/plugin-status`), cached 30 s | the configured API key in the auth header; no text | `ai.enabled: false`; for Anthropic nothing is sent without a key | `backend/app/routes_admin.py`, `backend/app/ai/llm_client.py` |
@@ -178,15 +181,9 @@ it is tracked separately.
 
 ## 7. Open decisions
 
-- **2.1 on the web app.** The GitHub Releases check exists for the
-  desktop builds, which have no service worker. The web app gets its
-  updates through the service worker anyway. Keeping the check means
-  every visitor's IP reaches `api.github.com` once a day by default;
-  switching it off by default on the Pages build would leave the web
-  app with no automatic third-party request at all. Recorded in #874.
 - **2.7.** Imported Medium articles keep their CDN image URLs. Whether
   the importer should always store a local copy (and drop the remote
   URL) is a product question; today the browser importer caches the
   featured image and the desktop importer downloads images by default.
 
-Verified against `develop` at commit 453e4bf1 (2026-09-16).
+Verified against `develop` at commit 453e4bf1 (2026-09-16); 2.1 updated for #881.

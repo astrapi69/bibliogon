@@ -1067,6 +1067,7 @@
       "updates_description": "新しいバージョンを自動的に確認します。",
       "auto_check": "自動アップデート確認",
       "auto_check_hint": "バックグラウンドで新しいバージョンを確認します。",
+      "auto_check_hint_web": "GitHub (api.github.com) に新しいバージョンを問い合わせます。Web アプリでは既定でオフです。ここでは更新は Service Worker 経由で届きます。",
       "check_interval": "確認間隔",
       "interval_daily": "毎日",
       "interval_weekly": "毎週",
