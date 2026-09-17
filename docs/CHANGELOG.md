@@ -61,6 +61,17 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
   capture now runs with an empty allowlist plus a positive control that
   switches the check on and sees the request.
 
+### Security
+- **Web app: the GitHub token moves out of `localStorage` (#880).** The
+  optional personal access token of the GitHub import now lives in its
+  own IndexedDB database (`bibliogon-credentials`), outside every
+  backup; a token left in `localStorage` by an earlier version is moved
+  on first use and the old key removed. This is not encryption: a script
+  running on the origin can still read it. The token field now says so,
+  recommends a fine-grained token (selected repositories, `Contents:
+  Read-only`, an expiry date) with a link to GitHub, and has a delete
+  button. The danger-zone reset drops the credential database too.
+
 ## [0.60.0] - 2026-08-15
 
 The **boot-resilience + PWA-update-flow + release-automation**

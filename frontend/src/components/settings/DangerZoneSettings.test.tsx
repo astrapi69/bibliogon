@@ -24,6 +24,7 @@ const navigateMock = vi.fn();
 const notifySuccess = vi.fn();
 const notifyError = vi.fn();
 const dbDeleteMock = vi.fn(async () => undefined);
+const deleteCredentialStoreMock = vi.fn(async () => undefined);
 const resetOfflineDbMock = vi.fn(async () => undefined);
 const exportFullBackupMock = vi.fn(async () => new Blob(["{}"]));
 const downloadBlobMock = vi.fn();
@@ -69,6 +70,10 @@ vi.mock("../../utils/platform/notify", () => ({
 }));
 
 vi.mock("../../db/drafts", () => ({ db: { delete: () => dbDeleteMock() } }));
+
+vi.mock("../../import/credentials/githubToken", () => ({
+    deleteCredentialStore: () => deleteCredentialStoreMock(),
+}));
 
 vi.mock("../../api/client", async () => {
     const actual = await vi.importActual<typeof import("../../api/client")>("../../api/client");
@@ -195,6 +200,7 @@ describe("DangerZoneSettings", () => {
             expect(localStorage.getItem("bibliogon-theme")).toBeNull();
             expect(sessionStorage.getItem("scratch")).toBeNull();
             expect(dbDeleteMock).toHaveBeenCalled();
+            expect(deleteCredentialStoreMock).toHaveBeenCalled();
             expect(notifySuccess).toHaveBeenCalled();
             expect(navigateMock).toHaveBeenCalledWith("/");
         });
@@ -226,6 +232,7 @@ describe("DangerZoneSettings", () => {
         expect(api.system.reset).not.toHaveBeenCalled();
         await waitFor(() => {
             expect(localStorage.getItem("bibliogon-theme")).toBeNull();
+            expect(deleteCredentialStoreMock).toHaveBeenCalled();
             expect(navigateMock).toHaveBeenCalledWith("/");
         });
     });

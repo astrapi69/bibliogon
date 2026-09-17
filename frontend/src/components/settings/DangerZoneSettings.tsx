@@ -59,6 +59,7 @@ import { downloadBlob } from "../../export/download";
 import { bgbBackupFilename, exportBgbBackup, type BgbProgress } from "../../export/bgbExport";
 import { BgbExportProgress } from "./BgbExportProgress";
 import { db } from "../../db/drafts";
+import { deleteCredentialStore } from "../../import/credentials/githubToken";
 import styles from "../../pages/Settings.module.css";
 
 type DialogState = "idle" | "typing" | "submitting";
@@ -197,6 +198,11 @@ export function DangerZoneSettings() {
                 await db.delete();
             } catch (idbErr) {
                 console.warn("Failed to drop Dexie BibliogonDB after reset:", idbErr);
+            }
+            try {
+                await deleteCredentialStore();
+            } catch (credentialErr) {
+                console.warn("Failed to drop the credential store after reset:", credentialErr);
             }
             notify.success(
                 t("ui.settings.danger_zone.reset_complete", "Alle Daten wurden gelöscht."),

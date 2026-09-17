@@ -24,7 +24,7 @@ See [`frontend/src/modules/README.md`](../frontend/src/modules/README.md) and
 | **medium-import** | Medium HTML-export importer | `module-medium-import` | `medium-import/{clientImport,walker}.ts` | **Yes** (DOMParser + `fflate`) | `medium-import` |
 | **kinderbuch** | Picture-book layouts | `module-kinderbuch` | `lib/utils/{pageLayoutStyles,pageTextContent}.ts` + `components/LayoutPicker.tsx` | **Yes** (storage seam) | `picture-book` |
 | **comics** | Multi-panel comic pages | `module-comics` | `components/comics/{bubblePath,tailDerivation,bubbleTypeStyle}.ts` + `storage/dexie/comics.ts` | **Yes** (storage seam) | `comics` |
-| **git-sync** (import) | GitHub import | `module-git-sync` | `import/{githubImport,githubToken}.ts` (GitHub REST) | **Partial** — needs network | `github-import` |
+| **git-sync** (import) | GitHub import | `module-git-sync` | `import/githubImport.ts`, `import/credentials/githubToken.ts` (GitHub REST) | **Partial** — needs network | `github-import` |
 | **git-sync** (backup/push) | Git commit/push | `module-git-backup` | — | **No** — needs git binary | `git-sync` / `git-backup` |
 | **audiobook** | TTS audiobook export + editor read-aloud | `module-audiobook` | `lib/utils/webSpeech.ts` + `hooks/ui/useWebSpeechTts.ts` (read-aloud) | **Partial** - multi-engine audiobook export No (cloud/server); editor read-aloud **Yes** (browser-native Web Speech API, #666) | export `tts` (`DESKTOP_ONLY`); read-aloud active |
 | **story-bible** | Per-book fiction-entity DB | _(no module; storage seam)_ | `storage/dexie/story-bible.ts` + `hooks/useStoryBibleIntegration.ts` | **Partial** — CRUD offline; auto-detect / continuity-check need server | active (`story-bible`) |

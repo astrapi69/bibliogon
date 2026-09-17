@@ -144,7 +144,8 @@ request is made until the click.
 | IndexedDB `bibliogon-offline`, `assets` / `articleAssets` | image bytes for covers, figures and article images | offline display without a server | Settings > Daten > clear image cache (with a preview of what is there); reset |
 | IndexedDB `bibliogon-offline`, `eventLog` | the last 100 UI events (clicks, navigation, errors); never keystrokes or text; sensitive fields redacted | attached to a bug report only if the user opens one and opts in | Settings > Daten > clear event log; reset |
 | IndexedDB `bibliogon`, `drafts` | unsaved chapter content with a hash, purged after a successful save and after 30 days | crash recovery | reset (deletes the database); or the browser |
-| `localStorage` | storage-mode pin, theme, onboarding progress, donation-reminder dates, editor display preferences, view modes, daily word goal, job resume state, playback preferences, **an optional GitHub token in plain text** (`bibliogon.github_token`) | preferences and resume state | GitHub tab: clear the token field; reset clears all keys; or the browser |
+| IndexedDB `bibliogon-credentials`, `secrets` | **an optional GitHub token in plain text** (#880; earlier versions kept it in `localStorage` as `bibliogon.github_token`, moved and removed on the first read). Not part of any backup | sent to GitHub only, for the rate limit and private repositories | GitHub tab: delete token; reset deletes the database; or the browser |
+| `localStorage` | storage-mode pin, theme, onboarding progress, donation-reminder dates, editor display preferences, view modes, daily word goal, job resume state, playback preferences | preferences and resume state | reset clears all keys; or the browser |
 | `sessionStorage` | provider model lists (1 h), remote default branch per repo, a one-shot chunk-reload flag; never the key itself | avoid repeated requests within a session | closes with the tab; reset |
 | Service-worker cache | the app's own files (JS, CSS, HTML, fonts, icons) | offline start | browser: clear site data / unregister the service worker |
 | Cookies | **none** | | |
@@ -189,4 +190,4 @@ it is tracked separately.
   that runs the same download-and-rewrite on existing articles, reports
   what failed, and removes nothing without that report.
 
-Verified against `develop` at commit 453e4bf1 (2026-09-16); 2.1 updated for #881; 2.7 and 3.5 updated for #882.
+Verified against `develop` at commit 453e4bf1 (2026-09-16); 2.1 updated for #881; 2.7 and 3.5 updated for #882; storage table updated for #880.
