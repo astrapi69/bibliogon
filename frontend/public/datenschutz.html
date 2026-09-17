@@ -6,8 +6,8 @@
     <meta name="robots" content="noindex" />
     <title>Datenschutzerklärung · Bibliogon</title>
     <style>
-      :root { color-scheme: light dark; --bg: #fbf8f3; --fg: #2b2620; --muted: #6b6259; --accent: #7a4b1f; --line: #e2d9cc; --mark: #ffe9a8; }
-      @media (prefers-color-scheme: dark) { :root { --bg: #1e1b18; --fg: #ece5da; --muted: #a79d90; --accent: #d9a56a; --line: #3a342d; --mark: #5a4a1a; } }
+      :root { color-scheme: light dark; --bg: #fbf8f3; --fg: #2b2620; --muted: #6b6259; --accent: #7a4b1f; --line: #e2d9cc; }
+      @media (prefers-color-scheme: dark) { :root { --bg: #1e1b18; --fg: #ece5da; --muted: #a79d90; --accent: #d9a56a; --line: #3a342d; } }
       html { background: var(--bg); color: var(--fg); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
       body { margin: 0; }
       main { max-width: 44rem; margin: 0 auto; padding: 1.5rem 1.25rem 4rem; }
@@ -16,8 +16,6 @@
       nav a { display: inline-flex; min-height: 44px; align-items: center; }
       h1 { font-size: 1.75rem; line-height: 1.25; margin: 0 0 1rem; }
       h2 { font-size: 1.15rem; margin: 2rem 0 0.5rem; }
-      .draft { border: 1px solid var(--accent); border-radius: 6px; padding: 0.75rem 1rem; margin: 0 0 1.5rem; font-size: 0.95rem; }
-      mark { background: var(--mark); color: inherit; padding: 0 0.2em; }
       footer { border-top: 1px solid var(--line); margin-top: 3rem; padding-top: 1rem; font-size: 0.85rem; color: var(--muted); }
     </style>
   </head>
@@ -29,18 +27,18 @@
         <a href="./privacy.html" lang="en" data-testid="legal-link-lang">English</a>
       </nav>
       <h1>Datenschutzerklärung</h1>
-      <p class="draft" data-testid="legal-draft-notice"><strong>Entwurf.</strong> Diese Fassung beschreibt die Technik sachlich und ist noch nicht anwaltlich geprüft. Stand: <mark data-placeholder="date">[Datum der Veröffentlichung]</mark></p>
+      <p>Stand: 17. September 2026</p>
 
       <p>Diese Erklärung gilt für die öffentliche Web-Version von Bibliogon unter <code>astrapi69.github.io/bibliogon</code>. Wer Bibliogon selbst installiert (Desktop-Launcher oder Docker), betreibt die App auf dem eigenen Gerät; dann verarbeitet der Betreiber dieser Seiten keine Daten.</p>
 
       <h2>Verantwortlicher</h2>
-      <p>Asterios Raptis, Seestraße 68, 71638 Ludwigsburg, Deutschland<br />E-Mail: <mark data-placeholder="email">[E-Mail-Adresse wird noch eingetragen]</mark></p>
+      <p>Asterios Raptis, Seestraße 68, 71638 Ludwigsburg, Deutschland<br />E-Mail: <a href="mailto:asterios.raptis@web.de">asterios.raptis@web.de</a></p>
 
       <h2>Das Wichtigste in Kürze</h2>
       <ul>
         <li>Bibliogon hat keinen eigenen Server. Deine Bücher, Kapitel, Artikel, Einstellungen und API-Schlüssel liegen ausschließlich in deinem Browser (IndexedDB und localStorage). Der Betreiber sieht sie nicht.</li>
         <li>Die App setzt keine Cookies und nutzt keine Analyse- oder Tracking-Dienste. Schriften und Skripte sind mitgeliefert und werden nicht von Dritten geladen.</li>
-        <li>Beim Aufruf der Seiten verarbeitet GitHub als Hoster deine IP-Adresse. Ohne dein Zutun ruft die App außerdem einmal täglich bei GitHub ab, ob eine neue Version vorliegt; das lässt sich abschalten. Alles andere geht nur dann an Dritte, wenn du eine Funktion nutzt, die das erfordert.</li>
+        <li>Beim Aufruf der Seiten verarbeitet GitHub als Hoster deine IP-Adresse. Alles andere geht nur dann an Dritte, wenn du eine Funktion nutzt oder einschaltest, die das erfordert.</li>
       </ul>
 
       <h2>Hosting bei GitHub Pages</h2>
@@ -50,8 +48,8 @@
       <p>Alle Daten, die du in der App anlegst, speichert dein Browser lokal in IndexedDB und localStorage; die Dateien der App selbst hält ein Service Worker vor, damit sie offline startet. Diese Speicherung ist für den Betrieb der App erforderlich; es wird nichts an einen Server übertragen. Du kannst deine Daten jederzeit exportieren und in den Einstellungen löschen (Daten: Bild-Cache und Ereignisprotokoll leeren; Gefahrenzone: alles zurücksetzen) oder die Website-Daten in deinem Browser entfernen.</p>
       <p>Dein API-Schlüssel für einen KI-Anbieter und ein optionales GitHub-Token werden, falls du sie hinterlegst, ebenfalls nur lokal gespeichert, im Klartext. Du entfernst sie in den Einstellungen (KI-Assistent) beziehungsweise im GitHub-Import.</p>
 
-      <h2>Automatische Update-Prüfung</h2>
-      <p>Beim Start fragt die App höchstens einmal täglich bei GitHub (<code>api.github.com</code>) ab, ob eine neue Version veröffentlicht wurde. Dabei erhält GitHub deine IP-Adresse; es werden weder ein Token noch Inhalte aus der App übertragen. Du kannst die Prüfung unter Einstellungen › Verhalten abschalten.</p>
+      <h2>Update-Prüfung</h2>
+      <p>Neue Versionen der Web-App lädt dein Browser über den Service Worker von GitHub Pages, also vom selben Hoster wie die App. Eine zusätzliche Abfrage bei GitHub (<code>api.github.com</code>) findet nur statt, wenn du unter Einstellungen › Verhalten die automatische Update-Prüfung einschaltest; sie ist ab Werk aus. Eingeschaltet fragt die App höchstens einmal täglich beim Start, ob eine neue Version veröffentlicht wurde. Dabei erhält GitHub deine IP-Adresse; es werden weder ein Token noch Inhalte aus der App übertragen.</p>
 
       <h2>KI-Funktionen mit eigenem Schlüssel</h2>
       <p>KI-gestützte Funktionen (Textvorschläge, Kapitelreview, Metadaten ausfüllen, Grammatik und Übersetzung im Browser) sind nur aktiv, wenn du in den Einstellungen einen eigenen API-Schlüssel eines Anbieters hinterlegst: Anthropic, OpenAI, Google, Mistral, oder eine selbst gewählte Adresse (etwa ein lokales LM Studio oder Ollama). Dann sendet dein Browser den betroffenen Text (Kapitel, Artikel, Buchbeschreibung) direkt an diesen Anbieter. Der Betreiber von Bibliogon ist an dieser Übermittlung nicht beteiligt und erhält keine Daten. Das Vertragsverhältnis besteht zwischen dir und dem Anbieter; es gelten dessen Datenschutzhinweise:</p>
@@ -63,7 +61,7 @@
       </ul>
 
       <h2>Importe aus dem Internet</h2>
-      <p>Wenn du ein Buch aus einem GitHub-Repository oder von einer URL importierst, ruft dein Browser die angegebene Quelle ab (bei GitHub: <code>api.github.com</code>, <code>raw.githubusercontent.com</code>); ein optionales GitHub-Token wird nur an GitHub gesendet. Beim Import eines Medium-Archivs lädt dein Browser die Bilder der Artikel von Mediums Bildserver (<code>cdn-images-1.medium.com</code>); Bilder, die dabei nicht lokal gespeichert werden konnten, ruft die Artikelübersicht später erneut von dort ab.</p>
+      <p>Wenn du ein Buch aus einem GitHub-Repository oder von einer URL importierst, ruft dein Browser die angegebene Quelle ab (bei GitHub: <code>api.github.com</code>, <code>raw.githubusercontent.com</code>); ein optionales GitHub-Token wird nur an GitHub gesendet. Beim Import eines Medium-Archivs lädt dein Browser die Bilder der Artikel einmalig von Mediums Bildservern (<code>cdn-images-1.medium.com</code>, <code>miro.medium.com</code>) und speichert sie lokal; ein Bild, das sich nicht laden lässt, wird nicht übernommen. Danach ruft die App für diese Artikel nichts mehr bei Medium ab. Artikel, die mit einer früheren Version von Bibliogon importiert wurden, können noch Bildadressen bei Medium enthalten; deren Bilder lädt die App beim Anzeigen weiterhin von dort.</p>
 
       <h2>Externe Links</h2>
       <p>Die App enthält Links zu externen Angeboten (unter anderem GitHub, Amazon KDP, Dokumentation, Spendenplattformen Liberapay, Ko-fi und PayPal). Erst mit dem Klick verlässt du die App; ab dann gelten die Datenschutzhinweise des jeweiligen Anbieters. Es sind keine Skripte oder Schaltflächen dieser Anbieter eingebettet.</p>

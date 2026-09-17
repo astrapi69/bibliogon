@@ -52,10 +52,13 @@ for (const page_ of PAGES) {
     });
 }
 
-test("the privacy pages carry a visible draft notice until the review is done", async ({page}) => {
-    for (const path of ["/datenschutz.html", "/privacy.html"]) {
-        await page.goto(path);
-        await expect(page.getByTestId("legal-draft-notice")).toBeVisible();
+test("every legal page is final: no placeholder, no draft notice, a reachable email", async ({page}) => {
+    for (const page_ of PAGES) {
+        await page.goto(page_.path);
+        await expect(page.getByTestId(page_.root)).toBeVisible();
+        await expect(page.locator("[data-placeholder]")).toHaveCount(0);
+        await expect(page.getByTestId("legal-draft-notice")).toHaveCount(0);
+        await expect(page.locator('a[href="mailto:asterios.raptis@web.de"]').first()).toBeVisible();
     }
 });
 
