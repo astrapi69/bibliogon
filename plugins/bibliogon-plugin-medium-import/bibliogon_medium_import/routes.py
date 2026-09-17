@@ -76,7 +76,6 @@ def _settings_kwargs() -> dict:
     if timeout <= 0:
         timeout = DEFAULT_TIMEOUT_SECONDS
     return {
-        "download_images_enabled": bool(settings.get("download_images", True)),
         "image_timeout_seconds": timeout,
         "skip_existing": bool(settings.get("skip_existing_canonical_urls", True)),
         "default_status": str(settings.get("default_status") or "published"),

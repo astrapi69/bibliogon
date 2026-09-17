@@ -2446,8 +2446,6 @@
       "settings": {
         "card_title": "Settings",
         "card_hint": "These settings apply to every future import. Per-book or per-article overrides are not supported.",
-        "download_images": "Download images locally",
-        "download_images_hint": "Recommended. Stores images in Bibliogon storage instead of pointing at the Medium CDN.",
         "timeout_seconds": "Per-image download timeout (seconds)",
         "skip_existing": "Skip already-imported articles",
         "skip_existing_hint": "Articles with the same Medium URL are not re-imported.",

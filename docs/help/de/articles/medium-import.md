@@ -1,21 +1,18 @@
 # Medium-Import
 
-Bibliogon importiert das gesamte Medium-Archiv, das du über "Download your information" erhältst. Jeder Beitrag wird ein Bibliogon-Artikel mit Provenienz-Metadaten und (optional) lokal heruntergeladenen Bildern.
+Bibliogon importiert das gesamte Medium-Archiv, das du über "Download your information" erhältst. Jeder Beitrag wird ein Bibliogon-Artikel mit Provenienz-Metadaten und lokal gespeicherten Bildern.
 
 > **Läuft im Browser — funktioniert offline.** Das ZIP wird komplett
 > **clientseitig** geparst und die Artikel werden clientseitig angelegt, der
-> Import funktioniert also auch in der Offline-Web-App **ohne Backend**. Ein
-> paar Dinge verhalten sich offline anders: Bilder im Beitragstext bleiben als
-> **Medium-CDN-URLs** erhalten (sie laden im Editor, wenn du online bist, statt
-> ins Datenverzeichnis heruntergeladen zu werden); erkannte **Kommentare werden
-> übersprungen** (der Offline-Build hat keinen Kommentar-Speicher); und die
-> **Sprache** des Artikels kommt aus deiner Standardsprache-Einstellung, mit
-> automatischer Erkennung für nicht-lateinische Schriften (Griechisch,
-> Japanisch, Kyrillisch). Eine Ausnahme, die offline DOCH erhalten bleibt: das
-> **erste Bild** jedes Artikels wird als Vorschaubild zwischengespeichert (siehe
-> unten), sodass die Dashboard-Kacheln ihr Titelbild auch offline zeigen. Die
-> Duplikat-Erkennung über die kanonische URL funktioniert online wie offline
-> gleich.
+> Import funktioniert also auch in der Offline-Web-App **ohne Backend**. Die
+> Bilder werden während des Imports heruntergeladen und in der lokalen
+> Datenbank deines Browsers gespeichert (siehe „Bilder“ unten). Zwei Dinge
+> verhalten sich offline anders: erkannte **Kommentare werden übersprungen**
+> (der Offline-Build hat keinen Kommentar-Speicher), und die **Sprache** des
+> Artikels kommt aus deiner Standardsprache-Einstellung, mit automatischer
+> Erkennung für nicht-lateinische Schriften (Griechisch, Japanisch,
+> Kyrillisch). Die Duplikat-Erkennung über die kanonische URL funktioniert
+> online wie offline gleich.
 
 ## Wann verwenden
 
@@ -46,7 +43,6 @@ Du kannst die Seite während des Imports verlassen und später zurückkehren. Da
 
 Die Einstellungen gelten für jeden Import; Überschreibungen pro Archiv werden nicht unterstützt.
 
-- **Bilder lokal herunterladen** – empfohlen. Bibliogon speichert jedes Bild im Bibliogon-Datenverzeichnis statt das Medium-CDN zu referenzieren. Nur deaktivieren, wenn du absichtlich CDN-gehostete Bilder behalten willst.
 - **Timeout pro Bild-Download (Sekunden)** – Standard 30. Auf langsamen Verbindungen erhöhen; bei Timeout überspringt der Importer das Bild und setzt fort.
 - **Bereits importierte Artikel überspringen** – standardmäßig an. Erkennung erfolgt über die kanonische Medium-URL. Nur deaktivieren, wenn du ein korrigiertes Archiv erneut über ein bestehendes laufen lassen willst (siehe "Erneuter Import" unten).
 - **Standardstatus für importierte Artikel** – Entwurf, Veröffentlicht oder Archiviert. Standard ist Veröffentlicht, da Medium-Beiträge per Definition veröffentlicht sind.
@@ -54,13 +50,17 @@ Die Einstellungen gelten für jeden Import; Überschreibungen pro Archiv werden 
 
 Diese Einstellung wirkt nur auf neue Importe. Um Titelbilder rückwirkend auf bereits importierte Artikel zu setzen, das Skript `scripts/fix_medium_import_featured_images.py` ausführen (Dry-run als Standard; mit `--apply` schreiben). Artikel mit bereits gesetztem Titelbild werden übersprungen – deine manuelle Kuratierung bleibt erhalten.
 
-### Offline-Vorschaubilder
+## Bilder
 
-In der Offline-Web-App versucht der Import außerdem, die Bytes des ersten Bildes jedes Artikels während des Imports zu laden – solange du noch online bist – und speichert sie in der lokalen Datenbank deines Browsers. Dieses zwischengespeicherte Vorschaubild ist es, das die **Kacheln im Artikel-Dashboard** auch dann zeigen, wenn du offline gehst, sodass deine Beitragsliste weiterhin wie eine Beitragsliste aussieht und nicht wie eine Wand aus Platzhaltern. Das geschieht nach dem Best-Effort-Prinzip: lässt sich ein Bild nicht laden (eine CORS-Beschränkung des Medium-CDN oder eine wacklige Verbindung), behält der Artikel die CDN-URL und fällt offline einfach auf den Platzhalter zurück. Die Bilder in voller Auflösung im Beitragstext werden auf diese Weise nicht zwischengespeichert – nur das Dashboard-Vorschaubild.
+Jedes Bild wird beim Import einmal heruntergeladen und lokal gespeichert: in der Desktop-App im Bibliogon-Datenverzeichnis, in der Web-App in der lokalen Datenbank deines Browsers. Nach dem Import ruft Bibliogon für diese Artikel nichts mehr bei Medium ab, und die Bilder erscheinen auch offline. Eine Option, Medium-CDN-Links zu behalten, gibt es nicht.
+
+Ein Bild, das sich nicht herunterladen lässt (Timeout, Netzwerkfehler oder eine Datei, die kein PNG-, JPEG-, GIF-, WebP- oder AVIF-Bild ist), fehlt im Artikel und wird als Import-Warnung vermerkt. Titelbild wird das erste Bild, das gespeichert werden konnte; ließ sich keins speichern, bleibt der Artikel ohne Titelbild.
+
+Artikel, die mit einer früheren Version von Bibliogon importiert wurden, können noch auf das Medium-CDN verweisen und laden ihre Bilder dann weiterhin von dort. Ein erneuter Import mit ausgeschaltetem **Bereits importierte Artikel überspringen** legt neue Kopien mit lokal gespeicherten Bildern an; die alten Artikel bleiben bestehen, bis du sie löschst.
 
 ## Erneuter Import desselben Archivs
 
-Der Importer ist idempotent über die kanonische Medium-URL. Dasselbe Archiv zweimal mit Standardeinstellungen zu importieren erzeugt keine Änderungen – jeder Beitrag landet im "Übersprungen"-Bereich. Um einen Re-Import zu erzwingen (du hast etwas am Archiv korrigiert oder willst die Bilder neu laden), vor dem erneuten Lauf **Bereits importierte Artikel überspringen** ausschalten.
+Der Importer ist idempotent über die kanonische Medium-URL. Dasselbe Archiv zweimal mit Standardeinstellungen zu importieren erzeugt keine Änderungen – jeder Beitrag landet im "Übersprungen"-Bereich. Um einen Re-Import zu erzwingen (du hast etwas am Archiv korrigiert oder willst die Bilder eines älteren Imports lokal speichern), vor dem erneuten Lauf **Bereits importierte Artikel überspringen** ausschalten.
 
 ## Was pro Beitrag importiert wird
 

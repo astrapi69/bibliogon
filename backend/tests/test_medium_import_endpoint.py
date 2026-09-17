@@ -286,6 +286,7 @@ def _post_zip_with_settings(
     zip_bytes: bytes,
     settings: dict,
     download_capture: list | None = None,
+    fail_src: str | None = None,
 ) -> dict:
     """Like _post_zip but injects a custom settings dict via set_config.
 
@@ -301,11 +302,16 @@ def _post_zip_with_settings(
         if download_capture is not None:
             download_capture.append((images, article_id, kwargs))
         rewrites = {
-            img.src: f"/api/articles/{article_id}/assets/file/dummy.jpg"
-            for img in images
-            if img.src
+            img.src: f"/api/articles/{article_id}/assets/file/{index}.jpg"
+            for index, img in enumerate(images)
+            if img.src and not (fail_src and fail_src in img.src)
         }
-        return DownloadResult(url_rewrites=rewrites, saved_filenames=[], warnings=[])
+        warnings = [
+            f"image download failed for {img.src}: fake"
+            for img in images
+            if img.src and fail_src and fail_src in img.src
+        ]
+        return DownloadResult(url_rewrites=rewrites, saved_filenames=[], warnings=warnings)
 
     saved_config = mi_routes._config
     mi_routes.set_config({"settings": settings})
@@ -360,11 +366,26 @@ def test_setting_skip_existing_false_allows_reimport(
     assert second_count == 2  # second pass created a duplicate row
 
 
-def test_setting_download_images_false_skips_download(
+def _image_srcs(article: Article) -> list[str]:
+    srcs: list[str] = []
+
+    def _walk(node):
+        if isinstance(node, dict):
+            if node.get("type") in ("imageFigure", "image"):
+                srcs.append(node.get("attrs", {}).get("src"))
+            for child in node.get("content", []) or []:
+                _walk(child)
+
+    _walk(json.loads(article.content_json))
+    return srcs
+
+
+def test_images_are_downloaded_even_with_a_legacy_download_images_false(
     client: TestClient, db: Session
 ) -> None:
-    """When download_images=False, the downloader must NOT be called
-    and the body's image URLs must stay CDN-hosted."""
+    """#882: images are always stored locally. A user overlay that still
+    carries the removed download_images: false must not bring back CDN
+    URLs - the key is ignored."""
     capture: list = []
     body = _post_zip_with_settings(
         client,
@@ -373,25 +394,34 @@ def test_setting_download_images_false_skips_download(
         download_capture=capture,
     )
     assert body["imported_count"] == 1
-    assert capture == []  # downloader was never invoked
-
+    assert capture, "downloader must run regardless of the legacy key"
     article = db.query(Article).filter(Article.id == body["imported"][0]["id"]).one()
-    doc = json.loads(article.content_json)
-    image_srcs = []
+    srcs = _image_srcs(article)
+    assert srcs, "fixture has at least one image"
+    assert all(src.startswith(f"/api/articles/{article.id}/assets/file/") for src in srcs), srcs
 
-    def _walk(node):
-        if isinstance(node, dict):
-            if node.get("type") == "imageFigure":
-                image_srcs.append(node.get("attrs", {}).get("src"))
-            for child in node.get("content", []) or []:
-                _walk(child)
 
-    _walk(doc)
-    assert image_srcs, "fixture has at least one image"
-    for src in image_srcs:
-        assert src.startswith("https://cdn-images-1.medium.com/"), (
-            f"expected CDN URL when download_images=False, got {src!r}"
-        )
+def test_a_failed_download_drops_the_image_instead_of_keeping_the_cdn_url(
+    client: TestClient, db: Session
+) -> None:
+    """#882: a download that fails must not leave a remote URL in the
+    stored article. The image node goes, the warning stays in the
+    provenance record."""
+    body = _post_zip_with_settings(
+        client,
+        _build_zip(["01_oldest_tech.html"]),
+        {"set_first_image_as_featured": True},
+        fail_src="medium.com",
+    )
+    article = db.query(Article).filter(Article.id == body["imported"][0]["id"]).one()
+    assert "medium.com/max" not in article.content_json
+    assert "cdn-images-1.medium.com" not in article.content_json
+    assert _image_srcs(article) == []
+    assert article.featured_image_url is None
+    provenance = (
+        db.query(ArticleImportSource).filter(ArticleImportSource.article_id == article.id).one()
+    )
+    assert "image download failed" in provenance.conversion_warnings
 
 
 def test_setting_image_download_timeout_seconds_passes_to_downloader(
@@ -470,7 +500,7 @@ def test_featured_image_set_when_on_and_images_present_with_download_on(
     body = _post_zip_with_settings(
         client,
         _build_zip(["01_oldest_tech.html"]),
-        {"set_first_image_as_featured": True, "download_images": True},
+        {"set_first_image_as_featured": True},
     )
     article = db.query(Article).filter(Article.id == body["imported"][0]["id"]).one()
     assert article.featured_image_url is not None
@@ -479,21 +509,17 @@ def test_featured_image_set_when_on_and_images_present_with_download_on(
     )
 
 
-def test_featured_image_uses_cdn_when_download_off(
-    client: TestClient, db: Session
-) -> None:
-    """download OFF + featured ON -> featured URL stays CDN-hosted
-    (mirrors the body's image URL)."""
+def test_featured_image_is_never_a_cdn_url(client: TestClient, db: Session) -> None:
+    """#882: with the first image failing, the featured image is the
+    first image that was stored locally, or None - never the CDN."""
     body = _post_zip_with_settings(
         client,
         _build_zip(["01_oldest_tech.html"]),
-        {"set_first_image_as_featured": True, "download_images": False},
+        {"set_first_image_as_featured": True},
     )
     article = db.query(Article).filter(Article.id == body["imported"][0]["id"]).one()
     assert article.featured_image_url is not None
-    assert article.featured_image_url.startswith("https://cdn-images-1.medium.com/"), (
-        f"expected CDN URL when download_images=False, got {article.featured_image_url!r}"
-    )
+    assert not article.featured_image_url.startswith("http"), article.featured_image_url
 
 
 def test_featured_image_null_when_setting_off(

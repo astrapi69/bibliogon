@@ -27,9 +27,9 @@ def test_plugin_metadata() -> None:
 
 
 def test_plugin_activate_initializes_settings() -> None:
-    plugin = _make_plugin({"settings": {"download_images": False}})
+    plugin = _make_plugin({"settings": {"default_status": "draft"}})
     plugin.activate()
-    assert plugin._settings == {"download_images": False}
+    assert plugin._settings == {"default_status": "draft"}
 
 
 def test_plugin_get_routes_returns_router() -> None:

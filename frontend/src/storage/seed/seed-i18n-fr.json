@@ -2446,8 +2446,6 @@
       "settings": {
         "card_title": "Paramètres",
         "card_hint": "Ces paramètres s'appliquent à tous les imports futurs. Les remplacements par livre ou par article ne sont pas pris en charge.",
-        "download_images": "Télécharger les images localement",
-        "download_images_hint": "Recommandé. Stocke les images dans le stockage Bibliogon au lieu de pointer vers le CDN Medium.",
         "timeout_seconds": "Délai par téléchargement d'image (secondes)",
         "skip_existing": "Ignorer les articles déjà importés",
         "skip_existing_hint": "Les articles avec la même URL Medium ne sont pas réimportés.",

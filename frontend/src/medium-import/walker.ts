@@ -12,8 +12,9 @@
  * 209-post production corpus (see lessons-learned "Walker iterating repeated
  * containers: prefer find_all over find").
  *
- * Images keep their `cdn-images-1.medium.com` src (client-side download is
- * CORS-blocked; the URLs display in the editor while online). Figure nodes use
+ * Images keep their `cdn-images-1.medium.com` src here; the importer then
+ * stores every image locally and rewrites or drops the node (#882,
+ * `localImages.ts`). Figure nodes use
  * Bibliogon's `imageFigure` node type, NOT `image` (the editor loads the
  * Figure extension, and an `image`-typed node fails the schema — see
  * lessons-learned "TipTap image node is imageFigure").

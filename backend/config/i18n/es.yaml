@@ -2364,8 +2364,6 @@ ui:
     settings:
       card_title: "Ajustes"
       card_hint: "Estos ajustes se aplican a todas las importaciones futuras. No se admiten anulaciones por libro o por artículo."
-      download_images: "Descargar imágenes localmente"
-      download_images_hint: "Recomendado. Guarda las imágenes en el almacenamiento de Bibliogon en lugar de apuntar al CDN de Medium."
       timeout_seconds: "Tiempo límite por descarga de imagen (segundos)"
       skip_existing: "Omitir artículos ya importados"
       skip_existing_hint: "Los artículos con la misma URL de Medium no se vuelven a importar."

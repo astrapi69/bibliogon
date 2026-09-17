@@ -12,7 +12,7 @@
 
 import { describe, it, expect } from "vitest";
 
-import { bookAssetFileUrl, coverFilenameFromPath } from "./asset-url";
+import { articleAssetFileUrl, bookAssetFileUrl, coverFilenameFromPath } from "./asset-url";
 
 describe("asset-url helpers", () => {
   it("bookAssetFileUrl builds the filename-served URL (encoded)", () => {
@@ -22,6 +22,11 @@ describe("asset-url helpers", () => {
     expect(bookAssetFileUrl("b1", "a b.png")).toBe(
       "/api/books/b1/assets/file/a%20b.png",
     );
+  });
+
+  it("articleAssetFileUrl builds the same URL the desktop importer writes (#882)", () => {
+    expect(articleAssetFileUrl("a1", "feat.png")).toBe("/api/articles/a1/assets/file/feat.png");
+    expect(articleAssetFileUrl("a1", "a b.png")).toBe("/api/articles/a1/assets/file/a%20b.png");
   });
 
   it("coverFilenameFromPath extracts the trailing filename", () => {
@@ -51,6 +56,25 @@ describe("SW intercept URL shapes (mirror asset-intercept-sw.js)", () => {
     expect(m?.[1]).toBe("bk1");
     expect(m?.[2]).toBe("asset-123");
     expect(path.match(FILE_BY_NAME)).toBeNull();
+  });
+
+  it("article asset URL matches ARTICLE_FILE_BY_NAME and no book shape (#882)", () => {
+    const ARTICLE_FILE_BY_NAME = /\/api\/articles\/([^/]+)\/assets\/file\/([^?#]+)/;
+    const path = "/api/articles/art1/assets/file/feat.png";
+    const m = path.match(ARTICLE_FILE_BY_NAME);
+    expect(m?.[1]).toBe("art1");
+    expect(m?.[2]).toBe("feat.png");
+    expect(path.match(FILE_BY_NAME)).toBeNull();
+    expect(path.match(FILE_BY_ID)).toBeNull();
+    expect("/api/books/bk1/assets/file/x.png".match(ARTICLE_FILE_BY_NAME)).toBeNull();
+  });
+
+  it("the service worker source carries the article shape", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { resolve } = await import("node:path");
+    const sw = readFileSync(resolve(__dirname, "../../public/asset-intercept-sw.js"), "utf-8");
+    expect(sw).toContain("ARTICLE_FILE_BY_NAME = /\\/api\\/articles\\/([^/]+)\\/assets\\/file\\/([^?#]+)/");
+    expect(sw).toContain('"articleAssets"');
   });
 
   it("a non-asset /api URL matches neither", () => {

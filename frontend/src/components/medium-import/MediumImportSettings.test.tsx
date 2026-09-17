@@ -61,15 +61,11 @@ describe("MediumImportSettings", () => {
         }));
         render(<MediumImportSettings />);
         await waitFor(() => {
-            const checkbox = screen.getByTestId(
-                "medium-import-settings-download-images",
+            const timeout = screen.getByTestId(
+                "medium-import-settings-timeout",
             ) as HTMLInputElement;
-            expect(checkbox.checked).toBe(false);
+            expect(timeout.value).toBe("60");
         });
-        const timeout = screen.getByTestId(
-            "medium-import-settings-timeout",
-        ) as HTMLInputElement;
-        expect(timeout.value).toBe("60");
         const select = screen.getByTestId(
             "medium-import-settings-default-status-trigger",
         ) as HTMLSelectElement;
@@ -86,11 +82,25 @@ describe("MediumImportSettings", () => {
         });
         render(<MediumImportSettings />);
         await waitFor(() => {
-            const checkbox = screen.getByTestId(
-                "medium-import-settings-download-images",
+            const timeout = screen.getByTestId(
+                "medium-import-settings-timeout",
             ) as HTMLInputElement;
-            expect(checkbox.checked).toBe(true);
+            expect(timeout.value).toBe("30");
         });
+    });
+
+    it("offers no switch to leave images on the Medium CDN (#882)", async () => {
+        getPluginMock.mockImplementation(async () => ({
+            settings: {download_images: false},
+        }));
+        render(<MediumImportSettings />);
+        await waitFor(() => {
+            expect(screen.getByTestId("medium-import-settings-save")).not.toBeDisabled();
+        });
+        expect(screen.queryByTestId("medium-import-settings-download-images")).toBeNull();
+        fireEvent.click(screen.getByTestId("medium-import-settings-save"));
+        await waitFor(() => expect(updatePluginMock).toHaveBeenCalled());
+        expect(updatePluginMock.mock.calls[0][1]).not.toHaveProperty("download_images");
     });
 
     it("saves the form via api.settings.updatePlugin", async () => {
@@ -105,7 +115,6 @@ describe("MediumImportSettings", () => {
         fireEvent.click(screen.getByTestId("medium-import-settings-save"));
         await waitFor(() => {
             expect(updatePluginMock).toHaveBeenCalledWith("medium-import", {
-                download_images: true,
                 image_download_timeout_seconds: 30,
                 skip_existing_canonical_urls: true,
                 default_status: "published",

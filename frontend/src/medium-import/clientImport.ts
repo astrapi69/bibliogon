@@ -27,7 +27,7 @@ import type {
     MediumImportSkippedItem,
 } from "../api/client";
 import { getStorage } from "../storage";
-import type { IStorageService } from "../storage/types";
+import { applyImageRewrites, localizeImages } from "./localImages";
 import { parseMediumPost, type ParsedPost, type TipTapDoc } from "./walker";
 
 export interface ClientMediumPreview {
@@ -229,37 +229,39 @@ export async function importParsed(
                 language: post.detectedLanguage ?? settings.defaultLanguage,
                 content_type: "blogpost",
             });
-            // Featured image = the post's first body image (a Medium CDN URL).
-            // Mirrors the backend importer's set_first_image_as_featured (#134).
-            const featuredUrl = post.images.length > 0 ? post.images[0].src : null;
+            // #882: every image is stored locally now, while the user is
+            // importing; an image that cannot be stored is removed from
+            // the body and reported, never left on Medium's CDN.
+            const localized = await localizeImages(
+                created.id,
+                post.images,
+                storage.articleAssets,
+            );
+            const body = applyImageRewrites(post.contentDoc, localized.urls);
+            // Featured image = the first body image that was stored (#134).
+            const firstStored = post.images.find((image) => localized.urls.has(image.src));
             const updated = await storage.articles.update(created.id, {
-                content_json: JSON.stringify(post.contentDoc),
+                content_json: JSON.stringify(body),
                 status: settings.defaultStatus,
                 canonical_url: post.canonicalUrl,
-                featured_image_url: featuredUrl,
+                featured_image_url: firstStored ? localized.urls.get(firstStored.src)! : null,
+                featured_image_asset_id: firstStored
+                    ? localized.assetIds.get(firstStored.src)!
+                    : null,
                 seo_title: title,
                 seo_description: subtitle,
                 excerpt: subtitle || bodyExcerpt(post.contentDoc),
                 tags: [],
             });
-            // #157: cache the CDN image bytes in Dexie now (online, during import)
-            // so the dashboard thumbnail survives offline. Best-effort: a CORS /
-            // network failure keeps the URL and leaves the asset id unset, so the
-            // card falls back to the URL online and the placeholder offline.
-            if (featuredUrl) {
-                const assetId = await cacheFeaturedImage(storage, updated.id, featuredUrl);
-                if (assetId) {
-                    await storage.articles.update(updated.id, {
-                        featured_image_asset_id: assetId,
-                    });
-                }
-            }
+            const imageWarnings = localized.failed.map(
+                (failure) => `image not imported: ${failure.src} (${failure.reason})`,
+            );
             byCanonical.set(post.canonicalUrl, updated.id);
             imported.push({
                 id: updated.id,
                 title,
                 canonical_url: post.canonicalUrl,
-                warnings: post.warnings,
+                warnings: [...post.warnings, ...imageWarnings],
             });
         } catch (err) {
             errored.push({
@@ -284,27 +286,6 @@ export async function importParsed(
 }
 
 /** Concatenated body text of a doc. */
-/** Best-effort fetch of a Medium CDN image, stored as bytes in Dexie (#157).
- *  Returns the new article-asset id, or null when the fetch fails (CORS /
- *  offline / empty body / api-mode store) so the caller keeps the URL-only
- *  fallback. Never throws — image caching must not fail an article import. */
-async function cacheFeaturedImage(
-    storage: IStorageService,
-    articleId: string,
-    url: string,
-): Promise<string | null> {
-    try {
-        const res = await fetch(url);
-        if (!res.ok) return null;
-        const blob = await res.blob();
-        if (blob.size === 0) return null;
-        const filename = url.split("/").pop()?.split("?")[0] || "featured";
-        return await storage.articleAssets.store(articleId, blob, filename, blob.type);
-    } catch {
-        return null;
-    }
-}
-
 function gatherDocText(doc: TipTapDoc): string {
     const bits: string[] = [];
     const walk = (node: unknown): void => {

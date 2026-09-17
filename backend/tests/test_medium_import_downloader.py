@@ -57,8 +57,11 @@ class _FakeHTTPClient:
     raises an HTTPError to simulate a fetch failure.
     """
 
-    def __init__(self, responses: dict[str, bytes]) -> None:
+    def __init__(
+        self, responses: dict[str, bytes], content_types: dict[str, str] | None = None
+    ) -> None:
         self._responses = responses
+        self._content_types = content_types or {}
         self.calls: list[str] = []
 
     def get(self, url: str, timeout: float | None = None) -> httpx.Response:
@@ -68,6 +71,7 @@ class _FakeHTTPClient:
         return httpx.Response(
             200,
             content=self._responses[url],
+            headers={"Content-Type": self._content_types.get(url, "image/png")},
             request=httpx.Request("GET", url),
         )
 
@@ -150,3 +154,42 @@ def test_download_skips_empty_src(db: Session) -> None:
 
     assert result.url_rewrites == {}
     assert fake_client.calls == []
+
+
+def test_download_rejects_a_non_raster_content_type(db: Session) -> None:
+    """#882: every image is stored and later served from the app's own
+    origin. An SVG (or HTML) answered for an image URL named in a
+    crafted archive could carry script, so only raster types are kept."""
+    article = _make_article(db)
+    svg = "https://evil.example/pic.svg"
+    ok = "https://cdn-images-1.medium.com/max/800/ok.png"
+    fake_client = _FakeHTTPClient(
+        {svg: b"<svg onload='alert(1)'/>", ok: _PNG_BYTES},
+        content_types={svg: "image/svg+xml"},
+    )
+    result = download_images(
+        [ImageRef(src=svg, alt="", caption=""), ImageRef(src=ok, alt="", caption="")],
+        article.id,
+        client=fake_client,
+    )
+    assert svg not in result.url_rewrites
+    assert ok in result.url_rewrites
+    assert any("image/svg+xml" in w for w in result.warnings)
+    stored = db.query(ArticleAsset).filter(ArticleAsset.article_id == article.id).all()
+    assert [a.filename for a in stored] == ["ok.png"]
+
+
+def test_download_refuses_non_http_sources_without_fetching(db: Session) -> None:
+    article = _make_article(db)
+    fake_client = _FakeHTTPClient({})
+    result = download_images(
+        [
+            ImageRef(src="file:///etc/passwd", alt="", caption=""),
+            ImageRef(src="data:image/png;base64,AAAA", alt="", caption=""),
+        ],
+        article.id,
+        client=fake_client,
+    )
+    assert fake_client.calls == []
+    assert result.url_rewrites == {}
+    assert len(result.warnings) == 2

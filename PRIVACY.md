@@ -25,7 +25,7 @@ happen there.
   (`backend/app/licensing.py`). Fonts, icons and scripts are shipped with
   the app; the page loads nothing from a CDN (guard: #874).
 - **On GitHub Pages, no call to a third party happens without a user
-  action - except images of previously imported Medium articles (2.7).**
+  action - except images of Medium articles imported before #882 (2.7).**
   The GitHub Releases check (section 2) is off by default on the web app
   (#881) and can be switched on in Settings > Verhalten. The runtime
   capture in `e2e/static-smoke/external-hosts.spec.ts` measures this on
@@ -53,7 +53,7 @@ happen there.
 | 2.4 | AI provider health probe (`GET {base_url}/models`, Anthropic: `/messages` with a one-token "hi") | desktop | when the book editor loads (`GET /api/editor/plugin-status`), cached 30 s | the configured API key in the auth header; no text | `ai.enabled: false`; for Anthropic nothing is sent without a key | `backend/app/routes_admin.py`, `backend/app/ai/llm_client.py` |
 | 2.5 | LM Studio health probe (`GET {lmstudio_url}/models`) | desktop | `GET /api/translation/health` (translation settings) | nothing | default target is `http://localhost:1234`; disable the translation plugin | `plugins/bibliogon-plugin-translation/.../lmstudio_client.py`, `routes.py` |
 | 2.6 | LAN-mode address lookup (`socket.connect(("8.8.8.8", 80))`, UDP) | desktop, LAN mode only | at startup with `BIBLIOGON_LAN_MODE` | no packet is sent; the OS route lookup picks the LAN IP | do not enable LAN mode | `backend/app/lan_net.py` |
-| 2.7 | Images of imported Medium articles (`cdn-images-1.medium.com`) | web app and desktop | whenever the article list or an imported article is shown and no local copy of the image exists | the image request (IP, user agent, referer) | only for users who imported Medium articles; the desktop importer downloads images locally by default (`download_images: true`), the browser importer caches the featured image; delete the article to stop it | `frontend/src/hooks/article/useArticleImageUrl.ts`, `frontend/src/medium-import/walker.ts` |
+| 2.7 | Images of Medium articles imported **before #882** (`cdn-images-1.medium.com`, `miro.medium.com`) | web app and desktop | whenever such an article or its thumbnail is shown and no local copy exists | the image request (IP, user agent, referer) | only affects articles imported with an older version; imports since #882 store every image locally and never reference the CDN (section 3.5); delete and re-import the article, or run the migration proposed in #882 | `frontend/src/hooks/article/useArticleImageUrl.ts` |
 
 Nothing else runs on a timer or at startup. There is no scheduler in the
 backend and no background loop in the frontend beyond 2.2.
@@ -122,8 +122,8 @@ cached per session; `frontend/src/hooks/useRemoteDefaultBranch.ts`).
 |---|---|---|---|---|
 | GitHub import | web app | `api.github.com`, `raw.githubusercontent.com`; optional personal access token | the repository path; the token if one is stored | `frontend/src/import/githubImport.ts` |
 | URL import | web app | the URL the user typed | the request | `frontend/src/import/urlImport.ts` |
-| Medium archive | web app | `cdn-images-1.medium.com` for each article's featured image (stored locally afterwards) | image requests | `frontend/src/medium-import/clientImport.ts` |
-| Medium archive | desktop | the image hosts named inside the uploaded archive (normally Medium's CDN) | image requests, saved locally | `plugins/bibliogon-plugin-medium-import/.../image_downloader.py`; `download_images` in `backend/config/plugins/medium-import.yaml` |
+| Medium archive | web app | the image hosts named in the archive (normally `cdn-images-1.medium.com` / `miro.medium.com`), once per image during the import; afterwards every image is served locally, and an image that could not be stored is removed from the article, never left remote (#882) | image requests; only raster types (PNG, JPEG, GIF, WebP, AVIF) are kept | `frontend/src/medium-import/localImages.ts`, `clientImport.ts` |
+| Medium archive | desktop | the image hosts named inside the uploaded archive (normally Medium's CDN), once per image during the import; always saved locally, no setting leaves them remote; a failed image is removed from the article (#882) | image requests; only raster types are kept | `plugins/bibliogon-plugin-medium-import/.../image_downloader.py` |
 | `.bgb` backup export | web app | the host of any article image that has no local copy | image requests | `frontend/src/export/bgbExport.ts` |
 
 ### 3.6 Links
@@ -181,9 +181,12 @@ it is tracked separately.
 
 ## 7. Open decisions
 
-- **2.7.** Imported Medium articles keep their CDN image URLs. Whether
-  the importer should always store a local copy (and drop the remote
-  URL) is a product question; today the browser importer caches the
-  featured image and the desktop importer downloads images by default.
+- **2.7, existing data.** Articles imported before #882 may still
+  reference Medium's CDN. On the desktop dev database there are none
+  (0 articles, counted 2026-09-16 on an agent copy). Web-app profiles
+  live in each user's browser and cannot be counted from here. Proposed
+  migration, not implemented: a one-time "store images locally" action
+  that runs the same download-and-rewrite on existing articles, reports
+  what failed, and removes nothing without that report.
 
-Verified against `develop` at commit 453e4bf1 (2026-09-16); 2.1 updated for #881.
+Verified against `develop` at commit 453e4bf1 (2026-09-16); 2.1 updated for #881; 2.7 and 3.5 updated for #882.

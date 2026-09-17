@@ -16,6 +16,12 @@ export function bookAssetFileUrl(bookId: string, filename: string): string {
   return `/api/books/${bookId}/assets/file/${encodeURIComponent(filename)}`;
 }
 
+/** The canonical served URL for an article asset, by filename - the same
+ *  shape the desktop Medium importer writes (#882). */
+export function articleAssetFileUrl(articleId: string, filename: string): string {
+  return `/api/articles/${articleId}/assets/file/${encodeURIComponent(filename)}`;
+}
+
 /** The trailing filename of a stored cover path, or null when unset. */
 export function coverFilenameFromPath(
   coverImage: string | null | undefined,

@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from bibliogon_medium_import.image_downloader import (
     filename_for,
-    rewrite_image_urls,
+    localize_image_nodes,
 )
 from bibliogon_medium_import.walker import ImageRef
 
@@ -59,102 +59,68 @@ def test_filename_for_sanitises_unsafe_characters() -> None:
     assert name.endswith(".png")
 
 
-def test_rewrite_image_urls_replaces_src_in_image_node() -> None:
+def test_localize_image_nodes_rewrites_downloaded_and_drops_the_rest() -> None:
+    """#882: after the download, no image node may keep a remote URL."""
     doc = {
         "type": "doc",
         "content": [
-            {
-                "type": "image",
-                "attrs": {"src": "https://cdn-images-1.medium.com/foo.jpg", "alt": "x"},
-            }
+            {"type": "imageFigure", "attrs": {"src": "https://cdn/a.png", "alt": "A"}},
+            {"type": "paragraph", "content": [{"type": "text", "text": "keep"}]},
+            {"type": "imageFigure", "attrs": {"src": "https://cdn/failed.png"}},
+            {"type": "image", "attrs": {"src": "https://cdn/b.png"}},
         ],
     }
-    rewrites = {"https://cdn-images-1.medium.com/foo.jpg": "/api/articles/abc/assets/file/foo.jpg"}
-    out = rewrite_image_urls(doc, rewrites)
-    assert out["content"][0]["attrs"]["src"] == "/api/articles/abc/assets/file/foo.jpg"
-    # alt preserved
-    assert out["content"][0]["attrs"]["alt"] == "x"
+    out = localize_image_nodes(
+        doc,
+        {"https://cdn/a.png": "/api/articles/x/assets/file/a.png", "https://cdn/b.png": "/local/b"},
+    )
+    assert [node["type"] for node in out["content"]] == ["imageFigure", "paragraph", "image"]
+    assert out["content"][0]["attrs"] == {"src": "/api/articles/x/assets/file/a.png", "alt": "A"}
+    assert "https://" not in str(out)
+    assert doc["content"][2]["attrs"]["src"] == "https://cdn/failed.png"
 
 
-def test_rewrite_image_urls_does_not_modify_input() -> None:
-    doc = {
-        "type": "doc",
-        "content": [
-            {
-                "type": "image",
-                "attrs": {"src": "https://cdn-images-1.medium.com/foo.jpg"},
-            }
-        ],
-    }
-    rewrites = {"https://cdn-images-1.medium.com/foo.jpg": "/local/foo.jpg"}
-    rewrite_image_urls(doc, rewrites)
-    # Original doc unchanged
-    assert doc["content"][0]["attrs"]["src"] == "https://cdn-images-1.medium.com/foo.jpg"
-
-
-def test_rewrite_image_urls_walks_nested_content() -> None:
-    """Images inside a blockquote / list / etc. must also be rewritten."""
+def test_localize_image_nodes_walks_nested_content() -> None:
     doc = {
         "type": "doc",
         "content": [
             {
                 "type": "blockquote",
                 "content": [
-                    {
-                        "type": "paragraph",
-                        "content": [
-                            {
-                                "type": "image",
-                                "attrs": {"src": "https://cdn-images-1.medium.com/x.jpg"},
-                            }
-                        ],
-                    }
+                    {"type": "imageFigure", "attrs": {"src": "https://cdn/nested.png"}},
+                    {"type": "imageFigure", "attrs": {"src": "https://cdn/gone.png"}},
+                    {"type": "paragraph", "content": [{"type": "text", "text": "q"}]},
                 ],
             }
         ],
     }
-    rewrites = {"https://cdn-images-1.medium.com/x.jpg": "/local/x.jpg"}
-    out = rewrite_image_urls(doc, rewrites)
-    nested_img = out["content"][0]["content"][0]["content"][0]
-    assert nested_img["attrs"]["src"] == "/local/x.jpg"
+    out = localize_image_nodes(
+        doc, {"https://cdn/nested.png": "/api/articles/a/assets/file/nested.png"}
+    )
+    inner = out["content"][0]["content"]
+    assert [node["type"] for node in inner] == ["imageFigure", "paragraph"]
+    assert inner[0]["attrs"]["src"] == "/api/articles/a/assets/file/nested.png"
 
 
-def test_rewrite_image_urls_leaves_unmapped_src_alone() -> None:
-    doc = {
-        "type": "doc",
-        "content": [{"type": "image", "attrs": {"src": "https://example.com/external.jpg"}}],
-    }
-    out = rewrite_image_urls(doc, {"https://other.com/foo.jpg": "/local/foo.jpg"})
-    assert out["content"][0]["attrs"]["src"] == "https://example.com/external.jpg"
-
-
-def test_rewrite_image_urls_empty_rewrites_returns_input() -> None:
-    doc = {"type": "doc", "content": []}
-    out = rewrite_image_urls(doc, {})
-    assert out is doc
-
-
-def test_rewrite_image_urls_handles_imageFigure_node_type() -> None:
-    """The walker emits ``imageFigure`` (Bibliogon's editor schema).
-
-    Regression pin against the next-walker-rename-by-itself class of
-    bug: yesterday the walker was renamed image -> imageFigure but
-    the rewrite function still grepped for ``image``, silently
-    leaking CDN URLs into persisted docs. This test fails loudly if
-    the rewriter ever stops handling imageFigure.
-    """
+def test_localize_image_nodes_with_no_downloads_removes_every_image_and_keeps_text() -> None:
     doc = {
         "type": "doc",
         "content": [
-            {
-                "type": "imageFigure",
-                "attrs": {"src": "https://cdn-images-1.medium.com/foo.jpg", "alt": "x"},
-            }
+            {"type": "imageFigure", "attrs": {"src": "https://cdn-images-1.medium.com/a.jpg"}},
+            {"type": "paragraph", "content": [{"type": "text", "text": "text stays"}]},
         ],
     }
-    rewrites = {
-        "https://cdn-images-1.medium.com/foo.jpg": "/api/articles/abc/assets/file/foo.jpg"
+    out = localize_image_nodes(doc, {})
+    assert out == {
+        "type": "doc",
+        "content": [{"type": "paragraph", "content": [{"type": "text", "text": "text stays"}]}],
     }
-    out = rewrite_image_urls(doc, rewrites)
-    assert out["content"][0]["attrs"]["src"] == "/api/articles/abc/assets/file/foo.jpg"
-    assert out["content"][0]["attrs"]["alt"] == "x"
+    assert doc["content"][0]["type"] == "imageFigure"
+
+
+def test_localize_image_nodes_leaves_a_doc_without_images_unchanged() -> None:
+    doc = {
+        "type": "doc",
+        "content": [{"type": "paragraph", "content": [{"type": "text", "text": "x"}]}],
+    }
+    assert localize_image_nodes(doc, {"https://cdn/a.png": "/local"}) == doc
