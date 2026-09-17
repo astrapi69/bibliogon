@@ -4,7 +4,7 @@
  * Offline parity layer (Maximal Offline, #34). The IMPORT half works in the
  * browser by talking to the GitHub REST API directly (list a repo's contents,
  * download files, route them through the client importer). Implementation lives
- * in `src/import/{githubImport,githubToken}.ts`; this barrel is the stable
+ * in `src/import/githubImport.ts` and `src/import/credentials/githubToken.ts`; this barrel is the stable
  * plugin-parity seam under `modules/`.
  *
  * Partial parity: this needs live network connectivity (gated by
@@ -31,4 +31,4 @@ export type {
     GitHubImportSummary,
     RunGitHubImportOptions,
 } from "../../import/githubImport";
-export { loadGitHubToken, saveGitHubToken } from "../../import/githubToken";
+export { loadGitHubToken, saveGitHubToken } from "../../import/credentials/githubToken";

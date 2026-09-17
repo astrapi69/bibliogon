@@ -16,7 +16,7 @@ vi.mock("../../utils/platform/notify", () => ({ notify: { success: vi.fn(), erro
 
 const loadGitHubToken = vi.fn(async () => "");
 const saveGitHubToken = vi.fn(async (_token: string) => {});
-vi.mock("../../import/githubToken", () => ({
+vi.mock("../../import/credentials/githubToken", () => ({
     loadGitHubToken: () => loadGitHubToken(),
     saveGitHubToken: (token: string) => saveGitHubToken(token),
 }));

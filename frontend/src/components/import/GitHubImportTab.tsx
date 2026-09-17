@@ -26,7 +26,7 @@ import { useI18n } from "../../hooks/useI18n";
 import { notify } from "../../utils/platform/notify";
 import { FEATURES } from "../../features/featureConfig";
 import { FeatureNotice } from "../../features/FeatureNotice";
-import { loadGitHubToken, saveGitHubToken } from "../../import/githubToken";
+import { loadGitHubToken, saveGitHubToken } from "../../import/credentials/githubToken";
 import { TokenInput } from "../../lib/components/TokenInput";
 import {
     GitHubNotFoundError,

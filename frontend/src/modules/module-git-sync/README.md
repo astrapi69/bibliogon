@@ -7,7 +7,7 @@ Frontend partial counterpart of **`bibliogon-plugin-git-sync`** (import half).
   GitHub REST API: `parseGitHubUrl`, `listGitHubContents`, `downloadGitHubFile`,
   `runGitHubImport`, plus an optional PAT held in IndexedDB (`bibliogon-credentials`,
   `load/saveGitHubToken`, #880).
-- **Backed by:** `src/import/{githubImport,githubToken}.ts` (re-exported).
+- **Backed by:** `src/import/githubImport.ts` and `src/import/credentials/githubToken.ts` (re-exported).
 - **Gating:** `FEATURES.GITHUB_IMPORT` → `disabled` when `navigator.onLine ===
   false` (reason `requires_network`).
 - **Missing / desktop-only:** the full write-book-template **Git sync/push**

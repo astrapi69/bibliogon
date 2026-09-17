@@ -71,7 +71,7 @@ vi.mock("../../utils/platform/notify", () => ({
 
 vi.mock("../../db/drafts", () => ({ db: { delete: () => dbDeleteMock() } }));
 
-vi.mock("../../import/githubToken", () => ({
+vi.mock("../../import/credentials/githubToken", () => ({
     deleteCredentialStore: () => deleteCredentialStoreMock(),
 }));
 

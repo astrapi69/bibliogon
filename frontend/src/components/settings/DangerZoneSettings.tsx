@@ -59,7 +59,7 @@ import { downloadBlob } from "../../export/download";
 import { bgbBackupFilename, exportBgbBackup, type BgbProgress } from "../../export/bgbExport";
 import { BgbExportProgress } from "./BgbExportProgress";
 import { db } from "../../db/drafts";
-import { deleteCredentialStore } from "../../import/githubToken";
+import { deleteCredentialStore } from "../../import/credentials/githubToken";
 import styles from "../../pages/Settings.module.css";
 
 type DialogState = "idle" | "typing" | "submitting";
