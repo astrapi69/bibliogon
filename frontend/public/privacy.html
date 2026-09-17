@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Privacy policy · Bibliogon</title>
+    <style>
+      :root { color-scheme: light dark; --bg: #fbf8f3; --fg: #2b2620; --muted: #6b6259; --accent: #7a4b1f; --line: #e2d9cc; }
+      @media (prefers-color-scheme: dark) { :root { --bg: #1e1b18; --fg: #ece5da; --muted: #a79d90; --accent: #d9a56a; --line: #3a342d; } }
+      html { background: var(--bg); color: var(--fg); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+      body { margin: 0; }
+      main { max-width: 44rem; margin: 0 auto; padding: 1.5rem 1.25rem 4rem; }
+      nav { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; font-size: 0.9rem; margin-bottom: 1.5rem; }
+      nav a, main a { color: var(--accent); }
+      nav a { display: inline-flex; min-height: 44px; align-items: center; }
+      h1 { font-size: 1.75rem; line-height: 1.25; margin: 0 0 1rem; }
+      h2 { font-size: 1.15rem; margin: 2rem 0 0.5rem; }
+      footer { border-top: 1px solid var(--line); margin-top: 3rem; padding-top: 1rem; font-size: 0.85rem; color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <main data-testid="legal-page-privacy">
+      <nav aria-label="Legal">
+        <a href="./" data-testid="legal-link-app">Back to the app</a>
+        <a href="./imprint.html" data-testid="legal-link-imprint">Legal notice</a>
+        <a href="./datenschutz.html" lang="de" data-testid="legal-link-lang">Deutsch</a>
+      </nav>
+      <h1>Privacy policy</h1>
+      <p>Version: 17 September 2026</p>
+
+      <p>This policy applies to the public web version of Bibliogon at <code>astrapi69.github.io/bibliogon</code>. If you install Bibliogon yourself (desktop launcher or Docker), you run the app on your own device; the operator of these pages then processes no data at all.</p>
+
+      <h2>Controller</h2>
+      <p>Asterios Raptis, Seestraße 68, 71638 Ludwigsburg, Germany<br />Email: <a href="mailto:asterios.raptis@web.de">asterios.raptis@web.de</a></p>
+
+      <h2>The short version</h2>
+      <ul>
+        <li>Bibliogon has no server of its own. Your books, chapters, articles, settings and API keys live only in your browser (IndexedDB and localStorage). The operator never sees them.</li>
+        <li>The app sets no cookies and uses no analytics or tracking services. Fonts and scripts ship with the app and are not loaded from third parties.</li>
+        <li>When you open the pages, GitHub, as the host, processes your IP address. Everything else reaches a third party only when you use or switch on a feature that needs it.</li>
+      </ul>
+
+      <h2>Hosting on GitHub Pages</h2>
+      <p>The app is served by GitHub Pages, a service of GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, USA. On every request GitHub processes your device's IP address and the usual connection data (time, requested file, browser type) for security purposes; according to GitHub these data are kept only for operational security and are not passed on to the operator. More: <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement">GitHub Privacy Statement</a>.</p>
+
+      <h2>Storage in your browser</h2>
+      <p>Everything you create in the app is stored locally by your browser in IndexedDB and localStorage; a service worker keeps the app's own files so it starts offline. This storage is necessary for the app to work; nothing is sent to a server. You can export your data at any time and delete it in Settings (Data: clear image cache and event log; Danger zone: reset everything), or remove the site data in your browser.</p>
+      <p>Your API key for an AI provider and an optional GitHub token are, if you store them, kept locally as well, in plain text. You remove them in Settings (AI assistant) or in the GitHub import.</p>
+
+      <h2>Update check</h2>
+      <p>Your browser receives new versions of the web app through the service worker from GitHub Pages, the same host as the app itself. An additional request to GitHub (<code>api.github.com</code>) happens only if you switch on the automatic update check under Settings › Behaviour; it is off by default. Once switched on, the app asks at most once a day on start whether a new version has been released. GitHub receives your IP address; no token and no content from the app is sent.</p>
+
+      <h2>AI features with your own key</h2>
+      <p>AI features (text suggestions, chapter review, metadata fill, grammar and translation in the browser) are active only if you store your own API key for a provider in Settings: Anthropic, OpenAI, Google, Mistral, or an address you choose yourself (for example a local LM Studio or Ollama). Your browser then sends the text concerned (chapter, article, book description) directly to that provider. The operator of Bibliogon is not involved in this transfer and receives no data. The contract is between you and the provider; its privacy notice applies:</p>
+      <ul>
+        <li><a href="https://www.anthropic.com/privacy">Anthropic</a></li>
+        <li><a href="https://openai.com/policies/privacy-policy">OpenAI</a></li>
+        <li><a href="https://policies.google.com/privacy">Google</a></li>
+        <li><a href="https://mistral.ai/terms/#privacy-policy">Mistral</a></li>
+      </ul>
+
+      <h2>Imports from the internet</h2>
+      <p>When you import a book from a GitHub repository or from a URL, your browser fetches the source you named (for GitHub: <code>api.github.com</code>, <code>raw.githubusercontent.com</code>); an optional GitHub token is sent to GitHub only. When you import a Medium archive, your browser loads the articles' images once from Medium's image servers (<code>cdn-images-1.medium.com</code>, <code>miro.medium.com</code>) and stores them locally; an image that cannot be loaded is left out. After that the app requests nothing from Medium for these articles. Articles imported with an earlier version of Bibliogon may still contain image addresses at Medium; the app keeps loading those images from there when it shows them.</p>
+
+      <h2>External links</h2>
+      <p>The app contains links to external services (among them GitHub, Amazon KDP, the documentation, the donation platforms Liberapay, Ko-fi and PayPal). Only when you click do you leave the app; from then on the privacy notice of the respective provider applies. No scripts or buttons of these providers are embedded.</p>
+
+      <h2>Desktop version</h2>
+      <p>The installed version runs entirely on your device. Services such as DeepL, LanguageTool, text-to-speech engines or a Git server are contacted only when you use the respective feature and, where required, have stored your own key. The complete technical inventory is in the file <a href="https://github.com/astrapi69/bibliogon/blob/develop/PRIVACY.md">PRIVACY.md</a> in the source code.</p>
+
+      <h2>Contact by email</h2>
+      <p>If you write to the operator by email, your details are stored to handle the request and deleted once the request is settled and no statutory retention obligation stands in the way.</p>
+
+      <h2>Your rights</h2>
+      <p>You have the right to access, rectification, erasure, restriction of processing, data portability and objection towards the controller, and you can lodge a complaint with a data protection supervisory authority. As the operator does not hold your content, requests for access or erasure concerning it are addressed to your own device: Settings › Data, export or delete.</p>
+
+      <h2>Changes</h2>
+      <p>This policy is updated when the app or the legal situation changes. The date of the current version is shown at the top.</p>
+
+      <footer>See also the <a href="./imprint.html">legal notice</a>.</footer>
+    </main>
+  </body>
+</html>

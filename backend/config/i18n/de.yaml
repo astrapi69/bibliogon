@@ -3502,6 +3502,9 @@ ui:
     title: "Vorschau-/Testversion"
     message: "Du verwendest eine Vorschau-/Testversion. Sie ist nicht stabil und kann Fehler enthalten."
   about:
+    imprint_link: "Impressum"
+    privacy_link: "Datenschutzerklärung"
+    legal_label: "Rechtliches"
     next_check: "Nächste automatische Prüfung: {time}"
     next_check_disabled: "Automatische Prüfung deaktiviert"
     heading: "Über Bibliogon"

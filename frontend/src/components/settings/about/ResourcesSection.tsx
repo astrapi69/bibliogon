@@ -10,12 +10,15 @@
 import { Bug, ExternalLink } from "lucide-react";
 import { sectionStyle, dlStyle, externalLinkStyle, type T } from "./styles";
 import { DOCS_URL, ISSUES_URL, LICENSE_URL, REPOSITORY_URL } from "./constants";
+import { legalPageHref } from "../../../lib/utils/legal/legalPages";
 
 export function ResourcesSection({
   t,
+  lang,
   onCreateReport,
 }: {
   t: T;
+  lang: string;
   onCreateReport: () => void;
 }) {
   return (
@@ -82,6 +85,25 @@ export function ResourcesSection({
           >
             <ExternalLink size={14} aria-hidden />
             {ISSUES_URL.replace(/^https?:\/\//, "")}
+          </a>
+        </dd>
+        <dt>
+          <strong>{t("ui.about.legal_label", "Rechtliches")}</strong>
+        </dt>
+        <dd style={{ margin: 0, display: "flex", flexWrap: "wrap", gap: 12 }}>
+          <a
+            href={legalPageHref("imprint", lang)}
+            data-testid="about-imprint-link"
+            style={externalLinkStyle}
+          >
+            {t("ui.about.imprint_link", "Impressum")}
+          </a>
+          <a
+            href={legalPageHref("privacy", lang)}
+            data-testid="about-privacy-link"
+            style={externalLinkStyle}
+          >
+            {t("ui.about.privacy_link", "Datenschutzerklärung")}
           </a>
         </dd>
       </dl>

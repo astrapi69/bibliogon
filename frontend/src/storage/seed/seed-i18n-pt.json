@@ -3679,6 +3679,9 @@
       "message": "Está a usar uma versão de pré-visualização/teste. Não é estável e pode conter erros."
     },
     "about": {
+      "imprint_link": "Ficha técnica",
+      "privacy_link": "Política de privacidade",
+      "legal_label": "Informação legal",
       "next_check": "Próxima verificação automática: {time}",
       "next_check_disabled": "Verificação automática desativada",
       "heading": "Acerca do Bibliogon",

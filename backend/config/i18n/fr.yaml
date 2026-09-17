@@ -3492,6 +3492,9 @@ ui:
     title: "Version aperçu/test"
     message: "Vous utilisez une version aperçu/test. Elle n'est pas stable et peut contenir des erreurs."
   about:
+    imprint_link: "Mentions légales"
+    privacy_link: "Politique de confidentialité"
+    legal_label: "Informations légales"
     next_check: "Prochaine vérification automatique : {time}"
     next_check_disabled: "Vérification automatique désactivée"
     heading: "À propos de Bibliogon"

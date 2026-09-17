@@ -154,6 +154,7 @@ export function AboutSettings({ appConfig }: Props) {
           <ResourcesSection
             t={t}
             onCreateReport={() => setReportOpen(true)}
+            lang={lang}
           />
         </div>
       )}
