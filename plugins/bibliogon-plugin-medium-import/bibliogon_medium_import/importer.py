@@ -38,7 +38,7 @@ from typing import Any
 import httpx
 
 from . import __version__ as IMPORTER_VERSION
-from .image_downloader import download_images, rewrite_image_urls
+from .image_downloader import download_images, localize_image_nodes
 from .walker import MediumWalker, ParsedPost
 
 logger = logging.getLogger(__name__)
@@ -121,7 +121,6 @@ class ImportResult:
 async def import_zip(
     zip_bytes: bytes,
     *,
-    download_images_enabled: bool = True,
     image_timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
     skip_existing: bool = True,
     default_status: str = "published",
@@ -225,7 +224,6 @@ async def import_zip(
                 _import_one_post(
                     path,
                     result,
-                    download_images_enabled=download_images_enabled,
                     image_timeout_seconds=image_timeout_seconds,
                     skip_existing=skip_existing,
                     default_status=default_status,
@@ -370,7 +368,6 @@ def _import_one_post(
     path: Path,
     result: ImportResult,
     *,
-    download_images_enabled: bool,
     image_timeout_seconds: float,
     skip_existing: bool,
     default_status: str,
@@ -506,7 +503,7 @@ def _import_one_post(
 
         warnings: list[str] = list(parsed.warnings)
         url_rewrites: dict[str, str] = {}
-        if download_images_enabled and parsed.images:
+        if parsed.images:
             download_result = download_images(
                 parsed.images,
                 article_id,
@@ -515,26 +512,23 @@ def _import_one_post(
             )
             warnings.extend(download_result.warnings)
             url_rewrites = download_result.url_rewrites
-            if url_rewrites:
-                rewritten = rewrite_image_urls(parsed.content_doc, url_rewrites)
-                # Update the article's content_json with rewritten doc.
-                article = db.query(Article).filter(Article.id == article_id).one()
-                article.content_json = json.dumps(rewritten)
-                db.commit()
-
-        # Featured image: take the first body image's URL. After the
-        # rewrite block, ``url_rewrites`` maps CDN -> local; when
-        # download_images is OFF or the image failed to download, the
-        # CDN URL falls through. Mirrors the user's mental model:
-        # "the featured image is the same image you see at the top of
-        # the article body". Skipped silently when the post has no
-        # images or the toggle is OFF.
-        if set_first_image_as_featured and parsed.images:
-            first_src = parsed.images[0].src
-            local_src = url_rewrites.get(first_src)
+            localized = localize_image_nodes(parsed.content_doc, url_rewrites)
             article = db.query(Article).filter(Article.id == article_id).one()
-            article.featured_image_url = local_src or first_src
+            article.content_json = json.dumps(localized)
             db.commit()
+
+        # Featured image: the first body image that was stored locally
+        # ("the image you see at the top of the article body"). None
+        # when no image could be stored - never a CDN URL (#882).
+        if set_first_image_as_featured and parsed.images:
+            first_local = next(
+                (url_rewrites[img.src] for img in parsed.images if img.src in url_rewrites),
+                None,
+            )
+            if first_local:
+                article = db.query(Article).filter(Article.id == article_id).one()
+                article.featured_image_url = first_local
+                db.commit()
 
         # Provenance.
         import_metadata = {

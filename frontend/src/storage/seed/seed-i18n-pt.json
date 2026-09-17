@@ -2446,8 +2446,6 @@
       "settings": {
         "card_title": "Definições",
         "card_hint": "Estas definições aplicam-se a todas as importações futuras. Substituições por livro ou por artigo não são suportadas.",
-        "download_images": "Descarregar imagens localmente",
-        "download_images_hint": "Recomendado. Armazena imagens no armazenamento do Bibliogon em vez de apontar para o CDN do Medium.",
         "timeout_seconds": "Tempo limite por descarga de imagem (segundos)",
         "skip_existing": "Ignorar artigos já importados",
         "skip_existing_hint": "Artigos com a mesma URL do Medium não são reimportados.",

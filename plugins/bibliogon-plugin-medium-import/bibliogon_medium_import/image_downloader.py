@@ -8,17 +8,21 @@ map the caller uses to replace cdn URLs in the produced TipTap
 doc with the local served path
 ``/api/articles/{article_id}/assets/file/{filename}``.
 
-Why local storage by default. Medium CDN URLs are notorious for
-breaking; the v0.30.0 design decision (data sovereignty over
-convenience) makes ``download_images = true`` the default. The
-plugin config exposes the toggle for power users who explicitly
-want remote URLs.
+Always local (#882). Every image is stored locally; there is no
+setting that keeps remote URLs. A remote URL in an imported article
+sends every reader's IP address to Medium's CDN and breaks the day
+Medium changes the URL.
 
-Failure handling. Per-image failures (timeout, 404, network) emit
-a conversion warning and leave the original cdn URL in place so
-the article is still usable post-import. The downloader does NOT
-abort the import on a single failed image - that would punish
-the user for one broken upstream out of dozens.
+Failure handling. Per-image failures (timeout, 404, network, a
+non-raster content type, a non-http source) emit a conversion
+warning; the importer then removes that image node from the stored
+doc (``localize_image_nodes``) instead of keeping the remote URL.
+The downloader does NOT abort the import on a single failed image.
+
+Only raster types are stored. The saved files are served from the
+app's own origin (``/api/articles/.../assets/file/...``); an SVG or
+HTML answer for an image URL named in a crafted archive could carry
+script there.
 """
 
 from __future__ import annotations
@@ -41,6 +45,10 @@ logger = logging.getLogger(__name__)
 # anything weirder.
 _FILENAME_SAFE = re.compile(r"[^A-Za-z0-9._-]")
 _DEFAULT_EXT = ".jpg"
+
+#: Content types stored from an image download (#882). Raster only:
+#: files are served same-origin, so SVG/HTML would be an XSS vector.
+ALLOWED_IMAGE_TYPES = frozenset({"image/png", "image/jpeg", "image/gif", "image/webp", "image/avif"})
 
 
 @dataclass
@@ -127,6 +135,10 @@ def download_images(
                 # already-saved file. (Rare but cheap to handle.)
                 saved.append(filename_for(image))
                 continue
+            if not image.src.lower().startswith(("http://", "https://")):
+                logger.warning("medium-import: image source is not http(s): %s", image.src[:80])
+                warnings.append(f"image download failed for {image.src[:200]}: not an http(s) URL")
+                continue
 
             try:
                 response = client.get(image.src, timeout=timeout_seconds)
@@ -134,6 +146,17 @@ def download_images(
             except httpx.HTTPError as exc:
                 logger.warning("medium-import: image download failed: %s (%s)", image.src, exc)
                 warnings.append(f"image download failed for {image.src}: {exc}")
+                continue
+
+            content_type = response.headers.get("content-type", "").split(";")[0].strip().lower()
+            if content_type not in ALLOWED_IMAGE_TYPES:
+                logger.warning(
+                    "medium-import: image %s has type %r, not stored", image.src, content_type
+                )
+                warnings.append(
+                    f"image download failed for {image.src}: content type "
+                    f"{content_type or '(none)'} is not a raster image"
+                )
                 continue
 
             filename = filename_for(image)
@@ -166,36 +189,37 @@ def download_images(
     )
 
 
-def rewrite_image_urls(doc: dict[str, Any], rewrites: dict[str, str]) -> dict[str, Any]:
-    """Return a copy of ``doc`` with image src URLs rewritten in place.
+def localize_image_nodes(doc: dict[str, Any], rewrites: dict[str, str]) -> dict[str, Any]:
+    """Return a copy of ``doc`` whose image nodes point at local files only.
 
-    Applied after a successful ``download_images`` run. Uses an
-    in-place mutation on the cloned dict; the input doc is not
-    modified.
+    Nodes whose ``src`` was downloaded get the local served path from
+    ``rewrites``; every other ``imageFigure``/``image`` node is removed,
+    so no remote URL survives in a stored article (#882). The input doc
+    is not modified.
     """
-    if not rewrites:
-        return doc
+    import json as _json
 
-    # Walker emits ``imageFigure`` (Bibliogon's editor schema; see
-    # lessons-learned). ``image`` is kept as a defensive fallback so a
-    # second oversight from a future walker rename does not silently
-    # leak CDN URLs into persisted docs.
+    local_values = set(rewrites.values())
+
+    def _keep(node: Any) -> bool:
+        if not isinstance(node, dict) or node.get("type") not in ("imageFigure", "image"):
+            return True
+        src = (node.get("attrs") or {}).get("src")
+        return isinstance(src, str) and (src in rewrites or src in local_values)
+
     def _walk(node: Any) -> None:
         if not isinstance(node, dict):
             return
         if node.get("type") in ("imageFigure", "image"):
             attrs = node.get("attrs") or {}
-            current_src = attrs.get("src")
-            if isinstance(current_src, str) and current_src in rewrites:
-                attrs["src"] = rewrites[current_src]
-        for child in node.get("content") or []:
-            _walk(child)
-
-    # Shallow copy at the top level is enough because _walk mutates
-    # the same nested dicts; for caller safety we deep-clone via
-    # JSON roundtrip though, since the doc is small enough that the
-    # cost is irrelevant.
-    import json as _json
+            src = attrs.get("src")
+            if isinstance(src, str) and src in rewrites:
+                attrs["src"] = rewrites[src]
+        children = node.get("content")
+        if isinstance(children, list):
+            node["content"] = [child for child in children if _keep(child)]
+            for child in node["content"]:
+                _walk(child)
 
     cloned: dict[str, Any] = _json.loads(_json.dumps(doc))
     _walk(cloned)

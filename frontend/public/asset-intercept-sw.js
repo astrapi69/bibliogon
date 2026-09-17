@@ -6,12 +6,15 @@
  * which the React `useAssetUrl` resolver cannot reach because it does not own
  * those `<img>` elements.
  *
- * Two URL shapes are served (mirroring backend/app/routers/assets.py):
- *   - /api/books/{bookId}/assets/file/{filename}   (covers + editor figures)
- *   - /api/books/{bookId}/assets/{assetId}/file    (picture-book / collage)
+ * Three URL shapes are served (mirroring the backend asset routers):
+ *   - /api/books/{bookId}/assets/file/{filename}      (covers + editor figures)
+ *   - /api/books/{bookId}/assets/{assetId}/file       (picture-book / collage)
+ *   - /api/articles/{articleId}/assets/file/{filename} (article images, #882:
+ *     the Medium import stores every image locally under this URL)
  *
- * The store is the Dexie `bibliogon-offline` DB's `assets` table; rows hold
- * the bytes as a raw `data` ArrayBuffer + a `mimeType`. On a miss the request
+ * Book files come from the Dexie `bibliogon-offline` DB's `assets` table,
+ * article files from its `articleAssets` table; rows hold the bytes as a raw
+ * `data` ArrayBuffer + a `mimeType`. On a miss the request
  * falls through to the network (so api mode / online is unaffected — the
  * store is empty there and the server serves the file).
  *
@@ -36,8 +39,10 @@ self.addEventListener("message", (event) => {
 
 const DB_NAME = "bibliogon-offline";
 const STORE = "assets";
+const ARTICLE_STORE = "articleAssets";
 const FILE_BY_NAME = /\/api\/books\/([^/]+)\/assets\/file\/([^?#]+)/;
 const FILE_BY_ID = /\/api\/books\/([^/]+)\/assets\/([^/]+)\/file(?:[?#]|$)/;
+const ARTICLE_FILE_BY_NAME = /\/api\/articles\/([^/]+)\/assets\/file\/([^?#]+)/;
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
@@ -48,6 +53,14 @@ self.addEventListener("fetch", (event) => {
     const bookId = decodeURIComponent(byName[1]);
     const filename = decodeURIComponent(byName[2]);
     event.respondWith(serve(readByFilename(bookId, filename), event.request));
+    return;
+  }
+
+  const byArticle = url.pathname.match(ARTICLE_FILE_BY_NAME);
+  if (byArticle) {
+    const articleId = decodeURIComponent(byArticle[1]);
+    const filename = decodeURIComponent(byArticle[2]);
+    event.respondWith(serve(readArticleAsset(articleId, filename), event.request));
     return;
   }
 
@@ -91,9 +104,20 @@ function readById(assetId) {
   return withStore((store) => reqToPromise(store.get(assetId)));
 }
 
+/** Article images are indexed by articleId only; the filename is matched
+ *  among that article's rows (a handful per article). */
+function readArticleAsset(articleId, filename) {
+  return withStore((store) => {
+    if (!store.indexNames.contains("articleId")) return Promise.resolve(null);
+    return reqToPromise(store.index("articleId").getAll(articleId)).then(
+      (rows) => (rows || []).find((row) => row.filename === filename) || null,
+    );
+  }, ARTICLE_STORE);
+}
+
 /** Open the DB read-only, run `fn(store)`, and close. Resolves null when the
  *  DB / store does not exist yet (fresh client, nothing taken offline). */
-function withStore(fn) {
+function withStore(fn, storeName = STORE) {
   return new Promise((resolve, reject) => {
     let open;
     try {
@@ -105,15 +129,15 @@ function withStore(fn) {
     open.onerror = () => reject(open.error);
     open.onsuccess = () => {
       const db = open.result;
-      if (!db.objectStoreNames.contains(STORE)) {
+      if (!db.objectStoreNames.contains(storeName)) {
         db.close();
         resolve(null);
         return;
       }
       let result;
       try {
-        const tx = db.transaction(STORE, "readonly");
-        result = fn(tx.objectStore(STORE));
+        const tx = db.transaction(storeName, "readonly");
+        result = fn(tx.objectStore(storeName));
       } catch (err) {
         db.close();
         reject(err);

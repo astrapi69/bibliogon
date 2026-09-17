@@ -7,10 +7,11 @@
  * incoming keys into the plugin's settings dict, so partial saves
  * are safe.
  *
- * Save is button-driven (no instant-on-change) per Q7. The five
- * fields mirror plugin.yaml keys 1:1: download_images,
- * image_download_timeout_seconds, skip_existing_canonical_urls,
- * default_status, set_first_image_as_featured.
+ * Save is button-driven (no instant-on-change) per Q7. The four
+ * fields mirror plugin.yaml keys 1:1: image_download_timeout_seconds,
+ * skip_existing_canonical_urls, default_status,
+ * set_first_image_as_featured. There is no switch for downloading
+ * images: they are always stored locally (#882).
  */
 import { useEffect, useState } from "react";
 import { api, ApiError } from "../../api/client";
@@ -24,7 +25,6 @@ const STATUS_OPTIONS = ["draft", "published", "archived"] as const;
 type Status = (typeof STATUS_OPTIONS)[number];
 
 interface SettingsState {
-    download_images: boolean;
     image_download_timeout_seconds: number;
     skip_existing_canonical_urls: boolean;
     default_status: Status;
@@ -32,7 +32,6 @@ interface SettingsState {
 }
 
 const DEFAULTS: SettingsState = {
-    download_images: true,
     image_download_timeout_seconds: 30,
     skip_existing_canonical_urls: true,
     default_status: "published",
@@ -50,10 +49,6 @@ function readState(raw: Record<string, unknown> | undefined): SettingsState {
     const settings = (raw?.settings ?? {}) as Record<string, unknown>;
     const timeout = Number(settings.image_download_timeout_seconds);
     return {
-        download_images:
-            typeof settings.download_images === "boolean"
-                ? settings.download_images
-                : DEFAULTS.download_images,
         image_download_timeout_seconds:
             Number.isFinite(timeout) && timeout > 0
                 ? Math.round(timeout)
@@ -111,7 +106,6 @@ export default function MediumImportSettings() {
         setError(null);
         try {
             await api.settings.updatePlugin(PLUGIN_NAME, {
-                download_images: state.download_images,
                 image_download_timeout_seconds: state.image_download_timeout_seconds,
                 skip_existing_canonical_urls: state.skip_existing_canonical_urls,
                 default_status: state.default_status,
@@ -136,36 +130,6 @@ export default function MediumImportSettings() {
 
     return (
         <div className={styles.wrap} data-testid="medium-import-settings">
-            <div className={styles.checkboxField}>
-                <input
-                    id="medium-import-download-images"
-                    type="checkbox"
-                    className={styles.checkbox}
-                    checked={state.download_images}
-                    onChange={(e) =>
-                        setState((s) => ({ ...s, download_images: e.target.checked }))
-                    }
-                    data-testid="medium-import-settings-download-images"
-                />
-                <label
-                    htmlFor="medium-import-download-images"
-                    className={styles.checkboxLabel}
-                >
-                    <span className={styles.label}>
-                        {t(
-                            "ui.medium_import.settings.download_images",
-                            "Bilder lokal herunterladen",
-                        )}
-                    </span>
-                    <span className={styles.hint}>
-                        {t(
-                            "ui.medium_import.settings.download_images_hint",
-                            "Empfohlen. Speichert Bilder im Bibliogon-Speicher statt das Medium-CDN zu referenzieren.",
-                        )}
-                    </span>
-                </label>
-            </div>
-
             <div className={styles.field}>
                 <label
                     className={styles.label}

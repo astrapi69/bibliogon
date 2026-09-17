@@ -162,7 +162,16 @@ describe("importParsed", () => {
         expect(res.errored[0].filename).toBe("bad.html");
     });
 
-    it("sets featured_image_url to the first body image (#134)", async () => {
+    it("sets featured_image_url to the first body image, stored locally (#134, #882)", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn().mockResolvedValue({
+                ok: true,
+                status: 200,
+                headers: new Headers({ "Content-Type": "image/png" }),
+                blob: async () => new Blob(["img"], { type: "image/png" }),
+            }),
+        );
         const parsed = new Map([
             [
                 "withimg.html",
@@ -191,7 +200,9 @@ describe("importParsed", () => {
         const rows = await offlineDb.articles.toArray();
         const withImg = rows.find((r) => r.canonical_url === "https://m/withimg");
         const noImg = rows.find((r) => r.canonical_url === "https://m/noimg");
-        expect(withImg?.featured_image_url).toBe("https://cdn-images-1.medium.com/first.png");
+        expect(withImg?.featured_image_url).toBe(
+            `/api/articles/${withImg?.id}/assets/file/first.png`,
+        );
         expect(noImg?.featured_image_url).toBeNull();
     });
 
@@ -227,45 +238,87 @@ describe("importParsed", () => {
     });
 });
 
-describe("importParsed — featured image caching (#157)", () => {
-    const imgPost = (over: Partial<ParsedPost> = {}): ParsedPost =>
+describe("importParsed — images are always stored locally (#157, #882)", () => {
+    const FIG = (src: string) => ({ type: "imageFigure", attrs: { src, alt: "" } });
+    const post = (srcs: string[]): ParsedPost =>
         makeParsed({
             canonicalUrl: "https://medium.com/@x/with-image",
-            images: [
-                {
-                    src: "https://cdn-images-1.medium.com/max/800/feat.png?q=20",
-                    alt: "",
-                    caption: "",
-                    dataImageId: "",
-                },
-            ],
-            ...over,
+            images: srcs.map((src) => ({ src, alt: "", caption: "", dataImageId: "" })),
+            contentDoc: {
+                type: "doc",
+                content: [
+                    ...srcs.map(FIG),
+                    { type: "paragraph", content: [{ type: "text", text: "body" }] },
+                ],
+            },
+        });
+    const okFetch = () =>
+        vi.fn().mockResolvedValue({
+            ok: true,
+            status: 200,
+            headers: new Headers({ "Content-Type": "image/png" }),
+            blob: async () => new Blob(["img-bytes"], { type: "image/png" }),
         });
 
-    it("caches the CDN image as a blob + sets featured_image_asset_id", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn().mockResolvedValue({
-                ok: true,
-                blob: async () => new Blob(["img-bytes"], { type: "image/png" }),
-            }),
-        );
-        const result = await importParsed(new Map([["a.html", imgPost()]]), ["a.html"], SETTINGS);
+    it("stores every body image and rewrites the body to local asset URLs", async () => {
+        vi.stubGlobal("fetch", okFetch());
+        const srcs = [
+            "https://cdn-images-1.medium.com/max/800/feat.png?q=20",
+            "https://miro.medium.com/v2/resize:fit:800/inline.png",
+        ];
+        const result = await importParsed(new Map([["a.html", post(srcs)]]), ["a.html"], SETTINGS);
         expect(result.imported_count).toBe(1);
-        const article = await dexieStorage.articles.get(result.imported[0].id);
+        const id = result.imported[0].id;
+        const article = await dexieStorage.articles.get(id);
+
+        const body = JSON.parse(article.content_json as string);
+        expect(body.content[0].attrs.src).toBe(`/api/articles/${id}/assets/file/feat.png`);
+        expect(body.content[1].attrs.src).toBe(`/api/articles/${id}/assets/file/inline.png`);
+        expect(article.featured_image_url).toBe(`/api/articles/${id}/assets/file/feat.png`);
         expect(article.featured_image_asset_id).toBeTruthy();
-        // URL is kept alongside the cached asset (online fallback / canonical).
-        expect(article.featured_image_url).toContain("feat.png");
-        const blob = await dexieStorage.articleAssets.getBlob(article.featured_image_asset_id!);
-        expect(blob).not.toBeNull();
-        expect(blob!.type).toBe("image/png");
+
+        const assets = await offlineDb.articleAssets.where("articleId").equals(id).toArray();
+        expect(assets.map((a) => a.filename).sort()).toEqual(["feat.png", "inline.png"]);
+        expect(JSON.stringify(article)).not.toMatch(/medium\.com\/(max|v2)/);
     });
 
-    it("keeps the URL + leaves asset id unset when the CDN fetch fails", async () => {
-        // beforeEach already stubs fetch to reject — the failure path.
-        const result = await importParsed(new Map([["a.html", imgPost()]]), ["a.html"], SETTINGS);
-        const article = await dexieStorage.articles.get(result.imported[0].id);
+    it("never keeps a CDN URL when a download fails: the image is dropped and reported", async () => {
+        // beforeEach stubs fetch to reject - every download fails.
+        const src = "https://cdn-images-1.medium.com/max/800/feat.png?q=20";
+        const result = await importParsed(new Map([["a.html", post([src])]]), ["a.html"], SETTINGS);
+        const id = result.imported[0].id;
+        const article = await dexieStorage.articles.get(id);
+
         expect(article.featured_image_asset_id ?? null).toBeNull();
-        expect(article.featured_image_url).toContain("feat.png");
+        expect(article.featured_image_url ?? null).toBeNull();
+        expect(article.content_json).not.toContain("medium.com");
+        expect(JSON.parse(article.content_json as string).content.map((n: { type: string }) => n.type)).toEqual([
+            "paragraph",
+        ]);
+        expect(result.imported[0].warnings.join("\n")).toContain(src);
+    });
+
+    it("uses the first image that was stored as the featured image when the first one fails", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (url: string) => {
+                if (url.includes("first")) throw new Error("offline");
+                return {
+                    ok: true,
+                    status: 200,
+                    headers: new Headers({ "Content-Type": "image/jpeg" }),
+                    blob: async () => new Blob(["img"], { type: "image/jpeg" }),
+                };
+            }),
+        );
+        const result = await importParsed(
+            new Map([["a.html", post(["https://cdn/first.png", "https://cdn/second.jpg"])]]),
+            ["a.html"],
+            SETTINGS,
+        );
+        const id = result.imported[0].id;
+        const article = await dexieStorage.articles.get(id);
+        expect(article.featured_image_url).toBe(`/api/articles/${id}/assets/file/second.jpg`);
+        expect(article.content_json).not.toContain("https://cdn/");
     });
 });

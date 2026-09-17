@@ -40,6 +40,17 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
   table.
 
 ### Changed
+- **Medium import stores every image locally (#882).** Both importers
+  (browser and desktop) download each image during the import and point
+  the article at `/api/articles/{id}/assets/file/...`; the web app's
+  service worker serves those URLs from IndexedDB. An image that cannot
+  be stored is removed from the article and named in the import report,
+  never left on Medium's CDN, so viewing an imported article no longer
+  contacts Medium. The desktop setting `download_images` is gone (a
+  stale `false` in a user overlay is ignored). Only raster images (PNG,
+  JPEG, GIF, WebP, AVIF) from http(s) URLs are stored: the files are
+  served from the app's own origin, and an SVG or HTML answer for an
+  image URL named in a crafted archive could carry script there.
 - **Web app: GitHub Releases check off by default (#881).** On the
   GitHub Pages build the background update check no longer runs unless
   the user switches it on in Settings > Verhalten (its own

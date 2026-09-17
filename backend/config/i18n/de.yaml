@@ -2373,8 +2373,6 @@ ui:
     settings:
       card_title: "Einstellungen"
       card_hint: "Diese Einstellungen gelten für alle künftigen Importe. Pro Buch oder pro Artikel sind sie nicht überschreibbar."
-      download_images: "Bilder lokal herunterladen"
-      download_images_hint: "Empfohlen. Speichert Bilder im Bibliogon-Speicher statt das Medium-CDN zu referenzieren."
       timeout_seconds: "Timeout pro Bild-Download (Sekunden)"
       skip_existing: "Bereits importierte Artikel überspringen"
       skip_existing_hint: "Artikel mit derselben Medium-URL werden nicht erneut importiert."

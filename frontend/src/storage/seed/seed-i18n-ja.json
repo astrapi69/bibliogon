@@ -2446,8 +2446,6 @@
       "settings": {
         "card_title": "設定",
         "card_hint": "これらの設定はすべての将来のインポートに適用されます。書籍ごと、記事ごとの上書きはサポートされていません。",
-        "download_images": "画像をローカルにダウンロード",
-        "download_images_hint": "推奨。Medium の CDN を参照する代わりに、画像を Bibliogon のストレージに保存します。",
         "timeout_seconds": "画像ダウンロードあたりのタイムアウト（秒）",
         "skip_existing": "すでにインポート済みの記事をスキップ",
         "skip_existing_hint": "同じ Medium URL を持つ記事は再インポートされません。",

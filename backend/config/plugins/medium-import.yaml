@@ -24,12 +24,6 @@ plugin:
   api_version: "1"
 
 settings:
-  # Whether to download referenced images from cdn-images-1.medium.com
-  # to local storage (ArticleAsset rows + uploads/articles/{id}/imported_image/).
-  # Default on per the v0.30.0 design decision: data sovereignty over
-  # convenience; remote URLs may break.
-  download_images: true
-
   # Per-image download timeout in seconds. cdn-images-1.medium.com is
   # usually fast, but the importer must not hang the whole batch on
   # one slow image.

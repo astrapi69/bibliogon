@@ -1,19 +1,16 @@
 # Medium import
 
-Bibliogon imports the entire Medium archive that you receive via "Download your information". Each post becomes a Bibliogon article, with provenance metadata and (optionally) locally-downloaded images.
+Bibliogon imports the entire Medium archive that you receive via "Download your information". Each post becomes a Bibliogon article, with provenance metadata and its images stored locally.
 
 > **Runs in your browser — works offline.** The ZIP is parsed and the articles
 > are created entirely **client-side**, so the import also works in the
-> offline web app with **no backend**. A few things behave differently offline:
-> body images are kept as **Medium CDN URLs** (they load in the editor when you
-> are online, rather than being downloaded into your data directory); detected
-> **comments are skipped** (the offline build has no comment store); and the
-> article **language** is taken from your default-language setting, with
-> automatic detection for non-Latin scripts (Greek, Japanese, Cyrillic).
-> One exception that DOES survive offline: each article's **first image** is
-> cached as a thumbnail (see below), so the dashboard tiles still show their
-> cover picture when you are offline. Duplicate detection by canonical URL
-> works the same online and offline.
+> offline web app with **no backend**. Images are downloaded during the import
+> and stored in your browser's local database (see "Images" below). Two things
+> behave differently offline: detected **comments are skipped** (the offline
+> build has no comment store), and the article **language** is taken from your
+> default-language setting, with automatic detection for non-Latin scripts
+> (Greek, Japanese, Cyrillic). Duplicate detection by canonical URL works the
+> same online and offline.
 
 ## When to use it
 
@@ -44,7 +41,6 @@ You can navigate away from the page during the import and come back to it. The r
 
 Settings apply to every import; per-archive overrides are not supported.
 
-- **Bilder lokal herunterladen** (Download images locally) — recommended. Bibliogon stores each image under your Bibliogon data directory instead of pointing at the Medium CDN. Disable only if you intentionally want CDN-hosted images.
 - **Timeout pro Bild-Download (Sekunden)** (Per-image download timeout) — default 30. Raise on slow connections; the importer skips the image and continues if the timeout fires.
 - **Bereits importierte Artikel überspringen** (Skip already-imported articles) — default on. Detection is by canonical Medium URL. Turn off only when you want to re-import a corrected archive on top of an existing one (see "Re-importing" below).
 - **Standardstatus für importierte Artikel** (Default status for imported articles) — draft, published, or archived. Default is published since Medium posts are by definition published.
@@ -52,13 +48,17 @@ Settings apply to every import; per-archive overrides are not supported.
 
 This setting affects new imports only. To retroactively set featured images on articles you imported before this feature shipped, run `scripts/fix_medium_import_featured_images.py` (dry-run by default; pass `--apply` to write). Articles with a featured image already set are skipped — your manual curation is preserved.
 
-### Offline thumbnails
+## Images
 
-In the offline web app, the importer also tries to fetch the bytes of each article's first image during the import — while you are still online — and stores them in your browser's local database. That cached thumbnail is what the **Articles dashboard tiles** show even after you go offline, so your list of posts still looks like a list of posts rather than a wall of placeholders. This is best-effort: if an image cannot be fetched (a CORS restriction on the Medium CDN, or a flaky connection), the article keeps the CDN URL and simply falls back to the placeholder when offline. The full-resolution body images are not cached this way — only the dashboard thumbnail.
+Every image is downloaded once during the import and stored locally: in the desktop app under your Bibliogon data directory, in the web app in your browser's local database. After the import, Bibliogon requests nothing from Medium for these articles, and the images show offline too. There is no option to keep Medium CDN links.
+
+An image that cannot be downloaded (timeout, network error, or a file that is not a PNG, JPEG, GIF, WebP or AVIF image) is left out of the article and recorded as an import warning. The featured image is the first image that was stored; when none could be stored, the article has no featured image.
+
+Articles imported with an earlier version of Bibliogon may still point at the Medium CDN and keep loading their images from there. Re-importing with **Skip already-imported articles** turned off creates new copies with locally stored images; the old articles stay until you delete them.
 
 ## Re-importing the same archive
 
-The importer is idempotent by canonical Medium URL. Running the same archive twice with the default settings produces zero changes — every post lands in the "skipped" section. To force a re-import (you fixed something in the archive, or you want to refresh image-download), turn off **Skip already-imported articles** before running again.
+The importer is idempotent by canonical Medium URL. Running the same archive twice with the default settings produces zero changes — every post lands in the "skipped" section. To force a re-import (you fixed something in the archive, or you want to store the images of an older import locally), turn off **Skip already-imported articles** before running again.
 
 ## What gets imported per post
 

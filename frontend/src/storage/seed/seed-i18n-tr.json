@@ -2446,8 +2446,6 @@
       "settings": {
         "card_title": "Ayarlar",
         "card_hint": "Bu ayarlar tüm gelecekteki içe aktarmalar için geçerlidir. Kitap veya makale başına geçersiz kılma desteklenmez.",
-        "download_images": "Görüntüleri yerel olarak indir",
-        "download_images_hint": "Önerilir. Görüntüleri Medium CDN'sini işaret etmek yerine Bibliogon depolamasında saklar.",
         "timeout_seconds": "Görüntü indirme zaman aşımı (saniye)",
         "skip_existing": "Zaten içe aktarılmış makaleleri atla",
         "skip_existing_hint": "Aynı Medium URL'sine sahip makaleler tekrar içe aktarılmaz.",
