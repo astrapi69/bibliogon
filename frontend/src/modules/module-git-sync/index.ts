@@ -31,4 +31,4 @@ export type {
     GitHubImportSummary,
     RunGitHubImportOptions,
 } from "../../import/githubImport";
-export { getGitHubToken, setGitHubToken } from "../../import/githubToken";
+export { loadGitHubToken, saveGitHubToken } from "../../import/githubToken";

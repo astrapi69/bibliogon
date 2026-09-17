@@ -8,9 +8,16 @@
  * (via `getStorage()`, zero `/api`). The network gate
  * ({@link FEATURES.GITHUB_IMPORT}) disables the tab only when the browser is
  * offline.
+ *
+ * The optional token (#880) is loaded from and saved to IndexedDB through
+ * {@link loadGitHubToken} / {@link saveGitHubToken}. The token section tells
+ * the user what a stored token exposes, links to GitHub's fine-grained token
+ * page with the minimal scope, and offers a delete button.
  */
 
-import { useState } from "react";
+const FINE_GRAINED_TOKEN_URL = "https://github.com/settings/personal-access-tokens/new";
+
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { ArrowUp, FileText, Folder, FolderGit2, Loader2 } from "lucide-react";
@@ -19,7 +26,7 @@ import { useI18n } from "../../hooks/useI18n";
 import { notify } from "../../utils/platform/notify";
 import { FEATURES } from "../../features/featureConfig";
 import { FeatureNotice } from "../../features/FeatureNotice";
-import { getGitHubToken, setGitHubToken } from "../../import/githubToken";
+import { loadGitHubToken, saveGitHubToken } from "../../import/githubToken";
 import { TokenInput } from "../../lib/components/TokenInput";
 import {
     GitHubNotFoundError,
@@ -49,7 +56,7 @@ export default function GitHubImportTab({ onImported, onClose }: GitHubImportTab
     const feature = useFeature(FEATURES.GITHUB_IMPORT);
 
     const [urlInput, setUrlInput] = useState("");
-    const [token, setToken] = useState<string>(() => getGitHubToken());
+    const [token, setToken] = useState<string>("");
     const [showToken, setShowToken] = useState(false);
 
     const [repoRef, setRepoRef] = useState<GitHubRepoRef | null>(null);
@@ -63,6 +70,24 @@ export default function GitHubImportTab({ onImported, onClose }: GitHubImportTab
     const [importing, setImporting] = useState(false);
     const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
     const [summary, setSummary] = useState<GitHubImportSummary | null>(null);
+
+    const storageErrorMessage = t(
+        "ui.github_import.token_storage_error",
+        "Der Token-Speicher im Browser ist nicht verfügbar.",
+    );
+
+    useEffect(() => {
+        let cancelled = false;
+        loadGitHubToken()
+            .then((stored) => {
+                if (!cancelled && stored) setToken((current) => current || stored);
+            })
+            .catch((err: unknown) => notify.error(storageErrorMessage, err));
+        return () => {
+            cancelled = true;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     if (!feature.isActive) {
         return (
@@ -114,12 +139,26 @@ export default function GitHubImportTab({ onImported, onClose }: GitHubImportTab
             );
             return;
         }
-        setGitHubToken(token);
+        try {
+            await saveGitHubToken(token);
+        } catch (err) {
+            notify.error(storageErrorMessage, err);
+        }
         setRepoRef(ref);
         setRootPath(ref.path);
         setSelected({});
         setSummary(null);
         await loadDir(ref, ref.path);
+    };
+
+    const handleClearToken = async () => {
+        setToken("");
+        try {
+            await saveGitHubToken("");
+            notify.success(t("ui.github_import.token_cleared", "Token gelöscht."));
+        } catch (err) {
+            notify.error(storageErrorMessage, err);
+        }
     };
 
     const toggleSelect = (entry: GitHubEntry) => {
@@ -219,7 +258,7 @@ export default function GitHubImportTab({ onImported, onClose }: GitHubImportTab
 
                 <button
                     className="self-start text-xs text-[var(--text-muted)] underline"
-                    data-testid="github-import-token-toggle"
+                    data-testid="github-import-token-section-toggle"
                     onClick={() => setShowToken((s) => !s)}
                     type="button"
                 >
@@ -245,6 +284,39 @@ export default function GitHubImportTab({ onImported, onClose }: GitHubImportTab
                                 "Wird nur lokal gespeichert und nur an GitHub gesendet. Erhöht das Anfragelimit und erlaubt private Repos.",
                             )}
                         </p>
+                        <p
+                            className="m-0 text-xs text-[var(--text-muted)]"
+                            data-testid="github-import-token-risk"
+                        >
+                            {t(
+                                "ui.github_import.token_risk",
+                                "Das Token liegt unverschlüsselt in diesem Browser; ein Skript, das hier ausgeführt wird, kann es lesen. Lege ein Fine-grained Token an: nur die Repositories, die du importieren willst, Berechtigung Contents: Read-only, mit Ablaufdatum. Ein klassisches Token mit repo-Scope erlaubt Schreibzugriff auf alle deine Repositories.",
+                            )}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-x-4">
+                            <a
+                                className="inline-flex min-h-[44px] items-center text-xs underline"
+                                data-testid="github-import-token-create-link"
+                                href={FINE_GRAINED_TOKEN_URL}
+                                rel="noopener noreferrer"
+                                target="_blank"
+                            >
+                                {t(
+                                    "ui.github_import.token_create_link",
+                                    "Fine-grained Token bei GitHub anlegen",
+                                )}
+                            </a>
+                            {token && (
+                                <button
+                                    className="min-h-[44px] text-xs text-[var(--danger)] underline"
+                                    data-testid="github-import-token-clear"
+                                    onClick={() => void handleClearToken()}
+                                    type="button"
+                                >
+                                    {t("ui.github_import.token_clear", "Token löschen")}
+                                </button>
+                            )}
+                        </div>
                     </div>
                 )}
 

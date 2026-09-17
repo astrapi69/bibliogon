@@ -14,9 +14,11 @@ vi.mock("react-router-dom", () => ({ useNavigate: () => navigate }));
 
 vi.mock("../../utils/platform/notify", () => ({ notify: { success: vi.fn(), error: vi.fn() } }));
 
+const loadGitHubToken = vi.fn(async () => "");
+const saveGitHubToken = vi.fn(async (_token: string) => {});
 vi.mock("../../import/githubToken", () => ({
-    getGitHubToken: () => "",
-    setGitHubToken: vi.fn(),
+    loadGitHubToken: () => loadGitHubToken(),
+    saveGitHubToken: (token: string) => saveGitHubToken(token),
 }));
 
 const useFeatureMock = vi.fn();
@@ -120,5 +122,85 @@ describe("GitHubImportTab edge cases", () => {
         expect((screen.getByTestId("github-import-select-all") as HTMLButtonElement).disabled).toBe(
             true,
         );
+    });
+});
+
+describe("GitHubImportTab token handling (#880)", () => {
+    it("fills the token field from the stored token once it has loaded", async () => {
+        useFeatureMock.mockReturnValue({ isActive: true });
+        loadGitHubToken.mockResolvedValueOnce("github_pat_stored");
+        render(<GitHubImportTab onClose={() => {}} />);
+        fireEvent.click(screen.getByTestId("github-import-token-section-toggle"));
+        await waitFor(() =>
+            expect((screen.getByTestId("github-import-token") as HTMLInputElement).value).toBe(
+                "github_pat_stored",
+            ),
+        );
+    });
+
+    it("does not overwrite a token the user typed before the stored one arrived", async () => {
+        useFeatureMock.mockReturnValue({ isActive: true });
+        let resolveStored: (value: string) => void = () => {};
+        loadGitHubToken.mockReturnValueOnce(
+            new Promise<string>((resolve) => {
+                resolveStored = resolve;
+            }),
+        );
+        render(<GitHubImportTab onClose={() => {}} />);
+        fireEvent.click(screen.getByTestId("github-import-token-section-toggle"));
+        fireEvent.change(screen.getByTestId("github-import-token"), {
+            target: { value: "github_pat_typed" },
+        });
+        resolveStored("github_pat_stored");
+        await waitFor(() => expect(loadGitHubToken).toHaveBeenCalled());
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        expect((screen.getByTestId("github-import-token") as HTMLInputElement).value).toBe(
+            "github_pat_typed",
+        );
+    });
+
+    it("shows the risk and minimal-scope notice with the fine-grained token link", () => {
+        useFeatureMock.mockReturnValue({ isActive: true });
+        render(<GitHubImportTab onClose={() => {}} />);
+        expect(screen.queryByTestId("github-import-token-risk")).toBeNull();
+        fireEvent.click(screen.getByTestId("github-import-token-section-toggle"));
+        const notice = screen.getByTestId("github-import-token-risk");
+        expect(notice.textContent).toContain("Contents: Read-only");
+        const link = screen.getByTestId("github-import-token-create-link");
+        expect(link.getAttribute("href")).toBe(
+            "https://github.com/settings/personal-access-tokens/new",
+        );
+        expect(link.getAttribute("rel")).toContain("noopener");
+    });
+
+    it("saves the typed token when a repository is loaded", async () => {
+        useFeatureMock.mockReturnValue({ isActive: true });
+        parseGitHubUrl.mockReturnValue({ owner: "o", repo: "r", path: "" });
+        listGitHubContents.mockResolvedValue([]);
+        render(<GitHubImportTab onClose={() => {}} />);
+        fireEvent.click(screen.getByTestId("github-import-token-section-toggle"));
+        fireEvent.change(screen.getByTestId("github-import-token"), {
+            target: { value: "github_pat_typed" },
+        });
+        fireEvent.change(screen.getByTestId("github-import-url"), {
+            target: { value: "https://github.com/o/r" },
+        });
+        fireEvent.click(screen.getByTestId("github-import-load"));
+        await waitFor(() => expect(saveGitHubToken).toHaveBeenCalledWith("github_pat_typed"));
+    });
+
+    it("deletes the stored token and empties the field", async () => {
+        useFeatureMock.mockReturnValue({ isActive: true });
+        loadGitHubToken.mockResolvedValueOnce("github_pat_stored");
+        render(<GitHubImportTab onClose={() => {}} />);
+        fireEvent.click(screen.getByTestId("github-import-token-section-toggle"));
+        await waitFor(() =>
+            expect((screen.getByTestId("github-import-token") as HTMLInputElement).value).toBe(
+                "github_pat_stored",
+            ),
+        );
+        fireEvent.click(screen.getByTestId("github-import-token-clear"));
+        await waitFor(() => expect(saveGitHubToken).toHaveBeenCalledWith(""));
+        expect((screen.getByTestId("github-import-token") as HTMLInputElement).value).toBe("");
     });
 });

@@ -12,7 +12,7 @@
  * Medium importer — all via the `getStorage()` seam (zero `/api`).
  *
  * Only the GitHub REST API + raw download hosts are contacted; the optional
- * token is read from {@link getGitHubToken} and sent only to those hosts.
+ * token is read from {@link loadGitHubToken} and sent only to those hosts.
  */
 
 import { detectImportFormat, type ImportFormat } from "./detectFormat";
