@@ -1,21 +1,17 @@
 /**
- * A+ Content section in the book metadata (#887).
+ * A+ Content in the book metadata (#887, #891), against the real backend.
  *
- * The A+ plugin (#825) shipped backend-only: visible in the plugin list,
- * reachable from nowhere in the UI. This smoke pins the integration:
- *   - the "A+ Content" item sits in the Veröffentlichung group of the
- *     metadata nav and opens a section of real, user-visible height
- *   - Generate posts to the plugin and renders the package with its
- *     validator findings; a second click regenerates with force=true
- *   - a missing-fields answer lists the field and jumps to the section
- *     that holds it
- *
- * The AI and the A+ endpoints are route-mocked (no LLM call). The plugin
- * status mock lights up AI the same way ai-review.spec.ts does.
+ * The author fills the A+ document by hand: typed fields are saved through
+ * the storage seam into `aplus_documents` and survive a reload, modules are
+ * added from templates. "Fill with AI" is optional; its AI call and the
+ * plugin status are route-mocked (no LLM), the save of the filled document
+ * is real. The layout must fit a phone-width viewport.
  */
 
 import {test, expect, createBook} from "../fixtures/base";
 import type {Page, Route} from "@playwright/test";
+
+const API = "http://localhost:8000/api";
 
 const PACKAGE = {
     short_description: "Ein Roman über Mut, Freundschaft und das Meer.",
@@ -29,23 +25,24 @@ const PACKAGE = {
         text: "Eine Geschichte über den Mut, loszulassen.",
         image: {
             prompt: "a small boat on a stormy sea",
-            aspect_ratio: "97:30",
-            size: "970x300",
+            aspect_ratio: "97:60",
+            size: "970x600",
             style_flags: [],
-            rendered: "a small boat on a stormy sea, 970x300, 97:30",
+            rendered: "a small boat on a stormy sea --ar 97:60",
         },
         alt_text: "Ein kleines Boot auf stürmischer See",
     },
     module_three_images: [],
     validation: [{field: "short_description", severity: "warning", message: "Kürzer wäre besser"}],
-    meta: {
-        book_id: "x",
-        language: "de",
-        model: "claude-sonnet-4-6",
-        ruleset_version: "1",
-        generated_at: "2026-09-22T08:00:00Z",
-    },
+    meta: {book_id: "x", language: "de", model: "m", ruleset_version: "3", generated_at: "2026-09-22T08:00:00Z"},
 };
+
+type StoredDocument = {language: string; short_description: string; modules: {template: string; slots: {image_prompt: string}[]}[]};
+
+async function storedDocuments(bookId: string): Promise<StoredDocument[]> {
+    const res = await fetch(`${API}/aplus/${bookId}/documents`);
+    return res.ok ? res.json() : [];
+}
 
 async function enableAi(page: Page) {
     await page.route("**/api/editor/plugin-status", (route: Route) =>
@@ -57,78 +54,98 @@ async function enableAi(page: Page) {
     );
 }
 
-/** Route-mock the A+ plugin; returns the list of generate URLs it saw. */
-async function mockAplus(page: Page, generateBody: unknown): Promise<string[]> {
-    const generateCalls: string[] = [];
-    await page.route("**/api/aplus/**", (route: Route) => {
-        const url = route.request().url();
-        if (route.request().method() === "POST" && url.includes("/generate")) {
-            generateCalls.push(url);
-            return route.fulfill({
-                status: 200,
-                contentType: "application/json",
-                body: JSON.stringify(generateBody),
-            });
-        }
-        return route.fulfill({
-            status: 404,
-            contentType: "application/json",
-            body: JSON.stringify({detail: "No A+ Content generated yet"}),
-        });
-    });
-    return generateCalls;
+async function mockGenerate(page: Page, body: unknown) {
+    await page.route("**/api/aplus/*/generate**", (route: Route) =>
+        route.fulfill({status: 200, contentType: "application/json", body: JSON.stringify(body)}),
+    );
 }
 
-test.describe("Book-metadata A+ Content (#887)", () => {
-    test("A+ section opens from the nav, generates and regenerates", async ({page}) => {
+async function openAplus(page: Page, bookId: string) {
+    await page.goto(`/book/${bookId}?view=metadata`);
+    const navItem = page.getByTestId("metadata-tab-aplus");
+    await expect(navItem).toBeVisible({timeout: 10000});
+    await navItem.click();
+    await expect(page.getByTestId("aplus-content-name")).toBeVisible();
+}
+
+test.describe("Book-metadata A+ Content (#891)", () => {
+    test("typed fields and an added module are saved and survive a reload", async ({page}) => {
+        const book = await createBook("A+ Handarbeit", "E2E Autor");
+        await openAplus(page, book.id);
+
+        await expect(page.getByTestId("aplus-content-name")).toHaveValue("A+ Handarbeit - A+Content");
+        await page.getByTestId("aplus-short-description").fill("Filimón ist ein Pferd, das lachen kann.");
+        await expect(page.getByTestId("aplus-short-description-char-count")).toContainText("/ 300");
+        await page.getByTestId("aplus-add-three_images_text").click();
+        await page.getByTestId("aplus-module-2-slot-1-prompt").fill("flooded bathroom, laughing horse --ar 1:1");
+
+        await expect
+            .poll(async () => (await storedDocuments(book.id))[0]?.modules?.[2]?.slots?.[1]?.image_prompt, {
+                timeout: 15000,
+            })
+            .toBe("flooded bathroom, laughing horse --ar 1:1");
+
+        await page.reload();
+        await page.getByTestId("metadata-tab-aplus").click();
+        await expect(page.getByTestId("aplus-short-description")).toHaveValue(
+            "Filimón ist ein Pferd, das lachen kann.",
+        );
+        await expect(page.getByTestId("aplus-module-2")).toContainText("300x300");
+        await expect(page.getByTestId("aplus-module-2-slot-1-prompt")).toHaveValue(
+            "flooded bathroom, laughing horse --ar 1:1",
+        );
+    });
+
+    test("fill with AI fills the fields, shows the findings and saves", async ({page}) => {
         await enableAi(page);
-        const generateCalls = await mockAplus(page, PACKAGE);
-        const book = await createBook("A+ Smoke Buch", "E2E Autor");
-        await page.goto(`/book/${book.id}?view=metadata`);
+        await mockGenerate(page, PACKAGE);
+        const book = await createBook("A+ KI Buch", "E2E Autor");
+        await openAplus(page, book.id);
 
-        const navItem = page.getByTestId("metadata-tab-aplus");
-        await expect(navItem).toBeVisible({timeout: 10000});
-        await navItem.click();
+        const fill = page.getByTestId("aplus-ai-fill");
+        await expect(fill).toBeEnabled();
+        await fill.click();
 
-        const section = page.getByTestId("aplus-section");
-        await expect(section).toBeVisible();
-        await expect(page.getByTestId("aplus-empty")).toBeVisible();
-
-        const generate = page.getByTestId("aplus-generate");
-        await expect(generate).toBeEnabled();
-        await generate.click();
-
-        await expect(page.getByTestId("aplus-package")).toBeVisible();
-        await expect(section).toContainText("Ein Roman über Mut, Freundschaft und das Meer.");
+        await expect(page.getByTestId("aplus-short-description")).toHaveValue(PACKAGE.short_description);
+        await expect(page.getByTestId("aplus-bullet-2-heading")).toHaveValue("Atmosphärisch");
+        await expect(page.getByTestId("aplus-module-0-slot-0-prompt")).toHaveValue(
+            "a small boat on a stormy sea --ar 97:60",
+        );
         await expect(page.getByTestId("aplus-findings")).toContainText("Kürzer wäre besser");
-        await expect(page.getByTestId("aplus-copy-header-prompt")).toBeVisible();
-        expect(generateCalls[0]).not.toContain("force=true");
-
-        const bbox = await section.boundingBox();
-        expect(bbox).not.toBeNull();
-        expect(bbox!.height).toBeGreaterThan(200);
-
-        await generate.click();
-        await expect.poll(() => generateCalls.length).toBe(2);
-        expect(generateCalls[1]).toContain("force=true");
+        await expect
+            .poll(async () => (await storedDocuments(book.id))[0]?.short_description, {timeout: 15000})
+            .toBe(PACKAGE.short_description);
     });
 
     test("missing fields are listed and link to the section holding them", async ({page}) => {
         await enableAi(page);
-        await mockAplus(page, {
+        await mockGenerate(page, {
             book_id: "x",
-            missing_fields: [
-                {field: "description", reason: "At least one description field is required."},
-            ],
+            missing_fields: [{field: "description", reason: "At least one description field is required."}],
         });
         const book = await createBook("A+ Missing Buch", "E2E Autor");
-        await page.goto(`/book/${book.id}?view=metadata`);
+        await openAplus(page, book.id);
 
-        await page.getByTestId("metadata-tab-aplus").click();
-        await page.getByTestId("aplus-generate").click();
-
+        await page.getByTestId("aplus-ai-fill").click();
         await expect(page.getByTestId("aplus-missing")).toBeVisible();
         await page.getByTestId("aplus-missing-goto-description").click();
         await expect(page.getByTestId("metadata-tab-general")).toHaveAttribute("aria-current", "page");
+    });
+
+    test("the editor fits a phone-width viewport", async ({page}) => {
+        await page.setViewportSize({width: 400, height: 860});
+        const book = await createBook("A+ Mobil", "E2E Autor");
+        await page.goto(`/book/${book.id}?view=metadata`);
+        await page.getByTestId("navigation-sidebar-mobile-trigger").click();
+        await page.getByTestId("metadata-tab-aplus-mobile").click();
+        const prompt = page.getByTestId("aplus-module-1-slot-2-prompt");
+        await prompt.scrollIntoViewIfNeeded();
+        await expect(prompt).toBeVisible();
+        const box = await prompt.boundingBox();
+        expect(box).not.toBeNull();
+        expect(box!.x).toBeGreaterThanOrEqual(0);
+        expect(box!.x + box!.width).toBeLessThanOrEqual(400);
+        const addButton = await page.getByTestId("aplus-add-image_header_text").boundingBox();
+        expect(addButton!.height).toBeGreaterThanOrEqual(44);
     });
 });

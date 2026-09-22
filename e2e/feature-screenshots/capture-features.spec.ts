@@ -808,11 +808,10 @@ test.describe("Feature Screenshots", () => {
                     text: "Vom ersten Entwurf bis zum fertigen Kapitel: ein Stil, der Leserinnen und Leser mitnimmt.",
                     image: {
                         prompt: "a writing desk by a window at dawn, open notebook, warm light",
-                        aspect_ratio: "97:30",
-                        size: "970x300",
+                        aspect_ratio: "97:60",
+                        size: "970x600",
                         style_flags: ["photorealistic"],
-                        rendered:
-                            "a writing desk by a window at dawn, open notebook, warm light, photorealistic, 970x300, aspect ratio 97:30",
+                        rendered: "a writing desk by a window at dawn, open notebook, warm light --ar 97:60",
                     },
                     alt_text: "Schreibtisch am Fenster im Morgenlicht",
                 },
@@ -828,11 +827,11 @@ test.describe("Feature Screenshots", () => {
                     book_id: "demo",
                     language: "de",
                     model: "claude-sonnet-4-6",
-                    ruleset_version: "1",
+                    ruleset_version: "3",
                     generated_at: "2026-09-22T08:00:00Z",
                 },
             };
-            await page.route("**/api/aplus/**", (route) =>
+            await page.route("**/api/aplus/*/generate**", (route) =>
                 route.fulfill({
                     status: 200,
                     contentType: "application/json",
@@ -842,10 +841,12 @@ test.describe("Feature Screenshots", () => {
             const book = await seedKdpReadyBook(page, "Die Souveränität des Musters");
             await page.goto(`/book/${book.id}?view=metadata`);
             await page.getByTestId("metadata-tab-aplus").click().catch(() => {});
+            await page.getByTestId("aplus-ai-fill").click().catch(() => {});
             await page
-                .getByTestId("aplus-package")
+                .getByTestId("aplus-findings")
                 .waitFor({state: "visible"})
                 .catch(() => {});
+            await page.getByTestId("aplus-module-0-title").fill("Die Souveränität des Musters").catch(() => {});
             await page.waitForTimeout(400);
             await page.screenshot({path: `${OUT}/import-export/aplus-content.png`});
         });

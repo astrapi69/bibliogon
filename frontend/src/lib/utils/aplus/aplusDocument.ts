@@ -123,17 +123,28 @@ export function emptyDocument(bookTitle: string, newId: () => string): AplusDocu
     };
 }
 
+function moduleTexts(module: AplusModuleDraft): string[] {
+    return [
+        module.module_title,
+        ...module.slots.flatMap((slot) => [slot.title, slot.text, slot.image_prompt, slot.alt_text]),
+    ];
+}
+
+const nonBlank = (text: string): boolean => text.trim() !== "";
+
+/** True when any field of the module holds text. */
+export function moduleHasContent(module: AplusModuleDraft): boolean {
+    return moduleTexts(module).some(nonBlank);
+}
+
 /** True when the author typed anything beyond the generated content name. */
 export function hasContent(doc: AplusDocumentDraft): boolean {
     const texts = [
         doc.short_description,
         ...doc.bullets.flatMap((bullet) => [bullet.heading, bullet.body]),
-        ...doc.modules.flatMap((module) => [
-            module.module_title,
-            ...module.slots.flatMap((slot) => [slot.title, slot.text, slot.image_prompt, slot.alt_text]),
-        ]),
+        ...doc.modules.flatMap(moduleTexts),
     ];
-    return texts.some((text) => text.trim() !== "");
+    return texts.some(nonBlank);
 }
 
 function slotFromGenerated(generated: GeneratedAplusModule): AplusSlotDraft {

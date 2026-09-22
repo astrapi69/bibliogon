@@ -15,6 +15,7 @@ import {
     fromStoredRow,
     findTemplate,
     hasContent,
+    moduleHasContent,
     moveModule,
     newModuleId,
     packageToDocument,
@@ -186,5 +187,16 @@ describe("stored rows", () => {
     it("fills fields a partial stored document lacks", () => {
         const row = { id: "r", book_id: "b", language: "de", document_json: '{"content_name":"x"}' };
         expect(fromStoredRow(row)).toEqual({ content_name: "x", short_description: "", bullets: [], modules: [] });
+    });
+});
+
+describe("moduleHasContent", () => {
+    it("is false for a fresh module and true once any slot field holds text", () => {
+        const module = createModule("three_images_text", "m");
+        expect(moduleHasContent(module)).toBe(false);
+        module.slots[1].text = "  ";
+        expect(moduleHasContent(module)).toBe(false);
+        module.slots[1].text = "x";
+        expect(moduleHasContent(module)).toBe(true);
     });
 });

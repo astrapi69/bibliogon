@@ -5,16 +5,22 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 ## [Unreleased]
 
 ### Added
-- **A+ Content in the book metadata (#887).** The A+ plugin (#825)
-  shipped backend-only and was reachable from nowhere in the UI. The
-  metadata editor now has an **A+ Content** section under
-  Veröffentlichung: language picker (de/en/fr/es, preselected from the
-  book), Generate / Regenerate, the validator findings, and every text
-  block and image prompt with a copy button. When the book lacks an
-  author or a description, the section lists the missing fields and
-  jumps to the section that holds them, without an AI call. Gated as
-  desktop-only in the web app (`aplus-content`), with a help page under
-  Portfolio.
+- **A+ Content editor in the book metadata (#887, #891).** The A+
+  plugin (#825) shipped backend-only and was reachable from nowhere in
+  the UI. The metadata editor now has an **A+ Content** section under
+  Veröffentlichung with an editable document per book and language:
+  content name, short description, three bullets, and modules added
+  from templates (standard image header 970x600, standard three images
+  300x300), each with module name and per image title, text, image
+  prompt and alt text. Counters show the ruleset limits, every field
+  has a copy button, "Copy all" produces the whole content as text.
+  Edits save automatically through the storage seam, so the editor
+  works in the desktop app, the web app and on a phone. "Fill with AI"
+  is optional and desktop-only: it asks before overwriting typed text,
+  lists missing book fields with a jump to them, and shows the
+  validator findings. A+ documents are part of the `.bgb` and JSON
+  backups (both directions between desktop and web app) and the
+  selective export; new backend table `aplus_documents`.
 - **Impressum + Datenschutzerklärung scaffold for the web app (#876).**
   Four static pages next to the SPA (`impressum.html`, `datenschutz.html`,
   `imprint.html`, `privacy.html`), a footer with both links under every

@@ -1,27 +1,45 @@
-import { useEffect, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { useState } from "react";
+import { ClipboardCopy, Sparkles } from "lucide-react";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 
 import { api, type BookDetail } from "../../../api/client";
 import {
     APLUS_LANGUAGES,
     isAplusMissingFields,
+    type AplusFinding,
     type AplusMissingField,
-    type AplusPackage,
 } from "../../../api/platform";
 import { FEATURES } from "../../../features/featureConfig";
-import { FeatureNotice } from "../../../features/FeatureNotice";
+import { useAplusDocument, type AplusSaveState } from "../../../hooks/book/useAplusDocument";
+import {
+    hasContent,
+    newModuleId,
+    packageToDocument,
+    type AplusDocumentDraft,
+    type GeneratedAplusPackage,
+} from "../../../lib/utils/aplus/aplusDocument";
+import { documentToText, type AplusTextLabels } from "../../../lib/utils/aplus/aplusText";
 import { copyToClipboard } from "../../../utils/platform/clipboard";
 import { notify } from "../../../utils/platform/notify";
+import { useDialog } from "../../shared/AppDialog";
 import { RadixSelect } from "../../shared/RadixSelect";
 import type { TFunc } from "../tabTypes";
-import AplusPackageView from "./AplusPackageView";
+import AplusDocumentEditor from "./AplusDocumentEditor";
+import AplusFindings from "./AplusFindings";
+import { templateLabel } from "./AplusModuleCard";
 
-/** Metadata section that holds each field the generator requires. */
+/** Metadata section that holds each field the AI generator requires. */
 const FIELD_SECTION: Record<string, string> = {
     author: "general",
     description: "general",
 };
+
+/** A plain language tag (`de`, `pt-BR`), the same shape the backend accepts. */
+function isLanguageTag(code: string): boolean {
+    const [base, region, ...rest] = code.split("-");
+    if (rest.length > 0 || !/^[a-z]{2,3}$/.test(base)) return false;
+    return region === undefined || /^[A-Za-z0-9]{2,8}$/.test(region);
+}
 
 interface AplusSectionProps {
     book: BookDetail;
@@ -32,9 +50,16 @@ interface AplusSectionProps {
     onSelectSection?: (sectionId: string) => void;
 }
 
-function initialLanguage(bookLanguage: string | null | undefined): string {
-    const base = (bookLanguage || "").slice(0, 2).toLowerCase();
-    return (APLUS_LANGUAGES as readonly string[]).includes(base) ? base : "en";
+const isAiLanguage = (code: string) => (APLUS_LANGUAGES as readonly string[]).includes(code);
+
+/** The AI languages plus the book's own language, which a manual document may use. */
+function languageOptions(bookLanguage: string): string[] {
+    const own = isLanguageTag(bookLanguage) && !isAiLanguage(bookLanguage) ? [bookLanguage] : [];
+    return [...own, ...APLUS_LANGUAGES];
+}
+
+function initialLanguage(bookLanguage: string): string {
+    return isLanguageTag(bookLanguage) ? bookLanguage : "en";
 }
 
 function languageLabel(code: string): string {
@@ -45,6 +70,30 @@ function languageLabel(code: string): string {
     } catch {
         return code;
     }
+}
+
+function textLabels(t: TFunc): AplusTextLabels {
+    return {
+        contentName: t("ui.aplus.content_name", "Name des Inhalts"),
+        shortDescription: t("ui.aplus.short_description", "Kurzbeschreibung"),
+        characters: t("ui.aplus.characters", "Zeichen"),
+        bullets: t("ui.aplus.bullets", "Bulletpoints"),
+        module: t("ui.aplus.module", "Modul"),
+        moduleTitle: t("ui.aplus.module_name", "Modulname"),
+        image: t("ui.aplus.image", "Bild"),
+        title: t("ui.aplus.module_title", "Titel"),
+        text: t("ui.aplus.module_text", "Text"),
+        imagePrompt: t("ui.aplus.image_prompt", "Bild-Prompt"),
+        altText: t("ui.aplus.alt_text", "Alt-Text"),
+        templateName: (id) => templateLabel(id, t),
+    };
+}
+
+function saveStateLabel(state: AplusSaveState, t: TFunc): string {
+    if (state === "saving") return t("ui.aplus.saving", "Speichert ...");
+    if (state === "saved") return t("ui.aplus.saved", "Gespeichert");
+    if (state === "error") return t("ui.aplus.save_failed", "Nicht gespeichert");
+    return "";
 }
 
 function MissingFieldsList({
@@ -62,9 +111,7 @@ function MissingFieldsList({
             data-testid="aplus-missing"
             role="status"
         >
-            <strong className="text-sm">
-                {t("ui.aplus.missing_title", "Für A+ Content fehlen noch Angaben:")}
-            </strong>
+            <strong className="text-sm">{t("ui.aplus.missing_title", "Für A+ Content fehlen noch Angaben:")}</strong>
             {fields.map((field) => (
                 <div key={field.field} className="flex flex-wrap items-center justify-between gap-2">
                     <span className="text-sm">{t(`ui.aplus.missing_${field.field}`, field.reason)}</span>
@@ -84,80 +131,90 @@ function MissingFieldsList({
     );
 }
 
+/** Why AI fill is unavailable, or null when it can run. */
+function aiBlocker(featureReason: string | undefined, aiAvailable: boolean, language: string, t: TFunc): string | null {
+    if (featureReason) return t(featureReason, "Nur in der Desktop-App verfügbar.");
+    if (!aiAvailable) {
+        return t(
+            "ui.aplus.ai_unavailable",
+            "Die KI ist nicht eingerichtet. Aktiviere sie in den Einstellungen unter KI-Assistent, um A+ Content zu erzeugen.",
+        );
+    }
+    if (!isAiLanguage(language)) {
+        return t("ui.aplus.ai_language_unsupported", "KI-Vorschläge gibt es für Deutsch, Englisch, Französisch und Spanisch.");
+    }
+    return null;
+}
+
 /**
- * A+ Content section of the book metadata (#887): the UI for the
- * backend-only A+ generator (#825). Loads the cached package for the
- * chosen language, generates or regenerates one, lists missing required
- * fields, and shows the package with copy buttons. Gated off in the web
- * app through `FEATURES.APLUS_CONTENT` (generation and validation run in
- * the backend), so offline it renders a notice and makes no request.
+ * A+ Content section of the book metadata (#887, #891): the author's
+ * editable A+ document for one language, built from module templates and
+ * saved through the storage seam, so it works in the desktop app, the web app
+ * and on a phone. "Fill with AI" is optional and desktop-only; it asks before
+ * overwriting typed text and shows the validator findings afterwards.
  *
  * @example
  * <AplusSection book={book} aiAvailable={ai.aiAvailable} t={t} onSelectSection={setActiveTab} />
  */
 export default function AplusSection({ book, aiAvailable, t, onSelectSection }: AplusSectionProps) {
-    const feature = useFeature(FEATURES.APLUS_CONTENT);
-    const [language, setLanguage] = useState(() => initialLanguage(book.language));
-    const [pkg, setPkg] = useState<AplusPackage | null>(null);
+    const aiFeature = useFeature(FEATURES.APLUS_AI);
+    const dialog = useDialog();
+    const bookLanguage = (book.language || "").toLowerCase();
+    const [language, setLanguage] = useState(() => initialLanguage(bookLanguage));
+    const [findings, setFindings] = useState<AplusFinding[]>([]);
     const [missing, setMissing] = useState<AplusMissingField[] | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [generating, setGenerating] = useState(false);
+    const [filling, setFilling] = useState(false);
+    const aplus = useAplusDocument({
+        bookId: book.id,
+        bookTitle: book.title,
+        language,
+        onError: (err) => notify.error(t("ui.aplus.save_error", "A+ Content konnte nicht gespeichert werden"), err),
+    });
+    const blocker = aiBlocker(aiFeature.isActive ? undefined : aiFeature.reason, aiAvailable, language, t);
 
-    useEffect(() => {
-        if (!feature.isActive) return;
-        let cancelled = false;
-        setLoading(true);
+    const changeLanguage = (next: string) => {
+        setFindings([]);
         setMissing(null);
-        api.aplus
-            .get(book.id, language)
-            .then((cached) => {
-                if (!cancelled) setPkg(cached);
-            })
-            .catch((err: unknown) => {
-                if (!cancelled) notify.error(t("ui.aplus.load_error", "A+ Content konnte nicht geladen werden"), err);
-            })
-            .finally(() => {
-                if (!cancelled) setLoading(false);
-            });
-        return () => {
-            cancelled = true;
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [book.id, language, feature.isActive]);
+        setLanguage(next);
+    };
 
-    if (!feature.isActive) {
-        return (
-            <div className="flex flex-col gap-3">
-                <h3 className="m-0 text-base">{t("ui.aplus.title", "A+ Content")}</h3>
-                <FeatureNotice reason={feature.reason} testId="aplus-feature-notice" />
-            </div>
-        );
-    }
-
-    const handleGenerate = async () => {
-        setGenerating(true);
+    const fillWithAi = async (doc: AplusDocumentDraft) => {
+        if (hasContent(doc)) {
+            const ok = await dialog.confirm(
+                t("ui.aplus.ai_fill_confirm_title", "Mit KI überschreiben?"),
+                t(
+                    "ui.aplus.ai_fill_confirm_message",
+                    "Kurzbeschreibung, Bulletpoints und die Standard-Module werden durch den KI-Vorschlag ersetzt. Name des Inhalts und Modulnamen bleiben.",
+                ),
+                "danger",
+            );
+            if (!ok) return;
+        }
+        setFilling(true);
         try {
-            const result = await api.aplus.generate(book.id, { language, force: pkg !== null });
+            const result = await api.aplus.generate(book.id, { language, force: true });
             if (isAplusMissingFields(result)) {
                 setMissing(result.missing_fields);
                 return;
             }
             setMissing(null);
-            setPkg(result);
+            setFindings(result.validation);
+            await aplus.replace(packageToDocument(result as GeneratedAplusPackage, doc, newModuleId));
             notify.success(t("ui.aplus.generated", "A+ Content erzeugt"));
         } catch (err) {
             notify.error(t("ui.aplus.generate_error", "A+ Content konnte nicht erzeugt werden"), err);
         } finally {
-            setGenerating(false);
+            setFilling(false);
         }
     };
 
-    const handleCopy = async (text: string) => {
-        const ok = await copyToClipboard(text);
+    const copyAll = async (doc: AplusDocumentDraft) => {
+        const ok = await copyToClipboard(documentToText(doc, textLabels(t)));
         if (ok) notify.success(t("ui.aplus.copied", "In die Zwischenablage kopiert"));
         else notify.error(t("ui.aplus.copy_failed", "Kopieren nicht möglich"), new Error("clipboard unavailable"));
     };
 
+    const doc = aplus.document;
     return (
         <div className="flex flex-col gap-4" data-testid="aplus-section">
             <div className="flex flex-col gap-1">
@@ -165,7 +222,7 @@ export default function AplusSection({ book, aiAvailable, t, onSelectSection }: 
                 <p className="m-0 text-sm text-[var(--text-muted)]">
                     {t(
                         "ui.aplus.intro",
-                        "Erzeugt aus den Buchdaten ein Amazon-A+-Content-Paket: Kurzbeschreibung, drei Bulletpoints sowie Kopf- und Drei-Bilder-Modul mit Bild-Prompts. Jedes Feld wird gegen das Regelwerk geprüft.",
+                        "Kurzbeschreibung, Bulletpoints und Module für Amazons A+ Manager. Von Hand ausfüllen oder mit KI vorschlagen lassen; jedes Feld lässt sich einzeln kopieren.",
                     )}
                 </p>
             </div>
@@ -174,48 +231,47 @@ export default function AplusSection({ book, aiAvailable, t, onSelectSection }: 
                     {t("ui.aplus.language", "Sprache")}
                     <RadixSelect
                         value={language}
-                        onValueChange={setLanguage}
-                        options={APLUS_LANGUAGES.map((code) => ({ value: code, label: languageLabel(code) }))}
+                        onValueChange={changeLanguage}
+                        options={languageOptions(bookLanguage).map((code) => ({ value: code, label: languageLabel(code) }))}
                         testId="aplus-language"
                         ariaLabel={t("ui.aplus.language", "Sprache")}
-                        disabled={generating}
+                        disabled={filling}
                     />
                 </label>
                 <button
                     type="button"
                     className="btn btn-primary btn-sm min-h-[44px]"
-                    data-testid="aplus-generate"
-                    disabled={!aiAvailable || generating || loading}
-                    onClick={() => void handleGenerate()}
+                    data-testid="aplus-ai-fill"
+                    disabled={!doc || blocker !== null || filling}
+                    title={blocker ?? undefined}
+                    onClick={() => doc && void fillWithAi(doc)}
                 >
                     <Sparkles size={14} />{" "}
-                    {generating
-                        ? t("ui.aplus.generating", "Erzeugt ...")
-                        : pkg
-                          ? t("ui.aplus.regenerate", "Neu generieren")
-                          : t("ui.aplus.generate", "Generieren")}
+                    {filling ? t("ui.aplus.generating", "Erzeugt ...") : t("ui.aplus.ai_fill", "Mit KI füllen")}
                 </button>
+                <button
+                    type="button"
+                    className="btn btn-secondary btn-sm min-h-[44px]"
+                    data-testid="aplus-copy-all"
+                    disabled={!doc}
+                    onClick={() => doc && void copyAll(doc)}
+                >
+                    <ClipboardCopy size={14} /> {t("ui.aplus.copy_all", "Alles kopieren")}
+                </button>
+                <span className="min-h-[1.25rem] text-xs text-[var(--text-muted)]" data-testid="aplus-save-state" aria-live="polite">
+                    {saveStateLabel(aplus.saveState, t)}
+                </span>
             </div>
-            {!aiAvailable && (
+            {blocker && (
                 <p className="m-0 text-sm text-[var(--text-muted)]" data-testid="aplus-ai-unavailable">
-                    {t(
-                        "ui.aplus.ai_unavailable",
-                        "Die KI ist nicht eingerichtet. Aktiviere sie unter Einstellungen > KI-Assistent, um A+ Content zu erzeugen.",
-                    )}
+                    {blocker}
                 </p>
             )}
             {missing && missing.length > 0 && (
                 <MissingFieldsList fields={missing} t={t} onSelectSection={onSelectSection} />
             )}
-            {pkg ? (
-                <AplusPackageView pkg={pkg} t={t} onCopy={(text) => void handleCopy(text)} />
-            ) : (
-                !loading && (
-                    <p className="m-0 text-sm text-[var(--text-muted)]" data-testid="aplus-empty">
-                        {t("ui.aplus.empty", "Für diese Sprache wurde noch kein A+ Content erzeugt.")}
-                    </p>
-                )
-            )}
+            <AplusFindings findings={findings} t={t} />
+            {doc && <AplusDocumentEditor document={doc} onChange={aplus.update} t={t} />}
         </div>
     );
 }

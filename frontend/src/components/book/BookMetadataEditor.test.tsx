@@ -213,7 +213,13 @@ vi.mock("../../api/client", () => ({
             download: (...args: unknown[]) => documentExportDownloadMock(...args),
         },
         aplus: {
-            get: (...args: unknown[]) => aplusGetMock(...args),
+            getDocument: (...args: unknown[]) => aplusGetMock(...args),
+            saveDocument: vi.fn(async (bookId: string, language: string, doc: object) => ({
+                ...doc,
+                book_id: bookId,
+                language,
+                updated_at: "now",
+            })),
             generate: (...args: unknown[]) => aplusGenerateMock(...args),
         },
         kdp: {
@@ -453,13 +459,14 @@ describe("BookMetadataEditor", () => {
 
     // --- A+ Content (#887) ---
 
-    it("A+ Content opens from the Veröffentlichung nav and loads the cached package", async () => {
+    it("A+ Content opens from the Veröffentlichung nav with an editable document", async () => {
         renderEditor();
         fireEvent.click(screen.getByTestId("metadata-tab-aplus"));
-        await screen.findByTestId("aplus-empty");
+        await screen.findByTestId("aplus-content-name");
         expect(screen.getByTestId("aplus-section")).toBeTruthy();
         expect(aplusGetMock).toHaveBeenCalledWith("book-1", "de");
-        expect((screen.getByTestId("aplus-generate") as HTMLButtonElement).disabled).toBe(true);
+        expect(screen.getByTestId("aplus-module-0")).toBeTruthy();
+        expect((screen.getByTestId("aplus-ai-fill") as HTMLButtonElement).disabled).toBe(true);
         expect(screen.getByTestId("aplus-ai-unavailable")).toBeTruthy();
     });
 
@@ -471,8 +478,8 @@ describe("BookMetadataEditor", () => {
         });
         renderEditor();
         fireEvent.click(screen.getByTestId("metadata-tab-aplus"));
-        await screen.findByTestId("aplus-empty");
-        fireEvent.click(screen.getByTestId("aplus-generate"));
+        await screen.findByTestId("aplus-content-name");
+        fireEvent.click(screen.getByTestId("aplus-ai-fill"));
         fireEvent.click(await screen.findByTestId("aplus-missing-goto-author"));
         expect(screen.getByTestId("metadata-tab-general").getAttribute("aria-current")).toBe("page");
         expect(screen.getByDisplayValue("A Subtitle")).toBeTruthy();
