@@ -79,13 +79,17 @@ function textLabels(t: TFunc): AplusTextLabels {
         characters: t("ui.aplus.characters", "Zeichen"),
         bullets: t("ui.aplus.bullets", "Bulletpoints"),
         module: t("ui.aplus.module", "Modul"),
-        moduleTitle: t("ui.aplus.module_name", "Modulname"),
+        moduleTitle: t("ui.aplus.module_headline", "Modul-Überschrift"),
         image: t("ui.aplus.image", "Bild"),
         title: t("ui.aplus.module_title", "Titel"),
         text: t("ui.aplus.module_text", "Text"),
         imagePrompt: t("ui.aplus.image_prompt", "Bild-Prompt"),
         altText: t("ui.aplus.alt_text", "Alt-Text"),
+        caption: t("ui.aplus.caption", "Bildunterschrift"),
+        asin: t("ui.aplus.asin", "ASIN"),
         templateName: (id) => templateLabel(id, t),
+        fieldLabel: (spec) => t(spec.labelKey, spec.labelFallback).replace("{n}", String(spec.n ?? "")),
+        slotLabel: (spec) => (spec.labelKey ? t(spec.labelKey, spec.labelFallback ?? "") : ""),
     };
 }
 

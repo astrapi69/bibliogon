@@ -103,6 +103,9 @@ backend change. The backend only guards the shape."""
 MAX_MODULES = 20
 MAX_SLOTS = 10
 MAX_BULLETS = 10
+MAX_ROWS = 20
+MAX_ROW_VALUES = 10
+MAX_FIELDS = 40
 
 
 class AplusDocumentSlot(BaseModel):
@@ -117,15 +120,29 @@ class AplusDocumentSlot(BaseModel):
     text: str = ""
     image_prompt: str = ""
     alt_text: str = ""
+    caption: str = ""
+    asin: str = ""
+
+
+class AplusDocumentRow(BaseModel):
+    """A table row: comparison-chart metric (one value per column) or a
+    tech-specs name/definition pair (one value)."""
+
+    label: str = ""
+    values: list[str] = Field(default_factory=list, max_length=MAX_ROW_VALUES)
 
 
 class AplusDocumentModule(BaseModel):
-    """One A+ module built from a template (e.g. image header, three images)."""
+    """One A+ module built from a template of the frontend catalog (#895):
+    module headline, image slots, module-level texts keyed by the template's
+    field keys, and table rows for the comparison chart and tech specs."""
 
     id: str = Field(min_length=1, max_length=64)
     template: str = Field(pattern=TEMPLATE_PATTERN)
     module_title: str = ""
     slots: list[AplusDocumentSlot] = Field(default_factory=list, max_length=MAX_SLOTS)
+    fields: dict[str, str] = Field(default_factory=dict, max_length=MAX_FIELDS)
+    rows: list[AplusDocumentRow] = Field(default_factory=list, max_length=MAX_ROWS)
 
 
 class AplusDocumentBody(BaseModel):

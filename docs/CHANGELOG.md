@@ -5,6 +5,18 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 ## [Unreleased]
 
 ### Added
+- **All 17 KDP A+ modules in the A+ editor (#895).** "Add module"
+  opens a gallery of Amazon's standard modules, as tiles with a layout
+  sketch or as a list, grouped into image and text, text only, tables
+  and brand, each with its image sizes and purpose. Beyond the image
+  header and three images there are four images, the quadrant, single
+  left/right image, dark and light text overlay, image with sidebar,
+  highlights, specs detail, multiple image module A, comparison chart
+  (1-6 columns with ASIN, up to 10 metric rows), tech specs (4-16 rows),
+  text, product description (6000 characters) and company logo (once
+  per A+ Content). The gallery notes KDP's five-module limit. Structure
+  follows Amazon's public A+ Content API model; existing documents keep
+  working.
 - **A+ Content editor in the book metadata (#887, #891).** The A+
   plugin (#825) shipped backend-only and was reachable from nowhere in
   the UI. The metadata editor now has an **A+ Content** section under

@@ -13,14 +13,29 @@ You find it in the book's metadata editor under **Publishing > A+ Content**. It 
 
 The counters below the fields turn red when a text is too long. It is still saved, so a draft is never lost.
 
-## Module templates
+## Modules
 
-A new document starts with the two standard modules. You add more with the template buttons at the bottom:
+Amazon offers 17 modules for A+ Content; KDP shows up to 5 per A+ Content. A new document starts with the image header and the three images. You add more under **Add module**: as **tiles** with a sketch of the layout or as a compact **list**, each with its image size and purpose. A click appends the module at the bottom.
 
-- **Standard image header with text**: one image of 970x600 pixels (aspect ratio 97:60).
-- **Standard three images & text**: three images of 300x300 pixels each (1:1).
+| Module | Images (minimum size) | Content |
+|---|---|---|
+| Standard Image Header With Text | 1, 970x600 | module headline, headline, text |
+| Standard Three Images & Text | 3, 300x300 each | module headline, headline and text per image |
+| Standard Four Image & Text | 4, 220x220 each | module headline, headline and text per image |
+| Standard Four Image/Text Quadrant | 4, 135x135 each | headline and text per image |
+| Standard Single Left / Right Image | 1, 300x300 | headline and text next to the image |
+| Standard Image & Dark / Light Text Overlay | 1, 970x300 | headline and text on the image |
+| Standard Single Image & Sidebar | 300x400 and 350x175 | description with bullet list, caption, sidebar with bullet list |
+| Standard Single Image & Highlights | 1, 300x300 | three text blocks and a bullet list |
+| Standard Single Image & Specs Detail | 1, 300x300 | description, text blocks, list of details |
+| Standard Multiple Image Module A | 1 to 4, 300x300 each | headline, text and caption per image |
+| Standard Comparison Chart | 1 to 6 columns, 150x300 each | title, ASIN and image per column; up to 10 comparison rows |
+| Standard Tech Specs | none | 4 to 16 entries with name and definition |
+| Standard Text | none | headline and text |
+| Standard Product Description Text | none | text up to 6000 characters |
+| Standard Company Logo | 1, 600x180 | once per A+ Content only |
 
-Every module has a **module name** and, per image, a **title**, **text**, **image prompt** and **alt text** (at most 200 characters). The arrows move a module, the bin removes it; if it already holds text, Bibliogon asks first.
+Write bullet lists with one item per line. In the comparison chart and the multiple-image module you add and remove columns or images; the comparison values move along. Every image has an **image prompt** and **alt text** (at most 200 characters). The arrows move a module, the bin removes it; if it already holds text, Bibliogon asks first.
 
 ## Copying
 

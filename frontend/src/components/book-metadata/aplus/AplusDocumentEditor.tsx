@@ -1,9 +1,6 @@
-import { Plus } from "lucide-react";
-
 import {
     APLUS_BULLET_COUNT,
     APLUS_FIELD_LIMITS,
-    APLUS_MODULE_TEMPLATES,
     createModule,
     moduleHasContent,
     moveModule,
@@ -15,7 +12,8 @@ import {
 import { useDialog } from "../../shared/AppDialog";
 import type { TFunc } from "../tabTypes";
 import AplusField from "./AplusField";
-import AplusModuleCard, { templateLabel } from "./AplusModuleCard";
+import AplusModuleCard from "./AplusModuleCard";
+import AplusModuleGallery from "./AplusModuleGallery";
 
 interface AplusDocumentEditorProps {
     document: AplusDocumentDraft;
@@ -60,7 +58,7 @@ function BulletFields({ document, onChange, t }: AplusDocumentEditorProps) {
 
 /**
  * Editor for the whole A+ document (#891): content name, short description,
- * bullets, and the module list with "add module" buttons per template.
+ * bullets, the module list, and the gallery of Amazon's modules to add from.
  * Controlled: every edit reports a new document through `onChange`.
  *
  * @example
@@ -112,19 +110,11 @@ export default function AplusDocumentEditor({ document, onChange, t }: AplusDocu
                     onRemove={() => void removeModule(i)}
                 />
             ))}
-            <div className="flex flex-wrap gap-2">
-                {APLUS_MODULE_TEMPLATES.map((template) => (
-                    <button
-                        key={template.id}
-                        type="button"
-                        className="btn btn-secondary btn-sm min-h-[44px]"
-                        data-testid={`aplus-add-${template.id}`}
-                        onClick={() => setModules([...document.modules, createModule(template.id, newModuleId())])}
-                    >
-                        <Plus size={14} /> {templateLabel(template.id, t)}
-                    </button>
-                ))}
-            </div>
+            <AplusModuleGallery
+                modules={document.modules}
+                onAdd={(templateId) => setModules([...document.modules, createModule(templateId, newModuleId())])}
+                t={t}
+            />
         </div>
     );
 }

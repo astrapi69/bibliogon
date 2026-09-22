@@ -37,7 +37,11 @@ const PACKAGE = {
     meta: {book_id: "x", language: "de", model: "m", ruleset_version: "3", generated_at: "2026-09-22T08:00:00Z"},
 };
 
-type StoredDocument = {language: string; short_description: string; modules: {template: string; slots: {image_prompt: string}[]}[]};
+type StoredDocument = {
+    language: string;
+    short_description: string;
+    modules: {template: string; slots: {image_prompt: string}[]; rows?: {label: string; values: string[]}[]}[];
+};
 
 async function storedDocuments(bookId: string): Promise<StoredDocument[]> {
     const res = await fetch(`${API}/aplus/${bookId}/documents`);
@@ -94,6 +98,47 @@ test.describe("Book-metadata A+ Content (#891)", () => {
         await expect(page.getByTestId("aplus-module-2-slot-1-prompt")).toHaveValue(
             "flooded bathroom, laughing horse --ar 1:1",
         );
+    });
+
+    test("the gallery offers all 17 modules as tiles or a list and builds tables", async ({page}) => {
+        const book = await createBook("A+ Galerie", "E2E Autor");
+        await openAplus(page, book.id);
+
+        const gallery = page.getByTestId("aplus-module-gallery");
+        await expect(gallery).toHaveAttribute("data-view", "tile");
+        await expect(gallery.locator("[data-testid^='aplus-add-']")).toHaveCount(17);
+        const tile = await page.getByTestId("aplus-add-comparison_chart").boundingBox();
+        expect(tile!.height).toBeGreaterThan(80);
+
+        await gallery.getByTestId("view-list").click();
+        await expect(gallery).toHaveAttribute("data-view", "list");
+        await expect(gallery.locator("[data-testid^='aplus-add-']")).toHaveCount(17);
+
+        await page.getByTestId("aplus-add-comparison_chart").click();
+        await page.getByTestId("aplus-add-tech_specs").click();
+        await page.getByTestId("aplus-add-company_logo").click();
+        await expect(page.getByTestId("aplus-add-company_logo")).toBeDisabled();
+
+        await page.getByTestId("aplus-module-2-add-slot").click();
+        await page.getByTestId("aplus-module-2-slot-3-asin").fill("B0FR1X1MVX");
+        await page.getByTestId("aplus-module-2-row-0-label").fill("Genre");
+        await page.getByTestId("aplus-module-2-row-0-value-3").fill("Krimi");
+        await page.getByTestId("aplus-module-3-row-0-label").fill("Seitenzahl");
+        await page.getByTestId("aplus-module-3-row-0-value-0").fill("320");
+        await expect(page.getByTestId("aplus-gallery-limit")).toBeVisible();
+
+        await expect
+            .poll(async () => (await storedDocuments(book.id))[0]?.modules?.[3]?.rows?.[0]?.values?.[0], {
+                timeout: 15000,
+            })
+            .toBe("320");
+
+        await page.reload();
+        await page.getByTestId("metadata-tab-aplus").click();
+        await expect(page.getByTestId("aplus-module-2-slot-3-asin")).toHaveValue("B0FR1X1MVX");
+        await expect(page.getByTestId("aplus-module-2-row-0-value-3")).toHaveValue("Krimi");
+        await expect(page.getByTestId("aplus-module-3-row-0-label")).toHaveValue("Seitenzahl");
+        await expect(page.getByTestId("aplus-module-4")).toContainText("600x180");
     });
 
     test("fill with AI fills the fields, shows the findings and saves", async ({page}) => {
