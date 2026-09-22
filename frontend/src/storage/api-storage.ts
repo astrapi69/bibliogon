@@ -16,6 +16,7 @@
 import { api } from "../api/client";
 import { bookAssetFileUrl } from "./asset-url";
 import type {
+    AplusDocumentStorage,
     ArticleAssetStorage,
     ArticlePlatformStorage,
     ArticleStorage,
@@ -94,6 +95,14 @@ export const apiStorage: IStorageService = {
     },
     get chapterLabels(): ChapterLabelStorage {
         return api.chapterLabels;
+    },
+    get aplusDocuments(): AplusDocumentStorage {
+        return {
+            get: api.aplus.getDocument,
+            save: api.aplus.saveDocument,
+            remove: api.aplus.deleteDocument,
+            listForBook: api.aplus.listDocuments,
+        };
     },
     get storyBible(): StoryBibleStorage {
         return api.storyBible;

@@ -47,6 +47,10 @@ const getChapters = (bookId: string) =>
 const getEntities = (bookId: string) =>
     api<{id: string; name: string}[]>(`/story-bible/books/${bookId}/entities`);
 const getApp = () => api<Record<string, unknown>>("/settings/app");
+const getAplusDocuments = (bookId: string) =>
+    api<{language: string; content_name: string; modules: {module_title: string}[]}[]>(
+        `/aplus/${bookId}/documents`,
+    );
 const patchApp = (data: Record<string, unknown>) =>
     api("/settings/app", {method: "PATCH", body: JSON.stringify(data)});
 const listAuthors = () => api<{id: string; name: string}[]>("/authors?limit=1000");
@@ -74,6 +78,22 @@ test.describe("BACKUP-AKZEPTANZTEST (#61)", () => {
         await api(`/story-bible/books/${book.id}/entities`, {
             method: "POST",
             body: JSON.stringify({entity_type: "character", name: "Held"}),
+        });
+        await api(`/aplus/${book.id}/document?language=es`, {
+            method: "PUT",
+            body: JSON.stringify({
+                content_name: "Akzeptanz Buch - A+Content",
+                short_description: "Filimón sabe reír.",
+                bullets: [{heading: "Uno", body: "Primero."}],
+                modules: [
+                    {
+                        id: "m1",
+                        template: "image_header_text",
+                        module_title: "Kopfmodul",
+                        slots: [{title: "T", text: "x", image_prompt: "farm --ar 97:60", alt_text: "Granja"}],
+                    },
+                ],
+            }),
         });
         await patchApp({
             ui: {theme: "nord"},
@@ -106,6 +126,7 @@ test.describe("BACKUP-AKZEPTANZTEST (#61)", () => {
         expect(entries).toContain("book.json");
         expect(entries).toContain("chapters/");
         expect(entries).toContain("story_entities.json");
+        expect(entries).toContain("aplus_documents.json");
         expect(entries).toContain("globals/authors.json");
         expect(entries).toContain("globals/settings.json");
 
@@ -170,6 +191,15 @@ test.describe("BACKUP-AKZEPTANZTEST (#61)", () => {
                 {timeout: 15000},
             )
             .toBe(true);
+
+        await expect
+            .poll(async () => (await getAplusDocuments(books[0].id)).map((d) => d.content_name), {
+                timeout: 15000,
+            })
+            .toEqual(["Akzeptanz Buch - A+Content"]);
+        const [aplusDoc] = await getAplusDocuments(books[0].id);
+        expect(aplusDoc.language).toBe("es");
+        expect(aplusDoc.modules[0].module_title).toBe("Kopfmodul");
 
         const authorNames = (await listAuthors()).map((a) => a.name);
         expect(authorNames).toEqual(

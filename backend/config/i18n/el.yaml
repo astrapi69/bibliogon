@@ -320,6 +320,7 @@ ui:
     item_authors: "Συγγραφείς / ψευδώνυμα"
     item_chapter_labels: "Ετικέτες κεφαλαίων"
     item_story_bible: "Story Bibles / Storyboards"
+    item_aplus_content: "Περιεχόμενο A+"
     item_writing_history: "Ιστορικό γραφής"
     item_settings: "Ρυθμίσεις"
     export_button: "Εξαγωγή επιλεγμένων δεδομένων"

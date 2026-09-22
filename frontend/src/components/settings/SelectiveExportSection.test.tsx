@@ -68,6 +68,7 @@ describe("SelectiveExportSection", () => {
         expect(screen.getByTestId("selective-export-item-authors")).toBeTruthy();
         expect(screen.getByTestId("selective-export-item-chapterLabels")).toBeTruthy();
         expect(screen.getByTestId("selective-export-item-storyBible")).toBeTruthy();
+        expect(screen.getByTestId("selective-export-item-aplusDocuments")).toBeTruthy();
         expect(screen.getByTestId("selective-export-item-writingSessions")).toBeTruthy();
         expect(screen.getByTestId("selective-export-item-settings")).toBeTruthy();
     });

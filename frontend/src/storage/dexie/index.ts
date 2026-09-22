@@ -15,6 +15,7 @@
  */
 
 import type { IStorageService } from "../types";
+import { aplusDocuments } from "./aplus/documents";
 import { articleAssets } from "./article-assets";
 import { articles } from "./articles";
 import { assets } from "./assets";
@@ -50,6 +51,7 @@ export const dexieStorage: IStorageService = {
     articlePlatforms,
     editorPluginStatus,
     chapterLabels,
+    aplusDocuments,
     storyBible,
     pages,
     comics,
@@ -60,6 +62,7 @@ export const dexieStorage: IStorageService = {
 
 export { offlineDb, getBaseline, setBaseline } from "./schema";
 export type {
+    AplusDocumentRow,
     ArticleAssetRow,
     AssetRow,
     CommentRow,

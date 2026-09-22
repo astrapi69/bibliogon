@@ -23,6 +23,19 @@ const fakeStorage = {
     writingSessions: {list: vi.fn(async () => [{id: "ws1", words: 100}])},
     storyBible: {listEntities: vi.fn(async () => [{id: "e1", name: "Hero"}])},
     chapterLabels: {list: vi.fn(async () => [{id: "l1", name: "Draft"}])},
+    aplusDocuments: {
+        listForBook: vi.fn(async (bookId: string) => [
+            {
+                book_id: bookId,
+                language: "es",
+                updated_at: "2026-09-22T10:00:00Z",
+                content_name: "El caballo - A+Content",
+                short_description: "Kurz",
+                bullets: [],
+                modules: [],
+            },
+        ]),
+    },
 };
 
 vi.mock("../storage", () => ({getStorage: () => fakeStorage}));
@@ -47,6 +60,10 @@ describe("buildBackupBundle", () => {
         expect(bundle.data.story_bible.entities[0].name).toBe("Hero");
         expect(bundle.data.writing_sessions).toHaveLength(1);
         expect(bundle.data.chapter_labels).toHaveLength(1);
+        expect(bundle.data.aplus_documents).toEqual([
+            expect.objectContaining({book_id: "b1", language: "es", content_name: "El caballo - A+Content"}),
+        ]);
+        expect(fakeStorage.aplusDocuments.listForBook).toHaveBeenCalledWith("b1");
     });
 
     it("fetches full article content via get, not just the list summary", async () => {

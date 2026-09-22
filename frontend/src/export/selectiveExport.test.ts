@@ -32,6 +32,11 @@ const fakeStorage = {
     writingSessions: { list: vi.fn(async () => [{ id: "ws1", words: 100 }]) },
     storyBible: { listEntities: vi.fn(async () => [{ id: "e1", name: "Hero" }]) },
     chapterLabels: { list: vi.fn(async () => [{ id: "l1", name: "Draft" }]) },
+    aplusDocuments: {
+        listForBook: vi.fn(async (bookId: string) => [
+            { book_id: bookId, language: "es", updated_at: "t", content_name: "A+", short_description: "", bullets: [], modules: [] },
+        ]),
+    },
 };
 
 vi.mock("../storage", () => ({ getStorage: () => fakeStorage }));
@@ -60,6 +65,20 @@ describe("buildSelectiveBundle", () => {
         expect(bundle.data.author_profile).toBeNull();
         expect(bundle.data.story_bible.entities).toHaveLength(0);
         expect(bundle.data.writing_sessions).toHaveLength(0);
+        expect(bundle.data.aplus_documents).toHaveLength(0);
+        expect(fakeStorage.aplusDocuments.listForBook).not.toHaveBeenCalled();
+    });
+
+    it("carries A+ documents only when that section is selected, fetching books for it", async () => {
+        const bundle = await buildSelectiveBundle(
+            selectionWith({ aplusDocuments: true }),
+            "2026-06-10T12:00:00Z",
+        );
+        expect(fakeStorage.books.list).toHaveBeenCalledTimes(1);
+        expect(bundle.data.aplus_documents).toEqual([
+            expect.objectContaining({ book_id: "b1", language: "es" }),
+        ]);
+        expect(bundle.data.books).toHaveLength(0);
     });
 
     it("does not fetch books when no book-derived section is selected", async () => {
@@ -100,6 +119,7 @@ describe("buildSelectiveBundle", () => {
         expect(bundle.data.chapter_labels).toHaveLength(1);
         expect(bundle.data.story_bible.entities).toHaveLength(1);
         expect(bundle.data.writing_sessions).toHaveLength(1);
+        expect(bundle.data.aplus_documents).toHaveLength(1);
     });
 });
 

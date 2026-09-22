@@ -48,6 +48,19 @@ const fakeStorage = {
     chapterLabels: {
         list: vi.fn(async () => [{ id: "l1", book_id: "b1", name: "Draft", color: "#abc" }]),
     },
+    aplusDocuments: {
+        listForBook: vi.fn(async (bookId: string) => [
+            {
+                book_id: bookId,
+                language: "es",
+                updated_at: "2026-09-22T10:00:00Z",
+                content_name: "El caballo - A+Content",
+                short_description: "Kurz",
+                bullets: [{ heading: "H", body: "B" }],
+                modules: [],
+            },
+        ]),
+    },
     assets: {
         list: vi.fn(async () => [
             {
@@ -102,6 +115,19 @@ describe("buildBgbFiles", () => {
         // Story entities + chapter labels grouped under the book.
         expect(JSON.parse(strFromU8(files["books/b1/story_entities.json"]))[0].name).toBe("Hero");
         expect(JSON.parse(strFromU8(files["books/b1/chapter_labels.json"]))[0].name).toBe("Draft");
+
+        // A+ documents in the backend's aplus_documents row shape, so a desktop
+        // restore of a web-app backup reads them (#891).
+        const aplusRows = JSON.parse(strFromU8(files["books/b1/aplus_documents.json"]));
+        expect(aplusRows).toHaveLength(1);
+        expect(aplusRows[0]).toMatchObject({ book_id: "b1", language: "es", updated_at: "2026-09-22T10:00:00Z" });
+        expect(typeof aplusRows[0].id).toBe("string");
+        expect(JSON.parse(aplusRows[0].document_json)).toEqual({
+            content_name: "El caballo - A+Content",
+            short_description: "Kurz",
+            bullets: [{ heading: "H", body: "B" }],
+            modules: [],
+        });
 
         // Article featured image bytes + a one-entry assets.json.
         expect(files["articles/ar1/article.json"]).toBeTruthy();

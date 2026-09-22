@@ -95,6 +95,48 @@ describe("aplus.get", () => {
     });
 });
 
+const DOC = {
+    content_name: "Buch - A+Content",
+    short_description: "Kurz",
+    bullets: [{ heading: "H", body: "B" }],
+    modules: [],
+};
+
+describe("aplus documents", () => {
+    it("reads the document for a language", async () => {
+        fetchSpy.mockResolvedValue(jsonResponse({ ...DOC, book_id: "b1", language: "es", updated_at: "t" }));
+        const result = await aplus.getDocument("b1", "es");
+        expect(calledUrl()).toMatch(/\/aplus\/b1\/document\?language=es$/);
+        expect(result?.content_name).toBe("Buch - A+Content");
+    });
+
+    it("returns null when there is no document yet (404)", async () => {
+        fetchSpy.mockResolvedValue(jsonResponse({ detail: "No A+ document" }, 404));
+        expect(await aplus.getDocument("b1", "es")).toBeNull();
+    });
+
+    it("saves with PUT and the document as JSON body", async () => {
+        fetchSpy.mockResolvedValue(jsonResponse({ ...DOC, book_id: "b1", language: "es", updated_at: "t" }));
+        await aplus.saveDocument("b1", "es", DOC);
+        expect(calledUrl()).toMatch(/\/aplus\/b1\/document\?language=es$/);
+        expect(calledInit().method).toBe("PUT");
+        expect(JSON.parse(String(calledInit().body))).toEqual(DOC);
+    });
+
+    it("deletes with DELETE", async () => {
+        fetchSpy.mockResolvedValue({ ...jsonResponse(null, 204), ok: true, status: 204 });
+        await aplus.deleteDocument("b1", "es");
+        expect(calledUrl()).toMatch(/\/aplus\/b1\/document\?language=es$/);
+        expect(calledInit().method).toBe("DELETE");
+    });
+
+    it("lists every language's document of a book", async () => {
+        fetchSpy.mockResolvedValue(jsonResponse([]));
+        expect(await aplus.listDocuments("b1")).toEqual([]);
+        expect(calledUrl()).toMatch(/\/aplus\/b1\/documents$/);
+    });
+});
+
 describe("isAplusMissingFields", () => {
     it("recognises the missing-fields answer", () => {
         expect(

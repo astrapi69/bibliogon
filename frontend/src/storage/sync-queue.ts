@@ -205,6 +205,8 @@ export function makeQueueingStorage(base: IStorageService): IStorageService {
         // Chapter labels: local-only offline writes (replay deferred, like
         // authors); straight passthrough so the seam stays complete.
         chapterLabels: base.chapterLabels,
+        // A+ documents (#891): local-only offline writes, like chapter labels.
+        aplusDocuments: base.aplusDocuments,
         // Story Bible: local-only offline writes (replay deferred); passthrough.
         storyBible: base.storyBible,
         // Picture-book pages + comic panels/bubbles: local-only offline writes

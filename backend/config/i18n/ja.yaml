@@ -320,6 +320,7 @@ ui:
     item_authors: "著者／ペンネーム"
     item_chapter_labels: "章ラベル"
     item_story_bible: "ストーリーバイブル／ストーリーボード"
+    item_aplus_content: "A+ コンテンツ"
     item_writing_history: "執筆履歴"
     item_settings: "設定"
     export_button: "選択したデータをエクスポート"

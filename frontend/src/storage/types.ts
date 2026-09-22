@@ -232,6 +232,16 @@ export interface ChapterLabelStorage {
     remove: typeof api.chapterLabels.remove;
 }
 
+/** The author's editable A+ document per book and language (#891). One row
+ *  per (book, language); upsert semantics, so an offline edit works without a
+ *  create step. */
+export interface AplusDocumentStorage {
+    get: typeof api.aplus.getDocument;
+    save: typeof api.aplus.saveDocument;
+    remove: typeof api.aplus.deleteDocument;
+    listForBook: typeof api.aplus.listDocuments;
+}
+
 /** Story Bible: per-book fiction-entity database + entity-page/chapter links.
  *  Entity + link CRUD and relationship resolution work offline against the
  *  Dexie storyEntities / storyEntityPageLinks tables (+ the seeded entity-type
@@ -365,6 +375,7 @@ export interface IStorageService {
     articlePlatforms: ArticlePlatformStorage;
     editorPluginStatus: EditorPluginStatusStorage;
     chapterLabels: ChapterLabelStorage;
+    aplusDocuments: AplusDocumentStorage;
     storyBible: StoryBibleStorage;
     pages: PageStorage;
     comics: ComicsStorage;
