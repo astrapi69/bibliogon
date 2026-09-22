@@ -5,6 +5,9 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
+  # On demand for a pushed branch before a PR exists (#898): `make ci-remote`.
+  # Without a base ref the Vitest TIA step falls back to the full suite.
+  workflow_dispatch: {}
 
 # Defensive opt-in: any JavaScript-runtime action still declaring
 # Node 20 (third-party or stragglers) is coerced to Node 24. After
@@ -162,6 +165,11 @@ jobs:
       - name: Run Vitest (changed-only, full-suite fallback)
         working-directory: frontend
         run: |
+          if [ "${EVENT:-}" = "workflow_dispatch" ]; then
+            echo "Manual run on a branch (#898): FULL Vitest suite."
+            npx vitest run
+            exit 0
+          fi
           if [ -n "${BASE_REF:-}" ]; then
             git fetch --no-tags --quiet origin "$BASE_REF" || true
             SINCE="origin/$BASE_REF"
@@ -182,6 +190,7 @@ jobs:
           fi
         env:
           BASE_REF: ${{ github.base_ref }}
+          EVENT: ${{ github.event_name }}
 
       - name: Build
         working-directory: frontend

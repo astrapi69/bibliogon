@@ -2,10 +2,15 @@
 
 ## Quick check after every change
 
+Agents run only the touched test files locally; full suites, Playwright
+and builds run on GitHub Actions (`make ci-remote`, `make e2e-remote`,
+PR checks). See `ci-only-heavy-tests.md`. The commands below are the
+suites CI runs and what Aster may run by hand.
+
 ### 1. Run the tests
 
 ```bash
-# Everything at once (MUST be green before every commit)
+# Everything at once (CI runs this on every PR)
 make test
 
 # Individually when targeted:

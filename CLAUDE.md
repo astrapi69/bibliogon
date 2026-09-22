@@ -59,6 +59,7 @@ Detailed rules live in `.claude/rules/`. Claude Code reads them on demand.
 **Always relevant** (read on every feature/fix):
 - `architecture.md` - layered architecture, plugin structure, UI strategy, data flow
 - `coding-standards.md` - naming, function design, tests, dependencies
+- `ci-only-heavy-tests.md` - full suites, Playwright and builds run on GitHub Actions (`make ci-remote`, `make e2e-remote`), never on the local machine
 
 **On demand** (read for specific tasks):
 - `code-hygiene.md` - linting, pre-commit, error handling architecture, API conventions
@@ -92,7 +93,9 @@ Lean core (UI, editor, CRUD, backup). Everything else via plugins. All plugins a
 make install              # Poetry + npm + plugins
 make dev                  # backend (8000) + frontend (5173) in parallel
 make dev-bg / dev-down    # background mode
-make test                 # all tests (backend + plugins + frontend), no coverage
+make ci-remote            # run CI (suites, tsc, build) on GitHub for the pushed branch
+make e2e-remote SUITE=smoke SPECS="smoke/x.spec.ts"  # Playwright on GitHub (smoke | static-smoke | feature-screenshots)
+make test                 # all tests (backend + plugins + frontend), no coverage - CI/Aster only, not for agents
 make test-coverage        # opt-in coverage run (heavy; CI runs this on every push)
 make test-backend         # backend only
 make test-plugins         # all plugin tests
@@ -118,7 +121,7 @@ E2E tests: `npx playwright test --project=smoke` (fast, per feature) or `--proje
 
 1. `git log --oneline -10` - recent changes
 2. Read `docs/ROADMAP.md` - current state
-3. `make test` - green baseline
+3. `gh run list --branch develop --limit 3` - CI green baseline (no local full suite, see ci-only-heavy-tests.md)
 
 ## Data model (short)
 
@@ -196,7 +199,7 @@ bibliogon/
 
 ## Tests
 
-- `make test` must stay green after every change
+- CI (`ci.yml`) must stay green after every change; heavy runs only on GitHub Actions (`ci-only-heavy-tests.md`)
 - E2E tests under `e2e/`, not on the `make test` default path
 - Current counts and coverage: see [docs/audits/current-coverage.md](docs/audits/current-coverage.md)
 
