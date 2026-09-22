@@ -1,13 +1,14 @@
 """Repository for the editable A+ document per book and language (#891).
 
-Persistence-only: book lookup, get/upsert/delete of the one document row
-per (book, language). The router keeps the 404 handling and the JSON
+Persistence-only: book lookup, list/get/upsert/delete of the document rows
+(one per book and language). The router keeps the 404 handling and the JSON
 schema validation.
 """
 
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 
 from fastapi import Depends
 from sqlalchemy.orm import Session
@@ -29,6 +30,10 @@ class AplusDocumentRepository(ABC):
         """Return the document for the book and language, or ``None``."""
 
     @abstractmethod
+    def list_for_book(self, book_id: str) -> Sequence[AplusDocument]:
+        """Return every language's document for the book, ordered by language."""
+
+    @abstractmethod
     def upsert(self, book_id: str, language: str, document_json: str) -> AplusDocument:
         """Create or replace the document and return it (committed, refreshed)."""
 
@@ -48,6 +53,14 @@ class SqlAlchemyAplusDocumentRepository(SQLAlchemyRepository, AplusDocumentRepos
             self._db.query(AplusDocument)
             .filter(AplusDocument.book_id == book_id, AplusDocument.language == language)
             .first()
+        )
+
+    def list_for_book(self, book_id: str) -> Sequence[AplusDocument]:
+        return (
+            self._db.query(AplusDocument)
+            .filter(AplusDocument.book_id == book_id)
+            .order_by(AplusDocument.language)
+            .all()
         )
 
     def upsert(self, book_id: str, language: str, document_json: str) -> AplusDocument:

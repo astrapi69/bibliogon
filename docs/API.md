@@ -215,6 +215,8 @@ generation cache, so a regeneration never overwrites manual edits.
   a limit still saves. Returns the stored document plus `book_id`,
   `language`, `updated_at`.
 - `DELETE /api/aplus/{book_id}/document?language=<tag>`: 204.
+- `GET /api/aplus/{book_id}/documents`: every language's document for
+  the book (used by the client-side full-data backup).
 - `language` defaults to the book's language. Any plain language tag
   is accepted (not only the four AI languages); a malformed one is 400.
   Unknown or trashed book is 404.

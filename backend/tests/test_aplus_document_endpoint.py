@@ -124,6 +124,27 @@ class TestDocumentRoundTrip:
         assert body["modules"] == []
 
 
+class TestDocumentList:
+    def test_lists_every_language_of_the_book(self, client: TestClient) -> None:
+        book_id = _book_id(client)
+        other_book = _book_id(client)
+        client.put(_url(book_id, "es"), json=DOCUMENT)
+        client.put(_url(book_id, "de"), json={**DOCUMENT, "content_name": "Deutsch"})
+        client.put(_url(other_book, "es"), json=DOCUMENT)
+        response = client.get(f"/api/aplus/{book_id}/documents")
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert sorted(d["language"] for d in body) == ["de", "es"]
+        assert all(d["book_id"] == book_id for d in body)
+
+    def test_empty_list_when_none_exist(self, client: TestClient) -> None:
+        book_id = _book_id(client)
+        assert client.get(f"/api/aplus/{book_id}/documents").json() == []
+
+    def test_unknown_book_is_404(self, client: TestClient) -> None:
+        assert client.get("/api/aplus/does-not-exist/documents").status_code == 404
+
+
 class TestDocumentGuards:
     def test_unknown_book_is_404(self, client: TestClient) -> None:
         assert client.get(_url("does-not-exist")).status_code == 404

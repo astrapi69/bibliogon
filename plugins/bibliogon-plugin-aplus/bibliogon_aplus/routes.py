@@ -179,6 +179,16 @@ def _document_response(document: AplusDocument) -> dict:
     ).model_dump()
 
 
+@router.get("/{book_id}/documents")
+def list_aplus_documents(
+    book_id: str,
+    repo: AplusDocumentRepository = Depends(get_aplus_document_repository),
+) -> list[dict]:
+    """Every language's editable A+ document for the book (full-data backup)."""
+    _document_book(repo, book_id)
+    return [_document_response(document) for document in repo.list_for_book(book_id)]
+
+
 @router.get("/{book_id}/document")
 def get_aplus_document(
     book_id: str,
