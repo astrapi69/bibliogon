@@ -293,7 +293,8 @@ Chain: BibliogonError -> API response (detail + traceback) -> ApiError -> toast 
 - New endpoints: at least one happy-path test.
 - Bug fixes: failing test FIRST, then fix.
 - Mocking: mock external services (LanguageTool, Pandoc), no real calls in tests.
-- `make test` must stay green after every change.
+- CI must stay green after every change. Full suites, Playwright and builds
+  run on GitHub Actions, not locally (ci-only-heavy-tests.md).
 - Surviving mutants in critical code: add tests. In trivial code: ignore.
 - See quality-checks.md for the full test strategy and mutmut configuration.
 

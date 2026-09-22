@@ -1,0 +1,152 @@
+name: E2E Targeted
+
+# On-demand Playwright runs for one branch (#898). Heavy test runs do not
+# happen on the developer machine (.claude/rules/ci-only-heavy-tests.md):
+# instead of `npx playwright test ...` locally, trigger this workflow on the
+# pushed branch and read the result here.
+#
+#   make e2e-remote SUITE=smoke SPECS="smoke/a.spec.ts smoke/b.spec.ts"
+#   make e2e-remote SUITE=static-smoke SPECS="static-smoke/aplus-offline.spec.ts"
+#   make e2e-remote SUITE=feature-screenshots GREP="a\+ module gallery"
+#
+# suites:
+#   smoke                the `smoke` project of playwright.config.ts; its
+#                        webServer starts uvicorn (isolated /tmp data dir)
+#                        and the Vite dev server, same as e2e-smoke.yml
+#   static-smoke         builds the backendless Dexie bundle and runs
+#                        playwright.static-smoke.config.ts against
+#                        `vite preview` (no backend at all)
+#   feature-screenshots  the capture spec; the PNGs it writes under
+#                        docs/screenshots/ are uploaded as the artifact
+#                        `feature-screenshots` to download and commit
+#
+# Inputs reach the shell only through env vars and are checked against a
+# plain path/pattern charset, so a crafted input cannot inject commands.
+
+on:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: "Suite to run"
+        type: choice
+        options: [smoke, static-smoke, feature-screenshots]
+        default: smoke
+      specs:
+        description: "Spec files relative to e2e/, space-separated (empty = whole suite)"
+        type: string
+        default: ""
+      grep:
+        description: "Optional Playwright -g pattern"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-targeted-${{ github.ref }}-${{ inputs.suite }}
+  cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  e2e:
+    name: E2E ${{ inputs.suite }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      SUITE: ${{ inputs.suite }}
+      SPECS: ${{ inputs.specs }}
+      GREP: ${{ inputs.grep }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Validate inputs
+        run: |
+          if ! printf '%s' "$SPECS" | grep -Eq '^[A-Za-z0-9_./ -]*$'; then
+            echo "specs may only hold spec paths (letters, digits, _ . / - and spaces)"; exit 1
+          fi
+          if ! printf '%s' "$GREP" | grep -Eq '^[A-Za-z0-9_ .+()|\\-]*$'; then
+            echo "grep may only hold letters, digits, spaces and _ . + ( ) | \\ -"; exit 1
+          fi
+
+      - name: Install Pandoc
+        if: inputs.suite != 'static-smoke'
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends pandoc
+
+      - uses: actions/setup-python@v6
+        if: inputs.suite != 'static-smoke'
+        with:
+          python-version: "3.12"
+
+      - name: Cache Poetry virtualenv
+        if: inputs.suite != 'static-smoke'
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/pypoetry/virtualenvs
+          key: poetry-backend-${{ runner.os }}-py3.12-${{ hashFiles('backend/poetry.lock') }}
+          restore-keys: |
+            poetry-backend-${{ runner.os }}-py3.12-
+
+      - name: Install Poetry
+        if: inputs.suite != 'static-smoke'
+        run: pip install poetry
+
+      - name: Install backend (uvicorn server for the E2E webServer)
+        if: inputs.suite != 'static-smoke'
+        working-directory: backend
+        run: poetry install --no-interaction --no-ansi
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: |
+            frontend/package-lock.json
+            e2e/package-lock.json
+
+      - name: Install frontend deps
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build the static Dexie bundle
+        if: inputs.suite == 'static-smoke'
+        working-directory: frontend
+        run: VITE_STORAGE_MODE=dexie npm run build
+
+      - name: Install E2E deps (Playwright)
+        working-directory: e2e
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        working-directory: e2e
+        run: npx playwright install chromium --with-deps
+
+      - name: Run Playwright
+        working-directory: e2e
+        run: |
+          args=()
+          if [ "$SUITE" = "static-smoke" ]; then
+            args+=(--config=playwright.static-smoke.config.ts)
+          else
+            args+=("--project=$SUITE")
+          fi
+          if [ -n "$GREP" ]; then args+=(-g "$GREP"); fi
+          read -r -a spec_list <<< "$SPECS"
+          echo "npx playwright test ${args[*]} ${spec_list[*]}"
+          npx playwright test "${args[@]}" "${spec_list[@]}"
+
+      - uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: e2e-test-results
+          path: e2e/test-results/
+          retention-days: 7
+
+      - uses: actions/upload-artifact@v6
+        if: always() && inputs.suite == 'feature-screenshots'
+        with:
+          name: feature-screenshots
+          path: docs/screenshots/
+          retention-days: 7

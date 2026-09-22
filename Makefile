@@ -1,7 +1,7 @@
 .PHONY: dev dev-bg dev-bg-logs dev-down dev-backend dev-frontend stop restart fix-watchers \
        launcher launcher-install test-launcher \
        install install-backend install-frontend install-plugins install-e2e \
-       test test-fast test-full test-nightly test-backend test-plugins test-e2e test-e2e-ui test-e2e-smoke test-e2e-smoke-retries test-e2e-manual test-e2e-all test-static-smoke test-visual test-visual-update capture-screenshots update-screenshots \
+       test test-fast test-full test-nightly test-backend test-plugins test-e2e test-e2e-ui test-e2e-smoke test-e2e-smoke-retries test-e2e-manual test-e2e-all test-static-smoke e2e-remote ci-remote test-visual test-visual-update capture-screenshots update-screenshots \
        tdd test-fail tdd-green tdd-refactor tdd-check test-only test-watch test-watch-backend \
        test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync test-plugin-comics test-plugin-medium-import test-plugin-learnset test-plugin-promotion test-plugin-story-bible test-plugin-aplus \
        test-coverage test-coverage-backend test-coverage-frontend test-coverage-plugins coverage-backend coverage-frontend test-cov-backend test-cov-frontend \
@@ -650,6 +650,16 @@ test-static-smoke: ## Build the static/Dexie bundle + smoke-test it with NO back
 	cd frontend && VITE_STORAGE_MODE=dexie npm run build
 	cd e2e && npx playwright test --config=playwright.static-smoke.config.ts
 
+e2e-remote: ## Run Playwright on GitHub Actions for the pushed current branch, not locally (#898). Usage: make e2e-remote SUITE=smoke|static-smoke|feature-screenshots SPECS="smoke/a.spec.ts" GREP="pattern"
+	@branch=$$(git rev-parse --abbrev-ref HEAD); \
+	gh workflow run e2e-targeted.yml --ref "$$branch" -f suite="$(or $(SUITE),smoke)" -f specs="$(SPECS)" -f grep="$(GREP)" && \
+	echo "Started E2E ($(or $(SUITE),smoke)) on $$branch. Watch: gh run list --workflow=e2e-targeted.yml --branch $$branch --limit 1"
+
+ci-remote: ## Run the CI workflow (backend + frontend suites, tsc, build, pre-commit) on GitHub for the pushed current branch (#898)
+	@branch=$$(git rev-parse --abbrev-ref HEAD); \
+	gh workflow run ci.yml --ref "$$branch" && \
+	echo "Started CI on $$branch. Watch: gh run list --workflow=ci.yml --branch $$branch --limit 1"
+
 test-visual: ## Run visual regression tests (pixel-diff screenshots)
 	cd e2e && npx playwright test --project=visual
 
@@ -1065,5 +1075,5 @@ clean: ## Remove build artifacts and caches
 # --- Help ---
 
 help: ## Show this help
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-25s\033[0m %s\n", $$1, $$2}'

@@ -5,7 +5,8 @@
 On the first message of a session:
 1. Read docs/ROADMAP.md (current state, open items).
 2. Review recent changes: git log --oneline -10
-3. Run make test (establish a green baseline).
+3. Check the CI state of `develop` (`gh run list --branch develop --limit 3`)
+   as the green baseline. No local full suite (ci-only-heavy-tests.md).
    Only then start on the task.
 
 ## Interpreting "continue" / "next item"
@@ -67,7 +68,8 @@ Every GitHub issue is closed by its fix commit.
 1. Read and understand the existing tests.
 2. Implement the change.
 3. Adjust or extend the tests.
-4. Make sure `make test` stays green.
+4. Make sure CI stays green (PR checks or `make ci-remote`); run only the
+   touched test files locally (ci-only-heavy-tests.md).
 
 ## Not allowed (AI-specific)
 
@@ -474,7 +476,7 @@ A task is done when ALL of:
 - Code is implemented and merged to `develop` (gitflow #79 — feature/fix
   branches merge to `develop`, never directly to `main`; only releases
   reach `main`).
-- Tests for the change are green (`make test`).
+- Tests for the change are green in CI (ci-only-heavy-tests.md).
 - Documentation is updated (CLAUDE.md, API docs, help articles).
 - CHANGELOG entry exists if the change is user-facing.
 - No follow-up work blocks closing the task (otherwise: split into

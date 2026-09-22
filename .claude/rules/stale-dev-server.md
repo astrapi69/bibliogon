@@ -1,5 +1,9 @@
 # Stale Dev Server Check
 
+Applies to Playwright runs Aster starts locally. Agents do not run
+Playwright locally at all; they use `make e2e-remote`
+(`ci-only-heavy-tests.md`).
+
 Before every `npx playwright test` run:
 
 1. Check for stale processes: `ss -ltnp | grep -E ':5173|:8000'`
