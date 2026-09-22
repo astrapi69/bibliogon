@@ -88,7 +88,7 @@ always the plugin name:
 | story-bible    | `/api/story-bible`  | Per-book fiction entities: type registry, CRUD, page/chapter links, relationships, auto-detect, continuity check, Markdown export |
 | learnset       | `/api/learnset`     | Export a book as an adaptive-learner learn set (schema-validated scaffold ZIP) |
 | promotion      | `/api/promotion`    | Portfolio board: per-book retail-format status, store URLs, ASIN, universal link, CSV import with dry-run |
-| aplus          | `/api/aplus`        | AI-generated Amazon A+ Content package, validated + cached per book and language (see below) |
+| aplus          | `/api/aplus`        | Amazon A+ Content: AI-generated package (validated + cached) and the author's editable document, per book and language (see below) |
 
 Examples:
 
@@ -107,9 +107,10 @@ Examples:
 
 ### A+ Content (plugin-aplus, #825)
 
-Two endpoints. Source: `plugins/bibliogon-plugin-aplus/bibliogon_aplus/routes.py`,
-behaviour pinned by `backend/tests/test_aplus_endpoint.py`. There is no
-frontend for this yet; the contract below is what a UI has to consume.
+Source: `plugins/bibliogon-plugin-aplus/bibliogon_aplus/routes.py`,
+behaviour pinned by `backend/tests/test_aplus_endpoint.py` (generation)
+and `backend/tests/test_aplus_document_endpoint.py` (editable document).
+The UI is the A+ Content section of the book metadata editor (#887).
 
 `POST /api/aplus/{book_id}/generate?language=<code>&force=<bool>`
 
@@ -198,7 +199,28 @@ Genre key resolution (`book_context._resolve_genre_key`):
 or any description field. Only the first tier is reliable; the rest are
 fallbacks for books nobody has tagged (#830, #839, #854).
 
-`aplus_content` rows are part of the `.bgb` backup (export + restore).
+Editable document (#891): what the author ships, filled by hand, from
+an AI result, or both. Stored in `aplus_documents`, separate from the
+generation cache, so a regeneration never overwrites manual edits.
+
+- `GET /api/aplus/{book_id}/document?language=<tag>`: the document, or
+  404 when none exists yet.
+- `PUT /api/aplus/{book_id}/document?language=<tag>`: create or replace.
+  Body `AplusDocumentBody`: `content_name`, `short_description`,
+  `bullets` (`[{heading, body}]`, max 10) and `modules` (max 20), each
+  `{id, template, module_title, slots: [{title, text, image_prompt,
+  alt_text}]}` (max 10 slots). `template` is a slug (`^[a-z0-9_]{1,40}$`);
+  the template catalog lives in the frontend. Fields have no length
+  limit: the editor shows the ruleset limits as counters, a draft over
+  a limit still saves. Returns the stored document plus `book_id`,
+  `language`, `updated_at`.
+- `DELETE /api/aplus/{book_id}/document?language=<tag>`: 204.
+- `language` defaults to the book's language. Any plain language tag
+  is accepted (not only the four AI languages); a malformed one is 400.
+  Unknown or trashed book is 404.
+
+`aplus_content` and `aplus_documents` rows are part of the `.bgb`
+backup (export + restore).
 
 ---
 

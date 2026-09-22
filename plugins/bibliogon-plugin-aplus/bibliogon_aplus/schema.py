@@ -93,3 +93,51 @@ class AplusPackage(BaseModel):
     @property
     def has_errors(self) -> bool:
         return any(finding.severity == "error" for finding in self.validation)
+
+
+TEMPLATE_PATTERN = r"^[a-z0-9_]{1,40}$"
+"""Module template ids are slugs; the template catalog itself lives in the
+frontend (``lib/aplus/moduleTemplates``) so a new template ships without a
+backend change. The backend only guards the shape."""
+
+MAX_MODULES = 20
+MAX_SLOTS = 10
+MAX_BULLETS = 10
+
+
+class AplusDocumentSlot(BaseModel):
+    """One content slot of a module: an image with its title and text.
+
+    Like the generated package, fields carry no length limit here: the
+    limits are advisory counters in the editor, and an over-length draft
+    must still save rather than be rejected mid-edit.
+    """
+
+    title: str = ""
+    text: str = ""
+    image_prompt: str = ""
+    alt_text: str = ""
+
+
+class AplusDocumentModule(BaseModel):
+    """One A+ module built from a template (e.g. image header, three images)."""
+
+    id: str = Field(min_length=1, max_length=64)
+    template: str = Field(pattern=TEMPLATE_PATTERN)
+    module_title: str = ""
+    slots: list[AplusDocumentSlot] = Field(default_factory=list, max_length=MAX_SLOTS)
+
+
+class AplusDocumentBody(BaseModel):
+    """The author's editable A+ Content for one book and language (#891)."""
+
+    content_name: str = ""
+    short_description: str = ""
+    bullets: list[Bullet] = Field(default_factory=list, max_length=MAX_BULLETS)
+    modules: list[AplusDocumentModule] = Field(default_factory=list, max_length=MAX_MODULES)
+
+
+class AplusDocumentResponse(AplusDocumentBody):
+    book_id: str
+    language: str
+    updated_at: str

@@ -28,6 +28,7 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models import (
     AplusContent,
+    AplusDocument,
     ArcReviewer,
     Article,
     ArticleAsset,
@@ -73,6 +74,7 @@ CONTENT_MODELS = [
     StoryEntityPageLink,
     BookFormatState,
     AplusContent,
+    AplusDocument,
     BookPublishingState,
     ArcReviewer,
     Article,
@@ -321,6 +323,14 @@ def _build_graph(db: Session, tmp_upload: str) -> None:
             source_hash="deadbeef",
             model_name="test-model",
             content_json='{"short_description":"x"}',
+        )
+    )
+    db.add(
+        AplusDocument(
+            id="apd1",
+            book_id="bk1",
+            language="es",
+            document_json='{"content_name":"El caballo que se reía - A+Content"}',
         )
     )
     db.flush()

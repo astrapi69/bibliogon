@@ -647,6 +647,36 @@ class AplusContent(Base):
         return f"<AplusContent book={self.book_id!r} language={self.language!r}>"
 
 
+class AplusDocument(Base):
+    """The author's editable A+ Content for one book and language (#891).
+
+    Separate from :class:`AplusContent`, which caches what the AI
+    generated: this row is what the author actually ships - filled by
+    hand, from an AI result, or both - so an AI regeneration never
+    overwrites manual edits. ``document_json`` holds the serialised
+    ``bibliogon_aplus.schema.AplusDocumentBody`` (content name, short
+    description, bullets, and the ordered module list built from
+    templates).
+    """
+
+    __tablename__ = "aplus_documents"
+    __table_args__ = (UniqueConstraint("book_id", "language", name="uq_aplus_documents_book_lang"),)
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    book_id: Mapped[str] = mapped_column(
+        ForeignKey("books.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    language: Mapped[str] = mapped_column(String(10), nullable=False)
+    document_json: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
+
+    def __repr__(self) -> str:
+        return f"<AplusDocument book={self.book_id!r} language={self.language!r}>"
+
+
 class GitSyncMapping(Base):
     """plugin-git-sync per-book sync state (PGS-02).
 
