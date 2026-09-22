@@ -786,6 +786,69 @@ test.describe("Feature Screenshots", () => {
             await page.waitForTimeout(400);
             await page.screenshot({path: `${OUT}/import-export/kdp-guide-step.png`});
         });
+
+        test("a+ content section", async ({page}) => {
+            await page.route("**/api/editor/plugin-status", (route) =>
+                route.fulfill({
+                    status: 200,
+                    contentType: "application/json",
+                    body: JSON.stringify({ai: {available: true, reason: null, message: ""}}),
+                }),
+            );
+            const aplusPackage = {
+                short_description:
+                    "Ein Handbuch für alle, die verstanden werden wollen: kurze Sätze, klarer Rhythmus, keine Schachtelsätze.",
+                bullets: [
+                    {heading: "Klarheit", body: "Werkzeuge für Sätze, die beim ersten Lesen sitzen."},
+                    {heading: "Rhythmus", body: "Wie Satzlänge und Pausen den Text tragen."},
+                    {heading: "Praxis", body: "Übungen aus dem Schreiballtag, sofort anwendbar."},
+                ],
+                module_header: {
+                    title: "Schreiben, das ankommt",
+                    text: "Vom ersten Entwurf bis zum fertigen Kapitel: ein Stil, der Leserinnen und Leser mitnimmt.",
+                    image: {
+                        prompt: "a writing desk by a window at dawn, open notebook, warm light",
+                        aspect_ratio: "97:30",
+                        size: "970x300",
+                        style_flags: ["photorealistic"],
+                        rendered:
+                            "a writing desk by a window at dawn, open notebook, warm light, photorealistic, 970x300, aspect ratio 97:30",
+                    },
+                    alt_text: "Schreibtisch am Fenster im Morgenlicht",
+                },
+                module_three_images: [],
+                validation: [
+                    {
+                        field: "bullets[1]",
+                        severity: "warning",
+                        message: "Bulletpoint beginnt ohne Nutzenversprechen.",
+                    },
+                ],
+                meta: {
+                    book_id: "demo",
+                    language: "de",
+                    model: "claude-sonnet-4-6",
+                    ruleset_version: "1",
+                    generated_at: "2026-09-22T08:00:00Z",
+                },
+            };
+            await page.route("**/api/aplus/**", (route) =>
+                route.fulfill({
+                    status: 200,
+                    contentType: "application/json",
+                    body: JSON.stringify(aplusPackage),
+                }),
+            );
+            const book = await seedKdpReadyBook(page, "Die Souveränität des Musters");
+            await page.goto(`/book/${book.id}?view=metadata`);
+            await page.getByTestId("metadata-tab-aplus").click().catch(() => {});
+            await page
+                .getByTestId("aplus-package")
+                .waitFor({state: "visible"})
+                .catch(() => {});
+            await page.waitForTimeout(400);
+            await page.screenshot({path: `${OUT}/import-export/aplus-content.png`});
+        });
     });
 
     test.describe("Book Creation", () => {

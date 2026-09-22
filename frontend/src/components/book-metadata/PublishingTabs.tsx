@@ -5,6 +5,7 @@ import CategoryInput from "../book/CategoryInput";
 import BisacCodeInput from "../book/BisacCodeInput";
 import { Row, Field } from "./MetadataFields";
 import { HtmlFieldWithPreview } from "./HtmlField";
+import AplusSection from "./aplus/AplusSection";
 import type { BookMetadataAiState, BookMetadataState, TFunc } from "./tabTypes";
 import styles from "../BookMetadataEditor.module.css";
 
@@ -14,11 +15,13 @@ interface PublishingTabsProps {
     meta: BookMetadataState;
     ai: BookMetadataAiState;
     t: TFunc;
+    /** Switch the metadata editor to another section (A+ missing-field links). */
+    onSelectSection?: (sectionId: string) => void;
 }
 
 /**
  * The "Veröffentlichung" sections of the book metadata editor: the
- * Publisher, ISBN, and Marketing tabs. Renders the tab matching
+ * Publisher, ISBN, Marketing, and A+ Content tabs. Renders the tab matching
  * ``activeTab`` (or ``null`` otherwise).
  *
  * Extracted from BookMetadataEditor.tsx (god-file split, #207) as a pure
@@ -27,7 +30,14 @@ interface PublishingTabsProps {
  * @example
  * <PublishingTabs activeTab={effectiveTab} book={book} meta={meta} ai={ai} t={t} />
  */
-export default function PublishingTabs({ activeTab, book, meta, ai, t }: PublishingTabsProps) {
+export default function PublishingTabs({
+    activeTab,
+    book,
+    meta,
+    ai,
+    t,
+    onSelectSection,
+}: PublishingTabsProps) {
     const {
         form,
         set,
@@ -40,6 +50,17 @@ export default function PublishingTabs({ activeTab, book, meta, ai, t }: Publish
         kdpCategoriesCatalog,
     } = meta;
     const { aiGenerating, aiAvailable, handleAiGenerate } = ai;
+
+    if (activeTab === "aplus") {
+        return (
+            <AplusSection
+                book={book}
+                aiAvailable={aiAvailable}
+                t={t}
+                onSelectSection={onSelectSection}
+            />
+        );
+    }
 
     if (activeTab === "publisher") {
         return (

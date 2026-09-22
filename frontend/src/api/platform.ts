@@ -16,6 +16,7 @@ import { pluginInstall, licenses } from "./platform/plugins";
 import { help, getStarted } from "./platform/help";
 import { git, translations, gitSync, ssh } from "./platform/git";
 import { promotion } from "./platform/promotion";
+import { aplus } from "./platform/aplus";
 import { system } from "./platform/system";
 
 export type { KdpPackageFormat } from "./platform/kdp";
@@ -26,6 +27,15 @@ export type {
   PortfolioFormatEntry,
   PortfolioFormatStateUpdate,
 } from "./platform/promotion";
+export type {
+  AplusFinding,
+  AplusImage,
+  AplusMissingField,
+  AplusMissingFields,
+  AplusModule,
+  AplusPackage,
+} from "./platform/aplus";
+export { APLUS_LANGUAGES, isAplusMissingFields } from "./platform/aplus";
 
 export const platformApi = {
   ai,
@@ -42,5 +52,6 @@ export const platformApi = {
   gitSync,
   ssh,
   promotion,
+  aplus,
   system,
 };
