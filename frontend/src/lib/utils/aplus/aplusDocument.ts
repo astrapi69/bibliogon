@@ -1,12 +1,13 @@
+import { findTemplate, type AplusModuleTemplate } from "./moduleTemplates";
+
 /**
  * Editable A+ Content document model (#891).
  *
  * The document is what an author ships to Amazon's A+ manager: a content
  * name, a short description, bullets, and an ordered list of modules, each
- * built from a template (image header, three images, ...). It is filled by
- * hand, from an AI result, or both. The shape mirrors the backend body
- * `bibliogon_aplus.schema.AplusDocumentBody`; the template catalog lives
- * here so a new template ships without a backend change.
+ * built from a template of the module catalog (`moduleTemplates.ts`). It is
+ * filled by hand, from an AI result, or both. The shape mirrors the backend
+ * body `bibliogon_aplus.schema.AplusDocumentBody`.
  *
  * @example
  * const doc = emptyDocument(book.title, () => crypto.randomUUID());
@@ -18,19 +19,33 @@ export interface AplusBulletDraft {
     body: string;
 }
 
-/** One image of a module with its title, text, prompt and alt text. */
+/** One image of a module with its texts. `caption` and `asin` are used by
+ *  some templates only and missing in documents written before #895. */
 export interface AplusSlotDraft {
     title: string;
     text: string;
     image_prompt: string;
     alt_text: string;
+    caption?: string;
+    asin?: string;
+}
+
+/** A table row: a label plus one value per column (or one value for a pair). */
+export interface AplusRowDraft {
+    label: string;
+    values: string[];
 }
 
 export interface AplusModuleDraft {
     id: string;
     template: string;
+    /** The module headline Amazon shows above the module. */
     module_title: string;
     slots: AplusSlotDraft[];
+    /** Module-level texts keyed by the template's field keys (#895). */
+    fields?: Record<string, string>;
+    /** Table rows of the comparison chart and tech specs templates (#895). */
+    rows?: AplusRowDraft[];
 }
 
 export interface AplusDocumentDraft {
@@ -39,23 +54,6 @@ export interface AplusDocumentDraft {
     bullets: AplusBulletDraft[];
     modules: AplusModuleDraft[];
 }
-
-export interface AplusModuleTemplate {
-    id: string;
-    slotCount: number;
-    /** Target pixel size of each image, as the A+ manager asks for it. */
-    size: string;
-    aspectRatio: string;
-}
-
-/**
- * Module templates. Sizes and aspect ratios match the backend ruleset's
- * `image_style` block (`bibliogon_aplus/rules/ruleset.yaml`).
- */
-export const APLUS_MODULE_TEMPLATES: readonly AplusModuleTemplate[] = [
-    { id: "image_header_text", slotCount: 1, size: "970x600", aspectRatio: "97:60" },
-    { id: "three_images_text", slotCount: 3, size: "300x300", aspectRatio: "1:1" },
-];
 
 /** Character limits from the backend ruleset's `schema_limits`. */
 export const APLUS_FIELD_LIMITS = {
@@ -94,23 +92,38 @@ export function newModuleId(): string {
     return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-export function findTemplate(id: string): AplusModuleTemplate | undefined {
-    return APLUS_MODULE_TEMPLATES.find((template) => template.id === id);
-}
-
 function emptySlot(): AplusSlotDraft {
-    return { title: "", text: "", image_prompt: "", alt_text: "" };
+    return { title: "", text: "", image_prompt: "", alt_text: "", caption: "", asin: "" };
 }
 
-/** A new module from a template, with one empty slot per image. */
+/** An empty table row with `columns` values. */
+export function emptyRow(columns: number): AplusRowDraft {
+    return { label: "", values: Array.from({ length: columns }, () => "") };
+}
+
+/** Values per table row: one per column for a comparison, one for a pair. */
+export function rowWidth(template: AplusModuleTemplate | undefined, slotCount: number): number {
+    return template?.rows?.kind === "matrix" ? slotCount : 1;
+}
+
+/** A new module from a catalog template: empty image places, fields and rows.
+ *  An unknown template gets one image place with the classic fields. */
 export function createModule(templateId: string, id: string): AplusModuleDraft {
-    const slotCount = findTemplate(templateId)?.slotCount ?? 1;
-    return {
+    const template = findTemplate(templateId);
+    const slotCount = template ? template.slots.length : 1;
+    const module: AplusModuleDraft = {
         id,
         template: templateId,
         module_title: "",
         slots: Array.from({ length: slotCount }, emptySlot),
     };
+    if (template && template.fields.length > 0) {
+        module.fields = Object.fromEntries(template.fields.map((spec) => [spec.key, ""]));
+    }
+    if (template?.rows) {
+        module.rows = Array.from({ length: template.rows.initial }, () => emptyRow(rowWidth(template, slotCount)));
+    }
+    return module;
 }
 
 /** The starting document: named after the book, three bullets, the two standard modules. */
@@ -126,7 +139,16 @@ export function emptyDocument(bookTitle: string, newId: () => string): AplusDocu
 function moduleTexts(module: AplusModuleDraft): string[] {
     return [
         module.module_title,
-        ...module.slots.flatMap((slot) => [slot.title, slot.text, slot.image_prompt, slot.alt_text]),
+        ...module.slots.flatMap((slot) => [
+            slot.title,
+            slot.text,
+            slot.image_prompt,
+            slot.alt_text,
+            slot.caption ?? "",
+            slot.asin ?? "",
+        ]),
+        ...Object.values(module.fields ?? {}),
+        ...(module.rows ?? []).flatMap((row) => [row.label, ...row.values]),
     ];
 }
 

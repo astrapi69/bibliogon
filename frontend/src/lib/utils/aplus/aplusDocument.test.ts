@@ -8,12 +8,10 @@ import { describe, expect, it } from "vitest";
 
 import {
     APLUS_FIELD_LIMITS,
-    APLUS_MODULE_TEMPLATES,
     countCharacters,
     createModule,
     emptyDocument,
     fromStoredRow,
-    findTemplate,
     hasContent,
     moduleHasContent,
     moveModule,
@@ -47,27 +45,26 @@ const PACKAGE: GeneratedAplusPackage = {
     ],
 };
 
-describe("module templates", () => {
-    it("ships the header and three-image templates with their image slots", () => {
-        const header = findTemplate("image_header_text");
-        const three = findTemplate("three_images_text");
-        expect(header).toMatchObject({ slotCount: 1, size: "970x600", aspectRatio: "97:60" });
-        expect(three).toMatchObject({ slotCount: 3, size: "300x300", aspectRatio: "1:1" });
-        expect(APLUS_MODULE_TEMPLATES.every((tpl) => /^[a-z0-9_]{1,40}$/.test(tpl.id))).toBe(true);
-    });
-
-    it("returns undefined for an unknown template", () => {
-        expect(findTemplate("nope")).toBeUndefined();
-    });
-
+describe("createModule", () => {
     it("creates a module with one empty slot per template image", () => {
         const module = createModule("three_images_text", "m1");
         expect(module).toEqual({
             id: "m1",
             template: "three_images_text",
             module_title: "",
-            slots: Array.from({ length: 3 }, () => ({ title: "", text: "", image_prompt: "", alt_text: "" })),
+            slots: Array.from({ length: 3 }, () => ({
+                title: "",
+                text: "",
+                image_prompt: "",
+                alt_text: "",
+                caption: "",
+                asin: "",
+            })),
         });
+    });
+
+    it("gives an unknown template one image place", () => {
+        expect(createModule("custom_x", "c").slots).toHaveLength(1);
     });
 
     it("mirrors the backend ruleset limits", () => {
@@ -77,6 +74,18 @@ describe("module templates", () => {
             bullet_body: 1000,
             alt_text: 200,
         });
+    });
+});
+
+describe("hasContent with template fields", () => {
+    it("sees text in module fields and table rows", () => {
+        const doc = emptyDocument("Buch", newId);
+        const text = createModule("text", "t");
+        text.fields = { body: "Hallo" };
+        expect(hasContent({ ...doc, modules: [text] })).toBe(true);
+        const specs = createModule("tech_specs", "s");
+        specs.rows = [{ label: "Seiten", values: [""] }];
+        expect(hasContent({ ...doc, modules: [specs] })).toBe(true);
     });
 });
 

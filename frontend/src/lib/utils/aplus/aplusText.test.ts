@@ -21,7 +21,11 @@ const LABELS: AplusTextLabels = {
     text: "Text",
     imagePrompt: "Bild-Prompt",
     altText: "Alt-Text",
+    caption: "Bildunterschrift",
+    asin: "ASIN",
     templateName: (id) => (id === "image_header_text" ? "Bild-Kopfzeile mit Text" : "Drei Bilder und Text"),
+    fieldLabel: (spec) => spec.labelFallback.replace("{n}", String(spec.n ?? "")),
+    slotLabel: (spec) => spec.labelFallback ?? "",
 };
 
 function sampleDocument(): AplusDocumentDraft {
@@ -98,5 +102,31 @@ describe("documentToText", () => {
         const text = documentToText(doc, { ...LABELS, templateName: () => "Frei" });
         expect(text).not.toContain("Bulletpoints:");
         expect(text).toContain("Modul 1: Frei\n");
+    });
+
+    it("writes module fields, list items, labelled image places and table rows", () => {
+        const doc = sampleDocument();
+        const sidebar = createModule("image_sidebar", "s1");
+        sidebar.module_title = "Kopf";
+        sidebar.fields = { ...sidebar.fields, description_body: "Beschreibung.", bullets: "eins\n\n zwei " };
+        sidebar.slots[0] = { ...sidebar.slots[0], caption: "Unterschrift" };
+        const specs = createModule("tech_specs", "t1");
+        specs.module_title = "Daten";
+        specs.rows = [{ label: "Seiten", values: ["320"] }];
+        const chart = createModule("comparison_chart", "c1");
+        chart.rows = [{ label: "Genre", values: ["Krimi", "Roman", ""] }];
+        doc.modules = [sidebar, specs, chart];
+        const text = documentToText(doc, { ...LABELS, templateName: (id) => id });
+
+        expect(text).toContain("Modul 1: image_sidebar (300x400, 350x175)\nModultitel: Kopf\n");
+        expect(text).toContain("Beschreibung: Beschreibung.\n");
+        expect(text).toContain("Aufzählung (ein Punkt pro Zeile):\n- eins\n- zwei\n");
+        expect(text).toContain("Hauptbild Bildunterschrift: Unterschrift\n");
+        expect(text).toContain("Seitenleiste Titel: \n");
+        expect(text).toContain("Modul 2: tech_specs\nModultitel: Daten\n");
+        expect(text).toContain("Seiten: 320\n");
+        expect(text).toContain("Modul 3: comparison_chart (150x300)\n\n");
+        expect(text).toContain("Bild 2 ASIN: \n");
+        expect(text).toContain("Genre: Krimi | Roman | \n");
     });
 });

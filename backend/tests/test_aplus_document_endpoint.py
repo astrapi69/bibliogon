@@ -54,6 +54,19 @@ DOCUMENT = {
 }
 
 
+def _with_defaults(modules: list[dict]) -> list[dict]:
+    """Modules as stored: the #895 parts default to empty values."""
+    return [
+        {
+            **module,
+            "slots": [{"caption": "", "asin": "", **slot} for slot in module["slots"]],
+            "fields": module.get("fields", {}),
+            "rows": module.get("rows", []),
+        }
+        for module in modules
+    ]
+
+
 @pytest.fixture
 def client() -> TestClient:
     with TestClient(app) as c:
@@ -82,8 +95,9 @@ class TestDocumentRoundTrip:
         saved = client.put(_url(book_id), json=DOCUMENT)
         assert saved.status_code == 200, saved.text
         body = client.get(_url(book_id)).json()
-        for key in ("content_name", "short_description", "bullets", "modules"):
+        for key in ("content_name", "short_description", "bullets"):
             assert body[key] == DOCUMENT[key]
+        assert body["modules"] == _with_defaults(DOCUMENT["modules"])
         assert body["book_id"] == book_id
         assert body["language"] == "es"
         assert body["updated_at"]
@@ -122,6 +136,60 @@ class TestDocumentRoundTrip:
         assert body["short_description"] == ""
         assert body["bullets"] == []
         assert body["modules"] == []
+
+
+class TestTemplateModules:
+    """Modules of the full catalog (#895) carry fields, table rows and extra slot texts."""
+
+    def test_fields_rows_caption_and_asin_round_trip(self, client: TestClient) -> None:
+        book_id = _book_id(client)
+        modules = [
+            {
+                "id": "s1",
+                "template": "image_sidebar",
+                "module_title": "Kopf",
+                "slots": [
+                    {
+                        "title": "",
+                        "text": "",
+                        "image_prompt": "p",
+                        "alt_text": "a",
+                        "caption": "Unterschrift",
+                    },
+                    {"title": "T", "text": "x", "image_prompt": "q", "alt_text": "b"},
+                ],
+                "fields": {"description_body": "Beschreibung", "bullets": "eins\nzwei"},
+            },
+            {
+                "id": "c1",
+                "template": "comparison_chart",
+                "module_title": "",
+                "slots": [{"title": "Band 1", "asin": "B0FR1X1MVX"}],
+                "rows": [{"label": "Genre", "values": ["Krimi"]}],
+            },
+        ]
+        client.put(_url(book_id), json={**DOCUMENT, "modules": modules})
+        stored = client.get(_url(book_id)).json()["modules"]
+        assert stored[0]["fields"] == {"description_body": "Beschreibung", "bullets": "eins\nzwei"}
+        assert stored[0]["slots"][0]["caption"] == "Unterschrift"
+        assert stored[1]["slots"][0]["asin"] == "B0FR1X1MVX"
+        assert stored[1]["rows"] == [{"label": "Genre", "values": ["Krimi"]}]
+
+    def test_documents_without_the_new_parts_read_back_with_defaults(
+        self, client: TestClient
+    ) -> None:
+        book_id = _book_id(client)
+        client.put(_url(book_id), json=DOCUMENT)
+        module = client.get(_url(book_id)).json()["modules"][0]
+        assert module["fields"] == {}
+        assert module["rows"] == []
+        assert module["slots"][0]["caption"] == ""
+
+    def test_too_many_rows_are_rejected(self, client: TestClient) -> None:
+        book_id = _book_id(client)
+        module = {**DOCUMENT["modules"][0], "rows": [{"label": "x", "values": []}] * 21}
+        response = client.put(_url(book_id), json={**DOCUMENT, "modules": [module]})
+        assert response.status_code == 422
 
 
 class TestDocumentList:

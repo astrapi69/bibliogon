@@ -1,10 +1,17 @@
 import {
     countCharacters,
-    findTemplate,
     type AplusDocumentDraft,
     type AplusModuleDraft,
     type AplusSlotDraft,
 } from "./aplusDocument";
+import {
+    findTemplate,
+    slotSpecAt,
+    type AplusModuleTemplate,
+    type AplusSlotField,
+    type AplusSlotSpec,
+    type AplusTextFieldSpec,
+} from "./moduleTemplates";
 
 /** Labels for the text export; the caller passes them in the UI language. */
 export interface AplusTextLabels {
@@ -19,30 +26,77 @@ export interface AplusTextLabels {
     text: string;
     imagePrompt: string;
     altText: string;
+    caption: string;
+    asin: string;
     templateName: (templateId: string) => string;
+    fieldLabel: (spec: AplusTextFieldSpec) => string;
+    slotLabel: (spec: AplusSlotSpec) => string;
 }
 
-function slotLines(slot: AplusSlotDraft, prefix: string, labels: AplusTextLabels): string[] {
-    return [
-        `${prefix}${labels.title}: ${slot.title}`,
-        `${prefix}${labels.text}: ${slot.text}`,
-        `${prefix}${labels.imagePrompt}: ${slot.image_prompt}`,
-        `${prefix}${labels.altText}: ${slot.alt_text}`,
-        "",
-    ];
+const CLASSIC_FIELDS: readonly AplusSlotField[] = ["title", "text", "image_prompt", "alt_text"];
+
+function slotFieldLabel(field: AplusSlotField, labels: AplusTextLabels): string {
+    const byField: Record<AplusSlotField, string> = {
+        title: labels.title,
+        text: labels.text,
+        image_prompt: labels.imagePrompt,
+        alt_text: labels.altText,
+        caption: labels.caption,
+        asin: labels.asin,
+    };
+    return byField[field];
+}
+
+function slotLines(
+    slot: AplusSlotDraft,
+    fields: readonly AplusSlotField[],
+    prefix: string,
+    labels: AplusTextLabels,
+): string[] {
+    return [...fields.map((field) => `${prefix}${slotFieldLabel(field, labels)}: ${slot[field] ?? ""}`), ""];
+}
+
+function fieldLines(module: AplusModuleDraft, specs: readonly AplusTextFieldSpec[], labels: AplusTextLabels): string[] {
+    const lines = specs.flatMap((spec) => {
+        const value = module.fields?.[spec.key] ?? "";
+        if (!spec.list) return [`${labels.fieldLabel(spec)}: ${value}`];
+        const items = value.split("\n").filter((item) => item.trim() !== "");
+        return [`${labels.fieldLabel(spec)}:`, ...items.map((item) => `- ${item.trim()}`)];
+    });
+    return lines.length > 0 ? [...lines, ""] : [];
+}
+
+function rowLines(module: AplusModuleDraft): string[] {
+    const rows = module.rows ?? [];
+    return rows.length > 0 ? [...rows.map((row) => `${row.label}: ${row.values.join(" | ")}`), ""] : [];
+}
+
+function sizesText(template: AplusModuleTemplate | undefined): string {
+    return template ? [...new Set(template.slots.map((spec) => spec.size))].join(", ") : "";
+}
+
+function slotPrefix(template: AplusModuleTemplate | undefined, module: AplusModuleDraft, index: number, labels: AplusTextLabels): string {
+    const spec = template ? slotSpecAt(template, index) : undefined;
+    if (spec?.labelKey) return `${labels.slotLabel(spec)} `;
+    return module.slots.length > 1 ? `${labels.image} ${index + 1} ` : "";
 }
 
 function moduleLines(module: AplusModuleDraft, index: number, labels: AplusTextLabels): string[] {
-    const size = findTemplate(module.template)?.size;
+    const template = findTemplate(module.template);
+    const sizes = sizesText(template);
     const heading = `${labels.module} ${index + 1}: ${labels.templateName(module.template)}`;
-    const multiSlot = module.slots.length > 1;
+    const headline = !template || template.headline ? [`${labels.moduleTitle}: ${module.module_title}`] : [];
+    const fields = template?.fields ?? [];
     return [
-        size ? `${heading} (${size})` : heading,
-        `${labels.moduleTitle}: ${module.module_title}`,
+        sizes ? `${heading} (${sizes})` : heading,
+        ...headline,
         "",
+        ...fieldLines(module, fields.filter((spec) => !spec.afterSlots), labels),
         ...module.slots.flatMap((slot, i) =>
-            slotLines(slot, multiSlot ? `${labels.image} ${i + 1} ` : "", labels),
+            slotLines(slot, (template && slotSpecAt(template, i)?.fields) || CLASSIC_FIELDS, slotPrefix(template, module, i, labels), labels),
         ),
+        ...fieldLines(module, fields.filter((spec) => spec.afterSlots), labels),
+        ...rowLines(module),
     ];
 }
 

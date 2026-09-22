@@ -850,6 +850,19 @@ test.describe("Feature Screenshots", () => {
             await page.waitForTimeout(400);
             await page.screenshot({path: `${OUT}/import-export/aplus-content.png`});
         });
+
+        test("a+ module gallery", async ({page}) => {
+            const book = await seedKdpReadyBook(page, "Die Souveränität des Musters");
+            await page.goto(`/book/${book.id}?view=metadata`);
+            await page.getByTestId("metadata-tab-aplus").click().catch(() => {});
+            const gallery = page.getByTestId("aplus-module-gallery");
+            await gallery.scrollIntoViewIfNeeded().catch(() => {});
+            await page.evaluate(() => {
+                document.querySelector("[data-testid='aplus-module-gallery']")?.scrollIntoView({block: "start"});
+            });
+            await page.waitForTimeout(400);
+            await page.screenshot({path: `${OUT}/import-export/aplus-module-gallery.png`});
+        });
     });
 
     test.describe("Book Creation", () => {

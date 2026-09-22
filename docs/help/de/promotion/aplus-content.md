@@ -13,14 +13,29 @@ Du findest ihn im Metadaten-Editor des Buchs unter **Veröffentlichung > A+ Cont
 
 Die Zähler unter den Feldern werden rot, wenn ein Text zu lang ist. Gespeichert wird trotzdem, damit ein Entwurf nicht verloren geht.
 
-## Modulvorlagen
+## Module
 
-Ein neues Dokument beginnt mit den beiden Standard-Modulen. Weitere fügst du unten über die Vorlagen-Schaltflächen hinzu:
+Amazon bietet für A+ Content 17 Module an; KDP zeigt bis zu 5 pro A+ Content. Ein neues Dokument beginnt mit der Bildkopfzeile und den drei Bildern. Weitere Module fügst du unter **Modul hinzufügen** hinzu: als **Kacheln** mit einer Skizze des Aufbaus oder als kompakte **Liste**, jeweils mit Bildgröße und Zweck. Ein Klick hängt das Modul unten an.
 
-- **Standard-Bildkopfzeile mit Text**: ein Bild in 970x600 Pixeln (Seitenverhältnis 97:60).
-- **Standard: Drei Bilder und Text**: drei Bilder in je 300x300 Pixeln (1:1).
+| Modul | Bilder (Mindestgröße) | Inhalt |
+|---|---|---|
+| Bildkopfzeile mit Text | 1, 970x600 | Modul-Überschrift, Überschrift, Text |
+| Drei Bilder und Text | 3, je 300x300 | Modul-Überschrift, pro Bild Überschrift und Text |
+| Vier Bilder und Text | 4, je 220x220 | Modul-Überschrift, pro Bild Überschrift und Text |
+| Vier Bilder mit Text im Raster | 4, je 135x135 | pro Bild Überschrift und Text |
+| Einzelbild links / rechts | 1, 300x300 | Überschrift und Text neben dem Bild |
+| Bild mit dunklem / hellem Textfeld | 1, 970x300 | Überschrift und Text auf dem Bild |
+| Einzelbild mit Seitenleiste | 300x400 und 350x175 | Beschreibung mit Aufzählung, Bildunterschrift, Seitenleiste mit Aufzählung |
+| Einzelbild mit Highlights | 1, 300x300 | drei Textblöcke und eine Aufzählung |
+| Einzelbild mit Detailangaben | 1, 300x300 | Beschreibung, Textblöcke, Liste mit Details |
+| Mehrere Bilder (Modul A) | 1 bis 4, je 300x300 | pro Bild Überschrift, Text, Bildunterschrift |
+| Vergleichstabelle | 1 bis 6 Spalten, je 150x300 | pro Spalte Titel, ASIN, Bild; bis zu 10 Vergleichszeilen |
+| Technische Daten | keine | 4 bis 16 Angaben mit Bezeichnung und Beschreibung |
+| Text | keine | Überschrift und Text |
+| Produktbeschreibung | keine | Text bis 6000 Zeichen |
+| Firmenlogo | 1, 600x180 | nur einmal pro A+ Content |
 
-Jedes Modul hat einen **Modulnamen** und pro Bild **Titel**, **Text**, **Bild-Prompt** und **Alt-Text** (höchstens 200 Zeichen). Mit den Pfeilen verschiebst du ein Modul, mit dem Papierkorb entfernst du es; enthält es schon Text, fragt Bibliogon vorher nach.
+Aufzählungen schreibst du mit einem Punkt pro Zeile. Bei der Vergleichstabelle und den Mehrfachbildern fügst du Spalten oder Bilder hinzu und entfernst sie wieder; die Vergleichswerte wandern mit. Jedes Bild hat einen **Bild-Prompt** und einen **Alt-Text** (höchstens 200 Zeichen). Mit den Pfeilen verschiebst du ein Modul, mit dem Papierkorb entfernst du es; enthält es schon Text, fragt Bibliogon vorher nach.
 
 ## Kopieren
 
