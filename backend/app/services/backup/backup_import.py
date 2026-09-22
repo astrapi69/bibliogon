@@ -15,6 +15,7 @@ from app.backup_history import BackupHistory
 from app.exceptions import ValidationError
 from app.models import (
     AplusContent,
+    AplusDocument,
     ArcReviewer,
     Article,
     ArticleAsset,
@@ -425,6 +426,7 @@ def _restore_book_children(db: Session, book_dir: Path) -> None:
     _restore_simple(db, book_dir / "story_entity_page_links.json", StoryEntityPageLink)
     _restore_simple(db, book_dir / "format_states.json", BookFormatState)
     _restore_simple(db, book_dir / "aplus_content.json", AplusContent)
+    _restore_simple(db, book_dir / "aplus_documents.json", AplusDocument)
     _restore_simple(db, book_dir / "publishing_state.json", BookPublishingState)
     db.flush()
     _restore_simple(db, book_dir / "arc_reviewers.json", ArcReviewer)
