@@ -190,6 +190,11 @@ export default function BookMetadataEditor({
                         label: t("ui.metadata.tab_marketing", "Marketing"),
                         testId: "metadata-tab-marketing",
                     },
+                    {
+                        id: "aplus",
+                        label: t("ui.metadata.tab_aplus", "A+ Content"),
+                        testId: "metadata-tab-aplus",
+                    },
                 ],
             },
             {
@@ -203,7 +208,7 @@ export default function BookMetadataEditor({
                           },
                           {
                               id: "quality",
-                              label: t("ui.metadata.tab_quality", "Qualitaet"),
+                              label: t("ui.metadata.tab_quality", "Qualität"),
                               testId: "metadata-tab-quality",
                           },
                       ]
@@ -334,6 +339,7 @@ export default function BookMetadataEditor({
                         meta={meta}
                         ai={ai}
                         t={t}
+                        onSelectSection={setActiveTab}
                     />
                     <ProductionTabs
                         activeTab={effectiveTab}

@@ -5,6 +5,16 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 ## [Unreleased]
 
 ### Added
+- **A+ Content in the book metadata (#887).** The A+ plugin (#825)
+  shipped backend-only and was reachable from nowhere in the UI. The
+  metadata editor now has an **A+ Content** section under
+  Veröffentlichung: language picker (de/en/fr/es, preselected from the
+  book), Generate / Regenerate, the validator findings, and every text
+  block and image prompt with a copy button. When the book lacks an
+  author or a description, the section lists the missing fields and
+  jumps to the section that holds them, without an AI call. Gated as
+  desktop-only in the web app (`aplus-content`), with a help page under
+  Portfolio.
 - **Impressum + Datenschutzerklärung scaffold for the web app (#876).**
   Four static pages next to the SPA (`impressum.html`, `datenschutz.html`,
   `imprint.html`, `privacy.html`), a footer with both links under every

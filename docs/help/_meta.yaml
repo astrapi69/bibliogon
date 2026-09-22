@@ -25,6 +25,12 @@ navigation:
     icon: layout-grid
 
   - title:
+      de: A+ Content
+      en: A+ Content
+    slug: promotion/aplus-content
+    icon: sparkles
+
+  - title:
       de: Artikel
       en: Articles
     slug: articles

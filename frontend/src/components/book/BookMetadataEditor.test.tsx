@@ -166,6 +166,21 @@ const assetsListMock = vi.fn().mockResolvedValue([]);
 const assetsDeleteMock = vi.fn().mockResolvedValue(undefined);
 
 const documentExportDownloadMock = vi.fn();
+const aplusGetMock = vi.fn();
+const aplusGenerateMock = vi.fn();
+
+let pluginStatusOverride: Record<string, { available: boolean; reason: string | null }> | null =
+    null;
+vi.mock("../../hooks/editor/useEditorPluginStatus", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("../../hooks/editor/useEditorPluginStatus")>();
+    return {
+        ...actual,
+        useEditorPluginStatus: () =>
+            pluginStatusOverride
+                ? { status: pluginStatusOverride, loading: false, refresh: () => undefined }
+                : actual.useEditorPluginStatus(),
+    };
+});
 
 vi.mock("../../api/client", () => ({
     api: {
@@ -196,6 +211,10 @@ vi.mock("../../api/client", () => ({
         },
         documentExport: {
             download: (...args: unknown[]) => documentExportDownloadMock(...args),
+        },
+        aplus: {
+            get: (...args: unknown[]) => aplusGetMock(...args),
+            generate: (...args: unknown[]) => aplusGenerateMock(...args),
         },
         kdp: {
             listCategories: vi.fn().mockResolvedValue([]),
@@ -336,6 +355,10 @@ describe("BookMetadataEditor", () => {
     beforeEach(() => {
         onSave.mockClear();
         onBack.mockClear();
+        pluginStatusOverride = null;
+        aplusGetMock.mockReset();
+        aplusGetMock.mockResolvedValue(null);
+        aplusGenerateMock.mockReset();
     });
 
     function renderEditor(bookOverrides: Partial<BookDetail> = {}, allBooks?: Book[]) {
@@ -381,6 +404,7 @@ describe("BookMetadataEditor", () => {
         expect(screen.getByTestId("metadata-tab-publisher")).toBeTruthy();
         expect(screen.getByTestId("metadata-tab-isbn")).toBeTruthy();
         expect(screen.getByTestId("metadata-tab-marketing")).toBeTruthy();
+        expect(screen.getByTestId("metadata-tab-aplus")).toBeTruthy();
         expect(screen.getByTestId("metadata-tab-design")).toBeTruthy();
         expect(screen.getByTestId("metadata-tab-audiobook")).toBeTruthy();
     });
@@ -425,6 +449,33 @@ describe("BookMetadataEditor", () => {
         fireEvent.click(screen.getByTestId("metadata-tab-isbn"));
         expect(screen.getByText("ISBN E-Book")).toBeTruthy();
         expect(screen.queryByDisplayValue("A Subtitle")).toBeNull();
+    });
+
+    // --- A+ Content (#887) ---
+
+    it("A+ Content opens from the Veröffentlichung nav and loads the cached package", async () => {
+        renderEditor();
+        fireEvent.click(screen.getByTestId("metadata-tab-aplus"));
+        await screen.findByTestId("aplus-empty");
+        expect(screen.getByTestId("aplus-section")).toBeTruthy();
+        expect(aplusGetMock).toHaveBeenCalledWith("book-1", "de");
+        expect((screen.getByTestId("aplus-generate") as HTMLButtonElement).disabled).toBe(true);
+        expect(screen.getByTestId("aplus-ai-unavailable")).toBeTruthy();
+    });
+
+    it("A+ missing-field link switches the editor to the section holding the field", async () => {
+        pluginStatusOverride = { ai: { available: true, reason: null } };
+        aplusGenerateMock.mockResolvedValue({
+            book_id: "book-1",
+            missing_fields: [{ field: "author", reason: "An author name is required." }],
+        });
+        renderEditor();
+        fireEvent.click(screen.getByTestId("metadata-tab-aplus"));
+        await screen.findByTestId("aplus-empty");
+        fireEvent.click(screen.getByTestId("aplus-generate"));
+        fireEvent.click(await screen.findByTestId("aplus-missing-goto-author"));
+        expect(screen.getByTestId("metadata-tab-general").getAttribute("aria-current")).toBe("page");
+        expect(screen.getByDisplayValue("A Subtitle")).toBeTruthy();
     });
 
     // --- Save ---

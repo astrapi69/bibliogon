@@ -122,6 +122,7 @@ binary via the repo-level `.gitattributes` (`*.png binary`) — plain git, no LF
 | Full-data backup (.bgb) | ![BGB Backup](import-export/bgb-backup.png) |
 | KDP wizard — format step (eBook/Taschenbuch/Hardcover + trim + margins) | ![KDP Format Step](import-export/kdp-format-step.png) |
 | KDP wizard — upload guide (kdp.amazon.com + walkthrough) | ![KDP Guide Step](import-export/kdp-guide-step.png) |
+| A+ Content — book metadata section (package, findings, copy buttons) | ![A+ Content](import-export/aplus-content.png) |
 
 ---
 
