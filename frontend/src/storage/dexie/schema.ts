@@ -16,6 +16,7 @@
 
 import Dexie, { type Table } from "dexie";
 
+import type { AplusDocumentRecord } from "../../api/platform";
 import type {
     Article,
     ArticleComment,
@@ -115,6 +116,10 @@ export interface WritingSessionRow {
  *  (the API model hides the column; the trash endpoints expose the state). */
 export type CommentRow = ArticleComment & { deleted_at: string | null };
 
+/** The author's A+ document for one book and language (#891): the API record
+ *  plus a local primary key. Unique per `[book_id+language]`. */
+export type AplusDocumentRow = AplusDocumentRecord & { id: string };
+
 /** A queued offline mutation awaiting replay against the API on
  *  reconnect (mobile-sync P3-C5). Created by the queueing-storage
  *  wrapper on every offline write; drained by the sync engine (C6). */
@@ -199,6 +204,8 @@ class BibliogonOfflineDB extends Dexie {
      *  ids) and the user's own, exactly like the backend table — the picker
      *  shows one list and `is_builtin` decides what is read-only. */
     chapterTemplates!: Table<ChapterTemplate, string>;
+    /** Editable A+ documents (#891), one per book and language. */
+    aplusDocuments!: Table<AplusDocumentRow, string>;
 
     constructor() {
         // Separate DB from the crash-recovery drafts store ("bibliogon").
@@ -288,6 +295,12 @@ class BibliogonOfflineDB extends Dexie {
         // indexed for the create/import 409 check and the list order.
         this.version(13).stores({
             chapterTemplates: "id, name, created_at",
+        });
+        // v14 (#891): editable A+ documents. `book_id` for the per-book list
+        // and the cascade on hard delete; the compound index backs the
+        // one-document-per-(book, language) lookup.
+        this.version(14).stores({
+            aplusDocuments: "id, book_id, [book_id+language]",
         });
     }
 }

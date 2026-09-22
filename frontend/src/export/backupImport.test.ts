@@ -18,6 +18,13 @@ const labelsCreate = vi.fn(async (_bookId: string, _d: {name: string; color: str
     id: "nl",
 }));
 
+const aplusSave = vi.fn(async (bookId: string, language: string, doc: Record<string, unknown>) => ({
+    ...doc,
+    book_id: bookId,
+    language,
+    updated_at: "t",
+}));
+
 vi.mock("../storage", () => ({
     getStorage: () => ({
         settings: {updateApp},
@@ -27,6 +34,7 @@ vi.mock("../storage", () => ({
         articles: {list: articlesList, create: articlesCreate, update: articlesUpdate},
         storyBible: {createEntity},
         chapterLabels: {create: labelsCreate},
+        aplusDocuments: {save: aplusSave},
     }),
 }));
 
@@ -77,6 +85,7 @@ beforeEach(() => {
         articlesUpdate,
         createEntity,
         labelsCreate,
+        aplusSave,
     ].forEach((m) => m.mockClear());
     authorsList.mockResolvedValue([]);
     booksList.mockResolvedValue([]);
@@ -125,6 +134,35 @@ describe("importFullBackup", () => {
         await importFullBackup(fileOf(bundle()));
         expect(createEntity).toHaveBeenCalledWith("new-b1", expect.objectContaining({name: "Hero"}));
         expect(labelsCreate).toHaveBeenCalledWith("new-b1", {name: "Draft", color: "#fff"});
+    });
+
+    it("restores A+ documents under the new book id, without the record metadata", async () => {
+        const doc = {
+            content_name: "El caballo - A+Content",
+            short_description: "Kurz",
+            bullets: [{heading: "H", body: "B"}],
+            modules: [{id: "m1", template: "image_header_text", module_title: "", slots: []}],
+        };
+        const result = await importFullBackup(
+            fileOf(
+                bundle({
+                    aplus_documents: [
+                        {...doc, book_id: "b1", language: "es", updated_at: "old"},
+                        {...doc, book_id: "unknown-book", language: "de", updated_at: "old"},
+                    ],
+                }),
+            ),
+        );
+        expect(aplusSave).toHaveBeenCalledTimes(1);
+        expect(aplusSave).toHaveBeenCalledWith("new-b1", "es", doc);
+        expect(result.imported.aplus_documents).toBe(1);
+        expect(result.skipped.aplus_documents).toBe(1);
+    });
+
+    it("accepts a bundle written before A+ documents existed", async () => {
+        const result = await importFullBackup(fileOf(bundle()));
+        expect(aplusSave).not.toHaveBeenCalled();
+        expect(result.imported.aplus_documents).toBe(0);
     });
 
     it("returns accurate imported counts", async () => {

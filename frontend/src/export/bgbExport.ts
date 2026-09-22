@@ -19,6 +19,7 @@
  * books/<id>/assets/<filename>           the image bytes
  * books/<id>/story_entities.json
  * books/<id>/chapter_labels.json
+ * books/<id>/aplus_documents.json       backend `aplus_documents` rows (#891)
  * articles/<id>/article.json
  * articles/<id>/assets.json              [{ filename, asset_type }] (featured)
  * articles/<id>/assets/<filename>        the image bytes
@@ -36,6 +37,7 @@
 import { strToU8, zipSync } from "fflate";
 
 import type { Article, Asset } from "../api/client";
+import { toStoredRow } from "../lib/utils/aplus/aplusDocument";
 import { getStorage } from "../storage";
 import { buildBackupBundle, type BackupBundleV1 } from "./backupExport";
 import { buildSelectiveBundle, type ExportSelection } from "./selectiveExport";
@@ -176,6 +178,12 @@ export async function buildBgbFiles(
         const labels = bundle.data.chapter_labels.filter((l) => l.book_id === oldId);
         if (labels.length) {
             files[`${dir}chapter_labels.json`] = strToU8(JSON.stringify(labels));
+        }
+        const aplusRows = (bundle.data.aplus_documents ?? [])
+            .filter((doc) => doc.book_id === oldId)
+            .map((doc) => toStoredRow(doc, `${oldId}-${doc.language}`));
+        if (aplusRows.length) {
+            files[`${dir}aplus_documents.json`] = strToU8(JSON.stringify(aplusRows));
         }
     }
 

@@ -38,6 +38,7 @@ import type {
 } from "../api/client";
 import { articleCreateFrom, bookCreateFrom } from "../export/backupImport";
 import { planAuthorsImport } from "../components/settings/authorsImportExport";
+import { fromStoredRow, type AplusStoredRow } from "../lib/utils/aplus/aplusDocument";
 import { getStorage } from "../storage";
 import { coverFilenameFromPath } from "../storage/asset-url";
 
@@ -51,6 +52,7 @@ export interface BgbImportCounts {
     authors: number;
     story_entities: number;
     chapter_labels: number;
+    aplus_documents: number;
 }
 
 /** Result of {@link importBgbFile}: what was created vs skipped. */
@@ -85,6 +87,7 @@ function zeroCounts(): BgbImportCounts {
         authors: 0,
         story_entities: 0,
         chapter_labels: 0,
+        aplus_documents: 0,
     };
 }
 
@@ -247,6 +250,7 @@ async function importBooks(
         await importChapters(entries, bookDir, oldId, newId, storage, imported);
         await importStoryEntities(entries, bookDir, newId, storage, imported);
         await importChapterLabels(entries, bookDir, newId, storage, imported);
+        await importAplusDocuments(entries, bookDir, newId, storage, imported);
     }
 }
 
@@ -350,6 +354,22 @@ async function importChapterLabels(
             color: label.color,
         });
         imported.chapter_labels++;
+    }
+}
+
+/** A+ documents (#891) in the backend row shape, written by both the
+ *  backend's and the web app's `.bgb` exporter. */
+async function importAplusDocuments(
+    entries: ZipEntries,
+    bookDir: string,
+    newBookId: string,
+    storage: Storage,
+    imported: BgbImportCounts,
+): Promise<void> {
+    const rows = readJson<AplusStoredRow[]>(entries, `${bookDir}aplus_documents.json`) ?? [];
+    for (const row of rows) {
+        await storage.aplusDocuments.save(newBookId, row.language, fromStoredRow(row));
+        imported.aplus_documents++;
     }
 }
 

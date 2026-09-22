@@ -28,6 +28,7 @@ export type {
   PortfolioFormatStateUpdate,
 } from "./platform/promotion";
 export type {
+  AplusDocumentRecord,
   AplusFinding,
   AplusImage,
   AplusMissingField,

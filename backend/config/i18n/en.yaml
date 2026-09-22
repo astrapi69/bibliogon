@@ -320,6 +320,7 @@ ui:
     item_authors: "Authors / pen names"
     item_chapter_labels: "Chapter labels"
     item_story_bible: "Story Bibles / Storyboards"
+    item_aplus_content: "A+ Content"
     item_writing_history: "Writing history"
     item_settings: "Settings"
     export_button: "Export selected data"

@@ -16,6 +16,7 @@ export interface ExportSelection {
     articles: boolean;
     authors: boolean;
     chapterLabels: boolean;
+    aplusDocuments: boolean;
     storyBible: boolean;
     writingSessions: boolean;
     settings: boolean;
@@ -27,6 +28,7 @@ export const EMPTY_SELECTION: ExportSelection = {
     articles: false,
     authors: false,
     chapterLabels: false,
+    aplusDocuments: false,
     storyBible: false,
     writingSessions: false,
     settings: false,
@@ -38,6 +40,7 @@ export const FULL_SELECTION: ExportSelection = {
     articles: true,
     authors: true,
     chapterLabels: true,
+    aplusDocuments: true,
     storyBible: true,
     writingSessions: true,
     settings: true,
@@ -61,6 +64,7 @@ function emptyData(): BackupData {
         story_bible: { entities: [], relationships: [], links: [] },
         writing_sessions: [],
         chapter_labels: [],
+        aplus_documents: [],
         storyboard: [],
         publications: [],
         article_platforms: [],
@@ -98,7 +102,10 @@ export async function buildSelectiveBundle(
     }
 
     const books =
-        selection.books || selection.chapterLabels || selection.storyBible
+        selection.books ||
+        selection.chapterLabels ||
+        selection.aplusDocuments ||
+        selection.storyBible
             ? await storage.books.list()
             : [];
 
@@ -130,6 +137,13 @@ export async function buildSelectiveBundle(
             books.map((book) => storage.chapterLabels.list(book.id)),
         );
         data.chapter_labels = labelLists.flat();
+    }
+
+    if (selection.aplusDocuments) {
+        const aplusLists = await Promise.all(
+            books.map((book) => storage.aplusDocuments.listForBook(book.id)),
+        );
+        data.aplus_documents = aplusLists.flat();
     }
 
     if (selection.writingSessions) {

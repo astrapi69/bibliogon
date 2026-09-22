@@ -1,3 +1,4 @@
+import type { AplusDocumentDraft } from "../../lib/utils/aplus/aplusDocument";
 import { ApiError } from "../errors";
 import { request } from "../http";
 
@@ -73,6 +74,13 @@ export interface AplusMissingFields {
     missing_fields: AplusMissingField[];
 }
 
+/** The author's editable A+ document as stored for one book and language (#891). */
+export interface AplusDocumentRecord extends AplusDocumentDraft {
+    book_id: string;
+    language: string;
+    updated_at: string;
+}
+
 export interface AplusGenerateOptions {
     language?: string;
     force?: boolean;
@@ -86,6 +94,10 @@ export function isAplusMissingFields(
     value: AplusPackage | AplusMissingFields,
 ): value is AplusMissingFields {
     return Array.isArray((value as AplusMissingFields).missing_fields);
+}
+
+function documentPath(bookId: string, language: string): string {
+    return `/aplus/${bookId}/document?language=${encodeURIComponent(language)}`;
 }
 
 function generateQuery(options: AplusGenerateOptions): string {
@@ -118,4 +130,32 @@ export const aplus = {
             throw err;
         }
     },
+
+    /** The editable document for the language, or null when none exists yet. */
+    getDocument: async (bookId: string, language: string): Promise<AplusDocumentRecord | null> => {
+        try {
+            return await request<AplusDocumentRecord>(documentPath(bookId, language));
+        } catch (err) {
+            if (err instanceof ApiError && err.status === 404) return null;
+            throw err;
+        }
+    },
+
+    /** Create or replace the editable document for the language. */
+    saveDocument: (
+        bookId: string,
+        language: string,
+        document: AplusDocumentDraft,
+    ): Promise<AplusDocumentRecord> =>
+        request<AplusDocumentRecord>(documentPath(bookId, language), {
+            method: "PUT",
+            body: JSON.stringify(document),
+        }),
+
+    deleteDocument: (bookId: string, language: string): Promise<void> =>
+        request<void>(documentPath(bookId, language), { method: "DELETE" }),
+
+    /** Every language's document of the book (full-data backup). */
+    listDocuments: (bookId: string): Promise<AplusDocumentRecord[]> =>
+        request<AplusDocumentRecord[]>(`/aplus/${bookId}/documents`),
 };

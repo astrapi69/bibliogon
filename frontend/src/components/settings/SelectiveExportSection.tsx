@@ -90,6 +90,11 @@ const GROUPS: ExportGroupDef[] = [
                 labelFallback: "Story Bibles / Storyboards",
             },
             {
+                key: "aplusDocuments",
+                labelKey: "ui.selective_export.item_aplus_content",
+                labelFallback: "A+ Content",
+            },
+            {
                 key: "writingSessions",
                 labelKey: "ui.selective_export.item_writing_history",
                 labelFallback: "Schreibverlauf",

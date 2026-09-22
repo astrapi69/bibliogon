@@ -6,6 +6,7 @@ import {
     type ChapterLabel,
     type StoryEntityOut,
 } from "../api/client";
+import type {AplusDocumentRecord} from "../api/platform";
 import {getStorage} from "../storage";
 import {planAuthorsImport} from "../components/settings/authorsImportExport";
 import {BACKUP_BUNDLE_VERSION, type BackupBundleV1} from "./backupExport";
@@ -19,6 +20,7 @@ export interface ImportCounts {
     articles: number;
     story_entities: number;
     chapter_labels: number;
+    aplus_documents: number;
 }
 
 /** Result of {@link importFullBackup}: what was created vs skipped. */
@@ -40,6 +42,7 @@ function zeroCounts(): ImportCounts {
         articles: 0,
         story_entities: 0,
         chapter_labels: 0,
+        aplus_documents: 0,
     };
 }
 
@@ -203,6 +206,21 @@ export async function importFullBackup(file: File): Promise<ImportResult> {
         }
         await storage.chapterLabels.create(newBookId, {name: label.name, color: label.color});
         imported.chapter_labels++;
+    }
+
+    for (const doc of data.aplus_documents ?? ([] as AplusDocumentRecord[])) {
+        const newBookId = bookIdMap.get(doc.book_id);
+        if (!newBookId) {
+            skipped.aplus_documents++;
+            continue;
+        }
+        await storage.aplusDocuments.save(newBookId, doc.language, {
+            content_name: doc.content_name,
+            short_description: doc.short_description,
+            bullets: doc.bullets,
+            modules: doc.modules,
+        });
+        imported.aplus_documents++;
     }
 
     return {imported, skipped};

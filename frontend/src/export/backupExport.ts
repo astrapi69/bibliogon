@@ -7,6 +7,7 @@ import {
     type StoryEntityOut,
     type WritingSession,
 } from "../api/client";
+import type {AplusDocumentRecord} from "../api/platform";
 import {getStorage} from "../storage";
 
 /** Current backup-bundle schema version. */
@@ -40,6 +41,9 @@ export interface BackupData {
     story_bible: BackupStoryBible;
     writing_sessions: WritingSession[];
     chapter_labels: ChapterLabel[];
+    /** Editable A+ documents (#891), every language of every book. Optional
+     *  so bundles written before it existed still parse. */
+    aplus_documents?: AplusDocumentRecord[];
     storyboard: unknown[];
     publications: unknown[];
     article_platforms: unknown[];
@@ -63,7 +67,7 @@ const AUTHOR_LIST_LIMIT = 1000;
  *
  * Core entities (settings, author profile, authors, books + chapters
  * with content, articles with content, story-bible entities, chapter
- * labels) are fully populated. Writing sessions cover the last 366 days
+ * labels, A+ documents) are fully populated. Writing sessions cover the last 366 days
  * (the backend list cap) and are informational only — they have no seam
  * ``create`` and are not restored on import. Page-level storyboard,
  * per-article publications, and the platform registry are reserved
@@ -103,6 +107,10 @@ export async function buildBackupBundle(exportedAt: string): Promise<BackupBundl
     );
     const chapterLabels = labelLists.flat();
 
+    const aplusLists = await Promise.all(
+        books.map((book) => storage.aplusDocuments.listForBook(book.id)),
+    );
+
     return {
         version: BACKUP_BUNDLE_VERSION,
         app_version: __APP_VERSION__,
@@ -116,6 +124,7 @@ export async function buildBackupBundle(exportedAt: string): Promise<BackupBundl
             story_bible: {entities, relationships: [], links: []},
             writing_sessions: writingSessions,
             chapter_labels: chapterLabels,
+            aplus_documents: aplusLists.flat(),
             storyboard: [],
             publications: [],
             article_platforms: [],

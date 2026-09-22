@@ -68,6 +68,7 @@ export async function removeBookGraph(bookId: string): Promise<void> {
         await offlineDb.storyEntities.where("book_id").equals(bookId).delete();
         await offlineDb.chapterLabels.where("book_id").equals(bookId).delete();
         await offlineDb.assets.where("bookId").equals(bookId).delete();
+        await offlineDb.aplusDocuments.where("book_id").equals(bookId).delete();
         if (pageIds.length > 0) {
             await offlineDb.storyEntityPageLinks.where("page_id").anyOf(pageIds).delete();
         }

@@ -106,4 +106,33 @@ describe("BGB image round-trip", () => {
         const settings = await dexieStorage.settings.getApp();
         expect((settings.ui as { theme?: string }).theme).toBe("nord");
     });
+
+    it("export → wipe → import restores every language's A+ document under the new book", async () => {
+        const book = await dexieStorage.books.create({ title: "El caballo", author: "A" });
+        const doc = {
+            content_name: "El caballo que se reía - A+Content",
+            short_description: "Filimón sabe reír.",
+            bullets: [{ heading: "Uno", body: "Primero." }],
+            modules: [
+                {
+                    id: "m1",
+                    template: "three_images_text",
+                    module_title: "Cultura griega",
+                    slots: [{ title: "T", text: "x", image_prompt: "p --ar 1:1", alt_text: "a" }],
+                },
+            ],
+        };
+        await dexieStorage.aplusDocuments.save(book.id, "es", doc);
+        await dexieStorage.aplusDocuments.save(book.id, "de", { ...doc, content_name: "Deutsch" });
+
+        const blob = await exportBgbBackup("2026-09-22T10:00:00Z");
+        await Promise.all(offlineDb.tables.map((t) => t.clear()));
+        const result = await importBgbFile(fileFromBlob(blob, "backup.bgb"));
+
+        expect(result.imported.aplus_documents).toBe(2);
+        const [newBook] = await dexieStorage.books.list();
+        const restored = await dexieStorage.aplusDocuments.get(newBook.id, "es");
+        expect(restored).toMatchObject({ ...doc, book_id: newBook.id, language: "es" });
+        expect((await dexieStorage.aplusDocuments.get(newBook.id, "de"))?.content_name).toBe("Deutsch");
+    });
 });

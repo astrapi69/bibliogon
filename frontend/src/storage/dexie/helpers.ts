@@ -225,6 +225,7 @@ export async function hardDeleteBooks(ids: string[]): Promise<void> {
             offlineDb.writingSessions,
             offlineDb.storyEntities,
             offlineDb.assets,
+            offlineDb.aplusDocuments,
         ],
         async () => {
             await offlineDb.books.bulkDelete(ids);
@@ -240,6 +241,7 @@ export async function hardDeleteBooks(ids: string[]): Promise<void> {
             await offlineDb.writingSessions.where("book_id").anyOf(ids).delete();
             await offlineDb.storyEntities.where("book_id").anyOf(ids).delete();
             await offlineDb.assets.where("bookId").anyOf(ids).delete();
+            await offlineDb.aplusDocuments.where("book_id").anyOf(ids).delete();
         },
     );
 }
