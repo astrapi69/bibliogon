@@ -22,7 +22,7 @@ from app.ai.llm_factory import _get_client
 from app.database import get_db
 from app.exceptions import ExternalServiceError, NotFoundError, ValidationError
 from app.models import AplusContent, AplusDocument, Book
-from app.repositories.aplus_documents import (
+from app.repositories.aplus import (
     AplusDocumentRepository,
     get_aplus_document_repository,
 )
