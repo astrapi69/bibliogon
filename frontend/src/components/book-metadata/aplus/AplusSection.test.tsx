@@ -1,31 +1,28 @@
 /**
- * A+ Content section in the book metadata (#887).
+ * A+ Content section in the book metadata (#887, #891).
  *
- * The section is the only UI for the backend-only A+ generator (#825):
- * it loads the cached package, generates or regenerates one, lists the
- * missing required fields the backend answers with instead of calling
- * the AI, shows the validator findings, and is gated off in the web app.
+ * The author edits the A+ document by hand; it is loaded and saved through
+ * the storage seam, so it works in the web app and on a phone. "Fill with
+ * AI" is optional: desktop-only (the backend ruleset + validator), needs a
+ * configured AI and one of the ruleset languages, asks before overwriting
+ * typed text, and shows the validator findings afterwards.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import type { BookDetail } from "../../../api/client";
-import type { AplusPackage } from "../../../api/platform";
 
-const getMock = vi.fn();
+const docGet = vi.fn();
+const docSave = vi.fn();
+vi.mock("../../../storage", () => ({
+    getStorage: () => ({ aplusDocuments: { get: docGet, save: docSave } }),
+}));
+
 const generateMock = vi.fn();
 vi.mock("../../../api/client", async (importOriginal) => {
     const actual = await importOriginal<typeof import("../../../api/client")>();
-    return {
-        ...actual,
-        api: {
-            aplus: {
-                get: (...args: unknown[]) => getMock(...args),
-                generate: (...args: unknown[]) => generateMock(...args),
-            },
-        },
-    };
+    return { ...actual, api: { aplus: { generate: (...args: unknown[]) => generateMock(...args) } } };
 });
 
 const notifySuccess = vi.fn();
@@ -43,14 +40,19 @@ vi.mock("../../../utils/platform/clipboard", () => ({
     copyToClipboard: (text: string) => copyMock(text),
 }));
 
-let featureActive = true;
+const confirmMock = vi.fn(async () => true);
+vi.mock("../../shared/AppDialog", () => ({
+    useDialog: () => ({ confirm: confirmMock }),
+}));
+
+let aiFeatureActive = true;
 vi.mock("@astrapi69/feature-strategy-react", () => ({
     useFeature: () => ({
-        state: featureActive ? "active" : "disabled",
-        isActive: featureActive,
-        isDisabled: !featureActive,
+        state: aiFeatureActive ? "active" : "disabled",
+        isActive: aiFeatureActive,
+        isDisabled: !aiFeatureActive,
         isHidden: false,
-        reason: featureActive ? undefined : "ui.feature.requires_desktop_app",
+        reason: aiFeatureActive ? undefined : "ui.feature.requires_desktop_app",
     }),
 }));
 
@@ -58,154 +60,168 @@ import AplusSection from "./AplusSection";
 
 const t = (key: string, fallback?: string) => fallback ?? key;
 
-const BOOK = { id: "b1", title: "Das Buch", language: "de" } as unknown as BookDetail;
+const BOOK = { id: "b1", title: "El caballo", language: "es" } as unknown as BookDetail;
 
-const PACKAGE: AplusPackage = {
-    short_description: "Eine kurze Beschreibung.",
+const PACKAGE = {
+    short_description: "Filimón sabe reír.",
     bullets: [
-        { heading: "Punkt eins", body: "Text eins" },
-        { heading: "Punkt zwei", body: "Text zwei" },
+        { heading: "Uno", body: "Primero." },
+        { heading: "Dos", body: "Segundo." },
+        { heading: "Tres", body: "Tercero." },
     ],
     module_header: {
-        title: "Kopfmodul",
+        title: "Kopf",
         text: "Kopftext",
-        image: {
-            prompt: "a book",
-            aspect_ratio: "16:9",
-            size: "970x600",
-            style_flags: [],
-            rendered: "a book, 970x600, 16:9",
-        },
-        alt_text: "Buchcover",
+        image: { prompt: "farm", rendered: "farm --ar 97:60", aspect_ratio: "97:60", size: "970x600", style_flags: [] },
+        alt_text: "Granja",
     },
-    module_three_images: [
-        {
-            title: "Bild eins",
-            text: "Bildtext",
-            image: { prompt: "p1", aspect_ratio: "1:1", size: "300x300", style_flags: [], rendered: "p1 rendered" },
-            alt_text: "Alt eins",
-        },
-    ],
-    validation: [{ field: "short_description", severity: "warning", message: "Zu lang" }],
-    meta: {
-        book_id: "b1",
-        language: "de",
-        model: "claude-sonnet-4-6",
-        ruleset_version: "3",
-        generated_at: "2026-09-22T08:00:00Z",
-    },
+    module_three_images: [],
+    validation: [{ field: "short_description", severity: "warning", message: "Too long" }],
+    meta: { book_id: "b1", language: "es", model: "m", ruleset_version: "3", generated_at: "2026-09-22T08:00:00Z" },
 };
 
+function storedDoc(overrides: Record<string, unknown> = {}) {
+    return {
+        book_id: "b1",
+        language: "es",
+        updated_at: "t",
+        content_name: "El caballo - A+Content",
+        short_description: "",
+        bullets: [],
+        modules: [],
+        ...overrides,
+    };
+}
+
 beforeEach(() => {
-    featureActive = true;
-    getMock.mockReset();
+    aiFeatureActive = true;
+    docGet.mockReset();
+    docSave.mockReset();
     generateMock.mockReset();
-    notifySuccess.mockClear();
-    notifyError.mockClear();
-    copyMock.mockClear();
-    getMock.mockResolvedValue(null);
+    confirmMock.mockReset();
+    confirmMock.mockResolvedValue(true);
+    docGet.mockResolvedValue(null);
+    docSave.mockImplementation(async (bookId: string, language: string, doc: object) => ({
+        ...doc,
+        book_id: bookId,
+        language,
+        updated_at: "now",
+    }));
 });
 afterEach(() => vi.clearAllMocks());
 
 describe("AplusSection", () => {
-    it("is gated off in the web app and never calls the backend", () => {
-        featureActive = false;
+    it("opens an editable document even without the desktop app", async () => {
+        aiFeatureActive = false;
         render(<AplusSection book={BOOK} aiAvailable t={t} />);
-        expect(screen.getByTestId("aplus-feature-notice")).toBeTruthy();
-        expect(screen.queryByTestId("aplus-generate")).toBeNull();
-        expect(getMock).not.toHaveBeenCalled();
+        const name = (await screen.findByTestId("aplus-content-name")) as HTMLTextAreaElement;
+        expect(name.value).toBe("El caballo - A+Content");
+        expect(docGet).toHaveBeenCalledWith("b1", "es");
     });
 
-    it("loads the cached package for the book language on mount", async () => {
-        getMock.mockResolvedValue(PACKAGE);
+    it("saves a typed field through the storage seam", async () => {
         render(<AplusSection book={BOOK} aiAvailable t={t} />);
-        await screen.findByText("Eine kurze Beschreibung.");
-        expect(getMock).toHaveBeenCalledWith("b1", "de");
-        expect(screen.getByText("Punkt zwei")).toBeTruthy();
-        expect(screen.getByText("a book, 970x600, 16:9")).toBeTruthy();
-        expect(screen.getByTestId("aplus-findings").textContent).toContain("Zu lang");
-        expect(screen.getByTestId("aplus-generate").textContent).toContain("Neu generieren");
+        fireEvent.change(await screen.findByTestId("aplus-short-description"), {
+            target: { value: "Kurz" },
+        });
+        await waitFor(() => expect(docSave).toHaveBeenCalled(), { timeout: 3000 });
+        expect(docSave.mock.calls[0][0]).toBe("b1");
+        expect(docSave.mock.calls[0][1]).toBe("es");
+        expect(docSave.mock.calls[0][2].short_description).toBe("Kurz");
     });
 
-    it("shows the empty state and generates without force when nothing is cached", async () => {
+    it("offers the book's own language next to the AI languages and loads its document", async () => {
+        const book = { ...BOOK, language: "it" } as unknown as BookDetail;
+        render(<AplusSection book={book} aiAvailable t={t} />);
+        await screen.findByTestId("aplus-content-name");
+        expect(docGet).toHaveBeenCalledWith("b1", "it");
+        fireEvent.change(screen.getByTestId("aplus-language-trigger"), { target: { value: "de" } });
+        await waitFor(() => expect(docGet).toHaveBeenCalledWith("b1", "de"));
+    });
+
+    it("disables AI fill with a reason in the web app", async () => {
+        aiFeatureActive = false;
+        render(<AplusSection book={BOOK} aiAvailable t={t} />);
+        await screen.findByTestId("aplus-content-name");
+        expect((screen.getByTestId("aplus-ai-fill") as HTMLButtonElement).disabled).toBe(true);
+        expect(screen.getByTestId("aplus-ai-unavailable")).toBeTruthy();
+    });
+
+    it("disables AI fill with a reason when AI is not set up", async () => {
+        render(<AplusSection book={BOOK} aiAvailable={false} t={t} />);
+        await screen.findByTestId("aplus-content-name");
+        expect((screen.getByTestId("aplus-ai-fill") as HTMLButtonElement).disabled).toBe(true);
+        expect(screen.getByTestId("aplus-ai-unavailable")).toBeTruthy();
+    });
+
+    it("disables AI fill for a language the ruleset does not cover", async () => {
+        const book = { ...BOOK, language: "it" } as unknown as BookDetail;
+        render(<AplusSection book={book} aiAvailable t={t} />);
+        await screen.findByTestId("aplus-content-name");
+        expect((screen.getByTestId("aplus-ai-fill") as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    it("fills an empty document with AI without asking and saves it at once", async () => {
         generateMock.mockResolvedValue(PACKAGE);
         render(<AplusSection book={BOOK} aiAvailable t={t} />);
-        await screen.findByTestId("aplus-empty");
-        fireEvent.click(screen.getByTestId("aplus-generate"));
-        await screen.findByText("Eine kurze Beschreibung.");
-        expect(generateMock).toHaveBeenCalledWith("b1", { language: "de", force: false });
-        expect(notifySuccess).toHaveBeenCalled();
-    });
-
-    it("regenerates with force when a package is already shown", async () => {
-        getMock.mockResolvedValue(PACKAGE);
-        generateMock.mockResolvedValue(PACKAGE);
-        render(<AplusSection book={BOOK} aiAvailable t={t} />);
-        await screen.findByText("Eine kurze Beschreibung.");
-        fireEvent.click(screen.getByTestId("aplus-generate"));
+        await screen.findByTestId("aplus-content-name");
+        fireEvent.click(screen.getByTestId("aplus-ai-fill"));
         await waitFor(() =>
-            expect(generateMock).toHaveBeenCalledWith("b1", { language: "de", force: true }),
+            expect((screen.getByTestId("aplus-short-description") as HTMLTextAreaElement).value).toBe(
+                "Filimón sabe reír.",
+            ),
+        );
+        expect(confirmMock).not.toHaveBeenCalled();
+        expect(generateMock).toHaveBeenCalledWith("b1", { language: "es", force: true });
+        expect(docSave).toHaveBeenCalled();
+        expect(screen.getByTestId("aplus-findings").textContent).toContain("Too long");
+        expect((screen.getByTestId("aplus-module-0-slot-0-prompt") as HTMLTextAreaElement).value).toBe(
+            "farm --ar 97:60",
         );
     });
 
-    it("lists missing fields and jumps to the section that holds them", async () => {
+    it("asks before AI overwrites typed text and leaves it alone on cancel", async () => {
+        docGet.mockResolvedValue(storedDoc({ short_description: "Von Hand" }));
+        confirmMock.mockResolvedValue(false);
+        render(<AplusSection book={BOOK} aiAvailable t={t} />);
+        await screen.findByTestId("aplus-content-name");
+        fireEvent.click(screen.getByTestId("aplus-ai-fill"));
+        await waitFor(() => expect(confirmMock).toHaveBeenCalled());
+        expect(generateMock).not.toHaveBeenCalled();
+        expect((screen.getByTestId("aplus-short-description") as HTMLTextAreaElement).value).toBe("Von Hand");
+    });
+
+    it("lists missing book fields and jumps to the section that holds them", async () => {
         generateMock.mockResolvedValue({
             book_id: "b1",
             missing_fields: [{ field: "author", reason: "An author name is required." }],
         });
         const onSelectSection = vi.fn();
         render(<AplusSection book={BOOK} aiAvailable t={t} onSelectSection={onSelectSection} />);
-        await screen.findByTestId("aplus-empty");
-        fireEvent.click(screen.getByTestId("aplus-generate"));
-        const missing = await screen.findByTestId("aplus-missing");
-        expect(missing.textContent).toContain("An author name is required.");
-        fireEvent.click(screen.getByTestId("aplus-missing-goto-author"));
+        await screen.findByTestId("aplus-content-name");
+        fireEvent.click(screen.getByTestId("aplus-ai-fill"));
+        fireEvent.click(await screen.findByTestId("aplus-missing-goto-author"));
         expect(onSelectSection).toHaveBeenCalledWith("general");
     });
 
-    it("reloads the cached package when the language changes", async () => {
-        render(<AplusSection book={BOOK} aiAvailable t={t} />);
-        await screen.findByTestId("aplus-empty");
-        fireEvent.change(screen.getByTestId("aplus-language-trigger"), { target: { value: "en" } });
-        await waitFor(() => expect(getMock).toHaveBeenCalledWith("b1", "en"));
-    });
-
-    it("falls back to English for a book language the ruleset does not support", async () => {
-        render(<AplusSection book={{ ...BOOK, language: "ja" }} aiAvailable t={t} />);
-        await waitFor(() => expect(getMock).toHaveBeenCalledWith("b1", "en"));
-    });
-
-    it("disables generation and says why when AI is not available", async () => {
-        render(<AplusSection book={BOOK} aiAvailable={false} t={t} />);
-        await screen.findByTestId("aplus-empty");
-        expect((screen.getByTestId("aplus-generate") as HTMLButtonElement).disabled).toBe(true);
-        expect(screen.getByTestId("aplus-ai-unavailable")).toBeTruthy();
-    });
-
-    it("copies a field to the clipboard", async () => {
-        getMock.mockResolvedValue(PACKAGE);
-        render(<AplusSection book={BOOK} aiAvailable t={t} />);
-        await screen.findByText("Eine kurze Beschreibung.");
-        fireEvent.click(screen.getByTestId("aplus-copy-short-description"));
-        await waitFor(() => expect(copyMock).toHaveBeenCalledWith("Eine kurze Beschreibung."));
-    });
-
-    it("shows a bullet's body under its heading and copies heading and body together", async () => {
-        getMock.mockResolvedValue(PACKAGE);
-        render(<AplusSection book={BOOK} aiAvailable t={t} />);
-        await screen.findByText("Text eins");
-        expect(screen.queryByText("Punkt eins: Text eins")).toBeNull();
-        fireEvent.click(screen.getByTestId("aplus-copy-bullet-0"));
-        await waitFor(() => expect(copyMock).toHaveBeenCalledWith("Punkt eins: Text eins"));
-    });
-
-    it("reports a generation error with the caught error", async () => {
+    it("reports an AI error with the caught error", async () => {
         const failure = new Error("provider down");
         generateMock.mockRejectedValue(failure);
         render(<AplusSection book={BOOK} aiAvailable t={t} />);
-        await screen.findByTestId("aplus-empty");
-        fireEvent.click(screen.getByTestId("aplus-generate"));
+        await screen.findByTestId("aplus-content-name");
+        fireEvent.click(screen.getByTestId("aplus-ai-fill"));
         await waitFor(() => expect(notifyError).toHaveBeenCalled());
         expect(notifyError.mock.calls[0][1]).toBe(failure);
+    });
+
+    it("copies the whole document as text", async () => {
+        docGet.mockResolvedValue(storedDoc({ short_description: "Kurz" }));
+        render(<AplusSection book={BOOK} aiAvailable t={t} />);
+        await screen.findByTestId("aplus-content-name");
+        fireEvent.click(screen.getByTestId("aplus-copy-all"));
+        await waitFor(() => expect(copyMock).toHaveBeenCalled());
+        const text = copyMock.mock.calls[0][0];
+        expect(text).toContain("El caballo - A+Content");
+        expect(text).toContain("Kurz");
     });
 });

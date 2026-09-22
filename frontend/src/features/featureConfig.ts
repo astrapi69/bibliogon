@@ -83,7 +83,7 @@ export const FEATURES = {
 
     GIT_SYNC: "git-sync",
     LEARNSET_EXPORT: "learnset-export",
-    APLUS_CONTENT: "aplus-content",
+    APLUS_AI: "aplus-ai",
     PORTFOLIO_BOARD: "portfolio-board",
     GIT_BACKUP: "git-backup",
     TTS: "tts",
@@ -229,17 +229,17 @@ const NEEDS_KEY_AND_NETWORK: readonly string[] = [FEATURES.AI_STORY_EXTRACTION];
  * schemas with Python jsonschema, so it has no browser implementation to
  * route through the storage seam.
  *
- * `aplus-content` (#887) is the same kind of exception: the A+ Content
- * package is built from the plugin's versioned Python ruleset, every field
- * is checked by its deterministic Python validator, and the result is cached
- * in the backend `aplus_content` table. Offline parity would mean porting
- * ruleset and validator to the browser; that is tracked separately.
+ * `aplus-ai` (#891) gates only the AI fill of the A+ document: the package
+ * is built from the plugin's versioned Python ruleset and every field is
+ * checked by its deterministic Python validator. Editing the A+ document by
+ * hand is not gated; it goes through the storage seam and works offline.
+ * Browser-direct AI plus a TypeScript validator is tracked in #890.
  */
 const DESKTOP_ONLY: readonly string[] = [
     FEATURES.GIT_SYNC,
     FEATURES.GIT_BACKUP,
     FEATURES.LEARNSET_EXPORT,
-    FEATURES.APLUS_CONTENT,
+    FEATURES.APLUS_AI,
     FEATURES.PORTFOLIO_BOARD,
     FEATURES.TTS,
     FEATURES.LAN_MODE,
