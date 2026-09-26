@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 
 import type { AplusModuleDraft } from "../../../lib/utils/aplus/aplusDocument";
@@ -12,6 +13,7 @@ import {
 import type { TFunc } from "../tabTypes";
 import AplusField from "./AplusField";
 import AplusRowsEditor from "./AplusRowsEditor";
+import AplusModuleSketch from "./AplusModuleSketch";
 import AplusSlotFields from "./AplusSlotFields";
 
 interface AplusModuleCardProps {
@@ -104,13 +106,69 @@ function slotHeading(template: AplusModuleTemplate | undefined, module: AplusMod
  * <AplusModuleCard module={m} index={0} count={2} t={t} onChange={set} onMove={move} onRemove={remove} />
  */
 export default function AplusModuleCard({ module, index, count, t, onChange, onMove, onRemove }: AplusModuleCardProps) {
+    const [expanded, setExpanded] = useState(false);
     const template = findTemplate(module.template);
     const base = `aplus-module-${index}`;
     const sizes = template ? imageSizesSummary(template) || t("ui.aplus.no_image", "Kein Bild") : "";
     const fields = template?.fields ?? [];
     const variableSlots = Boolean(template && template.maxSlots > template.minSlots);
+    const toggleLabel = expanded ? t("ui.common.close", "Schliessen") : t("ui.common.edit", "Bearbeiten");
+    const moduleTitle = (module.module_title ?? "").trim();
+    const handleToggle = () => setExpanded((prev) => !prev);
+    const actionButtons = (
+        <>
+            <IconButton label={t("ui.aplus.module_up", "Nach oben")} testId={`${base}-up`} disabled={index === 0} onClick={() => onMove(-1)}>
+                <ChevronUp size={16} />
+            </IconButton>
+            <IconButton label={t("ui.aplus.module_down", "Nach unten")} testId={`${base}-down`} disabled={index === count - 1} onClick={() => onMove(1)}>
+                <ChevronDown size={16} />
+            </IconButton>
+            <IconButton label={t("ui.aplus.module_remove", "Modul entfernen")} testId={`${base}-remove`} onClick={onRemove}>
+                <Trash2 size={16} />
+            </IconButton>
+        </>
+    );
+
+    if (!expanded) {
+        return (
+            <section
+                className="flex flex-col gap-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--bg-card)] p-3"
+                data-testid={base}
+                data-state="collapsed"
+            >
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="flex min-w-0 flex-1 items-start gap-3">
+                        {template && (
+                            <div className="w-28 shrink-0">
+                                <AplusModuleSketch template={template} />
+                            </div>
+                        )}
+                        <div className="flex min-w-0 flex-col gap-1">
+                            <strong className="text-sm">
+                                {t("ui.aplus.module_n", "Modul {n}").replace("{n}", String(index + 1))}: {templateLabel(module.template, t)}
+                            </strong>
+                            {sizes && <span className="text-xs text-[var(--text-muted)]">{sizes}</span>}
+                            {moduleTitle && <span className="text-xs text-[var(--text-muted)]">{moduleTitle}</span>}
+                        </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1">
+                        <button
+                            type="button"
+                            className="btn btn-secondary btn-sm min-h-[44px]"
+                            data-testid={`${base}-toggle`}
+                            onClick={handleToggle}
+                            aria-expanded={expanded}
+                        >
+                            {toggleLabel}
+                        </button>
+                        {actionButtons}
+                    </div>
+                </div>
+            </section>
+        );
+    }
     return (
-        <section className="flex flex-col gap-3 rounded-[var(--radius-md)] border border-[var(--border)] p-3" data-testid={base}>
+        <section className="flex flex-col gap-3 rounded-[var(--radius-md)] border border-[var(--border)] p-3" data-testid={base} data-state="open">
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex flex-col">
                     <strong className="text-sm">
@@ -118,16 +176,17 @@ export default function AplusModuleCard({ module, index, count, t, onChange, onM
                     </strong>
                     {sizes && <span className="text-xs text-[var(--text-muted)]">{sizes}</span>}
                 </div>
-                <div className="flex gap-1">
-                    <IconButton label={t("ui.aplus.module_up", "Nach oben")} testId={`${base}-up`} disabled={index === 0} onClick={() => onMove(-1)}>
-                        <ChevronUp size={16} />
-                    </IconButton>
-                    <IconButton label={t("ui.aplus.module_down", "Nach unten")} testId={`${base}-down`} disabled={index === count - 1} onClick={() => onMove(1)}>
-                        <ChevronDown size={16} />
-                    </IconButton>
-                    <IconButton label={t("ui.aplus.module_remove", "Modul entfernen")} testId={`${base}-remove`} onClick={onRemove}>
-                        <Trash2 size={16} />
-                    </IconButton>
+                <div className="flex flex-wrap items-center gap-1">
+                    <button
+                        type="button"
+                        className="btn btn-secondary btn-sm min-h-[44px]"
+                        data-testid={`${base}-toggle`}
+                        onClick={handleToggle}
+                        aria-expanded={expanded}
+                    >
+                        {toggleLabel}
+                    </button>
+                    {actionButtons}
                 </div>
             </div>
             {(!template || template.headline) && (

@@ -26,6 +26,14 @@ function renderEditor(doc: AplusDocumentDraft) {
     return onChange;
 }
 
+function openBasics() {
+    fireEvent.click(screen.getByTestId("aplus-basics-toggle"));
+}
+
+function openModule(index: number) {
+    fireEvent.click(screen.getByTestId(`aplus-module-${index}-toggle`));
+}
+
 const lastDoc = (onChange: ReturnType<typeof vi.fn>): AplusDocumentDraft =>
     onChange.mock.calls[onChange.mock.calls.length - 1][0];
 
@@ -37,6 +45,7 @@ beforeEach(() => {
 describe("AplusDocumentEditor", () => {
     it("shows the content name, short description with its limit, three bullets and both modules", () => {
         renderEditor(emptyDocument("El caballo", newId));
+        openBasics();
         expect((screen.getByTestId("aplus-content-name") as HTMLTextAreaElement).value).toBe(
             "El caballo - A+Content",
         );
@@ -44,18 +53,22 @@ describe("AplusDocumentEditor", () => {
         expect(screen.getByTestId("aplus-bullet-2-heading")).toBeTruthy();
         expect(screen.getByTestId("aplus-module-0").textContent).toContain("970x600");
         expect(screen.getByTestId("aplus-module-1").textContent).toContain("300x300");
+        openModule(0);
+        openModule(1);
         expect(screen.getByTestId("aplus-module-1-slot-2-alt")).toBeTruthy();
         expect(screen.getByTestId("aplus-module-1-slot-2-alt-char-count").textContent).toContain("/ 200");
     });
 
     it("reports a typed short description as a new document", () => {
         const onChange = renderEditor(emptyDocument("Buch", newId));
+        openBasics();
         fireEvent.change(screen.getByTestId("aplus-short-description"), { target: { value: "Kurz" } });
         expect(lastDoc(onChange).short_description).toBe("Kurz");
     });
 
     it("writes a bullet body into the right bullet", () => {
         const onChange = renderEditor(emptyDocument("Buch", newId));
+        openBasics();
         fireEvent.change(screen.getByTestId("aplus-bullet-1-body"), { target: { value: "Zwei" } });
         const doc = lastDoc(onChange);
         expect(doc.bullets[1].body).toBe("Zwei");
@@ -64,6 +77,8 @@ describe("AplusDocumentEditor", () => {
 
     it("writes a slot field into the right module and slot", () => {
         const onChange = renderEditor(emptyDocument("Buch", newId));
+        openModule(1);
+        openModule(0);
         fireEvent.change(screen.getByTestId("aplus-module-1-slot-2-prompt"), {
             target: { value: "family dinner --ar 1:1" },
         });

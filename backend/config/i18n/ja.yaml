@@ -1595,6 +1595,7 @@ ui:
   aplus:
     title: "A+ コンテンツ"
     intro: "Amazon の A+ マネージャー用の短い説明、箇条書き、モジュールです。手入力するか AI に提案させます。各フィールドは個別にコピーできます。"
+    basics_title: "A+ 基本"
     language: "言語"
     generating: "生成中 ..."
     ai_unavailable: "AI が設定されていません。A+ コンテンツを生成するには、設定の AI アシスタントで有効にしてください。"

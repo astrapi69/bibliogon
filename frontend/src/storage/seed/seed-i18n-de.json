@@ -1649,6 +1649,7 @@
     "aplus": {
       "title": "A+ Content",
       "intro": "Kurzbeschreibung, Bulletpoints und Module für Amazons A+ Manager. Von Hand ausfüllen oder mit KI vorschlagen lassen; jedes Feld lässt sich einzeln kopieren.",
+      "basics_title": "A+ Basis",
       "language": "Sprache",
       "generating": "Erzeugt ...",
       "ai_unavailable": "Die KI ist nicht eingerichtet. Aktiviere sie in den Einstellungen unter KI-Assistent, um A+ Content zu erzeugen.",

@@ -1691,6 +1691,7 @@
     "aplus": {
       "title": "A+ İçerik",
       "intro": "Amazon'un A+ yöneticisi için kısa açıklama, madde işaretleri ve modüller. Elle doldur ya da yapay zekanın önermesine izin ver; her alan ayrı ayrı kopyalanabilir.",
+      "basics_title": "A+ Temel",
       "language": "Dil",
       "generating": "Oluşturuluyor ...",
       "ai_unavailable": "Yapay zeka kurulmamış. A+ İçerik oluşturmak için Ayarlar'da Yapay Zeka Asistanı altında etkinleştir.",

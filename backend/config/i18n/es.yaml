@@ -1635,6 +1635,7 @@ ui:
   aplus:
     title: "Contenido A+"
     intro: "Descripción corta, viñetas y módulos para el gestor de A+ de Amazon. Rellénalos a mano o deja que la IA los proponga; cada campo se puede copiar por separado."
+    basics_title: "A+ Básico"
     language: "Idioma"
     generating: "Generando ..."
     ai_unavailable: "La IA no está configurada. Actívala en Ajustes, en Asistente de IA, para generar Contenido A+."
