@@ -102,7 +102,7 @@ async def generate_aplus_content(
             context, language=resolved_language, rules=rules, client=client
         )
     except LLMError as exc:
-        raise ExternalServiceError("AI provider", str(exc)) from exc
+        raise ExternalServiceError("AI provider", f"A+ Content Generation: {exc}") from exc
 
     row = _cached_row(db, book_id, resolved_language)
     package_json = package.model_dump_json()
