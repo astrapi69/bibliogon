@@ -1597,6 +1597,7 @@ ui:
   aplus:
     title: "A+ Content"
     intro: "Short description, bullets and modules for Amazon's A+ manager. Fill them in by hand or let AI suggest them; every field can be copied on its own."
+    basics_title: "A+ Basics"
     language: "Language"
     generating: "Generating ..."
     ai_unavailable: "AI is not set up. Enable it in Settings under AI Assistant to generate A+ Content."

@@ -28,11 +28,16 @@ function renderCard(module: AplusModuleDraft) {
     return onChange;
 }
 
+function openModule() {
+    fireEvent.click(screen.getByTestId("aplus-module-0-toggle"));
+}
+
 const last = (fn: ReturnType<typeof vi.fn>): AplusModuleDraft => fn.mock.calls[fn.mock.calls.length - 1][0];
 
 describe("AplusModuleCard", () => {
     it("renders the sidebar module with labelled images, caption and its texts", () => {
         const onChange = renderCard(createModule("image_sidebar", "s"));
+        openModule();
         expect(screen.getByTestId("aplus-module-0-title")).toBeTruthy();
         expect(screen.getByTestId("aplus-module-0-slot-0").textContent).toContain("Hauptbild");
         expect(screen.getByTestId("aplus-module-0-slot-1").textContent).toContain("Seitenleiste");
@@ -47,12 +52,14 @@ describe("AplusModuleCard", () => {
 
     it("has no module headline where Amazon has none", () => {
         renderCard(createModule("image_dark_overlay", "o"));
+        openModule();
         expect(screen.queryByTestId("aplus-module-0-title")).toBeNull();
         expect(screen.getByTestId("aplus-module-0-slot-0-title")).toBeTruthy();
     });
 
     it("adds and removes comparison columns and keeps the values in step", () => {
         const onChange = renderCard(createModule("comparison_chart", "c"));
+        openModule();
         expect(screen.getByTestId("aplus-module-0-slot-2-asin")).toBeTruthy();
         fireEvent.click(screen.getByTestId("aplus-module-0-add-slot"));
         const wider = last(onChange);
@@ -64,6 +71,7 @@ describe("AplusModuleCard", () => {
 
     it("edits comparison rows: label and one value per column", () => {
         const onChange = renderCard(createModule("comparison_chart", "c"));
+        openModule();
         fireEvent.change(screen.getByTestId("aplus-module-0-row-0-label"), { target: { value: "Genre" } });
         expect(last(onChange).rows?.[0].label).toBe("Genre");
         fireEvent.change(screen.getByTestId("aplus-module-0-row-0-value-2"), { target: { value: "Krimi" } });
@@ -74,6 +82,7 @@ describe("AplusModuleCard", () => {
 
     it("keeps at least four tech-spec rows", () => {
         renderCard(createModule("tech_specs", "t"));
+        openModule();
         expect(screen.getByTestId("aplus-module-0-row-3-value-0")).toBeTruthy();
         expect((screen.getByTestId("aplus-module-0-row-0-remove") as HTMLButtonElement).disabled).toBe(true);
         expect(screen.queryByTestId("aplus-module-0-add-slot")).toBeNull();
@@ -81,6 +90,7 @@ describe("AplusModuleCard", () => {
 
     it("renders the text module as headline and body", () => {
         const onChange = renderCard(createModule("text", "x"));
+        openModule();
         fireEvent.change(screen.getByTestId("aplus-module-0-field-body"), { target: { value: "Hallo" } });
         expect(last(onChange).fields?.body).toBe("Hallo");
         expect(screen.getByTestId("aplus-module-0").textContent).toContain("Kein Bild");
@@ -88,12 +98,14 @@ describe("AplusModuleCard", () => {
 
     it("shows the product description limit", () => {
         renderCard(createModule("product_description", "p"));
+        openModule();
         expect(screen.getByTestId("aplus-module-0-field-body-char-count").textContent).toContain("/ 6000");
     });
 
     it("reads an older document without caption, fields or rows", () => {
         const old = { id: "h", template: "image_header_text", module_title: "", slots: [{ title: "T", text: "", image_prompt: "", alt_text: "" }] };
         renderCard(old);
+        openModule();
         expect((screen.getByTestId("aplus-module-0-slot-0-title") as HTMLTextAreaElement).value).toBe("T");
     });
 });
