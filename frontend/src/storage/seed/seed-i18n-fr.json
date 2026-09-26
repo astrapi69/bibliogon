@@ -1691,6 +1691,7 @@
     "aplus": {
       "title": "Contenu A+",
       "intro": "Description courte, puces et modules pour le gestionnaire A+ d'Amazon. Remplissez-les à la main ou laissez l'IA les proposer ; chaque champ se copie séparément.",
+      "basics_title": "Bases A+",
       "language": "Langue",
       "generating": "Génération ...",
       "ai_unavailable": "L'IA n'est pas configurée. Activez-la dans Paramètres, sous Assistant IA, pour générer du Contenu A+.",

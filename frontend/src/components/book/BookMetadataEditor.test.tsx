@@ -378,6 +378,11 @@ describe("BookMetadataEditor", () => {
         );
     }
 
+    async function openAplusBasics() {
+        const toggle = await screen.findByTestId("aplus-basics-toggle");
+        fireEvent.click(toggle);
+    }
+
     // --- Header ---
 
     it("renders the metadata heading", () => {
@@ -462,6 +467,7 @@ describe("BookMetadataEditor", () => {
     it("A+ Content opens from the Veröffentlichung nav with an editable document", async () => {
         renderEditor();
         fireEvent.click(screen.getByTestId("metadata-tab-aplus"));
+        await openAplusBasics();
         await screen.findByTestId("aplus-content-name");
         expect(screen.getByTestId("aplus-section")).toBeTruthy();
         expect(aplusGetMock).toHaveBeenCalledWith("book-1", "de");
@@ -478,6 +484,7 @@ describe("BookMetadataEditor", () => {
         });
         renderEditor();
         fireEvent.click(screen.getByTestId("metadata-tab-aplus"));
+        await openAplusBasics();
         await screen.findByTestId("aplus-content-name");
         fireEvent.click(screen.getByTestId("aplus-ai-fill"));
         fireEvent.click(await screen.findByTestId("aplus-missing-goto-author"));

@@ -60,7 +60,9 @@
       "medium-import",
       "comics",
       "story-bible",
-      "learnset"
+      "learnset",
+      "promotion",
+      "aplus"
     ],
     "entry_point_group": "bibliogon.plugins"
   },
