@@ -113,6 +113,73 @@ def test_backup_import_merges_with_existing_non_empty_db(client, tmp_path, monke
     assert titles == ["Backed Up", "Existing"]
 
 
+def _create_book_template(client, name: str) -> str:
+    payload = {
+        "name": name,
+        "description": "Template",
+        "genre": "Fiction",
+        "language": "en",
+        "chapters": [
+            {
+                "position": 0,
+                "title": "Chapter",
+                "chapter_type": "chapter",
+                "content": "{}",
+            }
+        ],
+    }
+    resp = client.post("/api/templates", json=payload)
+    assert resp.status_code == 201
+    return resp.json()["id"]
+
+
+def _create_chapter_template(client, name: str) -> str:
+    payload = {
+        "name": name,
+        "description": "Template",
+        "chapter_type": "chapter",
+        "content": "{}",
+        "language": "en",
+    }
+    resp = client.post("/api/chapter-templates", json=payload)
+    assert resp.status_code == 201
+    return resp.json()["id"]
+
+
+def test_backup_import_skips_duplicate_template_names(client, tmp_path, monkeypatch):
+    """Importing a backup into a DB with same-name templates should skip
+    those rows instead of crashing on UNIQUE(name)."""
+    monkeypatch.chdir(tmp_path)
+
+    book_template_name = "Backup Import Conflict Template"
+    chapter_template_name = "Backup Import Conflict Chapter"
+
+    tmpl_id = _create_book_template(client, book_template_name)
+    chapter_id = _create_chapter_template(client, chapter_template_name)
+
+    backup = client.get("/api/backup/export").content
+
+    client.delete(f"/api/templates/{tmpl_id}")
+    client.delete(f"/api/chapter-templates/{chapter_id}")
+
+    _create_book_template(client, book_template_name)
+    _create_chapter_template(client, chapter_template_name)
+
+    resp = client.post(
+        "/api/backup/import",
+        files={"file": ("bk.bgb", backup, "application/octet-stream")},
+    )
+    assert resp.status_code == 200
+
+    templates = client.get("/api/templates").json()
+    assert len([t for t in templates if t["name"] == book_template_name]) == 1
+
+    chapter_templates = client.get("/api/chapter-templates").json()
+    assert (
+        len([t for t in chapter_templates if t["name"] == chapter_template_name]) == 1
+    )
+
+
 # ---------------------------------------------------------------------------
 # Fix 3: smart-import handles Pandoc-style multi-doc metadata.yaml
 # ---------------------------------------------------------------------------

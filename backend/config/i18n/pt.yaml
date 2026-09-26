@@ -330,11 +330,13 @@ ui:
   backups:
     full_backup_title: "Cópia de segurança completa (JSON)"
     full_backup_description: "Exporta ou importa todos os dados (livros, capítulos, artigos, autores, definições, story bible) como um único ficheiro JSON. Também funciona offline."
+    full_backup_import_hint: "App desktop: a importação .bgb roda no servidor para restaurar totalmente capas e recursos. A web importa no navegador."
     export_full: "Exportar cópia de segurança"
     import_full: "Importar cópia de segurança"
     import_result: "{books} livros, {chapters} capítulos, {articles} artigos importados. {skipped_books} ignorados."
     import_invalid: "Formato de cópia de segurança inválido"
     import_full_error: "Falha na importação da cópia de segurança"
+    import_too_large: "Backup demasiado grande (>{max} MB). Aumente o limite de upload em Definicoes > Avancado e reinicie."
     export_full_error: "Falha na exportação da cópia de segurança"
     progress_collecting: "A recolher dados…"
     progress_assets: "A carregar imagens…"
@@ -1178,7 +1180,10 @@ ui:
     default_book_type: "Tipo de livro padrão"
     default_content_type: "Tipo de texto padrão"
     erweitert_title: "Avancado"
-    erweitert_description: "Chaves SSH para a autenticacao do host de Git."
+    erweitert_description: "Chaves SSH e limites de upload para importacoes grandes."
+    upload_limit_label: "Max. upload (MB)"
+    upload_limit_hint: "0 = ilimitado. Aplica-se ao import de backup, import ZIP, instalação de plugins e uploads."
+    upload_limit_restart: "As alteracoes exigem reiniciar a app desktop."
     dashboard_views_title: "Visualizacoes padrao"
     dashboard_books_view_label: "Painel de livros: visualizacao padrao"
     dashboard_books_view_tooltip: "Visualizacao inicial ao abrir o painel de livros. Pode ser alterada a qualquer momento pelo icone no canto superior direito."
@@ -2277,7 +2282,7 @@ ui:
     step_1_drop_zone: Arrasta o ficheiro aqui ou clica para procurar
     step_1_accepted_formats: 'Aceita: .bgb, .md, .markdown, .txt, .html, .htm, .zip (write-book-template / Scrivener .scriv), .docx, .epub'
     error_unsupported_format: 'Formato de ficheiro nao suportado. Aceita: {formats}'
-    error_file_too_large: Ficheiro demasiado grande (>{max} MB).
+    error_file_too_large: Ficheiro demasiado grande (>{max} MB). Aumente o limite de upload em Definicoes > Avancado e reinicie.
     warn_large_file: Ficheiro grande ({size}); a detecao pode demorar um momento.
     status_reading: A ler ficheiro...
     status_detecting: A detectar formato...

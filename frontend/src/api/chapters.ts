@@ -397,7 +397,12 @@ export const chaptersApi = {
 
     import: async (
       file: File,
-    ): Promise<{ imported_books: number; imported_articles?: number }> => {
+    ): Promise<{
+      imported_books: number;
+      imported_chapters?: number;
+      imported_articles?: number;
+      skipped_books?: number;
+    }> => {
       const formData = new FormData();
       formData.append("file", file);
       const res = await guardedFetch(`${BASE}/backup/import`, {

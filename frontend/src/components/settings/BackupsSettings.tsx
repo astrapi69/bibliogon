@@ -38,6 +38,12 @@ import { bgbBackupFilename, exportBgbBackup, type BgbProgress } from "../../expo
 import { BackupImportError } from "../../export/backupImport";
 import { BgbImportError } from "../../import/bgbImport";
 import { restoreBackupFile } from "../../export/restoreBackup";
+import { getStorage } from "../../storage";
+import {
+    DEFAULT_MAX_UPLOAD_MB,
+    maxUploadBytes,
+    resolveMaxUploadMb,
+} from "../../utils/platform/uploadLimit";
 import BackupCompareDialog from "./BackupCompareDialog";
 import { SectionHeader } from "./SectionHeader";
 import { SelectiveExportSection } from "./SelectiveExportSection";
@@ -68,6 +74,7 @@ export function BackupsSettings() {
     const [fullBackupBusy, setFullBackupBusy] = useState(false);
     const [exportProgress, setExportProgress] = useState<BgbProgress | null>(null);
     const importInputRef = useRef<HTMLInputElement | null>(null);
+    const [maxUploadMb, setMaxUploadMb] = useState<number | null>(DEFAULT_MAX_UPLOAD_MB);
 
     const handleFullExport = async () => {
         setFullBackupBusy(true);
@@ -99,6 +106,16 @@ export function BackupsSettings() {
     const handleFullImportFile = async (file: File) => {
         setFullBackupBusy(true);
         try {
+            const maxBytes = maxUploadBytes(maxUploadMb);
+            if (maxBytes !== null && file.size > maxBytes) {
+                notify.error(
+                    t(
+                        "ui.backups.import_too_large",
+                        "Backup too large (>{max} MB). Raise the upload limit in Settings > Advanced and restart.",
+                    ).replace("{max}", String(maxUploadMb ?? DEFAULT_MAX_UPLOAD_MB)),
+                );
+                return;
+            }
             const counts = await restoreBackupFile(file);
             notify.success(
                 t(
@@ -139,6 +156,20 @@ export function BackupsSettings() {
             .then(setBackupHistory)
             .catch(() => {});
     }, [offline]);
+
+    useEffect(() => {
+        let cancelled = false;
+        getStorage()
+            .settings.getApp()
+            .then((config) => {
+                if (cancelled) return;
+                setMaxUploadMb(resolveMaxUploadMb(config));
+            })
+            .catch(() => {});
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const handleDeleteEntry = async (entry: BackupHistoryEntry) => {
         const previous = backupHistory;
@@ -197,6 +228,18 @@ export function BackupsSettings() {
                     {t(
                         "ui.backups.full_backup_description",
                         "Exportiert oder importiert alle Daten (Bücher, Kapitel, Artikel, Autoren, Einstellungen, Story Bible) inklusive aller Bilder als eine .bgb-Datei. Funktioniert auch offline.",
+                    )}
+                </p>
+                <p
+                    style={{
+                        margin: "0 0 12px 0",
+                        color: "var(--text-muted)",
+                        fontSize: "0.875rem",
+                    }}
+                >
+                    {t(
+                        "ui.backups.full_backup_import_hint",
+                        "Desktop-App: .bgb-Import läuft serverseitig, damit Cover und Assets vollständig wiederhergestellt werden. Web-App importiert im Browser.",
                     )}
                 </p>
                 <div className="flex flex-wrap gap-2">

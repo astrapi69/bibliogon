@@ -330,11 +330,13 @@ ui:
   backups:
     full_backup_title: "Full backup (JSON)"
     full_backup_description: "Exports or imports all data (books, chapters, articles, authors, settings, story bible) as a single JSON file. Works offline too."
+    full_backup_import_hint: "Desktop app: .bgb import runs on the server so covers and assets are fully restored. The web app imports in the browser."
     export_full: "Export backup"
     import_full: "Import backup"
     import_result: "{books} books, {chapters} chapters, {articles} articles imported. {skipped_books} skipped."
     import_invalid: "Invalid backup format"
     import_full_error: "Backup import failed"
+    import_too_large: "Backup too large (>{max} MB). Raise the upload limit in Settings > Advanced and restart."
     export_full_error: "Backup export failed"
     progress_collecting: "Collecting data…"
     progress_assets: "Loading images…"
@@ -1180,7 +1182,10 @@ ui:
     default_book_type: "Default Book Type"
     default_content_type: "Default Content Type"
     erweitert_title: "Advanced"
-    erweitert_description: "SSH keys for Git host authentication."
+    erweitert_description: "SSH keys and upload limits for large imports."
+    upload_limit_label: "Max upload (MB)"
+    upload_limit_hint: "0 = unlimited. Applies to backup import, ZIP import, plugin installs, and uploads."
+    upload_limit_restart: "Changes require a desktop app restart."
     dashboard_views_title: "Default views"
     dashboard_books_view_label: "Books dashboard: default view"
     dashboard_books_view_tooltip: "Initial view when opening the books dashboard. Can be changed any time via the icon at the top right."
@@ -2286,7 +2291,7 @@ ui:
     step_1_drop_zone: Drop file here or click to browse
     step_1_accepted_formats: 'Accepts: .bgb, .md, .markdown, .txt, .html, .htm, .zip (write-book-template / Scrivener .scriv), .docx, .epub'
     error_unsupported_format: 'Unsupported file format. Accepts: {formats}'
-    error_file_too_large: File too large (>{max} MB).
+    error_file_too_large: File too large (>{max} MB). Raise the upload limit in Settings > Advanced and restart.
     warn_large_file: Large file ({size}); detection may take a moment.
     status_reading: Reading file...
     status_detecting: Detecting format...

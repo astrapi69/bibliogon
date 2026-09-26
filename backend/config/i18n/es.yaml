@@ -330,11 +330,13 @@ ui:
   backups:
     full_backup_title: "Copia de seguridad completa (JSON)"
     full_backup_description: "Exporta o importa todos los datos (libros, capítulos, artículos, autores, ajustes, biblia de la historia) como un único archivo JSON. También funciona sin conexión."
+    full_backup_import_hint: "App de escritorio: la importación .bgb se ejecuta en el servidor para restaurar completamente portadas y recursos. La web importa en el navegador."
     export_full: "Exportar copia de seguridad"
     import_full: "Importar copia de seguridad"
     import_result: "{books} libros, {chapters} capítulos, {articles} artículos importados. {skipped_books} omitidos."
     import_invalid: "Formato de copia de seguridad no válido"
     import_full_error: "Error al importar la copia de seguridad"
+    import_too_large: "Copia demasiado grande (>{max} MB). Aumenta el limite de subida en Configuración > Avanzado y reinicia."
     export_full_error: "Error al exportar la copia de seguridad"
     progress_collecting: "Recopilando datos…"
     progress_assets: "Cargando imágenes…"
@@ -1178,7 +1180,10 @@ ui:
     default_book_type: "Tipo de libro predeterminado"
     default_content_type: "Tipo de texto predeterminado"
     erweitert_title: "Avanzado"
-    erweitert_description: "Claves SSH para la autenticacion del host de Git."
+    erweitert_description: "Claves SSH y limites de subida para importaciones grandes."
+    upload_limit_label: "Max. subida (MB)"
+    upload_limit_hint: "0 = ilimitado. Se aplica a importación de backup, ZIP, instalación de plugins y subidas."
+    upload_limit_restart: "Los cambios requieren reiniciar la app de escritorio."
     dashboard_views_title: "Vistas predeterminadas"
     dashboard_books_view_label: "Panel de libros: vista predeterminada"
     dashboard_books_view_tooltip: "Vista inicial al abrir el panel de libros. Se puede cambiar en cualquier momento con el icono en la esquina superior derecha."
@@ -2277,7 +2282,7 @@ ui:
     step_1_drop_zone: Arrastra el archivo aqui o haz clic para buscar
     step_1_accepted_formats: 'Acepta: .bgb, .md, .markdown, .txt, .html, .htm, .zip (write-book-template / Scrivener .scriv), .docx, .epub'
     error_unsupported_format: 'Formato de archivo no admitido. Acepta: {formats}'
-    error_file_too_large: Archivo demasiado grande (>{max} MB).
+    error_file_too_large: Archivo demasiado grande (>{max} MB). Aumenta el limite de subida en Configuración > Avanzado y reinicia.
     warn_large_file: Archivo grande ({size}); la deteccion puede tardar un momento.
     status_reading: Leyendo archivo...
     status_detecting: Detectando formato...

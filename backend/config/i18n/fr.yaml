@@ -330,11 +330,13 @@ ui:
   backups:
     full_backup_title: "Sauvegarde complète (JSON)"
     full_backup_description: "Exporte ou importe toutes les données (livres, chapitres, articles, auteurs, paramètres, bible de l'histoire) dans un seul fichier JSON. Fonctionne aussi hors ligne."
+    full_backup_import_hint: "Application de bureau : l'import .bgb s'exécute côté serveur pour restaurer complètement les couvertures et les ressources. L'app web importe dans le navigateur."
     export_full: "Exporter la sauvegarde"
     import_full: "Importer la sauvegarde"
     import_result: "{books} livres, {chapters} chapitres, {articles} articles importés. {skipped_books} ignorés."
     import_invalid: "Format de sauvegarde non valide"
     import_full_error: "Échec de l'importation de la sauvegarde"
+    import_too_large: "Sauvegarde trop volumineuse (>{max} Mo). Augmentez la limite d'envoi dans Paramètres > Avancé et redémarrez."
     export_full_error: "Échec de l'exportation de la sauvegarde"
     progress_collecting: "Collecte des données…"
     progress_assets: "Chargement des images…"
@@ -1178,7 +1180,10 @@ ui:
     default_book_type: "Type de livre par défaut"
     default_content_type: "Type de texte par défaut"
     erweitert_title: "Avance"
-    erweitert_description: "Cles SSH pour l'authentification de l'hote Git."
+    erweitert_description: "Cles SSH et limites d'envoi pour les gros imports."
+    upload_limit_label: "Upload max (Mo)"
+    upload_limit_hint: "0 = illimité. S'applique à l'import de sauvegarde, l'import ZIP, l'installation de plugins et les uploads."
+    upload_limit_restart: "Les modifications nécessitent un redémarrage de l'application desktop."
     dashboard_views_title: "Vues par defaut"
     dashboard_books_view_label: "Tableau de bord livres : vue par defaut"
     dashboard_books_view_tooltip: "Vue initiale a l'ouverture du tableau de bord livres. Modifiable a tout moment via l'icone en haut a droite."
@@ -2277,7 +2282,7 @@ ui:
     step_1_drop_zone: Deposez un fichier ici ou cliquez pour parcourir
     step_1_accepted_formats: 'Accepte : .bgb, .md, .markdown, .txt, .html, .htm, .zip (write-book-template / Scrivener .scriv), .docx, .epub'
     error_unsupported_format: 'Format de fichier non pris en charge. Accepte : {formats}'
-    error_file_too_large: Fichier trop volumineux (>{max} Mo).
+    error_file_too_large: Fichier trop volumineux (>{max} Mo). Augmentez la limite d'envoi dans Paramètres > Avancé et redémarrez.
     warn_large_file: Fichier volumineux ({size}) ; la detection peut prendre un instant.
     status_reading: Lecture du fichier...
     status_detecting: Detection du format...

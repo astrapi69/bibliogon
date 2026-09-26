@@ -4,9 +4,21 @@ import { restoreBackupFile } from "./restoreBackup";
 
 const importBgbFile = vi.fn();
 const importFullBackup = vi.fn();
+const backupImport = vi.fn();
+const storageMode = vi.hoisted(() => ({ value: "dexie" as "api" | "dexie" }));
 
 vi.mock("../import/bgbImport", () => ({ importBgbFile: (f: File) => importBgbFile(f) }));
 vi.mock("./backupImport", () => ({ importFullBackup: (f: File) => importFullBackup(f) }));
+vi.mock("../api/client", () => ({
+    api: {
+        backup: {
+            import: (f: File) => backupImport(f),
+        },
+    },
+}));
+vi.mock("../storage", () => ({
+    getStorage: () => ({ mode: storageMode.value }),
+}));
 
 /** A File whose first two bytes are the ZIP "PK" magic. */
 function zipFile(): File {
@@ -16,6 +28,8 @@ function zipFile(): File {
 beforeEach(() => {
     importBgbFile.mockReset();
     importFullBackup.mockReset();
+    backupImport.mockReset();
+    storageMode.value = "dexie";
 });
 
 describe("restoreBackupFile", () => {
@@ -26,8 +40,23 @@ describe("restoreBackupFile", () => {
         });
         const counts = await restoreBackupFile(zipFile());
         expect(importBgbFile).toHaveBeenCalled();
+        expect(backupImport).not.toHaveBeenCalled();
         expect(importFullBackup).not.toHaveBeenCalled();
         expect(counts).toEqual({ books: 2, chapters: 5, articles: 1, skippedBooks: 1 });
+    });
+
+    it("routes a ZIP to the backend import in api mode", async () => {
+        storageMode.value = "api";
+        backupImport.mockResolvedValue({
+            imported_books: 1,
+            imported_chapters: 3,
+            imported_articles: 0,
+            skipped_books: 2,
+        });
+        const counts = await restoreBackupFile(zipFile());
+        expect(backupImport).toHaveBeenCalled();
+        expect(importBgbFile).not.toHaveBeenCalled();
+        expect(counts).toEqual({ books: 1, chapters: 3, articles: 0, skippedBooks: 2 });
     });
 
     it("routes non-ZIP content to the JSON importer", async () => {

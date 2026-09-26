@@ -68,7 +68,8 @@ _KNOWN_MANIFEST_VERSIONS = {"1.0", "2.0", "3.0"}
 def import_backup_archive(file: UploadFile, db: Session) -> dict[str, int]:
     """Restore a .bgb backup file into the DB.
 
-    Returns ``{"imported_books": N, "imported_articles": M}``.
+    Returns ``{"imported_books": N, "imported_chapters": C, "imported_articles": M,
+    "skipped_books": S}``.
 
     Backwards-compat: legacy backups (manifest version 1.0) have no
     ``articles/`` segment. Their absence is silently treated as
@@ -83,9 +84,12 @@ def import_backup_archive(file: UploadFile, db: Session) -> dict[str, int]:
         books_dir = _require_books_dir(extracted)
 
         imported_books = 0
-        for book_dir in sorted(books_dir.iterdir()):
+        imported_chapters = 0
+        book_dirs = [path for path in books_dir.iterdir() if path.is_dir()]
+        for book_dir in sorted(book_dirs):
             if _restore_book_from_dir(db, book_dir):
                 imported_books += 1
+                imported_chapters += _count_chapters(book_dir)
 
         # Articles segment (manifest version 2.0+). Missing directory is
         # the legacy 1.0 case - treat as zero articles, do not raise.
@@ -101,14 +105,18 @@ def import_backup_archive(file: UploadFile, db: Session) -> dict[str, int]:
         _restore_globals(db, extracted)
 
         db.commit()
+        skipped_books = max(0, len(book_dirs) - imported_books)
         _history.add(
             action="restore",
             book_count=imported_books,
+            chapter_count=imported_chapters,
             filename=file.filename or "backup.bgb",
         )
         return {
             "imported_books": imported_books,
+            "imported_chapters": imported_chapters,
             "imported_articles": imported_articles,
+            "skipped_books": skipped_books,
         }
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
@@ -364,6 +372,13 @@ def _restore_assets(db: Session, book_dir: Path, book_id: str) -> None:
         )
 
 
+def _count_chapters(book_dir: Path) -> int:
+    chapters_dir = book_dir / "chapters"
+    if not chapters_dir.exists():
+        return 0
+    return len([path for path in chapters_dir.glob("*.json") if path.is_file()])
+
+
 # --- v3.0 child + globals restore (BACKUP-COMPLETENESS-01) ---
 
 
@@ -386,8 +401,15 @@ def _restore_simple(db: Session, path: Path, model_cls: type) -> None:
         db.add(restore_row(model_cls, row_data))
 
 
-def _restore_idempotent(db: Session, path: Path, model_cls: type) -> None:
-    """Restore rows from a list file, skipping ids that already exist.
+def _restore_idempotent(
+    db: Session,
+    path: Path,
+    model_cls: type,
+    *,
+    unique_field: str | None = None,
+) -> None:
+    """Restore rows from a list file, skipping ids (and optional unique keys)
+    that already exist.
 
     Used for GLOBAL content (authors, templates, orphan comments) which
     is restored once per archive regardless of books/articles, so a
@@ -401,6 +423,13 @@ def _restore_idempotent(db: Session, path: Path, model_cls: type) -> None:
     for row_data in payload:
         if db.get(model_cls, row_data.get("id")) is not None:
             continue
+        if unique_field:
+            value = row_data.get(unique_field)
+            if (
+                value
+                and db.query(model_cls).filter(getattr(model_cls, unique_field) == value).first()
+            ):
+                continue
         db.add(restore_row(model_cls, row_data))
 
 
@@ -484,10 +513,18 @@ def _restore_globals(db: Session, extracted: Path) -> None:
                 chapters = tmpl_data.pop("chapters", [])
                 if db.get(BookTemplate, tmpl_data.get("id")) is not None:
                     continue
+                name = tmpl_data.get("name")
+                if name and db.query(BookTemplate).filter(BookTemplate.name == name).first():
+                    continue
                 db.add(restore_row(BookTemplate, tmpl_data))
                 db.flush()
                 for ch_data in chapters:
                     db.add(restore_row(BookTemplateChapter, ch_data))
 
-    _restore_idempotent(db, globals_dir / "chapter_templates.json", ChapterTemplate)
+    _restore_idempotent(
+        db,
+        globals_dir / "chapter_templates.json",
+        ChapterTemplate,
+        unique_field="name",
+    )
     _restore_idempotent(db, globals_dir / "orphan_comments.json", ArticleComment)

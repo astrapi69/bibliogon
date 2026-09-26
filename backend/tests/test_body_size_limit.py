@@ -13,8 +13,8 @@ POST under the cap succeeds; missing Content-Length on a small
 POST also succeeds.
 
 Resolver helper ``_resolve_max_bytes_from_config`` gets its own
-pin: integer in, non-int / non-positive / missing fall back to
-the documented default.
+pin: integer in, non-int / negative / missing fall back to the
+documented default, and ``0`` disables the cap.
 """
 
 from __future__ import annotations
@@ -70,11 +70,8 @@ def test_resolver_falls_back_on_non_integer_value() -> None:
     )
 
 
-def test_resolver_falls_back_on_zero() -> None:
-    assert (
-        _resolve_max_bytes_from_config({"app": {"max_upload_mb": 0}})
-        == DEFAULT_MAX_UPLOAD_MB * 1024 * 1024
-    )
+def test_resolver_returns_zero_for_unlimited() -> None:
+    assert _resolve_max_bytes_from_config({"app": {"max_upload_mb": 0}}) == 0
 
 
 def test_resolver_falls_back_on_negative() -> None:
@@ -144,6 +141,17 @@ def test_content_length_over_cap_returns_413() -> None:
     assert "detail" in body
     # Detail must name a cap so the client can act on it.
     assert "MB" in body["detail"]
+
+
+def test_unlimited_cap_allows_large_payload() -> None:
+    from fastapi.testclient import TestClient
+
+    app = _build_app_with_cap(0)
+    client = TestClient(app)
+    payload = b"a" * (2 * 1024 * 1024)
+    r = client.post("/echo", content=payload)
+    assert r.status_code == 200
+    assert r.json() == {"received_bytes": len(payload)}
 
 
 def test_get_request_is_not_rate_limited() -> None:

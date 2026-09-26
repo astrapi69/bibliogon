@@ -47,6 +47,11 @@ import { BackupImportError } from "../../export/backupImport";
 import { BgbImportError } from "../../import/bgbImport";
 import { restoreBackupFile } from "../../export/restoreBackup";
 import {
+    DEFAULT_MAX_UPLOAD_MB,
+    maxUploadBytes,
+    resolveMaxUploadMb,
+} from "../../utils/platform/uploadLimit";
+import {
     AuthorsImportError,
     authorsExportFilename,
     buildAuthorsExport,
@@ -91,6 +96,7 @@ export function DataManagementSettings() {
     const [showTables, setShowTables] = useState(false);
     const [busy, setBusy] = useState(false);
     const [exportProgress, setExportProgress] = useState<BgbProgress | null>(null);
+    const [maxUploadMb, setMaxUploadMb] = useState<number | null>(DEFAULT_MAX_UPLOAD_MB);
 
     const backupInputRef = useRef<HTMLInputElement | null>(null);
     const authorsInputRef = useRef<HTMLInputElement | null>(null);
@@ -110,6 +116,20 @@ export function DataManagementSettings() {
     useEffect(() => {
         void refreshStats();
     }, [refreshStats]);
+
+    useEffect(() => {
+        let cancelled = false;
+        getStorage()
+            .settings.getApp()
+            .then((config) => {
+                if (cancelled) return;
+                setMaxUploadMb(resolveMaxUploadMb(config));
+            })
+            .catch(() => {});
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     // --- Export ----------------------------------------------------------
 
@@ -163,6 +183,16 @@ export function DataManagementSettings() {
         async (file: File) => {
             setBusy(true);
             try {
+                const maxBytes = maxUploadBytes(maxUploadMb);
+                if (maxBytes !== null && file.size > maxBytes) {
+                    notify.error(
+                        t(
+                            "ui.backups.import_too_large",
+                            "Backup too large (>{max} MB). Raise the upload limit in Settings > Advanced and restart.",
+                        ).replace("{max}", String(maxUploadMb ?? DEFAULT_MAX_UPLOAD_MB)),
+                    );
+                    return;
+                }
                 const counts = await restoreBackupFile(file);
                 notify.success(
                     t(
@@ -188,7 +218,7 @@ export function DataManagementSettings() {
                 setBusy(false);
             }
         },
-        [refreshStats, t],
+        [maxUploadMb, refreshStats, t],
     );
 
     const handleAuthorsImportFile = useCallback(
@@ -467,6 +497,12 @@ export function DataManagementSettings() {
                     {t(
                         "ui.data.import_description",
                         "Spiele ein Backup oder eine Autorenliste wieder ein. Vorhandene Einträge werden nicht überschrieben.",
+                    )}
+                </p>
+                <p className={cardDescClass}>
+                    {t(
+                        "ui.backups.full_backup_import_hint",
+                        "Desktop-App: .bgb-Import läuft serverseitig, damit Cover und Assets vollständig wiederhergestellt werden. Web-App importiert im Browser.",
                     )}
                 </p>
                 <p className={cardDescClass} data-testid="data-import-online-hint">
