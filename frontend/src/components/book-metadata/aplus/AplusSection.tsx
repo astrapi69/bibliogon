@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ClipboardCopy, Sparkles } from "lucide-react";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 
-import { api, type BookDetail } from "../../../api/client";
+import { api, type BookDetail, ApiError } from "../../../api/client";
 import {
     APLUS_LANGUAGES,
     isAplusMissingFields,
@@ -205,8 +205,12 @@ export default function AplusSection({ book, aiAvailable, t, onSelectSection }: 
             setFindings(result.validation);
             await aplus.replace(packageToDocument(result as GeneratedAplusPackage, doc, newModuleId));
             notify.success(t("ui.aplus.generated", "A+ Content erzeugt"));
-        } catch (err) {
-            notify.error(t("ui.aplus.generate_error", "A+ Content konnte nicht erzeugt werden"), err);
+        } catch (err: unknown) {
+            const detail = err instanceof ApiError ? err.detail : String(err);
+            notify.error(
+                t("ui.aplus.generate_error", "A+ Content konnte nicht erzeugt werden") + ": " + detail,
+                err,
+            );
         } finally {
             setFilling(false);
         }
