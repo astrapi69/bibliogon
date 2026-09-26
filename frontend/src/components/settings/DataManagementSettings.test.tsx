@@ -50,11 +50,15 @@ vi.mock("../../utils/platform/notify", () => ({ notify: mockNotify }));
 
 const mockAuthorsList = vi.fn().mockResolvedValue([]);
 const mockAuthorsCreate = vi.fn().mockResolvedValue({ id: "a1" });
+const mockGetApp = vi.fn().mockResolvedValue({ app: { max_upload_mb: 500 } });
 vi.mock("../../storage", () => ({
     getStorage: () => ({
         authors: {
             list: (...args: unknown[]) => mockAuthorsList(...args),
             create: (...args: unknown[]) => mockAuthorsCreate(...args),
+        },
+        settings: {
+            getApp: (...args: unknown[]) => mockGetApp(...args),
         },
     }),
 }));
@@ -129,6 +133,7 @@ describe("DataManagementSettings", () => {
         mockAuthorsList.mockResolvedValue([]);
         mockExportFullBackup.mockResolvedValue(new Blob(["{}"]));
         mockClearImageCache.mockResolvedValue(3);
+        mockGetApp.mockClear();
     });
 
     it("renders the section + storage overview with category counts", async () => {

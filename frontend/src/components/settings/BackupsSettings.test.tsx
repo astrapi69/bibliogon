@@ -73,6 +73,13 @@ vi.mock("../../utils/platform/notify", () => ({
     },
 }));
 
+const mockGetApp = vi.fn().mockResolvedValue({ app: { max_upload_mb: 500 } });
+vi.mock("../../storage", () => ({
+    getStorage: () => ({
+        settings: { getApp: mockGetApp },
+    }),
+}));
+
 // Stub the dialog so we don't pull in its Radix Portal +
 // fetch/XHR fixtures (covered by BackupCompareDialog.test.tsx).
 vi.mock("./BackupCompareDialog", () => ({
@@ -87,6 +94,7 @@ describe("BackupsSettings", () => {
         mockClearHistory.mockReset();
         mockConfirm.mockReset();
         mockNotifyError.mockReset();
+        mockGetApp.mockClear();
     });
 
     it("renders the tab heading and both section headings", async () => {

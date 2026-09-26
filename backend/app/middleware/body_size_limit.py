@@ -26,10 +26,11 @@ through unchanged. They normally have no body of interest; the
 middleware skips them to keep the read-path overhead at zero.
 
 Configuration: the cap is read from ``app.yaml`` at startup via
-``app.max_upload_mb`` (default ``500``). Editing the value
-requires a server restart, intentionally: a runtime cap change
-would need locking around the in-flight request set to stay
-consistent with what handlers already accepted.
+``app.max_upload_mb`` (default ``500``). Set it to ``0`` to
+disable the limit. Editing the value requires a server restart,
+intentionally: a runtime cap change would need locking around
+the in-flight request set to stay consistent with what handlers
+already accepted.
 
 Fail-open posture: if config loading raises for any reason, the
 middleware defaults to 500 MB rather than refusing to start. A
@@ -70,13 +71,15 @@ def _resolve_max_bytes_from_config(app_config: dict[str, Any] | None) -> int:
             DEFAULT_MAX_UPLOAD_MB,
         )
         return DEFAULT_MAX_UPLOAD_MB * 1024 * 1024
-    if mb <= 0:
+    if mb < 0:
         logger.warning(
-            "BodySizeLimitMiddleware: app.max_upload_mb=%d is non-positive; falling back to %d MB.",
+            "BodySizeLimitMiddleware: app.max_upload_mb=%d is negative; falling back to %d MB.",
             mb,
             DEFAULT_MAX_UPLOAD_MB,
         )
         return DEFAULT_MAX_UPLOAD_MB * 1024 * 1024
+    if mb == 0:
+        return 0
     return mb * 1024 * 1024
 
 
@@ -85,7 +88,8 @@ def _too_large_response(max_bytes: int) -> dict[str, Any]:
     return {
         "detail": (
             f"Request body exceeds the {max_bytes // (1024 * 1024)} MB cap. "
-            f"Configure via app.max_upload_mb in backend/config/app.yaml."
+            "Configure via Settings > Advanced (Upload limit) or app.max_upload_mb "
+            "in backend/config/app.yaml; set to 0 to disable."
         )
     }
 
@@ -124,6 +128,9 @@ class BodySizeLimitMiddleware:
 
         method = scope.get("method", "GET").upper()
         if method not in _METHODS_WITH_BODY:
+            await self.app(scope, receive, send)
+            return
+        if self.max_bytes <= 0:
             await self.app(scope, receive, send)
             return
 

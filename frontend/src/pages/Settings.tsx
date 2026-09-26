@@ -600,7 +600,30 @@ export default function Settings() {
                                 <SupportSection config={getDonationsConfig(appConfig)!} />
                             )}
                             {activeTab === "about" && <AboutSettings appConfig={appConfig} />}
-                            {activeTab === "erweitert" && <ErweitertSettings />}
+                            {activeTab === "erweitert" && (
+                                <ErweitertSettings
+                                    config={appConfig}
+                                    onSave={async (data) => {
+                                        setSaving(true);
+                                        try {
+                                            const updated =
+                                                await getStorage().settings.updateApp(data);
+                                            setAppConfig(updated);
+                                            showMessage(t("ui.settings.saved", "Gespeichert"));
+                                        } catch (err) {
+                                            showMessage(
+                                                t(
+                                                    "ui.settings.save_error",
+                                                    "Fehler beim Speichern",
+                                                ),
+                                                true,
+                                            );
+                                        }
+                                        setSaving(false);
+                                    }}
+                                    saving={saving}
+                                />
+                            )}
                             {activeTab === "danger_zone" && <DangerZoneSettings />}
                         </>
                     )}

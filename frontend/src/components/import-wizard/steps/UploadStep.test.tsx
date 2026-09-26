@@ -1,6 +1,8 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { beforeEach, describe, it, expect, vi } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { UploadStep } from "./UploadStep";
+
+const getApp = vi.fn().mockResolvedValue({ app: { max_upload_mb: 500 } });
 
 vi.mock("../../../hooks/useI18n", () => ({
     useI18n: () => ({
@@ -9,6 +11,16 @@ vi.mock("../../../hooks/useI18n", () => ({
         setLang: vi.fn(),
     }),
 }));
+
+vi.mock("../../../storage", () => ({
+    getStorage: () => ({
+        settings: { getApp },
+    }),
+}));
+
+beforeEach(() => {
+    getApp.mockClear();
+});
 
 function file(
     name: string,
@@ -101,6 +113,30 @@ describe("UploadStep", () => {
         });
         expect(onInputSelected).not.toHaveBeenCalled();
         expect(screen.getByTestId("upload-error")).toHaveTextContent(/too large/i);
+    });
+
+    it("rejects files over the configured limit", async () => {
+        getApp.mockResolvedValueOnce({ app: { max_upload_mb: 100 } });
+        const onInputSelected = vi.fn();
+        render(<UploadStep onInputSelected={onInputSelected} />);
+        await waitFor(() => expect(getApp).toHaveBeenCalled());
+        fireEvent.change(screen.getByTestId("upload-input"), {
+            target: { files: [file("huge.bgb", 120 * 1024 * 1024)] },
+        });
+        expect(onInputSelected).not.toHaveBeenCalled();
+        expect(screen.getByTestId("upload-error")).toHaveTextContent("100");
+    });
+
+    it("allows large files when the limit is disabled", async () => {
+        getApp.mockResolvedValueOnce({ app: { max_upload_mb: 0 } });
+        const onInputSelected = vi.fn();
+        render(<UploadStep onInputSelected={onInputSelected} />);
+        await waitFor(() => expect(getApp).toHaveBeenCalled());
+        fireEvent.change(screen.getByTestId("upload-input"), {
+            target: { files: [file("huge.bgb", 1200 * 1024 * 1024)] },
+        });
+        await waitFor(() => expect(onInputSelected).toHaveBeenCalled());
+        expect(screen.queryByTestId("upload-error")).not.toBeInTheDocument();
     });
 
     it("warns but accepts files over 50 MB", () => {

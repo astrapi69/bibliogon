@@ -8,6 +8,7 @@ import zipfile
 from pathlib import Path
 
 from fastapi.testclient import TestClient
+from PIL import Image
 
 from app.main import app
 
@@ -45,6 +46,13 @@ def _create_project_zip(
 def _cleanup(book_id: str) -> None:
     client.delete(f"/api/books/{book_id}")
     client.delete(f"/api/books/trash/{book_id}")
+
+
+def _png_bytes(width: int = 300, height: int = 450, color: str = "white") -> bytes:
+    img = Image.new("RGB", (width, height), color=color)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
 
 
 # --- Roundtrip Tests ---
@@ -201,6 +209,14 @@ def test_roundtrip_backup_restore_complete():
     r_json = import_wbt_zip(client, buf, filename="test.zip")
     book_id = r_json["book_id"]
 
+    cover_payload = _png_bytes()
+    r_cover = client.post(
+        f"/api/books/{book_id}/cover",
+        files={"file": ("cover.png", io.BytesIO(cover_payload), "image/png")},
+    )
+    assert r_cover.status_code == 201
+    cover_filename = r_cover.json()["filename"]
+
     # Backup
     r_backup = client.get("/api/backup/export")
     assert r_backup.status_code == 200
@@ -225,6 +241,12 @@ def test_roundtrip_backup_restore_complete():
     assert book["title"] == "Backup Roundtrip"
     assert book["publisher"] == "Test Pub"
     assert len(book["chapters"]) >= 1
+    assert book["cover_image"]
+    assert cover_filename in book["cover_image"]
+
+    r_cover_asset = client.get(f"/api/books/{book_id}/assets/file/{cover_filename}")
+    assert r_cover_asset.status_code == 200
+    assert r_cover_asset.content == cover_payload
 
     _cleanup(book_id)
 

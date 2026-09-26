@@ -330,11 +330,13 @@ ui:
   backups:
     full_backup_title: "完全バックアップ（JSON）"
     full_backup_description: "すべてのデータ（書籍、章、記事、著者、設定、ストーリーバイブル）を単一のJSONファイルとしてエクスポートまたはインポートします。オフラインでも動作します。"
+    full_backup_import_hint: "デスクトップ版: .bgb のインポートはサーバー側で実行され、カバーとアセットを完全に復元します。Web版はブラウザ内でインポートします。"
     export_full: "バックアップをエクスポート"
     import_full: "バックアップをインポート"
     import_result: "{books}冊の書籍、{chapters}章、{articles}件の記事をインポートしました。{skipped_books}件をスキップしました。"
     import_invalid: "無効なバックアップ形式"
     import_full_error: "バックアップのインポートに失敗しました"
+    import_too_large: "バックアップが大きすぎます (>{max} MB)。設定 > 詳細設定でアップロード上限を上げて再起動してください。"
     export_full_error: "バックアップのエクスポートに失敗しました"
     progress_collecting: "データを収集中…"
     progress_assets: "画像を読み込み中…"
@@ -1178,7 +1180,10 @@ ui:
     default_book_type: "デフォルトの本の種類"
     default_content_type: "デフォルトのテキストの種類"
     erweitert_title: "詳細設定"
-    erweitert_description: "Git ホスト認証用の SSH キー。"
+    erweitert_description: "SSH キーと大容量インポート向けのアップロード制限。"
+    upload_limit_label: "最大アップロード (MB)"
+    upload_limit_hint: "0 = 無制限。バックアップ/ZIP インポート、プラグイン導入、アップロードに適用。"
+    upload_limit_restart: "変更にはデスクトップアプリの再起動が必要です。"
     dashboard_views_title: "デフォルト表示"
     dashboard_books_view_label: "本ダッシュボード: デフォルト表示"
     dashboard_books_view_tooltip: "本ダッシュボードを開いたときの初期表示。右上のアイコンからいつでも変更できます。"
@@ -2277,7 +2282,7 @@ ui:
     step_1_drop_zone: ファイルをここにドロップ、またはクリックして選択
     step_1_accepted_formats: '対応形式: .bgb, .md, .markdown, .txt, .html, .htm, .zip (write-book-template / Scrivener .scriv), .docx, .epub'
     error_unsupported_format: 'サポートされていない形式です。対応: {formats}'
-    error_file_too_large: ファイルが大きすぎます (>{max} MB)。
+    error_file_too_large: ファイルが大きすぎます (>{max} MB)。設定 > 詳細設定でアップロード上限を上げて再起動してください。
     warn_large_file: 大きなファイル ({size})。検出に時間がかかる場合があります。
     status_reading: ファイルを読み込み中...
     status_detecting: 形式を検出中...

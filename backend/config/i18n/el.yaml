@@ -330,11 +330,13 @@ ui:
   backups:
     full_backup_title: "Πλήρες αντίγραφο ασφαλείας (JSON)"
     full_backup_description: "Εξάγει ή εισάγει όλα τα δεδομένα (βιβλία, κεφάλαια, άρθρα, συγγραφείς, ρυθμίσεις, story bible) ως ένα ενιαίο αρχείο JSON. Λειτουργεί και εκτός σύνδεσης."
+    full_backup_import_hint: "Εφαρμογή desktop: η εισαγωγή .bgb γίνεται στον διακομιστή ώστε να αποκαθίστανται πλήρως τα εξώφυλλα και τα στοιχεία. Η web εφαρμογή εισάγει στον browser."
     export_full: "Εξαγωγή αντιγράφου ασφαλείας"
     import_full: "Εισαγωγή αντιγράφου ασφαλείας"
     import_result: "{books} βιβλία, {chapters} κεφάλαια, {articles} άρθρα εισήχθησαν. {skipped_books} παραλείφθηκαν."
     import_invalid: "Μη έγκυρη μορφή αντιγράφου ασφαλείας"
     import_full_error: "Η εισαγωγή αντιγράφου ασφαλείας απέτυχε"
+    import_too_large: "Το αντίγραφο είναι πολύ μεγάλο (>{max} MB). Αυξήστε το όριο μεταφόρτωσης στις Ρυθμίσεις > Για προχωρημένους και κάντε επανεκκίνηση."
     export_full_error: "Η εξαγωγή αντιγράφου ασφαλείας απέτυχε"
     progress_collecting: "Συλλογή δεδομένων…"
     progress_assets: "Φόρτωση εικόνων…"
@@ -1160,7 +1162,10 @@ ui:
     default_book_type: "Προεπιλεγμένος τύπος βιβλίου"
     default_content_type: "Προεπιλεγμένος τύπος κειμένου"
     erweitert_title: "Για προχωρημένους"
-    erweitert_description: "Κλειδιά SSH για την ταυτοποίηση του host Git."
+    erweitert_description: "Κλειδιά SSH και όρια μεταφόρτωσης για μεγάλες εισαγωγές."
+    upload_limit_label: "Μέγ. μεταφόρτωση (MB)"
+    upload_limit_hint: "0 = χωρίς όριο. Ισχύει για εισαγωγή αντιγράφου, εισαγωγή ZIP, εγκατάσταση προσθηκών και μεταφορτώσεις."
+    upload_limit_restart: "Οι αλλαγές απαιτούν επανεκκίνηση της desktop εφαρμογής."
     dashboard_views_title: "Προεπιλεγμένες προβολές"
     dashboard_books_view_label: "Πίνακας βιβλίων: προεπιλεγμένη προβολή"
     dashboard_books_view_tooltip: "Αρχική προβολή κατά το άνοιγμα του πίνακα βιβλίων. Μπορεί να αλλάξει οποιαδήποτε στιγμή μέσω του εικονιδίου επάνω δεξιά."
@@ -2277,7 +2282,7 @@ ui:
     step_1_drop_zone: Σύρε το αρχείο εδώ ή κάνε κλικ για περιήγηση
     step_1_accepted_formats: 'Δέχεται: .bgb, .md, .markdown, .txt, .html, .htm, .zip (write-book-template / Scrivener .scriv), .docx, .epub'
     error_unsupported_format: 'Μη υποστηριζόμενη μορφή αρχείου. Δέχεται: {formats}'
-    error_file_too_large: Αρχείο πολύ μεγάλο (>{max} MB).
+    error_file_too_large: Αρχείο πολύ μεγάλο (>{max} MB). Αυξήστε το όριο μεταφόρτωσης στις Ρυθμίσεις > Για προχωρημένους και κάντε επανεκκίνηση.
     warn_large_file: Μεγάλο αρχείο ({size}); η ανίχνευση μπορεί να πάρει λίγο.
     status_reading: Ανάγνωση αρχείου...
     status_detecting: Ανίχνευση μορφής...

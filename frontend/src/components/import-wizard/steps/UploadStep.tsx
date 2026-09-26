@@ -1,6 +1,12 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Folder, GitBranch, Upload } from "lucide-react";
 import { useI18n } from "../../../hooks/useI18n";
+import { getStorage } from "../../../storage";
+import {
+    DEFAULT_MAX_UPLOAD_MB,
+    maxUploadBytes,
+    resolveMaxUploadMb,
+} from "../../../utils/platform/uploadLimit";
 
 // Regex is intentionally loose: we accept HTTPS, http, git@ and
 // ssh:// URLs. Backend handler validates the actual git-ness by
@@ -34,7 +40,6 @@ const ACCEPTED_EXTENSIONS = [
 const FOLDER_MD_EXTENSIONS = [".md", ".markdown"] as const;
 const FOLDER_IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp", ".gif"] as const;
 const WARN_SIZE_MB = 50;
-const MAX_SIZE_MB = 500;
 const MAX_FOLDER_FILES = 2000;
 
 function extensionOf(filename: string): string {
@@ -86,6 +91,23 @@ export function UploadStep({
     const [warning, setWarning] = useState<string | null>(null);
     const [gitUrl, setGitUrl] = useState("");
     const [gitError, setGitError] = useState<string | null>(null);
+    const [maxUploadMb, setMaxUploadMb] = useState<number | null>(DEFAULT_MAX_UPLOAD_MB);
+
+    useEffect(() => {
+        let cancelled = false;
+        getStorage()
+            .settings.getApp()
+            .then((config) => {
+                if (cancelled) return;
+                setMaxUploadMb(resolveMaxUploadMb(config));
+            })
+            .catch(() => {});
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const maxBytes = maxUploadBytes(maxUploadMb);
 
     const validateSingle = (file: File): string | null => {
         const ext = extensionOf(file.name);
@@ -95,11 +117,11 @@ export function UploadStep({
                 "Unsupported file format. Accepts: {formats}",
             ).replace("{formats}", ACCEPTED_EXTENSIONS.join(", "));
         }
-        if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+        if (maxBytes !== null && file.size > maxBytes) {
             return t(
                 "ui.import_wizard.error_file_too_large",
-                "File too large (>{max} MB).",
-            ).replace("{max}", String(MAX_SIZE_MB));
+                "File too large (>{max} MB). Raise the upload limit in Settings > Advanced and restart.",
+            ).replace("{max}", String(maxUploadMb ?? DEFAULT_MAX_UPLOAD_MB));
         }
         return null;
     };
@@ -145,11 +167,14 @@ export function UploadStep({
             return;
         }
         const total = picked.reduce((sum, f) => sum + f.size, 0);
-        if (total > MAX_SIZE_MB * 1024 * 1024) {
+        if (maxBytes !== null && total > maxBytes) {
             setError(
-                t("ui.import_wizard.error_file_too_large", "File too large (>{max} MB).").replace(
+                t(
+                    "ui.import_wizard.error_file_too_large",
+                    "File too large (>{max} MB). Raise the upload limit in Settings > Advanced and restart.",
+                ).replace(
                     "{max}",
-                    String(MAX_SIZE_MB),
+                    String(maxUploadMb ?? DEFAULT_MAX_UPLOAD_MB),
                 ),
             );
             return;

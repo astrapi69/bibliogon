@@ -13,7 +13,9 @@
  * robust and correct regardless of how the file was named.
  */
 
+import { api } from "../api/client";
 import { importBgbFile } from "../import/bgbImport";
+import { getStorage } from "../storage";
 import { importFullBackup } from "./backupImport";
 
 /** The subset of restore counts every backup surface reports. */
@@ -33,13 +35,25 @@ async function isZipArchive(file: File): Promise<boolean> {
 /**
  * Restore a backup file, auto-detecting `.bgb` (ZIP) vs `.json`.
  *
- * A ZIP archive carries image bytes and routes through {@link importBgbFile};
- * everything else is treated as the legacy JSON bundle via
- * {@link importFullBackup} (which throws `BackupImportError` on a bad shape,
- * so the existing invalid-format toast still fires).
+ * A ZIP archive carries image bytes and routes through {@link importBgbFile}
+ * in Dexie mode; API mode uses the backend `/api/backup/import` so the full
+ * server-side graph (assets, pages, comments, etc.) is restored. Everything
+ * else is treated as the legacy JSON bundle via {@link importFullBackup}
+ * (which throws `BackupImportError` on a bad shape, so the existing invalid-
+ * format toast still fires).
  */
 export async function restoreBackupFile(file: File): Promise<RestoreCounts> {
     if (await isZipArchive(file)) {
+        const storage = getStorage();
+        if (storage.mode === "api") {
+            const result = await api.backup.import(file);
+            return {
+                books: result.imported_books,
+                chapters: result.imported_chapters ?? 0,
+                articles: result.imported_articles ?? 0,
+                skippedBooks: result.skipped_books ?? 0,
+            };
+        }
         const result = await importBgbFile(file);
         return {
             books: result.imported.books,
