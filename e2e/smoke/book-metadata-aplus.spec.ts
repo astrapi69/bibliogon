@@ -64,11 +64,29 @@ async function mockGenerate(page: Page, body: unknown) {
     );
 }
 
+/**
+ * Expand a collapsed A+ card (the basics card or a module) so its fields are
+ * in the DOM.
+ *
+ * #903 made every A+ card collapse to a summary with an edit toggle, so a
+ * field only exists once its card is open. Guarded on `data-state` so calling
+ * this twice cannot collapse an already-open card.
+ */
+async function expandAplusCard(page: Page, testId: string) {
+    const card = page.getByTestId(testId);
+    await expect(card).toBeVisible({timeout: 10000});
+    if ((await card.getAttribute("data-state")) === "collapsed") {
+        await page.getByTestId(`${testId}-toggle`).click();
+        await expect(card).toHaveAttribute("data-state", "open");
+    }
+}
+
 async function openAplus(page: Page, bookId: string) {
     await page.goto(`/book/${bookId}?view=metadata`);
     const navItem = page.getByTestId("metadata-tab-aplus");
     await expect(navItem).toBeVisible({timeout: 10000});
     await navItem.click();
+    await expandAplusCard(page, "aplus-basics");
     await expect(page.getByTestId("aplus-content-name")).toBeVisible();
 }
 
@@ -81,6 +99,7 @@ test.describe("Book-metadata A+ Content (#891)", () => {
         await page.getByTestId("aplus-short-description").fill("Filimón ist ein Pferd, das lachen kann.");
         await expect(page.getByTestId("aplus-short-description-char-count")).toContainText("/ 300");
         await page.getByTestId("aplus-add-three_images_text").click();
+        await expandAplusCard(page, "aplus-module-2");
         await page.getByTestId("aplus-module-2-slot-1-prompt").fill("flooded bathroom, laughing horse --ar 1:1");
 
         await expect
@@ -91,10 +110,13 @@ test.describe("Book-metadata A+ Content (#891)", () => {
 
         await page.reload();
         await page.getByTestId("metadata-tab-aplus").click();
+        // A reload re-collapses every card, so re-expand before reading back.
+        await expandAplusCard(page, "aplus-basics");
         await expect(page.getByTestId("aplus-short-description")).toHaveValue(
             "Filimón ist ein Pferd, das lachen kann.",
         );
         await expect(page.getByTestId("aplus-module-2")).toContainText("300x300");
+        await expandAplusCard(page, "aplus-module-2");
         await expect(page.getByTestId("aplus-module-2-slot-1-prompt")).toHaveValue(
             "flooded bathroom, laughing horse --ar 1:1",
         );
@@ -119,10 +141,12 @@ test.describe("Book-metadata A+ Content (#891)", () => {
         await page.getByTestId("aplus-add-company_logo").click();
         await expect(page.getByTestId("aplus-add-company_logo")).toBeDisabled();
 
+        await expandAplusCard(page, "aplus-module-2");
         await page.getByTestId("aplus-module-2-add-slot").click();
         await page.getByTestId("aplus-module-2-slot-3-asin").fill("B0FR1X1MVX");
         await page.getByTestId("aplus-module-2-row-0-label").fill("Genre");
         await page.getByTestId("aplus-module-2-row-0-value-3").fill("Krimi");
+        await expandAplusCard(page, "aplus-module-3");
         await page.getByTestId("aplus-module-3-row-0-label").fill("Seitenzahl");
         await page.getByTestId("aplus-module-3-row-0-value-0").fill("320");
         await expect(page.getByTestId("aplus-gallery-limit")).toBeVisible();
@@ -135,8 +159,11 @@ test.describe("Book-metadata A+ Content (#891)", () => {
 
         await page.reload();
         await page.getByTestId("metadata-tab-aplus").click();
+        // A reload re-collapses every card, so re-expand before reading back.
+        await expandAplusCard(page, "aplus-module-2");
         await expect(page.getByTestId("aplus-module-2-slot-3-asin")).toHaveValue("B0FR1X1MVX");
         await expect(page.getByTestId("aplus-module-2-row-0-value-3")).toHaveValue("Krimi");
+        await expandAplusCard(page, "aplus-module-3");
         await expect(page.getByTestId("aplus-module-3-row-0-label")).toHaveValue("Seitenzahl");
         await expect(page.getByTestId("aplus-module-4")).toContainText("600x180");
     });
@@ -153,6 +180,7 @@ test.describe("Book-metadata A+ Content (#891)", () => {
 
         await expect(page.getByTestId("aplus-short-description")).toHaveValue(PACKAGE.short_description);
         await expect(page.getByTestId("aplus-bullet-2-heading")).toHaveValue("Atmosphärisch");
+        await expandAplusCard(page, "aplus-module-0");
         await expect(page.getByTestId("aplus-module-0-slot-0-prompt")).toHaveValue(
             "a small boat on a stormy sea --ar 97:60",
         );
@@ -183,6 +211,7 @@ test.describe("Book-metadata A+ Content (#891)", () => {
         await page.goto(`/book/${book.id}?view=metadata`);
         await page.getByTestId("navigation-sidebar-mobile-trigger").click();
         await page.getByTestId("metadata-tab-aplus-mobile").click();
+        await expandAplusCard(page, "aplus-module-1");
         const prompt = page.getByTestId("aplus-module-1-slot-2-prompt");
         await prompt.scrollIntoViewIfNeeded();
         await expect(prompt).toBeVisible();
