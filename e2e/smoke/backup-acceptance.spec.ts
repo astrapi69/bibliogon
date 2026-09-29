@@ -28,6 +28,9 @@
 
 import {test, expect, createBook, createChapter, createArticle} from "../fixtures/base";
 import {readFileSync} from "node:fs";
+import * as fs from "node:fs/promises";
+import * as os from "node:os";
+import * as path from "node:path";
 
 const API = "http://localhost:8000/api";
 
@@ -107,7 +110,17 @@ test.describe("BACKUP-AKZEPTANZTEST (#61)", () => {
             page.waitForEvent("download"),
             page.getByTestId("backups-export-full").click(),
         ]);
-        const exportPath = await download.path();
+        // Save under the REAL download filename. `download.path()` is an
+        // extensionless temp artifact, and since #341 made the export a `.bgb`
+        // ZIP the import routes to the backend, which rejects anything not
+        // ending in `.bgb` (400 "Datei muss eine .bgb-Datei sein"). Uploading
+        // the file under its own name is also what a user actually does.
+        const exportPath = path.join(
+            await fs.mkdtemp(path.join(os.tmpdir(), "bibliogon-e2e-backup-")),
+            download.suggestedFilename(),
+        );
+        await download.saveAs(exportPath);
+        expect(exportPath.endsWith(".bgb")).toBe(true);
         // The backup is now a .bgb ZIP (carries image bytes), not JSON. Assert
         // the ZIP magic + that the archive carries the entity graph and the
         // client settings extension. ZIP local-file-header filenames are stored

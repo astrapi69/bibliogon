@@ -224,6 +224,33 @@ async function importSettings(
     imported.settings = 1;
 }
 
+/**
+ * Apply ONLY the client settings extension (`globals/settings.json`) from a
+ * `.bgb` archive.
+ *
+ * API mode restores the entity graph through the backend's
+ * `/api/backup/import`, which knows nothing about that file — it is a client
+ * extension this app writes on export. Without this the settings a user
+ * backed up (theme, default language, editor prefs) are silently dropped on
+ * restore, while the offline path restores them: the export would write
+ * something no importer in that mode reads.
+ *
+ * The author PROFILE is preserved, exactly as in the full client import.
+ * Returns whether a settings file was found and applied.
+ */
+export async function importBgbSettings(file: File): Promise<boolean> {
+    let entries: ZipEntries;
+    try {
+        entries = unzipSync(new Uint8Array(await file.arrayBuffer()));
+    } catch {
+        throw new BgbImportError("Beschädigte .bgb-Datei");
+    }
+    const prefix = findPrefix(entries);
+    const counts: BgbImportCounts = zeroCounts();
+    await importSettings(entries, prefix, getStorage(), counts);
+    return counts.settings === 1;
+}
+
 async function importBooks(
     entries: ZipEntries,
     booksPrefix: string,
