@@ -14,7 +14,7 @@
  */
 
 import { api } from "../api/client";
-import { importBgbFile } from "../import/bgbImport";
+import { importBgbFile, importBgbSettings } from "../import/bgbImport";
 import { getStorage } from "../storage";
 import { importFullBackup } from "./backupImport";
 
@@ -47,6 +47,19 @@ export async function restoreBackupFile(file: File): Promise<RestoreCounts> {
         const storage = getStorage();
         if (storage.mode === "api") {
             const result = await api.backup.import(file);
+            // The backend restores the DB graph but ignores
+            // `globals/settings.json` — that file is a CLIENT extension this
+            // app writes on export, so only the client can read it back. The
+            // offline importer already applies it; without this the same
+            // archive would restore a user's theme and defaults offline and
+            // silently drop them online.
+            try {
+                await importBgbSettings(file);
+            } catch (err) {
+                // The graph is already restored at this point; a failed
+                // settings extension must not turn that into an error toast.
+                console.warn("Backup settings extension not applied", err);
+            }
             return {
                 books: result.imported_books,
                 chapters: result.imported_chapters ?? 0,

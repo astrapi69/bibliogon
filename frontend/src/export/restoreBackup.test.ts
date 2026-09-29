@@ -3,11 +3,15 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { restoreBackupFile } from "./restoreBackup";
 
 const importBgbFile = vi.fn();
+const importBgbSettings = vi.fn();
 const importFullBackup = vi.fn();
 const backupImport = vi.fn();
 const storageMode = vi.hoisted(() => ({ value: "dexie" as "api" | "dexie" }));
 
-vi.mock("../import/bgbImport", () => ({ importBgbFile: (f: File) => importBgbFile(f) }));
+vi.mock("../import/bgbImport", () => ({
+    importBgbFile: (f: File) => importBgbFile(f),
+    importBgbSettings: (f: File) => importBgbSettings(f),
+}));
 vi.mock("./backupImport", () => ({ importFullBackup: (f: File) => importFullBackup(f) }));
 vi.mock("../api/client", () => ({
     api: {
@@ -27,6 +31,7 @@ function zipFile(): File {
 
 beforeEach(() => {
     importBgbFile.mockReset();
+    importBgbSettings.mockReset();
     importFullBackup.mockReset();
     backupImport.mockReset();
     storageMode.value = "dexie";
@@ -57,6 +62,33 @@ describe("restoreBackupFile", () => {
         expect(backupImport).toHaveBeenCalled();
         expect(importBgbFile).not.toHaveBeenCalled();
         expect(counts).toEqual({ books: 1, chapters: 3, articles: 0, skippedBooks: 2 });
+        // The backend restores the DB graph but ignores the client's
+        // globals/settings.json extension, so the client applies it after.
+        expect(importBgbSettings).toHaveBeenCalledTimes(1);
+    });
+
+    it("still reports the backend counts when the settings extension fails", async () => {
+        storageMode.value = "api";
+        backupImport.mockResolvedValue({
+            imported_books: 1,
+            imported_chapters: 0,
+            imported_articles: 0,
+            skipped_books: 0,
+        });
+        importBgbSettings.mockRejectedValue(new Error("settings write failed"));
+        // The graph IS restored at this point; a failed settings extension
+        // must not turn a successful restore into an error toast.
+        const counts = await restoreBackupFile(zipFile());
+        expect(counts.books).toBe(1);
+    });
+
+    it("does not re-apply settings in dexie mode (the bgb importer already did)", async () => {
+        importBgbFile.mockResolvedValue({
+            imported: { books: 1, chapters: 0, articles: 0 },
+            skipped: { books: 0 },
+        });
+        await restoreBackupFile(zipFile());
+        expect(importBgbSettings).not.toHaveBeenCalled();
     });
 
     it("routes non-ZIP content to the JSON importer", async () => {
