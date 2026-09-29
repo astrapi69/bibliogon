@@ -960,6 +960,7 @@ describe("DexieStorage — story bible", () => {
         });
         const chapter = await dexieStorage.chapters.create(book.id, { title: "Kapitel 1" });
         await dexieStorage.chapters.update(book.id, chapter.id, {
+            version: chapter.version,
             content: "<p>Max ging fort. Al blieb. Ökologie wuchs.</p>",
         });
         const page = await dexieStorage.pages.create(book.id, { layout: "text_only" });
