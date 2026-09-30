@@ -27,6 +27,8 @@ import type {
     LongSentence,
 } from "../../api/types";
 
+import { htmlToPlainText } from "./content/htmlToPlainText";
+
 const MAX_SENTENCE_LENGTH = 25;
 
 /** Per-language vowel groups for the syllable heuristic. */
@@ -128,14 +130,30 @@ function roundTo(value: number, digits: number): number {
     return Math.round(value * factor) / factor;
 }
 
-/** Extract plain text from TipTap JSON (mirrors backend `_extract_text`). */
+/**
+ * Extract plain text from a chapter body in any stored shape.
+ *
+ * Mirrors the backend `content_to_plain_text`: a TipTap doc (parsed or
+ * as a JSON string) is walked, HTML is stripped to prose, and genuine
+ * plain text passes through.
+ *
+ * The HTML branch is the common case, not the edge case: an imported
+ * chapter stays HTML until someone opens and saves it in the editor
+ * (#787), which is 779 of 834 chapters on the dev library. Returning the
+ * raw markup here counted `<p>`, `strong`, class names and URLs as words
+ * and syllables, so every metric for an imported chapter was computed
+ * over the tags as well as the prose (#914) - the same failure #806
+ * fixed server-side.
+ */
 export function extractPlainText(content: unknown): string {
     let doc: unknown = content;
     if (typeof content === "string") {
+        const stripped = content.trimStart();
+        if (!stripped) return "";
         try {
             doc = JSON.parse(content);
         } catch {
-            return content;
+            return stripped.startsWith("<") ? htmlToPlainText(content) : content;
         }
     }
     if (typeof doc !== "object" || doc === null) {

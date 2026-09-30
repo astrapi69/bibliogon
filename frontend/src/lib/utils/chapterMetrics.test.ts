@@ -42,6 +42,55 @@ describe("extractPlainText", () => {
         expect(extractPlainText("")).toBe("");
         expect(extractPlainText(null)).toBe("");
     });
+
+    // An imported chapter stays HTML until someone opens and saves it in
+    // the editor (#787) - 779 of 834 on the dev library - so this is the
+    // common shape, not an edge case (#914).
+    it("strips HTML instead of counting the markup as prose", () => {
+        expect(extractPlainText("<p>Hallo <strong>Welt</strong>.</p>")).toBe("Hallo Welt.");
+    });
+
+    it("keeps block boundaries when stripping HTML", () => {
+        expect(extractPlainText("<h2>Titel</h2><p>Erster Satz.</p><p>Zweiter Satz.</p>")).toBe(
+            "Titel\nErster Satz.\nZweiter Satz.",
+        );
+    });
+
+    it("drops attribute values, which are never prose", () => {
+        expect(extractPlainText('<p>Siehe <a href="/wiki/Goethe">dort</a>.</p>')).toBe(
+            "Siehe dort.",
+        );
+    });
+
+    it("leaves genuine plain text alone", () => {
+        expect(extractPlainText("Kein Markup, nur Text.")).toBe("Kein Markup, nur Text.");
+    });
+});
+
+describe("computeChapterMetrics on imported (HTML) chapters", () => {
+    it("counts words of the prose, not of the tags", () => {
+        const html = "<p>Ein kurzer Satz.</p><p>Noch ein Satz.</p>";
+        const equivalent = tiptap("Ein kurzer Satz.", "Noch ein Satz.");
+        const fromHtml = computeChapterMetrics("Importiert", "de", [
+            makeChapter({ id: "c1", content: html }),
+        ]);
+        const fromJson = computeChapterMetrics("Getippt", "de", [
+            makeChapter({ id: "c1", content: equivalent }),
+        ]);
+        expect(fromHtml.chapters[0].word_count).toBe(6);
+        expect(fromHtml.chapters[0].word_count).toBe(fromJson.chapters[0].word_count);
+        expect(fromHtml.chapters[0].sentence_count).toBe(fromJson.chapters[0].sentence_count);
+    });
+
+    it("does not read class names and hrefs as words", () => {
+        const noisy =
+            '<div class="chapter-body"><p>Nur <em>drei</em> Woerter.</p>' +
+            '<p><a href="https://example.com/a/very/long/path">Link</a></p></div>';
+        const metrics = computeChapterMetrics("Importiert", "de", [
+            makeChapter({ id: "c1", content: noisy }),
+        ]);
+        expect(metrics.chapters[0].word_count).toBe(4);
+    });
 });
 
 describe("computeChapterMetrics", () => {
