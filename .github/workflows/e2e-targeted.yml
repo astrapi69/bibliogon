@@ -64,10 +64,14 @@ jobs:
 
       - name: Validate inputs
         run: |
-          if ! printf '%s' "$SPECS" | grep -Eq '^[A-Za-z0-9_./ -]*$'; then
+          # printf '%s\n', not '%s': an empty input must still present one
+          # (empty) line, or grep finds nothing to match and exits 1 -
+          # rejecting every invocation that leaves specs or grep unset,
+          # which is all three documented ones (#912).
+          if ! printf '%s\n' "$SPECS" | grep -Eq '^[A-Za-z0-9_./ -]*$'; then
             echo "specs may only hold spec paths (letters, digits, _ . / - and spaces)"; exit 1
           fi
-          if ! printf '%s' "$GREP" | grep -Eq '^[A-Za-z0-9_ .+()|\\-]*$'; then
+          if ! printf '%s\n' "$GREP" | grep -Eq '^[A-Za-z0-9_ .+()|\\-]*$'; then
             echo "grep may only hold letters, digits, spaces and _ . + ( ) | \\ -"; exit 1
           fi
 
