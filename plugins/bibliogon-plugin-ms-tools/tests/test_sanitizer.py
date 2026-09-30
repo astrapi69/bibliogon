@@ -372,3 +372,61 @@ class TestUppercaseTags:
         result = sanitize('<P TITLE="a \'b\'">Er sagte "hallo"...</P>', "de")["sanitized"]
         assert "TITLE=\"a 'b'\"" in result
         assert "Er sagte „hallo“…" in result
+
+
+# --- Fragment boundaries (#939) ---
+#
+# fix_whitespace ends with a per-line trailing trim. On a whole document
+# that is right. Since #805 it runs once per TEXT NODE, and a text node's
+# last line is usually not a line end at all - it is the middle of a
+# sentence, cut where the next tag begins. rstrip() then removed a space
+# that was carrying meaning, gluing the word before an inline tag onto
+# whatever the tag rendered.
+
+
+class TestFragmentBoundaries:
+    def _sanitized(self, text: str, language: str = "de") -> str:
+        return sanitize(text, language)["sanitized"]
+
+    def test_space_before_an_inline_tag_survives(self):
+        result = self._sanitized("<p>Ein <em>Satz</em> mit <strong>Markup</strong>.</p>")
+        assert result == "<p>Ein <em>Satz</em> mit <strong>Markup</strong>.</p>"
+
+    def test_space_before_an_embedded_image_survives(self):
+        """The shape the walker was built for: markdown prose with one
+        raw <img> in it routes the WHOLE chapter through the walker."""
+        markdown = 'Ein Satz mit einem Bild <img src="assets/figures/a.png" alt="Bild" /> im Text.'
+        assert self._sanitized(markdown) == markdown
+
+    def test_space_after_an_end_tag_survives(self):
+        result = self._sanitized("<p><em>Kursiv</em> danach.</p>")
+        assert "</em> danach." in result
+
+    def test_a_real_line_end_inside_a_text_node_is_still_trimmed(self):
+        """Only the LAST line of a fragment is a boundary the fragment
+        does not own. Earlier lines end where they say they end."""
+        result = self._sanitized("<p>Erste Zeile   \nZweite Zeile</p>")
+        assert "Zeile   \n" not in result
+        assert "Erste Zeile\nZweite Zeile" in result
+
+    def test_plain_text_keeps_the_per_line_trim(self):
+        """No markup means the raw-string branch, where the trim is
+        correct and must stay."""
+        assert self._sanitized("Zeile eins   \nZeile zwei   ") == "Zeile eins\nZeile zwei"
+
+    def test_double_spaces_are_still_collapsed_inside_a_fragment(self):
+        result = self._sanitized("<p>Zu    viele Leerzeichen <em>hier</em>.</p>")
+        assert "Zu viele Leerzeichen <em>hier</em>." in result
+
+    def test_a_document_ending_in_whitespace_after_a_tag_keeps_one_space(self):
+        """Accepted trade-off. The final text node is a fragment like any
+        other, and the walker cannot tell mid-stream that it is the last
+        one, so its trailing whitespace is kept. A single space at the very
+        end of a document is cosmetic; eating a space in the middle of a
+        sentence was not. The client port behaves identically."""
+        assert self._sanitized("<p>Ende.</p>   ") == "<p>Ende.</p> "
+
+    def test_sanitizing_html_twice_is_still_idempotent(self):
+        html = '<p>Ein <em>Satz</em> mit "Zitat" <img src="a.png" alt="B" /> Ende.</p>'
+        once = self._sanitized(html)
+        assert self._sanitized(once) == once

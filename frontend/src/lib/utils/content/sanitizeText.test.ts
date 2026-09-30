@@ -82,16 +82,19 @@ describe("individual fixes", () => {
         // (`$3`); only the later whitespace pass collapses it away, so the
         // full-pipeline result below is the one a caller actually sees.
         expect(fixHtmlArtifacts('<span></span><div>  </div>Text')[0]).toBe("  Text");
-        expect(sanitizeText('<span></span><div>  </div>Text').sanitized).toBe("Text");
+        // The collapsed single space survives: it sits at the end of a
+        // FRAGMENT (the div's body), which the whitespace fix no longer
+        // trims (#939). The backend produces the same string.
+        expect(sanitizeText('<span></span><div>  </div>Text').sanitized).toBe(" Text");
         expect(
             fixHtmlArtifacts('<p class="MsoNormal" style="color:red">Hallo</p>')[0],
         ).toBe("<p>Hallo</p>");
     });
 
-    // The Python rules are case-sensitive and its walker lowercases END
-    // tags only, so `<DIV>x</DIV>` comes out half-stripped as `<DIV>x`.
-    // Word emits uppercase tags, which is the input this exists for.
-    it("strips uppercase wrappers at both ends (deliberate divergence, #934)", () => {
+    // Word emits uppercase tags, which is the input this exists for. Was
+    // this port's one divergence until #934 fixed the backend the same
+    // way; now a plain parity pin.
+    it("strips uppercase wrappers at both ends (#934)", () => {
         expect(fixHtmlArtifacts("<DIV>Uppercase</DIV>")[0]).toBe("Uppercase");
     });
 });
@@ -167,5 +170,61 @@ describe("sanitizePreview", () => {
         const result = sanitizePreview("Warten...");
         expect(result.sanitized).toBe("Warten…");
         expect(result.diff).toHaveLength(2);
+    });
+});
+
+// Mirrors TestFragmentBoundaries in the Python suite. fixWhitespace ends
+// with a per-line trailing trim, which is right for a whole document and
+// wrong for a text node: its last line is usually cut mid-sentence where
+// the next tag begins, so the trim ate a space that was carrying meaning
+// (#939).
+describe("fragment boundaries (#939)", () => {
+    it("keeps the space before an inline tag", () => {
+        const html = "<p>Ein <em>Satz</em> mit <strong>Markup</strong>.</p>";
+        expect(sanitizeText(html).sanitized).toBe(html);
+    });
+
+    it("keeps the space before an embedded image in markdown prose", () => {
+        const markdown =
+            'Ein Satz mit einem Bild <img src="assets/figures/a.png" alt="Bild" /> im Text.';
+        expect(sanitizeText(markdown).sanitized).toBe(markdown);
+    });
+
+    it("keeps the space after an end tag", () => {
+        expect(sanitizeText("<p><em>Kursiv</em> danach.</p>").sanitized).toContain(
+            "</em> danach.",
+        );
+    });
+
+    it("still trims a line that really does end inside a text node", () => {
+        const result = sanitizeText("<p>Erste Zeile   \nZweite Zeile</p>").sanitized;
+        expect(result).toContain("Erste Zeile\nZweite Zeile");
+    });
+
+    it("keeps the per-line trim for plain text with no markup", () => {
+        expect(sanitizeText("Zeile eins   \nZeile zwei   ").sanitized).toBe(
+            "Zeile eins\nZeile zwei",
+        );
+    });
+
+    it("still collapses double spaces inside a fragment", () => {
+        expect(sanitizeText("<p>Zu    viele Leerzeichen <em>hier</em>.</p>").sanitized).toContain(
+            "Zu viele Leerzeichen <em>hier</em>.",
+        );
+    });
+
+    it("leaves one trailing space when a document ends in whitespace after a tag", () => {
+        // Accepted trade-off. The final text node is a fragment like any
+        // other, and the walker cannot tell mid-stream that it is the
+        // last one, so its trailing whitespace is kept. A single space at
+        // the very end of a document is cosmetic; eating a space in the
+        // middle of a sentence was not. The backend behaves identically.
+        expect(sanitizeText("<p>Ende.</p>   ").sanitized).toBe("<p>Ende.</p> ");
+    });
+
+    it("stays idempotent", () => {
+        const html = '<p>Ein <em>Satz</em> mit "Zitat" <img src="a.png" alt="B" /> Ende.</p>';
+        const once = sanitizeText(html).sanitized;
+        expect(sanitizeText(once).sanitized).toBe(once);
     });
 });

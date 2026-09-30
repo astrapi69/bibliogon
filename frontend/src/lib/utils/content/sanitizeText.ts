@@ -159,8 +159,19 @@ export function fixQuotes(text: string, language = "de"): [string, number] {
  * Collapse doubled spaces, pull punctuation back onto its word, put a
  * space after punctuation that lost one, trim line ends, and cap runs
  * of blank lines at two.
+ *
+ * `trimLastLine: false` leaves the final line's trailing whitespace
+ * alone. Callers pass it when the input is a FRAGMENT rather than a whole
+ * document - a text node between two tags, whose last line ends at the
+ * next tag rather than at a line break, so its trailing space is carrying
+ * meaning instead of being noise (#939). Every earlier line in the
+ * fragment does end where it says it ends and is trimmed as usual.
+ *
+ * Accepted trade-off: the walker cannot tell mid-stream which text node
+ * is the document's last, so a document ending in whitespace after a tag
+ * keeps one space. Cosmetic, where eating a space mid-sentence was not.
  */
-export function fixWhitespace(text: string): [string, number] {
+export function fixWhitespace(text: string, trimLastLine = true): [string, number] {
     let count = 0;
     let [fixed, n] = replaceCounting(text, / {2,}/g, " ");
     count += n;
@@ -169,7 +180,10 @@ export function fixWhitespace(text: string): [string, number] {
     [fixed, n] = replaceCounting(fixed, /([.,;:!?])([A-Za-zÀ-ɏ])/g, "$1 $2");
     count += n;
 
-    const trimmed = fixed.split("\n").map((line) => {
+    const lines = fixed.split("\n");
+    const last = lines.length - 1;
+    const trimmed = lines.map((line, index) => {
+        if (index === last && !trimLastLine) return line;
         const stripped = line.replace(/\s+$/, "");
         if (stripped !== line) count += 1;
         return stripped;
@@ -200,15 +214,14 @@ export function fixEllipsis(text: string): [string, number] {
  * tags, style and class attributes, conditional and plain comments,
  * Word namespace tags, and bare span/div wrappers.
  *
- * Two deliberate differences from the Python original, both documented
- * at {@link applyToTextNodes} and filed as #934:
- *
- * 1. The rules match case-insensitively. Python's are case-sensitive,
- *    and its text-node walker lowercases END tags while re-emitting
- *    START tags verbatim - so `<DIV>x</DIV>` comes out as `<DIV>x`,
- *    stripped at one end only. Word emits uppercase tags, which is
- *    exactly the input this function exists for.
- * 2. Tag casing is preserved rather than normalised (see the walker).
+ * The rules match case-insensitively, and tag casing is preserved rather
+ * than normalised. That was this port's one deliberate divergence: the
+ * Python rules were case-sensitive and its walker lower-cased END tags
+ * only, so `<SPAN>a</SPAN>` came back as the unbalanced `<SPAN>a`, and
+ * Word emits exactly the uppercase tags this function exists for.
+ * Mirroring the bug would have shipped it to the offline build. #934
+ * fixed the backend the same way, so this is now plain parity rather than
+ * a divergence.
  *
  * Known issue carried over deliberately: the class-attribute rule strips
  * EVERY class, not only Word's, so legitimate structural classes are
@@ -258,8 +271,17 @@ export function looksLikeHtml(text: string): boolean {
  * case is unaffected. A quote opened in one text node and closed after
  * an intervening tag is not paired across the boundary - each node
  * starts fresh, the same narrow limitation the backend documents.
+ *
+ * `fragmentTransform` is the variant used on the text-node path, for a
+ * fix whose behaviour differs between a whole document and a fragment
+ * (`fixWhitespace`'s per-line trailing trim; see #939). It defaults to
+ * `transform`, so a fix that does not care passes one callable.
  */
-export function applyToTextNodes(text: string, transform: Transform): [string, number] {
+export function applyToTextNodes(
+    text: string,
+    transform: Transform,
+    fragmentTransform: Transform = transform,
+): [string, number] {
     if (!looksLikeHtml(text)) return transform(text);
     const chunks: string[] = [];
     let count = 0;
@@ -267,7 +289,7 @@ export function applyToTextNodes(text: string, transform: Transform): [string, n
     NON_TEXT_RE.lastIndex = 0;
     for (let match = NON_TEXT_RE.exec(text); match; match = NON_TEXT_RE.exec(text)) {
         if (match.index > cursor) {
-            const [fixed, n] = transform(text.slice(cursor, match.index));
+            const [fixed, n] = fragmentTransform(text.slice(cursor, match.index));
             chunks.push(fixed);
             count += n;
         }
@@ -275,7 +297,7 @@ export function applyToTextNodes(text: string, transform: Transform): [string, n
         cursor = match.index + match[0].length;
     }
     if (cursor < text.length) {
-        const [fixed, n] = transform(text.slice(cursor));
+        const [fixed, n] = fragmentTransform(text.slice(cursor));
         chunks.push(fixed);
         count += n;
     }
@@ -312,7 +334,13 @@ export function sanitizeText(text: string, options: SanitizeOptions = {}): Sanit
     if (fixQuoteMarks) {
         run("quotes", (value) => applyToTextNodes(value, (part) => fixQuotes(part, language)));
     }
-    if (fixSpaces) run("whitespace", (value) => applyToTextNodes(value, fixWhitespace));
+    if (fixSpaces) {
+        run("whitespace", (value) =>
+            applyToTextNodes(value, fixWhitespace, (part) =>
+                fixWhitespace(part, false),
+            ),
+        );
+    }
     if (fixDashMarks) run("dashes", fixDashes);
     if (fixEllipses) run("ellipsis", fixEllipsis);
     if (fixHtml) run("html_artifacts", fixHtmlArtifacts);
