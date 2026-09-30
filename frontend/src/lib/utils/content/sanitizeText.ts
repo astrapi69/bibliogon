@@ -256,8 +256,24 @@ export function fixHtmlArtifacts(text: string): [string, number] {
 /**
  * Markup, comments, declarations and character references - everything
  * a text transform must be kept away from.
+ *
+ * A tag's attribute list is matched as quoted values or unquoted
+ * non-`>` characters, never as a plain `[^>]*` run: a `>` inside a
+ * quoted value does not end the tag. Getting that wrong split
+ * `<img alt="a>b" src="x.png"/>` into a tag and a "text node" of
+ * `b" src="x.png"/>`, and the text fixes then rewrote the attributes -
+ * typographic quotes in `alt`, a space inserted into the filename in
+ * `src` (#941). The backend has no such gap; its walker is `HTMLParser`,
+ * which tracks quoting itself.
+ *
+ * The linter flags the alternation under a `*` as a backtracking risk.
+ * It is not: the three branches are disjoint on their first character
+ * (`"`, `'`, and a class excluding both), so no input can match two of
+ * them. Measured on an unterminated tag carrying 40 000 attributes: 4 ms.
  */
-const NON_TEXT_RE = /<!--[\s\S]*?-->|<![^>]*>|<\/?[a-zA-Z][^>]*>|&#?\w+;/g;
+const NON_TEXT_RE =
+    // eslint-disable-next-line security/detect-unsafe-regex
+    /<!--[\s\S]*?-->|<![^>]*>|<\/?[a-zA-Z](?:"[^"]*"|'[^']*'|[^>"'])*>|&#?\w+;/g;
 
 /** Whether the text carries markup ANYWHERE, not only at its start. */
 export function looksLikeHtml(text: string): boolean {

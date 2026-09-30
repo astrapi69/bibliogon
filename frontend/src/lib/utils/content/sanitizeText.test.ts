@@ -228,3 +228,34 @@ describe("fragment boundaries (#939)", () => {
         expect(sanitizeText(once).sanitized).toBe(once);
     });
 });
+
+// The port finds markup with a regex where the backend uses HTMLParser.
+// A plain `[^>]*` attribute run ends the tag at the first `>`, even one
+// inside a quoted value, and the text fixes then rewrote the attributes
+// (#941). Every expectation is the backend's output for the same input.
+describe("tags carrying '>' inside an attribute value (#941)", () => {
+    it("leaves a double-quoted value containing '>' alone", () => {
+        const html = '<img alt="a>b" src="x.png"/>Text';
+        expect(sanitizeText(html).sanitized).toBe(html);
+    });
+
+    it("leaves a single-quoted value containing '>' alone", () => {
+        const html = "<img alt='a>b' src='x.png'/>Text";
+        expect(sanitizeText(html).sanitized).toBe(html);
+    });
+
+    it("leaves the other quote style nested inside a value alone", () => {
+        const html = "<p title=\"Er sagte 'hallo'\">Text</p>";
+        expect(sanitizeText(html).sanitized).toBe(html);
+    });
+
+    it("leaves a URL with an ampersand alone", () => {
+        const html = '<a href="x?a=1&b=2">Link</a>';
+        expect(sanitizeText(html).sanitized).toBe(html);
+    });
+
+    it("leaves an unquoted value alone", () => {
+        const html = "<p class=foo>Text</p>";
+        expect(sanitizeText(html).sanitized).toBe(html);
+    });
+});
