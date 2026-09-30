@@ -419,4 +419,3 @@ function derivePreviewTitle(page: Page): string {
     if (!firstLine) return ""
     return firstLine.length > 60 ? firstLine.slice(0, 57) + "..." : firstLine
 }
-
