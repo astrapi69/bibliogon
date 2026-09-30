@@ -1871,7 +1871,7 @@ ui:
     author_pen_names_label: "Pseudonymes"
     author_no_author: "(sans auteur)"
     author_manage_link: "Gerer les auteurs dans Parametres"
-    add_to_authors_db: "Ajouter „{name}\" à la base d'auteurs"
+    add_to_authors_db: "Ajouter « {name} » à la base d'auteurs"
     author_add_failed: "Impossible d'ajouter l'auteur à la base de données"
     language: Langue
     series_index: Numero dans la serie

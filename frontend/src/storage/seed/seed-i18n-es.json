@@ -1928,7 +1928,7 @@
       "author_pen_names_label": "Seudonimos",
       "author_no_author": "(sin autor)",
       "author_manage_link": "Gestionar autores en Ajustes",
-      "add_to_authors_db": "Añadir „{name}\" a la base de autores",
+      "add_to_authors_db": "Agregar \"{name}\" a la base de datos de autores",
       "author_add_failed": "No se pudo añadir el autor a la base de datos",
       "language": "Idioma",
       "series_index": "Numero en la serie",
