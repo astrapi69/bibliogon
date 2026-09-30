@@ -185,6 +185,34 @@ export async function buildBgbFiles(
         if (aplusRows.length) {
             files[`${dir}aplus_documents.json`] = strToU8(JSON.stringify(aplusRows));
         }
+
+        // Pages, their comic panels and bubbles, and the entity links.
+        // The importers already read these four filenames and restore the
+        // rows as-is; the client just never wrote them, so a picture book
+        // or comic came back as a bare book row (#931).
+        const pageEntries = entry.pages ?? [];
+        if (pageEntries.length) {
+            files[`${dir}pages.json`] = strToU8(
+                JSON.stringify(pageEntries.map((p) => p.page)),
+            );
+            const panels = pageEntries.flatMap((p) => p.panels.map((entry) => entry.panel));
+            if (panels.length) {
+                files[`${dir}comic_panels.json`] = strToU8(JSON.stringify(panels));
+            }
+            const bubbles = pageEntries.flatMap((p) => p.panels.flatMap((e) => e.bubbles));
+            if (bubbles.length) {
+                files[`${dir}comic_bubbles.json`] = strToU8(JSON.stringify(bubbles));
+            }
+        }
+        const bookEntityIds = new Set(entities.map((e) => e.id));
+        const links = bundle.data.story_bible.links
+            .filter((link) => bookEntityIds.has(link.entity_id))
+            // `entity` is embedded for the UI; the row importers restore
+            // columns, so an unknown nested object would trip them.
+            .map(({entity: _entity, ...row}) => row);
+        if (links.length) {
+            files[`${dir}story_entity_page_links.json`] = strToU8(JSON.stringify(links));
+        }
     }
 
     for (const article of bundle.data.articles) {
