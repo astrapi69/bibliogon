@@ -9,10 +9,24 @@
  * Markdown is rendered to HTML by `marked`, then both Markdown and HTML reuse
  * the shared {@link htmlToTipTapDoc} walker; plain text is split into
  * paragraphs directly.
+ *
+ * Every importer runs the raw file text through {@link sanitizeText} first,
+ * mirroring the backend handler for the same file types
+ * (`app/import_plugins/handlers/markdown.py`, which calls
+ * `sanitize_import_markdown` before deciding between the HTML and Markdown
+ * branch). Without it the same `.md` file imported offline kept the invisible
+ * characters, straight quotes and Word debris that a desktop import strips
+ * (#733).
+ *
+ * One gap remains: the desktop path can switch the fix off through the
+ * plugin's `auto_sanitize_on_import: false` setting, and the storage seam
+ * exposes no plugin config offline, so the client always sanitizes. Filed as
+ * part of #733's remaining half rather than silently diverging.
  */
 
 import { marked } from "marked";
 
+import { sanitizeText } from "../lib/utils/content/sanitizeText";
 import { getStorage } from "../storage";
 import type { TipTapDoc, TipTapNode } from "../medium-import/walker";
 import { htmlToTipTapDoc } from "./htmlToTipTap";
@@ -151,12 +165,34 @@ async function persist(
     };
 }
 
+/** The language the sanitizer picks its quote characters by: the target
+ *  book's when appending, otherwise the same `"de"` a new book is created
+ *  with (both the Dexie `buildBook` and the backend handler default to it). */
+async function resolveLanguage(target: ChapterImportTarget): Promise<string> {
+    if (target.kind === "existing-book") {
+        const book = await getStorage().books.get(target.bookId);
+        return book.language || "de";
+    }
+    return "de";
+}
+
+/** Read the file, sanitize the raw text, derive the chapter, store it. */
+async function importAsChapter(
+    file: File,
+    target: ChapterImportTarget,
+    derive: (text: string, filename: string) => DerivedChapter,
+): Promise<ChapterImportResult> {
+    const language = await resolveLanguage(target);
+    const { sanitized } = sanitizeText(await file.text(), { language });
+    return persist(derive(sanitized, file.name), target);
+}
+
 /** Import a `.md`/`.markdown` file. The first `# H1` becomes the title. */
 export async function importMarkdownAsChapter(
     file: File,
     target: ChapterImportTarget,
 ): Promise<ChapterImportResult> {
-    return persist(deriveFromMarkdown(await file.text(), file.name), target);
+    return importAsChapter(file, target, deriveFromMarkdown);
 }
 
 /** Import a `.txt` file. The filename (without extension) becomes the title. */
@@ -164,7 +200,7 @@ export async function importTextAsChapter(
     file: File,
     target: ChapterImportTarget,
 ): Promise<ChapterImportResult> {
-    return persist(deriveFromText(await file.text(), file.name), target);
+    return importAsChapter(file, target, deriveFromText);
 }
 
 /** Import an `.html`/`.htm` file. `<title>` or the first `<h1>` becomes the title. */
@@ -172,5 +208,5 @@ export async function importHtmlAsChapter(
     file: File,
     target: ChapterImportTarget,
 ): Promise<ChapterImportResult> {
-    return persist(deriveFromHtml(await file.text(), file.name), target);
+    return importAsChapter(file, target, deriveFromHtml);
 }

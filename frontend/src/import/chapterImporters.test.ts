@@ -11,7 +11,11 @@ const booksCreate = vi.fn(async (d: { title: string }) => ({
     id: "book-1",
     title: d.title,
 }));
-const booksGet = vi.fn(async (id: string) => ({ id, title: "Existing Book" }));
+const booksGet = vi.fn(async (id: string) => ({
+    id,
+    title: "Existing Book",
+    language: "de",
+}));
 const chaptersCreate = vi.fn(
     async (
         _bookId: string,
@@ -96,6 +100,67 @@ describe("importHtmlAsChapter", () => {
         expect(booksCreate).toHaveBeenCalledWith({
             title: "Doc Title",
             book_type: "prose",
+        });
+    });
+});
+
+// Every sanitizer expectation below was produced by running the real
+// plugins/bibliogon-plugin-ms-tools sanitizer at the matching language,
+// so a drift in the port fails here as well as in sanitizeText.test.ts.
+describe("sanitizes the raw text first (#733)", () => {
+    it("cleans quotes, ellipsis, dashes and invisible characters on markdown import", async () => {
+        await importMarkdownAsChapter(
+            file('# Titel\n\nEr sagte "hallo"... und\u200b dann -- Schluss.', "draft.md"),
+            { kind: "new-book" },
+        );
+        const body = JSON.stringify(lastContent());
+        expect(body).toContain("Er sagte \u201ehallo\u201c\u2026 und dann \u2013 Schluss.");
+        expect(body).not.toContain("\u200b");
+    });
+
+    it("cleans plain-text imports too", async () => {
+        await importTextAsChapter(file('Roh "zitat"...', "notes.txt"), {
+            kind: "new-book",
+        });
+        expect(lastContent().content[0]).toMatchObject({
+            content: [{ type: "text", text: "Roh \u201ezitat\u201c\u2026" }],
+        });
+    });
+
+    it("fixes text inside HTML markup without touching the markup", async () => {
+        await importHtmlAsChapter(
+            file(
+                '<title>T</title><p class="MsoNormal">Er sagte "hallo"...</p>',
+                "page.html",
+            ),
+            { kind: "new-book" },
+        );
+        expect(JSON.stringify(lastContent())).toContain(
+            "Er sagte \u201ehallo\u201c\u2026",
+        );
+    });
+
+    it("takes the quote style from the book it appends to, not the default", async () => {
+        booksGet.mockResolvedValueOnce({
+            id: "book-9",
+            title: "Existing Book",
+            language: "en",
+        });
+        await importTextAsChapter(file('Roh "zitat"...', "extra.txt"), {
+            kind: "existing-book",
+            bookId: "book-9",
+        });
+        expect(lastContent().content[0]).toMatchObject({
+            content: [{ type: "text", text: "Roh \u201czitat\u201d\u2026" }],
+        });
+    });
+
+    it("leaves already-clean text byte-for-byte alone", async () => {
+        await importTextAsChapter(file("Sauberer Satz.", "clean.txt"), {
+            kind: "new-book",
+        });
+        expect(lastContent().content[0]).toMatchObject({
+            content: [{ type: "text", text: "Sauberer Satz." }],
         });
     });
 });
