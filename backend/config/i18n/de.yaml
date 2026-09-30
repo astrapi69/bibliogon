@@ -825,7 +825,7 @@ ui:
     author: "Autor"
     author_placeholder: "Autorenname oder Pen Name"
     author_select: "Autor wählen..."
-    add_to_authors_db: "„{name}\" zur Autoren-Datenbank hinzufügen"
+    add_to_authors_db: "„{name}“ zur Autoren-Datenbank hinzufügen"
     add_to_authors_error: "Autor konnte nicht zur Datenbank hinzugefügt werden."
     subtitle: "Untertitel"
     subtitle_placeholder: "Optional"
@@ -1840,7 +1840,7 @@ ui:
     author_pen_names_label: "Pen Names"
     author_no_author: "(kein Autor)"
     author_manage_link: "Autoren in Einstellungen verwalten"
-    add_to_authors_db: "„{name}\" zur Autoren-Datenbank hinzufügen"
+    add_to_authors_db: "„{name}“ zur Autoren-Datenbank hinzufügen"
     author_add_failed: "Autor konnte nicht zur Autoren-Datenbank hinzugefügt werden"
     language: Sprache
     series_index: Band-Nummer
@@ -2817,7 +2817,7 @@ ui:
     metadata_subtitle_prefill: "Wird aus Artikel-Untertitel übernommen, wenn leer."
     metadata_author: "Autor"
     metadata_author_required: "Autor ist erforderlich"
-    metadata_add_to_authors_db: "„{name}\" zur Autoren-Datenbank hinzufügen"
+    metadata_add_to_authors_db: "„{name}“ zur Autoren-Datenbank hinzufügen"
     add_to_authors_error: "Autor konnte nicht zur Datenbank hinzugefügt werden."
     metadata_language: "Sprache"
     metadata_series: "Serie"

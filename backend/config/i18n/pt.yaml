@@ -1831,7 +1831,7 @@ ui:
     author_pen_names_label: "Pseudonimos"
     author_no_author: "(sem autor)"
     author_manage_link: "Gerenciar autores em Ajustes"
-    add_to_authors_db: "Adicionar „{name}\" à base de autores"
+    add_to_authors_db: "Adicionar \"{name}\" à base de dados de autores"
     author_add_failed: "Falha ao adicionar autor à base de dados"
     language: Idioma
     series_index: Numero na serie

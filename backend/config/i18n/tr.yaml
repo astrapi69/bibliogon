@@ -1871,7 +1871,7 @@ ui:
     author_pen_names_label: "Takma adlar"
     author_no_author: "(yazar yok)"
     author_manage_link: "Yazarlari Ayarlarda yonet"
-    add_to_authors_db: "„{name}\" yazarini Yazarlar veritabanina ekle"
+    add_to_authors_db: "\"{name}\" adını Yazarlar veritabanına ekle"
     author_add_failed: "Yazar Yazarlar veritabanina eklenemedi"
     language: Dil
     series_index: Seri numarasi
