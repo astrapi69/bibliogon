@@ -93,19 +93,15 @@ Rejected: shadcn/ui (Tailwind-only), MUI (too opinionated), Ant Design (too heav
 
 Three themes (Warm Literary, Cool Modern, Nord) × Light + Dark = 6 variants. Everything goes through CSS variables in `frontend/src/styles/global.css`. New UI elements MUST use CSS variables; hardcoded `#fff` etc. is a documented bug class.
 
-### Plugin UI (manifest-driven)
+### Plugin UI (core frontend, not plugin-shipped)
 
-Plugins declare UI extensions via `get_frontend_manifest()`. The frontend queries `/api/plugins/manifests` at startup and inserts plugin UI into predefined slots:
+**Plugins do not contribute UI.** A plugin ships backend routes, hooks and config; everything the user sees is a core-frontend component rendered conditionally, gated on `book_type` or on the plugin's activation.
 
-| Slot | Location |
-|------|----------|
-| `sidebar_actions` | BookEditor sidebar |
-| `toolbar_buttons` | Editor toolbar |
-| `editor_panels` | Next to the editor |
-| `settings_section` | Settings → Plugins |
-| `export_options` | Export dialog |
+React Router routes are static in `frontend/src/App.tsx`, the editor's TipTap extension array is hardcoded in `Editor.tsx`, and plugin-specific surfaces (the comic editor, the Story-Bible sidebar, the KDP wizard) live in `frontend/src/components/`. Activation is detected through `GET /api/settings/plugins/discovered`; the Settings plugin panel reads its display name, description and settings block from `backend/config/plugins/<name>.yaml`.
 
-For complex plugin UIs, plugins can ship a compiled JS bundle as a Web Component (custom element) inside the ZIP.
+Through v0.60.0 this page described a manifest-driven mechanism (`get_frontend_manifest()` + `GET /api/plugins/manifests`, with `sidebar_actions` / `toolbar_buttons` / `editor_panels` / `settings_section` / `export_options` slots). The backend half worked, but no frontend code ever queried it, so a plugin's declared UI was silently ignored. It was removed in #936 rather than left as documentation to build against.
+
+Adding UI for a plugin therefore means a core-frontend change gated on that plugin's activation.
 
 ### Storage format
 

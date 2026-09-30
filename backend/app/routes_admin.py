@@ -1,5 +1,5 @@
 """Admin / plugin-introspection routes: editor plugin-status, plugin
-manifests / health / errors, hot rediscover, and the debug test reset.
+health / errors, hot rediscover, and the debug test reset.
 
 Extracted from ``app/main.py`` (God-file decomposition, 2026-06-14).
 These routes need the live ``PluginManager`` (and, for the AI branch, the
@@ -149,19 +149,6 @@ async def editor_plugin_status() -> dict[str, dict[str, Any]]:
 
     _plugin_status_cache = result
     _plugin_status_timestamp = now
-    return result
-
-
-@router.get("/plugins/manifests")
-def get_plugin_manifests() -> dict[str, Any]:
-    """Return each active plugin's frontend manifest, keyed by plugin name."""
-    from app.main import manager
-
-    result: dict[str, Any] = {}
-    for plugin in manager.get_active_plugins():
-        manifest = plugin.get_frontend_manifest()
-        if manifest:
-            result[plugin.name] = manifest
     return result
 
 

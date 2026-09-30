@@ -51,9 +51,6 @@ export const pluginInstall = {
         path: string;
       }[]
     >("/plugins/installed"),
-
-  manifests: () =>
-    request<Record<string, Record<string, unknown>>>("/plugins/manifests"),
 };
 
 export const licenses = {

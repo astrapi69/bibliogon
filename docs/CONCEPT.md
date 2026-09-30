@@ -131,7 +131,7 @@ PluginForge builds on pluggy and adds:
 | FastAPI router integration | No | Yes (plugin routes mounted automatically) |
 | DB migration support | No | Yes (Alembic per plugin) |
 | Plugin dependencies | No | Yes (declarative in YAML) |
-| Frontend plugin loading | No | Yes (manifest for UI components) |
+| Frontend plugin loading | No | Yes (`get_frontend_manifest`), offered by PluginForge, **not used by Bibliogon**; see 5.5 |
 | API versioning | No | Yes (hook specs versioned) |
 
 ### 3.2 Configuration system
@@ -277,7 +277,6 @@ class BasePlugin(ABC):
     def activate(self) -> None: ...
     def deactivate(self) -> None: ...
     def get_routes(self) -> list: ...           # FastAPI router
-    def get_frontend_manifest(self) -> dict | None: ...  # UI manifest
     def health(self) -> dict[str, Any]: ...     # health check
     def get_migrations_dir(self) -> str | None: ...      # Alembic
 ```
@@ -711,48 +710,39 @@ settings:
 - `DELETE /api/plugins/install/{name}` - uninstall a plugin
 - `GET /api/plugins/installed` - list installed plugins
 
-### 5.5 Plugin UI strategy (manifest-driven)
+### 5.5 Plugin UI strategy (core frontend, not plugin-shipped)
 
-Plugins can declare UI extensions through the `get_frontend_manifest()` method. The frontend queries `GET /api/plugins/manifests` and renders predefined UI slots.
+**Plugins do not contribute UI.** A plugin ships backend routes, hooks and
+config; everything the user sees is a core-frontend component rendered
+conditionally, gated on `book_type` or on the plugin's activation.
 
-**Predefined UI slots:**
+Concretely: React Router routes are static in `frontend/src/App.tsx`, the
+editor's TipTap extension array is hardcoded in `Editor.tsx`, and
+plugin-specific surfaces (`ComicBookEditor.tsx`, the Story-Bible sidebar, the
+KDP wizard) live in `frontend/src/components/`. Activation is detected through
+`GET /api/settings/plugins/discovered`; the Settings plugin panel reads its
+display name, description and settings block from
+`backend/config/plugins/<name>.yaml`.
 
-| Slot | Description | Location in the app |
-|------|-------------|---------------------|
-| `sidebar_actions` | Buttons in the chapter sidebar | BookEditor sidebar |
-| `toolbar_buttons` | Buttons in the editor toolbar | Editor toolbar |
-| `editor_panels` | Panels next to the editor | BookEditor |
-| `settings_section` | Additional settings | Settings > Plugins |
-| `export_options` | Options in the export dialog | ExportDialog |
+**A manifest-driven mechanism was specified here and never built.** Through
+v0.60.0 this section described `get_frontend_manifest()` +
+`GET /api/plugins/manifests` with five predefined slots. The backend half
+worked; no frontend code ever queried it. Twelve plugins declared entries, in
+up to eight languages, that no user could see, and a third-party plugin
+following this documentation would have found its manifest silently ignored.
+Removed in #936; the endpoint, the twelve implementations and the client method
+are gone.
 
-**Manifest example (export plugin):**
+**Adding UI for a plugin** therefore means a core-frontend change gated on that
+plugin's activation.
 
-```python
-def get_frontend_manifest(self) -> dict | None:
-    return {
-        "sidebar_actions": [
-            {
-                "id": "export_epub",
-                "label": {"de": "EPUB exportieren", "en": "Export EPUB"},
-                "icon": "download",
-                "action": "/api/books/{book_id}/export/epub",
-            }
-        ],
-        "export_options": [
-            {
-                "id": "toc_depth",
-                "type": "select",
-                "label": {"de": "Inhaltsverzeichnis-Tiefe", "en": "TOC Depth"},
-                "options": [1, 2, 3, 4],
-                "default": 2,
-            }
-        ],
-    }
-```
-
-**Strategy for complex plugin UIs:**
-
-For plugins that go beyond simple manifest declarations (e.g. interactive preview, complex forms), Web Components as custom elements can be delivered. The plugin ZIP then contains a compiled JS bundle that is loaded through a defined slot.
+**Reviving plugin-shipped UI** is a design decision, not a repair. Two
+questions have to be answered first: how a declaration names the behaviour it
+triggers (an id the core already knows is not extensibility), and whether
+plugins ship a compiled JS bundle, with Web Components as custom elements
+loaded from the plugin ZIP being the shape previously sketched. Nothing in the
+current plugin set needs it: all of them are first-party and already have
+their UI.
 
 ## 6. API versioning
 

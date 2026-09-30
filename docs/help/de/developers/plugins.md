@@ -94,10 +94,6 @@ class MeinPlugin(BasePlugin):
         """FastAPI-Router zurückgeben."""
         from .routes import router
         return [router]
-
-    def get_frontend_manifest(self) -> dict[str, Any] | None:
-        """UI-Erweiterungen deklarieren. None wenn kein UI."""
-        return None
 ```
 
 ### routes.py
@@ -192,36 +188,19 @@ Jede Einstellung in der YAML muss entweder:
 
 Versteckte Einstellungen, die Nutzerverhalten beeinflussen, sind nicht erlaubt.
 
-## Frontend-Manifest
+## Plugin-UI
 
-Plugins deklarieren UI-Erweiterungen über `get_frontend_manifest()`. Das Frontend fragt `/api/plugins/manifests` ab, um alle Erweiterungen zu entdecken.
+**Plugins liefern keine UI.** Ein Plugin bringt Backend-Routen, Hooks und Konfiguration mit; alles Sichtbare ist eine Core-Frontend-Komponente, die bedingt gerendert wird - abhängig vom `book_type` oder davon, ob das Plugin aktiv ist.
 
-### Verfügbare UI-Slots
+React-Router-Routen stehen statisch in `frontend/src/App.tsx`, das TipTap-Extension-Array des Editors ist in `Editor.tsx` fest verdrahtet, und plugin-spezifische Oberflächen liegen in `frontend/src/components/`. Die Aktivierung wird über `GET /api/settings/plugins/discovered` erkannt; das Plugin-Panel in den Einstellungen liest Anzeigename, Beschreibung und Settings-Block aus `backend/config/plugins/<name>.yaml`.
 
-| Slot | Position | Anwendungsfall |
-|------|----------|---------------|
-| `pages` | App-Navigation | Vollständige Plugin-Seite |
-| `sidebar_actions` | BookEditor-Seitenleiste | Aktionsbuttons |
-| `toolbar_buttons` | Editor-Toolbar | Formatierungstools |
-| `editor_panels` | Neben dem Editor | Seitenpanels |
-| `settings_section` | Einstellungen > Plugins | Plugin-Konfiguration |
-| `export_options` | Export-Dialog | Formatspezifische Optionen |
+UI für dein Plugin bedeutet also eine Core-Frontend-Änderung, die an der Aktivierung des Plugins hängt - es gibt keine Deklaration, die irgendwo einen Button platziert.
 
-### Beispiel: Seite hinzufügen
+### Warum es kein Manifest mehr gibt
 
-```python
-def get_frontend_manifest(self) -> dict[str, Any] | None:
-    return {
-        "pages": [
-            {
-                "id": "meinplugin",
-                "path": "/meinplugin",
-                "label": {"de": "Mein Plugin", "en": "My Plugin"},
-                "icon": "puzzle",  # lucide-react Icon-Name
-            },
-        ],
-    }
-```
+Bis v0.60.0 dokumentierte diese Seite `get_frontend_manifest()` + `GET /api/plugins/manifests` mit sechs UI-Slots (`pages`, `sidebar_actions`, `toolbar_buttons`, `editor_panels`, `settings_section`, `export_options`). Die Backend-Hälfte funktionierte; **kein Frontend-Code hat sie je abgefragt**, jedes geschriebene Manifest wurde also still ignoriert. Zwölf First-Party-Plugins trugen Deklarationen, die niemand sehen konnte. In #936 entfernt, statt sie als Spezifikation stehen zu lassen, gegen die jemand entwickelt.
+
+Plugin-gelieferte UI wiederzubeleben ist eine bewusste Design-Entscheidung - wie eine Deklaration das ausgelöste Verhalten benennt, und ob Plugins ein kompiliertes JS-Bundle ausliefern (Web Components als Custom Elements). Wer sie braucht, öffnet ein Issue, statt ein Manifest zu schreiben.
 
 ## ZIP-Distribution
 

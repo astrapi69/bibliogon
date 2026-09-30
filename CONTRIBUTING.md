@@ -98,8 +98,7 @@ Steps:
    `[tool.poetry.plugins."bibliogon.plugins"]` entry point.
 3. Implement `plugin.py` extending `BasePlugin` with `name`,
    `version`, `api_version = "1"`, `license_tier = "core"`.
-   Override `activate()`, `get_routes()`,
-   `get_frontend_manifest()` as needed.
+   Override `activate()` and `get_routes()` as needed.
 4. Add a path-dep in `backend/pyproject.toml` mirroring the
    existing entries.
 5. Add the plugin slug to `backend/config/app.yaml.example`

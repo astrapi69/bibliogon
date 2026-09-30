@@ -4,7 +4,6 @@ These pin the plugin's contract at the Session 1 boundary:
 - Class attributes (name, version, api_version, license_tier, depends_on)
 - ``init`` + ``activate`` lifecycle without configuration crashes
 - ``get_routes`` returns the single info router carrying ``/story-bible/info``
-- ``get_frontend_manifest`` returns a stable minimal manifest
 - entry-point registration shape
 
 Session 2 extends these with entity-CRUD route-presence assertions;
@@ -36,7 +35,7 @@ class TestStoryBiblePluginContract:
 
 
 class TestStoryBiblePluginLifecycle:
-    """Plugin lifecycle: init -> activate -> get_routes / manifest."""
+    """Plugin lifecycle: init -> activate -> get_routes."""
 
     def _make_plugin(self, plugin_config: dict | None = None) -> StoryBiblePlugin:
         plugin = StoryBiblePlugin()
@@ -58,17 +57,6 @@ class TestStoryBiblePluginLifecycle:
         assert len(routers) == 1
         endpoint_paths = [getattr(r, "path", "") for r in routers[0].routes]
         assert "/story-bible/info" in endpoint_paths
-
-    def test_get_frontend_manifest_is_minimal(self) -> None:
-        plugin = self._make_plugin({"settings": {}})
-        manifest = plugin.get_frontend_manifest()
-        assert manifest is not None
-        assert manifest == {"settings": {}}
-
-    def test_get_frontend_manifest_exposes_settings(self) -> None:
-        plugin = self._make_plugin({"settings": {"default_sort": "created"}})
-        manifest = plugin.get_frontend_manifest()
-        assert manifest == {"settings": {"default_sort": "created"}}
 
 
 class TestStoryBiblePluginEntryPoint:
