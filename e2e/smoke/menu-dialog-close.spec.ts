@@ -7,15 +7,19 @@
  * Radix's default close-on-select. Fix (commit 02fc66b) removed
  * the preventDefault from every menu-item that triggers a dialog.
  *
- * Two surfaces pinned here:
+ * Surfaces pinned here:
  *  1. ArticleCard's "Endgültig löschen" → AppDialog confirm.
  *  2. BookCard's "Endgültig löschen" → AppDialog confirm.
+ *  3. ArticleRow (list view) — both menu items.
  *
- * The other affected surfaces (BookListView, ArticleEditor
- * reclassify, Toolbar copy items, Dashboard theme toggle) follow
- * the same Radix pattern; pinning the two card variants is the
- * minimum to catch a regression in the family. If a future
- * surface diverges, add a sibling test here.
+ * (3) was added by #923. The original two-card pin rested on the
+ * assumption that "pinning the two card variants is the minimum to
+ * catch a regression in the family", and that assumption failed:
+ * ArticleRow kept the preventDefault through the whole Bug-6 sweep
+ * and through every green run of this spec, because the list view
+ * uses its own testid namespace (`article-list-row-menu-*`) that no
+ * spec touched. A view-mode-split surface is not covered by its
+ * sibling - it needs its own case.
  *
  * The Vitest layer's Radix DropdownMenu + happy-dom limitation
  * (per the established lessons-learned rule) is why this lives
@@ -74,6 +78,40 @@ test.describe("Bug 6: menu auto-closes before dialog opens", () => {
             .getByRole("button", {name: /Abbrechen|Cancel/i})
             .click()
             .catch(() => page.keyboard.press("Escape"));
+    });
+
+    test("ArticleRow list-view kebab: both items close the menu before the dialog", async ({
+        page,
+    }) => {
+        const article = await postJson<{id: string}>("/articles", {
+            title: "List-row menu-close regression target",
+            author: "Asterios",
+        });
+
+        await page.goto("/articles");
+        await page.getByTestId("view-toggle-list").click();
+
+        for (const action of ["delete", "delete-permanent"] as const) {
+            const kebab = page.getByTestId(`article-list-row-menu-${article.id}`);
+            await expect(kebab).toBeVisible({timeout: 5000});
+            await kebab.click();
+
+            const item = page.getByTestId(`article-list-row-menu-${action}-${article.id}`);
+            await expect(item).toBeVisible({timeout: 3000});
+            await item.click();
+
+            const dialog = page.getByRole("dialog");
+            await expect(dialog).toBeVisible({timeout: 3000});
+            // The Bug-6 assertion: the menu content is gone by the time
+            // the dialog is up, rather than lingering behind it.
+            await expect(item).not.toBeVisible({timeout: 3000});
+
+            await dialog
+                .getByRole("button", {name: /Abbrechen|Cancel/i})
+                .click()
+                .catch(() => page.keyboard.press("Escape"));
+            await expect(dialog).not.toBeVisible({timeout: 3000});
+        }
     });
 
     test("BookCard kebab: permanent-delete closes menu before AppDialog", async ({page}) => {
