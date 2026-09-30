@@ -209,7 +209,7 @@ describe("bgb filenames", () => {
     });
 
     it("writes pages, panels, bubbles and entity links into the archive (#931)", async () => {
-        const blob = await exportBgbBackup();
+        const blob = await exportBgbBackup("2026-09-30T12:00:00Z");
         const entries = unzipSync(new Uint8Array(await blob.arrayBuffer()));
 
         // The filenames are the ones the importers already read; the

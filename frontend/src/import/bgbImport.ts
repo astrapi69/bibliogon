@@ -32,6 +32,7 @@ import type {
     ComicBubbleOut,
     ComicPanelOut,
     Page,
+    PageCreate,
     StoryEntityLinkOut,
     Article,
     Asset,
@@ -421,7 +422,7 @@ async function importPages(
             image_asset_id: page.image_asset_id,
             layout_config: page.layout_config,
             notes: page.notes,
-            story_beat: page.story_beat,
+            story_beat: page.story_beat as PageCreate["story_beat"],
             mood_color: page.mood_color,
             act_group: page.act_group,
         });
