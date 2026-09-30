@@ -380,6 +380,39 @@ test.describe("Feature Screenshots", () => {
             await page.screenshot({path: `${OUT}/book-editor/story-bible.png`});
         });
 
+        test("story bible auto-detect", async ({page}) => {
+            const book = await createBook("Der Nordhafen", "Asterios Raptis");
+            await createChapter(
+                book.id,
+                "Kapitel 1: Ankunft",
+                PROSE(
+                    "Mira stand am Nordhafen und wartete. Der Nordhafen schwieg, " +
+                        "doch Mira hörte das Tauwerk gegen die Masten schlagen.",
+                ),
+            );
+            await page.goto(`/book/${book.id}`);
+            await page.getByTestId("story-bible-toggle").click().catch(() => {});
+            await page
+                .getByTestId("story-bible-sidebar")
+                .waitFor({state: "visible"})
+                .catch(() => {});
+            for (const [type, name] of [
+                ["character", "Mira"],
+                ["setting", "Nordhafen"],
+            ] as const) {
+                await page.getByTestId(`story-bible-add-${type}`).click().catch(() => {});
+                await page.getByTestId(`story-bible-add-input-${type}`).fill(name).catch(() => {});
+                await page.getByTestId(`story-bible-add-save-${type}`).click().catch(() => {});
+            }
+            await page.getByTestId("story-bible-autodetect").click().catch(() => {});
+            await page
+                .getByTestId("story-bible-autodetect-panel")
+                .waitFor({state: "visible"})
+                .catch(() => {});
+            await page.waitForTimeout(400);
+            await page.screenshot({path: `${OUT}/book-editor/story-bible-auto-detect.png`});
+        });
+
         test("context menu", async ({page}) => {
             const book = await seedProseBook("Schreiben am Meer");
             await page.goto(`/book/${book.id}`);

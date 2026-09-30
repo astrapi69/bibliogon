@@ -935,11 +935,101 @@ describe("DexieStorage — story bible", () => {
         expect(await dexieStorage.storyBible.pageEntities("p1")).toEqual([]);
         expect(await dexieStorage.storyBible.getRelationships("b1", villain.id)).toEqual([]);
 
-        // Text-analysis methods are empty offline (not an error).
+        // Text analysis has nothing to work with here - no chapters, no
+        // pages. Its own round-trip is the next case.
         expect(await dexieStorage.storyBible.autoDetect("b1")).toEqual([]);
         expect(await dexieStorage.storyBible.continuityCheck("b1")).toEqual([]);
         // getInfo reports availability so the UI un-gates.
         expect((await dexieStorage.storyBible.getInfo()).plugin).toBe("story-bible");
+    });
+
+    it("auto-detect scans chapters + pages and skips already-linked pairs", async () => {
+        const book = await dexieStorage.books.create({ title: "Roman", author: "A" });
+        const max = await dexieStorage.storyBible.createEntity(book.id, {
+            entity_type: "character",
+            name: "Max",
+        });
+        await dexieStorage.storyBible.createEntity(book.id, {
+            entity_type: "setting",
+            name: "Öko",
+        });
+        // Two-character names stay below the minimum length.
+        await dexieStorage.storyBible.createEntity(book.id, {
+            entity_type: "character",
+            name: "Al",
+        });
+        const chapter = await dexieStorage.chapters.create(book.id, { title: "Kapitel 1" });
+        await dexieStorage.chapters.update(book.id, chapter.id, {
+            version: chapter.version,
+            content: "<p>Max ging fort. Al blieb. Ökologie wuchs.</p>",
+        });
+        const page = await dexieStorage.pages.create(book.id, { layout: "text_only" });
+        await dexieStorage.pages.update(book.id, page.id, {
+            text_content: "Max und Öko am Ufer.",
+        });
+
+        const proposals = await dexieStorage.storyBible.autoDetect(book.id);
+        expect(proposals).toEqual([
+            {
+                entity_id: max.id,
+                entity_name: "Max",
+                entity_type: "character",
+                page_id: null,
+                chapter_id: chapter.id,
+                ref_label: "Kapitel 1",
+                occurrences: 1,
+            },
+            {
+                entity_id: max.id,
+                entity_name: "Max",
+                entity_type: "character",
+                page_id: page.id,
+                chapter_id: null,
+                ref_label: "Page 0",
+                occurrences: 1,
+            },
+            expect.objectContaining({ entity_name: "Öko", page_id: page.id, occurrences: 1 }),
+        ]);
+
+        // Linking a proposal removes it from the next run.
+        await dexieStorage.storyBible.createLink({
+            entity_id: max.id,
+            chapter_id: chapter.id,
+        });
+        expect(
+            (await dexieStorage.storyBible.autoDetect(book.id)).map((p) => p.chapter_id),
+        ).toEqual([null, null]);
+    });
+
+    it("continuity-check flags empty pages, gaps and disappearances", async () => {
+        const book = await dexieStorage.books.create({ title: "Bilderbuch", author: "A" });
+        const hero = await dexieStorage.storyBible.createEntity(book.id, {
+            entity_type: "character",
+            name: "Held",
+        });
+        const pages = [];
+        for (let i = 0; i < 8; i += 1) {
+            pages.push(await dexieStorage.pages.create(book.id, { layout: "text_only" }));
+        }
+        await dexieStorage.storyBible.createLink({
+            entity_id: hero.id,
+            page_id: pages[0].id,
+        });
+
+        const warnings = await dexieStorage.storyBible.continuityCheck(book.id);
+        expect(warnings.filter((w) => w.code === "empty_page")).toHaveLength(7);
+        expect(warnings.filter((w) => w.code === "entity_disappears")).toEqual([
+            {
+                code: "entity_disappears",
+                page_id: pages[0].id,
+                page_position: 0,
+                entity_id: hero.id,
+                entity_name: "Held",
+            },
+        ]);
+        // A book without pages (prose) yields nothing.
+        const prose = await dexieStorage.books.create({ title: "Prosa", author: "A" });
+        expect(await dexieStorage.storyBible.continuityCheck(prose.id)).toEqual([]);
     });
 });
 

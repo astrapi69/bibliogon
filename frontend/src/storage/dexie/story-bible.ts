@@ -1,14 +1,21 @@
 /**
  * Story Bible namespace for DexieStorage. Entity + link CRUD over the
  * offline tables; the entity-type registry is seeded; the text-analysis
- * methods return empty offline and exportBible is generated client-side.
+ * methods run the ported rules client-side and exportBible is generated
+ * client-side.
  */
 
 import type {
+    Chapter,
+    Page,
     StoryEntityLinkOut,
     StoryEntityOut,
     StoryEntityRelationshipResolved,
 } from "../../api/client";
+import {
+    computeContinuityWarnings,
+    detectUnlinkedMentions,
+} from "../../lib/utils/content/storyBibleAnalysis";
 import type { IStorageService } from "../types";
 import {
     buildStoryEntity,
@@ -90,9 +97,9 @@ export const storyBible: IStorageService["storyBible"] = {
         if (!entity?.relationships?.length) return [];
         const resolved: StoryEntityRelationshipResolved[] = [];
         for (const rel of entity.relationships) {
-            const target = (await offlineDb.storyEntities.get(
-                rel.target_entity_id,
-            )) as unknown as StoryEntityOut | undefined;
+            const target = (await offlineDb.storyEntities.get(rel.target_entity_id)) as unknown as
+                | StoryEntityOut
+                | undefined;
             if (!target) continue; // drop stale (deleted-target) relationships
             resolved.push({
                 relationship_type: rel.relationship_type,
@@ -103,10 +110,58 @@ export const storyBible: IStorageService["storyBible"] = {
         return resolved;
     },
 
-    // Text analysis needs the backend; offline it yields nothing rather than
-    // erroring, so the buttons degrade to "no proposals" / "no warnings".
-    autoDetect: async () => [],
-    continuityCheck: async () => [],
+    autoDetect: async (bookId) => {
+        const entities = (
+            (await offlineDb.storyEntities
+                .where("book_id")
+                .equals(bookId)
+                .toArray()) as unknown as StoryEntityOut[]
+        ).sort((a, b) => a.position - b.position);
+        if (!entities.length) return [];
+        const entityIds = new Set(entities.map((entity) => entity.id));
+        const chapters = (
+            (await offlineDb.chapters
+                .where("book_id")
+                .equals(bookId)
+                .toArray()) as unknown as Chapter[]
+        ).sort((a, b) => a.position - b.position);
+        const pages = (
+            (await offlineDb.pages.where("book_id").equals(bookId).toArray()) as unknown as Page[]
+        ).sort((a, b) => a.position - b.position);
+        // No entity_id index on the link table -> filter scan, the same
+        // shape deleteEntity / appearances already use.
+        const links = (
+            (await offlineDb.storyEntityPageLinks.toArray()) as unknown as StoryEntityLinkOut[]
+        ).filter((link) => entityIds.has(link.entity_id));
+        return detectUnlinkedMentions({ entities, chapters, pages, links });
+    },
+
+    continuityCheck: async (bookId) => {
+        const pages = (
+            (await offlineDb.pages.where("book_id").equals(bookId).toArray()) as unknown as Page[]
+        ).sort((a, b) => a.position - b.position);
+        if (!pages.length) return [];
+        const pageIds = new Set(pages.map((page) => page.id));
+        const links = (
+            (await offlineDb.storyEntityPageLinks.toArray()) as unknown as StoryEntityLinkOut[]
+        ).filter((link) => link.page_id && pageIds.has(link.page_id));
+        const names = new Map(
+            (
+                (await offlineDb.storyEntities
+                    .where("book_id")
+                    .equals(bookId)
+                    .toArray()) as unknown as StoryEntityOut[]
+            ).map((entity) => [entity.id, entity.name]),
+        );
+        return computeContinuityWarnings(
+            pages.map((page) => ({ id: page.id, position: page.position })),
+            links.map((link) => ({
+                page_id: link.page_id as string,
+                entity_id: link.entity_id,
+                entity_name: names.get(link.entity_id) ?? "",
+            })),
+        );
+    },
 
     appearances: async (entityId) => {
         const links = (await offlineDb.storyEntityPageLinks
