@@ -315,3 +315,60 @@ class TestSanitizeIsHtmlAware:
         not be affected by the HTML-detection branch."""
         result = self._sanitized('Er sagte "Hallo" zu ihr.')
         assert "„" in result and "“" in result
+
+
+# --- Uppercase tags (#934) ---
+#
+# Word emits uppercase tags, which is the input fix_html_artifacts exists
+# for, and it did nothing against them: its rules were case-sensitive. The
+# walker made it worse than a no-op - it re-emitted start tags verbatim but
+# rebuilt end tags from HTMLParser's lower-cased name, so `<SPAN>a</SPAN>`
+# became `<SPAN>a</span>`, the span rule then matched the closing half only,
+# and unbalanced markup was written back into the chapter.
+
+
+class TestUppercaseTags:
+    def test_uppercase_div_is_stripped_at_both_ends(self):
+        fixed, count = fix_html_artifacts("<DIV>Uppercase</DIV>")
+        assert fixed == "Uppercase"
+        assert count == 2
+
+    def test_mixed_case_pair_is_stripped(self):
+        fixed, _ = fix_html_artifacts("<DIV>Mixed</div>")
+        assert fixed == "Mixed"
+
+    def test_uppercase_empty_tag_is_removed(self):
+        fixed, count = fix_html_artifacts("Hallo <SPAN></SPAN>Welt")
+        assert fixed == "Hallo Welt"
+        assert count >= 1
+
+    def test_uppercase_style_and_class_attributes_are_stripped(self):
+        fixed, _ = fix_html_artifacts('<P STYLE="color:red" CLASS="MsoNormal">Text</P>')
+        assert "STYLE=" not in fixed
+        assert "CLASS=" not in fixed
+        assert "<P>Text</P>" == fixed
+
+    def test_uppercase_word_namespace_tags_are_stripped(self):
+        fixed, _ = fix_html_artifacts("Hallo <O:P></O:P> Welt")
+        assert "O:P" not in fixed
+
+    def test_sanitize_leaves_no_unbalanced_tag_behind(self):
+        """The regression that made this worse than a no-op: one half of a
+        tag pair stripped, the other half written back into the chapter."""
+        result = sanitize('<SPAN style="x">a</SPAN>')["sanitized"]
+        assert "<SPAN>" not in result
+        assert "</SPAN>" not in result
+        assert result == "a"
+
+    def test_sanitize_preserves_end_tag_casing_of_tags_it_keeps(self):
+        """The walker's own docstring promises every tag comes back
+        byte-for-byte; it lower-cased end tags, which is what let the
+        case-sensitive rules half-match."""
+        result = sanitize("<P>Ein Satz.</P>")["sanitized"]
+        assert result == "<P>Ein Satz.</P>"
+
+    def test_uppercase_markup_stays_html_aware(self):
+        """Uppercase attributes must not be touched by the text fixes."""
+        result = sanitize('<P TITLE="a \'b\'">Er sagte "hallo"...</P>', "de")["sanitized"]
+        assert "TITLE=\"a 'b'\"" in result
+        assert "Er sagte „hallo“…" in result

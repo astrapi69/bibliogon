@@ -152,26 +152,34 @@ def fix_html_artifacts(text: str) -> tuple[str, int]:
     Strips empty tags, style attributes, Word-specific XML comments,
     and common Word metadata tags.
 
+    Every rule is case-insensitive (#934). Word emits UPPERCASE tags and
+    attributes, which is the input this function exists for, and the
+    case-sensitive rules simply skipped them. ``IGNORECASE`` also makes the
+    empty-tag backreference match across cases, so ``<DIV>x</div>`` is
+    recognised as a pair.
+
     Returns (fixed_text, number_of_replacements).
     """
     count = 0
 
     # Empty HTML tags: <span></span>, <div></div>, <p></p>, etc.
-    fixed, n = re.subn(r"<(\w+)(\s[^>]*)?>(\s*)</\1>", r"\3", text)
+    fixed, n = re.subn(r"<(\w+)(\s[^>]*)?>(\s*)</\1>", r"\3", text, flags=re.IGNORECASE)
     count += n
 
     # Style attributes inside tags
-    fixed, n = re.subn(r'\s+style="[^"]*"', "", fixed)
+    fixed, n = re.subn(r'\s+style="[^"]*"', "", fixed, flags=re.IGNORECASE)
     count += n
-    fixed, n = re.subn(r"\s+style='[^']*'", "", fixed)
+    fixed, n = re.subn(r"\s+style='[^']*'", "", fixed, flags=re.IGNORECASE)
     count += n
 
     # Class attributes from Word
-    fixed, n = re.subn(r'\s+class="[^"]*"', "", fixed)
+    fixed, n = re.subn(r'\s+class="[^"]*"', "", fixed, flags=re.IGNORECASE)
     count += n
 
     # Word-specific XML comments: <!--[if ...]> ... <![endif]-->
-    fixed, n = re.subn(r"<!--\[if[^>]*>.*?<!\[endif\]-->", "", fixed, flags=re.DOTALL)
+    fixed, n = re.subn(
+        r"<!--\[if[^>]*>.*?<!\[endif\]-->", "", fixed, flags=re.DOTALL | re.IGNORECASE
+    )
     count += n
 
     # Generic HTML comments
@@ -179,21 +187,24 @@ def fix_html_artifacts(text: str) -> tuple[str, int]:
     count += n
 
     # Word namespace tags: <o:p>, </o:p>, <w:...>, etc.
-    fixed, n = re.subn(r"</?[owm]:[^>]*>", "", fixed)
+    fixed, n = re.subn(r"</?[owm]:[^>]*>", "", fixed, flags=re.IGNORECASE)
     count += n
 
     # <span> and <div> tags themselves (after emptying their attributes)
-    fixed, n = re.subn(r"</?span[^>]*>", "", fixed)
+    fixed, n = re.subn(r"</?span[^>]*>", "", fixed, flags=re.IGNORECASE)
     count += n
-    fixed, n = re.subn(r"</?div[^>]*>", "", fixed)
+    fixed, n = re.subn(r"</?div[^>]*>", "", fixed, flags=re.IGNORECASE)
     count += n
 
     return fixed, count
 
 
+_END_TAG_RE = re.compile(r"</\s*([a-zA-Z][^\s>]*)[^>]*>")
+
+
 class _TextNodeTransformer(HTMLParser):
     """Applies ``transform`` to every text node, re-emitting every tag
-    byte-for-byte unchanged (#805).
+    byte-for-byte unchanged (#805) - including its casing (#934).
 
     fix_quotes and fix_whitespace originally walked the raw content
     string with no concept of markup, so an imported chapter's own
@@ -213,11 +224,12 @@ class _TextNodeTransformer(HTMLParser):
     quotes essentially always close within the same text run.
     """
 
-    def __init__(self, transform):
+    def __init__(self, transform, source: str = ""):
         super().__init__(convert_charrefs=False)
         self._transform = transform
         self.chunks: list[str] = []
         self.count = 0
+        self._end_tags = [(m.group(1).lower(), m.group(0)) for m in _END_TAG_RE.finditer(source)]
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         self.chunks.append(self.get_starttag_text() or "")
@@ -226,6 +238,26 @@ class _TextNodeTransformer(HTMLParser):
         self.chunks.append(self.get_starttag_text() or "")
 
     def handle_endtag(self, tag: str) -> None:
+        """Re-emit the end tag exactly as the source wrote it.
+
+        ``HTMLParser`` hands ``tag`` down-cased and offers no
+        ``get_endtag_text()`` counterpart to ``get_starttag_text()``, so
+        rebuilding from ``tag`` silently lower-cased every end tag - which
+        broke this class's own byte-for-byte promise and, combined with the
+        then case-sensitive ``fix_html_artifacts`` rules, turned
+        ``<SPAN>a</SPAN>`` into the unbalanced ``<SPAN>a`` (#934).
+
+        The source's end tags are collected up front, in document order.
+        Matching by name rather than popping blindly keeps the list aligned
+        when the parser synthesises an end tag the source never wrote; if
+        nothing matches, the rebuilt form is still a correct tag, just
+        lower-cased.
+        """
+        for index, (name, raw) in enumerate(self._end_tags):
+            if name == tag:
+                del self._end_tags[: index + 1]
+                self.chunks.append(raw)
+                return
         self.chunks.append(f"</{tag}>")
 
     def handle_data(self, data: str) -> None:
@@ -276,7 +308,7 @@ def _apply_html_aware(text: str, transform) -> tuple[str, int]:
     """
     if not _looks_like_html(text):
         return transform(text)
-    parser = _TextNodeTransformer(transform)
+    parser = _TextNodeTransformer(transform, text)
     parser.feed(text)
     parser.close()
     return "".join(parser.chunks), parser.count
