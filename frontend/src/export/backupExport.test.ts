@@ -21,7 +21,25 @@ const fakeStorage = {
         get: vi.fn(async (id: string) => ({id, title: "Art", content_json: '{"a":1}'})),
     },
     writingSessions: {list: vi.fn(async () => [{id: "ws1", words: 100}])},
-    storyBible: {listEntities: vi.fn(async () => [{id: "e1", name: "Hero"}])},
+    storyBible: {
+        listEntities: vi.fn(async () => [{id: "e1", name: "Hero"}]),
+        appearances: vi.fn(async (entityId: string) => [
+            {id: "lnk1", entity_id: entityId, page_id: "p1", chapter_id: null, role: "lead"},
+        ]),
+    },
+    pages: {
+        list: vi.fn(async (bookId: string) => [
+            {id: "p1", book_id: bookId, position: 0, layout: "text_only", text_content: "Seite"},
+        ]),
+    },
+    comics: {
+        listPanels: vi.fn(async (_bookId: string, pageId: string) => [
+            {id: "pan1", page_id: pageId, position: 0, bounds: {x: 0}},
+        ]),
+        listBubbles: vi.fn(async (_bookId: string, panelId: string) => [
+            {id: "bub1", panel_id: panelId, position: 0, bubble_type: "speech", anchor: {x: 1}},
+        ]),
+    },
     chapterLabels: {list: vi.fn(async () => [{id: "l1", name: "Draft"}])},
     aplusDocuments: {
         listForBook: vi.fn(async (bookId: string) => [

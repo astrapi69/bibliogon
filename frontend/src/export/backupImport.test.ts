@@ -17,6 +17,14 @@ const createEntity = vi.fn(async (_bookId: string, _d: {name: string}) => ({id: 
 const labelsCreate = vi.fn(async (_bookId: string, _d: {name: string; color: string}) => ({
     id: "nl",
 }));
+const pagesCreate = vi.fn(async (_bookId: string, _d: Record<string, unknown>) => ({id: "np"}));
+const createPanel = vi.fn(
+    async (_bookId: string, _pageId: string, _d: Record<string, unknown>) => ({id: "npan"}),
+);
+const createBubble = vi.fn(
+    async (_bookId: string, _panelId: string, _d: Record<string, unknown>) => ({id: "nbub"}),
+);
+const createLink = vi.fn(async (_d: Record<string, unknown>) => ({id: "nlink"}));
 
 const aplusSave = vi.fn(async (bookId: string, language: string, doc: Record<string, unknown>) => ({
     ...doc,
@@ -31,8 +39,10 @@ vi.mock("../storage", () => ({
         authors: {list: authorsList, create: authorsCreate},
         books: {list: booksList, create: booksCreate},
         chapters: {create: chaptersCreate},
+        pages: {create: pagesCreate},
+        comics: {createPanel, createBubble},
         articles: {list: articlesList, create: articlesCreate, update: articlesUpdate},
-        storyBible: {createEntity},
+        storyBible: {createEntity, createLink},
         chapterLabels: {create: labelsCreate},
         aplusDocuments: {save: aplusSave},
     }),
@@ -83,6 +93,10 @@ beforeEach(() => {
         articlesList,
         articlesCreate,
         articlesUpdate,
+        pagesCreate,
+        createPanel,
+        createBubble,
+        createLink,
         createEntity,
         labelsCreate,
         aplusSave,
@@ -184,5 +198,140 @@ describe("importFullBackup", () => {
         expect(booksCreate).not.toHaveBeenCalled();
         expect(result.skipped.books).toBe(1);
         expect(result.imported.books).toBe(0);
+    });
+
+    it("restores pages with their comic panels and bubbles under the new ids (#931)", async () => {
+        const payload = bundle({
+            books: [
+                {
+                    book: {id: "b1", title: "Comic", author: "A", language: "de"},
+                    chapters: [],
+                    pages: [
+                        {
+                            page: {
+                                id: "p1",
+                                book_id: "b1",
+                                position: 0,
+                                layout: "comic_panel_grid",
+                                text_content: "Seitentext",
+                                layout_config: {grid: "2x2"},
+                                notes: "Notiz",
+                                story_beat: "setup",
+                                mood_color: "#abc",
+                                act_group: "Akt 1",
+                            },
+                            panels: [
+                                {
+                                    panel: {id: "pan1", bounds: {x: 0}, panel_config: {z: 1}},
+                                    bubbles: [
+                                        {
+                                            id: "bub1",
+                                            bubble_type: "speech",
+                                            anchor: {x: 5},
+                                            width_pct: 30,
+                                            height_pct: 20,
+                                            tail_direction: "down",
+                                            tail_position_pct: 50,
+                                            tail_length_px: 12,
+                                            bubble_config: null,
+                                            text_content: "Hallo!",
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        });
+
+        const result = await importFullBackup(fileOf(payload));
+
+        expect(pagesCreate).toHaveBeenCalledWith(
+            "new-b1",
+            expect.objectContaining({
+                layout: "comic_panel_grid",
+                text_content: "Seitentext",
+                layout_config: {grid: "2x2"},
+                notes: "Notiz",
+                mood_color: "#abc",
+            }),
+        );
+        expect(createPanel).toHaveBeenCalledWith("new-b1", "np", expect.objectContaining({bounds: {x: 0}}));
+        expect(createBubble).toHaveBeenCalledWith(
+            "new-b1",
+            "npan",
+            expect.objectContaining({text_content: "Hallo!", tail_length_px: 12}),
+        );
+        expect(result.imported.pages).toBe(1);
+        expect(result.imported.comic_panels).toBe(1);
+        expect(result.imported.comic_bubbles).toBe(1);
+    });
+
+    it("re-parents story-entity links onto the new entity and page ids (#931)", async () => {
+        const payload = bundle({
+            books: [
+                {
+                    book: {id: "b1", title: "Comic", author: "A", language: "de"},
+                    chapters: [],
+                    pages: [
+                        {
+                            page: {id: "p1", book_id: "b1", position: 0, layout: "text_only"},
+                            panels: [],
+                        },
+                    ],
+                },
+            ],
+            story_bible: {
+                entities: [{id: "e1", book_id: "b1", entity_type: "character", name: "Held"}],
+                relationships: [],
+                links: [
+                    {id: "lnk1", entity_id: "e1", page_id: "p1", chapter_id: null, role: "lead"},
+                ],
+            },
+        });
+
+        const result = await importFullBackup(fileOf(payload));
+
+        expect(createLink).toHaveBeenCalledWith(
+            expect.objectContaining({entity_id: "ne", page_id: "np", role: "lead"}),
+        );
+        expect(result.imported.story_entity_links).toBe(1);
+    });
+
+    it("skips a link whose page did not survive the restore", async () => {
+        const payload = bundle({
+            books: [],
+            story_bible: {
+                entities: [],
+                relationships: [],
+                links: [{id: "lnk1", entity_id: "gone", page_id: "gone", chapter_id: null}],
+            },
+        });
+
+        const result = await importFullBackup(fileOf(payload));
+
+        expect(createLink).not.toHaveBeenCalled();
+        expect(result.skipped.story_entity_links).toBe(1);
+    });
+
+    it("still accepts a v1 bundle, which carries no pages or links", async () => {
+        const payload = {
+            ...bundle({
+                books: [
+                    {
+                        book: {id: "b1", title: "Prosa", author: "A", language: "de"},
+                        chapters: [],
+                    },
+                ],
+            }),
+            version: 1,
+        };
+
+        const result = await importFullBackup(fileOf(payload));
+
+        expect(result.imported.books).toBe(1);
+        expect(result.imported.pages).toBe(0);
+        expect(createLink).not.toHaveBeenCalled();
     });
 });

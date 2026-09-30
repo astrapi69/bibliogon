@@ -44,6 +44,12 @@ const fakeStorage = {
     writingSessions: { list: vi.fn(async () => []) },
     storyBible: {
         listEntities: vi.fn(async () => [{ id: "e1", book_id: "b1", name: "Hero" }]),
+        appearances: vi.fn(async () => []),
+    },
+    pages: { list: vi.fn(async () => []) },
+    comics: {
+        listPanels: vi.fn(async () => []),
+        listBubbles: vi.fn(async () => []),
     },
     chapterLabels: {
         list: vi.fn(async () => [{ id: "l1", book_id: "b1", name: "Draft", color: "#abc" }]),
