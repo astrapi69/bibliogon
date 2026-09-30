@@ -93,19 +93,15 @@ Abgelehnt: shadcn/ui (Tailwind-only), MUI (zu meinungsstark), Ant Design (zu sch
 
 Drei Themes (Warm Literary, Cool Modern, Nord) × Hell + Dunkel = 6 Varianten. Alles geht über CSS-Variablen in `frontend/src/styles/global.css`. Neue UI-Elemente MÜSSEN CSS-Variablen verwenden; hartcodierte `#fff` etc. sind eine dokumentierte Bug-Klasse.
 
-### Plugin-UI (Manifest-getrieben)
+### Plugin-UI (Core-Frontend, nicht vom Plugin geliefert)
 
-Plugins deklarieren UI-Erweiterungen über `get_frontend_manifest()`. Das Frontend fragt beim Start `/api/plugins/manifests` ab und fügt Plugin-UI in vordefinierte Slots ein:
+**Plugins liefern keine UI.** Ein Plugin bringt Backend-Routen, Hooks und Konfiguration mit; alles Sichtbare ist eine Core-Frontend-Komponente, die bedingt gerendert wird - abhängig vom `book_type` oder davon, ob das Plugin aktiv ist.
 
-| Slot | Ort |
-|------|-----|
-| `sidebar_actions` | BookEditor-Sidebar |
-| `toolbar_buttons` | Editor-Toolbar |
-| `editor_panels` | Neben dem Editor |
-| `settings_section` | Einstellungen → Plugins |
-| `export_options` | Export-Dialog |
+React-Router-Routen stehen statisch in `frontend/src/App.tsx`, das TipTap-Extension-Array des Editors ist in `Editor.tsx` fest verdrahtet, und plugin-spezifische Oberflächen (Comic-Editor, Story-Bible-Seitenleiste, KDP-Assistent) liegen in `frontend/src/components/`. Die Aktivierung wird über `GET /api/settings/plugins/discovered` erkannt; das Plugin-Panel in den Einstellungen liest Anzeigename, Beschreibung und Settings-Block aus `backend/config/plugins/<name>.yaml`.
 
-Für komplexe Plugin-UIs können Plugins ein kompiliertes JS-Bundle als Web Component (Custom Element) im ZIP ausliefern.
+Bis v0.60.0 beschrieb diese Seite einen manifestgesteuerten Mechanismus (`get_frontend_manifest()` + `GET /api/plugins/manifests` mit den Slots `sidebar_actions` / `toolbar_buttons` / `editor_panels` / `settings_section` / `export_options`). Die Backend-Hälfte funktionierte, aber kein Frontend-Code hat sie je abgefragt - die deklarierte Plugin-UI wurde still ignoriert. In #936 entfernt, statt sie als Dokumentation stehen zu lassen, gegen die jemand entwickelt.
+
+UI für ein Plugin bedeutet daher eine Core-Frontend-Änderung, die an der Aktivierung des Plugins hängt.
 
 ### Speicherformat
 

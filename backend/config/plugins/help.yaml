@@ -230,8 +230,8 @@ faq:
       de: "Können Plugins eigene UI-Komponenten mitbringen?"
       en: "Can plugins provide their own UI components?"
     answer:
-      de: "Ja. Plugins deklarieren UI-Erweiterungen über ein Manifest (get_frontend_manifest). Vordefinierte Slots: Sidebar-Aktionen, Toolbar-Buttons, Editor-Panels, Einstellungen-Abschnitte, Export-Optionen. Für komplexe UIs können Plugins Web Components als Custom Elements liefern."
-      en: "Yes. Plugins declare UI extensions via a manifest (get_frontend_manifest). Predefined slots: sidebar actions, toolbar buttons, editor panels, settings sections, export options. For complex UIs, plugins can ship Web Components as Custom Elements."
+      de: "Nein. Ein Plugin bringt Backend-Routen, Hooks und Konfiguration mit; alles Sichtbare ist eine Core-Frontend-Komponente, die abhängig vom Buchtyp oder von der Aktivierung des Plugins gerendert wird. Bis v0.60.0 war hier ein Manifest-Mechanismus dokumentiert, den nie ein Frontend-Code abgefragt hat; er wurde entfernt. UI für ein Plugin ist daher eine Core-Frontend-Änderung."
+      en: "No. A plugin ships backend routes, hooks and config; everything the user sees is a core-frontend component rendered conditionally, gated on the book type or on the plugin being active. A manifest mechanism was documented here through v0.60.0, but no frontend code ever queried it, so it was removed. UI for a plugin is a core-frontend change."
   # --- Deployment ---
   - question:
       de: "Wie starte ich Bibliogon in Produktion?"

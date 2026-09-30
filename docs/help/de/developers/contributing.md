@@ -149,7 +149,7 @@ Den vollen Ablauf siehe [Plugin-Entwickler-Leitfaden](plugins.md). Kurz:
 3. Plugin-Klasse erbt von `pluginforge.BasePlugin`, mit `name`, `version`, `depends_on`.
 4. YAML-Config: `backend/config/plugins/{name}.yaml`.
 5. Routen in `routes.py` (FastAPI) + Geschäftslogik in separaten Modulen.
-6. Frontend-Manifest via `get_frontend_manifest()` für UI-Slot-Erweiterungen.
+6. UI, falls nötig: eine Core-Frontend-Änderung, die an der Aktivierung des Plugins hängt. Plugins liefern keine UI.
 7. Tests in `plugins/{name}/tests/`.
 8. Path-Dependency in `backend/pyproject.toml` deklarieren (Pflicht; `importlib.metadata.entry_points()` sieht nur, was tatsächlich installiert ist).
 9. In `config/app.yaml` unter `plugins.enabled` aktivieren.

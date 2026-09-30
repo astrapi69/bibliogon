@@ -94,10 +94,6 @@ class MyPlugin(BasePlugin):
         """Return FastAPI routers to mount."""
         from .routes import router
         return [router]
-
-    def get_frontend_manifest(self) -> dict[str, Any] | None:
-        """Declare UI extensions. Return None if no UI."""
-        return None
 ```
 
 ### routes.py
@@ -200,54 +196,19 @@ Every setting in the YAML must either:
 
 Hidden settings that influence user behavior without a UI are not allowed.
 
-## Frontend manifest
+## Plugin UI
 
-Plugins declare UI extensions via `get_frontend_manifest()`. The frontend queries `/api/plugins/manifests` to discover all extensions.
+**Plugins do not contribute UI.** A plugin ships backend routes, hooks and config; everything the user sees is a core-frontend component rendered conditionally, gated on `book_type` or on the plugin's activation.
 
-### Available UI slots
+React Router routes are static in `frontend/src/App.tsx`, the editor's TipTap extension array is hardcoded in `Editor.tsx`, and plugin-specific surfaces live in `frontend/src/components/`. Activation is detected through `GET /api/settings/plugins/discovered`; the Settings plugin panel reads its display name, description and settings block from `backend/config/plugins/<name>.yaml`.
 
-| Slot | Location | Use case |
-|------|----------|----------|
-| `pages` | App navigation | Full-page plugin UI |
-| `sidebar_actions` | BookEditor sidebar | Action buttons |
-| `toolbar_buttons` | Editor toolbar | Formatting tools |
-| `editor_panels` | Beside the editor | Side panels |
-| `settings_section` | Settings > Plugins | Plugin configuration |
-| `export_options` | Export dialog | Format-specific options |
+So adding UI for your plugin means a core-frontend change gated on the plugin's activation: there is no declaration that puts a button anywhere.
 
-### Example: adding a page
+### Why there is no manifest any more
 
-```python
-def get_frontend_manifest(self) -> dict[str, Any] | None:
-    return {
-        "pages": [
-            {
-                "id": "myplugin",
-                "path": "/myplugin",
-                "label": {"de": "Mein Plugin", "en": "My Plugin"},
-                "icon": "puzzle",  # lucide-react icon name
-            },
-        ],
-    }
-```
+Through v0.60.0 this page documented `get_frontend_manifest()` + `GET /api/plugins/manifests` with six UI slots (`pages`, `sidebar_actions`, `toolbar_buttons`, `editor_panels`, `settings_section`, `export_options`). The backend half worked; **no frontend code ever queried it**, so any manifest you wrote was silently ignored. Twelve first-party plugins carried declarations nobody could see. Removed in #936 rather than kept as a specification to build against.
 
-### Example: adding sidebar actions
-
-```python
-def get_frontend_manifest(self) -> dict[str, Any] | None:
-    return {
-        "sidebar_actions": [
-            {
-                "id": "myplugin_analyze",
-                "label": {"de": "Analysieren", "en": "Analyze"},
-                "icon": "bar-chart",
-                "action": "/api/myplugin/analyze/{book_id}",
-            },
-        ],
-    }
-```
-
-For complex plugin UIs, you can ship Web Components as custom elements (compiled JS bundle in the plugin ZIP).
+Reviving plugin-shipped UI is a deliberate design decision: how a declaration names the behaviour it triggers, and whether plugins ship a compiled JS bundle (Web Components as custom elements). If you need it, open an issue rather than writing a manifest.
 
 ## ZIP distribution
 

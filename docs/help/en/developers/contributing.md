@@ -149,7 +149,7 @@ See the [Plugin Developer Guide](plugins.md) for the full flow. In short:
 3. Plugin class subclassing `pluginforge.BasePlugin` with `name`, `version`, `depends_on`.
 4. YAML config: `backend/config/plugins/{name}.yaml`.
 5. Routes in `routes.py` (FastAPI) + business logic in separate modules.
-6. Frontend manifest via `get_frontend_manifest()` declaring UI slot extensions.
+6. UI, if any: a core-frontend change gated on the plugin's activation. Plugins do not ship UI.
 7. Tests in `plugins/{name}/tests/`.
 8. Add the path-dependency declaration in `backend/pyproject.toml` (mandatory; `importlib.metadata.entry_points()` only sees what is actually installed).
 9. Enable in `config/app.yaml` under `plugins.enabled`.

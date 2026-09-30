@@ -111,21 +111,30 @@ Still rejected: MUI (too opinionated), Ant Design (too heavy).
 - **Custom properties in `frontend/src/styles/global.css` remain the single source of truth for color** (6 palettes × light/dark). Tailwind does NOT introduce a second color system: `frontend/src/styles/tailwind.css` defines a `@theme inline` bridge that maps every Tailwind color utility onto the existing `var(--*)` tokens (e.g. `bg-primary` → `var(--accent)`), and clears Tailwind's default palette (`--color-*: initial`) so stray utilities like `bg-red-500` cannot be generated. `make verify-theme` therefore stays authoritative over the whole UI, Tailwind utilities included. Non-color tokens that collide name-for-name with Tailwind namespaces (`--radius-*`, `--shadow-*`, `--font-*`) are referenced via arbitrary values (`rounded-[var(--radius-md)]`) for now; mapping them under non-colliding keys is a later phase.
 - **Theme gates** (`make verify-theme`, in `make release-test`): `scripts/audit_theme_tokens.py` (every referenced token defined in every variant + no bare `var(--token)` to an undefined token), `scripts/check_theme_contrast.py` (WCAG AA across all 12 variants), `scripts/check_hardcoded_colors.py` (no stray hardcoded hex). How to add a palette / the full token vocabulary: [docs/development/theming.md](../../docs/development/theming.md).
 
-### Plugin UI (manifest-driven)
+### Plugin UI (hardcoded in the core frontend)
 
-Plugins declare UI extensions via get_frontend_manifest(). The frontend queries /api/plugins/manifests.
+**Plugins do not contribute UI.** A plugin ships backend routes, hooks and
+config; everything the user sees lives in the core frontend and is rendered
+conditionally, gated on `book_type` or on plugin activation.
 
-Predefined UI slots:
+React Router routes are static in `frontend/src/App.tsx`. The editor's TipTap
+extension array is hardcoded in `Editor.tsx`. Plugin-specific surfaces
+(`ComicBookEditor.tsx`, the Story-Bible sidebar, the KDP wizard) are core
+components. Activation is detected through `/api/settings/plugins/discovered`
+via the storage seam, and the Settings plugin panel reads its display name,
+description and settings block from `backend/config/plugins/<name>.yaml`.
 
-| Slot | Location |
-|------|----------|
-| sidebar_actions | BookEditor sidebar |
-| toolbar_buttons | Editor toolbar |
-| editor_panels | Next to the editor |
-| settings_section | Settings > Plugins |
-| export_options | ExportDialog |
+A manifest-driven mechanism (`get_frontend_manifest()` +
+`GET /api/plugins/manifests`, with `sidebar_actions` / `toolbar_buttons` /
+`editor_panels` / `settings_section` / `export_options` slots) was specified
+here for several releases and **never had a consumer**: twelve plugins
+declared entries that nothing rendered. Removed in #936 rather than left as
+documentation a plugin author would reasonably build against.
 
-For complex plugin UIs: Web Components as custom elements (compiled JS bundle in the plugin ZIP).
+Adding UI for a plugin therefore means a core-frontend change gated on that
+plugin's activation. Reviving plugin-shipped UI is a deliberate design
+decision (how a declaration names the behaviour it triggers; whether plugins
+ship a JS bundle), not a repair job.
 
 ### TipTap editor
 
