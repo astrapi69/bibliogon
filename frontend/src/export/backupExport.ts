@@ -82,9 +82,33 @@ const MAX_WRITING_SESSION_DAYS = 366;
 const AUTHOR_LIST_LIMIT = 1000;
 
 /**
+ * Run a sub-resource list, treating a book-type gate as "none of these".
+ *
+ * Online, both routers enforce the book's type: the pages router answers
+ * 400 for anything that is not a picture book or comic, and the panels
+ * router 400 for anything that is not a comic. Those are not failures -
+ * a prose book genuinely has no pages, a picture book genuinely has no
+ * panels - but letting the rejection propagate aborts the whole export
+ * on the first prose book in the library.
+ *
+ * Only 400 and 404 are swallowed. A network error or a 500 is a real
+ * failure and must still reach the caller, or a backup could silently
+ * come back short.
+ */
+async function listOrNone<T>(run: () => Promise<T[]>): Promise<T[]> {
+    try {
+        return await run();
+    } catch (error) {
+        const status = (error as {status?: number} | null)?.status;
+        if (status === 400 || status === 404) return [];
+        throw error;
+    }
+}
+
+/**
  * Collect a book's pages with their comic panels and speech bubbles.
  *
- * A prose book has no pages, so this is one cheap empty list for it. A
+ * A prose book has no pages, so this is one empty list for it. A
  * picture-book page has pages but no panels; only a comic reaches the
  * innermost level.
  */
@@ -92,16 +116,18 @@ async function gatherPages(
     storage: ReturnType<typeof getStorage>,
     bookId: string,
 ): Promise<BackupPage[]> {
-    const pages = await storage.pages.list(bookId);
+    const pages = await listOrNone(() => storage.pages.list(bookId));
     return Promise.all(
         pages.map(async (page) => {
-            const panels = await storage.comics.listPanels(bookId, page.id);
+            const panels = await listOrNone(() => storage.comics.listPanels(bookId, page.id));
             return {
                 page,
                 panels: await Promise.all(
                     panels.map(async (panel) => ({
                         panel,
-                        bubbles: await storage.comics.listBubbles(bookId, panel.id),
+                        bubbles: await listOrNone(() =>
+                            storage.comics.listBubbles(bookId, panel.id),
+                        ),
                     })),
                 ),
             };

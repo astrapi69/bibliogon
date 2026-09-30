@@ -100,4 +100,25 @@ describe("backupFilename", () => {
     it("uses only the date part", () => {
         expect(backupFilename("2026-06-10T12:34:56Z")).toBe("bibliogon-backup-2026-06-10.json");
     });
+
+    it("treats a book-type gate as 'no pages' instead of failing the export", async () => {
+        // Online the pages router answers 400 for a prose book and the
+        // panels router 400 for a picture-book page. Letting that
+        // propagate aborted the whole export on the first prose book.
+        const gate = Object.assign(new Error("not a picture book"), {status: 400});
+        fakeStorage.pages.list.mockRejectedValueOnce(gate);
+
+        const bundle = await buildBackupBundle("2026-09-30T12:00:00Z");
+
+        expect(bundle.data.books[0].pages).toEqual([]);
+    });
+
+    it("still fails the export on a real error", async () => {
+        const boom = Object.assign(new Error("server exploded"), {status: 500});
+        fakeStorage.pages.list.mockRejectedValueOnce(boom);
+
+        await expect(buildBackupBundle("2026-09-30T12:00:00Z")).rejects.toThrow(
+            "server exploded",
+        );
+    });
 });
