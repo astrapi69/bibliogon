@@ -28,6 +28,7 @@ import {useI18n} from "../../hooks/useI18n"
 import {notify} from "../../utils/platform/notify"
 import {STORY_ENTITY_DND_MIME} from "./StoryBibleSidebar"
 import {entityTypeColor, entityTypeIcon} from "./storyBibleIcons"
+import {flattenTipTapText} from "../../lib/utils/content/tiptapText"
 import {
     ActGroupInput,
     BeatSelect,
@@ -417,19 +418,4 @@ function derivePreviewTitle(page: Page): string {
         .find((line) => line.length > 0)
     if (!firstLine) return ""
     return firstLine.length > 60 ? firstLine.slice(0, 57) + "..." : firstLine
-}
-
-/** Flatten a TipTap doc to plain text. Visits text nodes
- *  depth-first; joins with newlines between block-level nodes so
- *  the first-non-empty-line heuristic in derivePreviewTitle picks
- *  the first user-visible line rather than collapsing the whole doc
- *  to a single string. */
-function flattenTipTapText(node: unknown): string {
-    if (!node || typeof node !== "object") return ""
-    const n = node as {type?: string; text?: string; content?: unknown[]}
-    if (typeof n.text === "string") return n.text
-    if (!Array.isArray(n.content)) return ""
-    const parts = n.content.map((child) => flattenTipTapText(child))
-    const isBlock = n.type === "doc" || n.type === "paragraph" || n.type?.startsWith("heading")
-    return parts.join(isBlock ? "\n" : "")
 }

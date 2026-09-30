@@ -359,6 +359,33 @@ describe("Storyboard", () => {
             expect(card.textContent).not.toContain("there was a princess")
         })
 
+        it("keeps a paragraph split across marks on one title line (#849)", async () => {
+            // TipTap stores "sehr wichtig" with a bold second word as the
+            // text nodes "sehr " and "wichtig". The old flattener treated
+            // paragraph as a block and joined ALL its children with a
+            // newline, so the first-non-empty-line heuristic cut the title
+            // at the mark boundary and showed only "sehr".
+            const tiptap = JSON.stringify({
+                type: "doc",
+                content: [
+                    {
+                        type: "paragraph",
+                        content: [
+                            {type: "text", text: "sehr "},
+                            {type: "text", marks: [{type: "bold"}], text: "wichtig"},
+                            {type: "text", text: " fuer die Szene"},
+                        ],
+                    },
+                ],
+            })
+            vi.mocked(api.pages.list).mockResolvedValue([
+                makePage({id: "p1", text_content: tiptap}),
+            ])
+            render(<Storyboard {...defaultProps} />)
+            const card = await screen.findByTestId("storyboard-card-p1")
+            expect(card.textContent).toContain("sehr wichtig fuer die Szene")
+        })
+
         it("renders the no-text placeholder when text_content is null", async () => {
             vi.mocked(api.pages.list).mockResolvedValue([
                 makePage({id: "p1", text_content: null}),

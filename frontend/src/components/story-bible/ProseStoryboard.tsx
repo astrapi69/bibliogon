@@ -61,6 +61,7 @@ import ChapterLabelManager from "../book/ChapterLabelManager"
 import AiStoryExtraction from "./AiStoryExtraction"
 import type {ChapterStatus} from "../../api/client"
 import styles from "./Storyboard.module.css"
+import {flattenTipTapText} from "../../lib/utils/content/tiptapText"
 
 /** Patch shape the chapter card hands back up: a single annotation
  *  field. ``version`` is added by the parent from the current row. */
@@ -68,18 +69,6 @@ type ChapterAnnotationPatch = Pick<
     ChapterUpdatePayload,
     "notes" | "story_beat" | "mood_color" | "act_group" | "status" | "label_id" | "target_words"
 >
-
-/** Flatten a TipTap doc to plain text (mirrors the helper in
- *  Storyboard.tsx for page preview titles). */
-function flattenTipTapText(node: unknown): string {
-    if (!node || typeof node !== "object") return ""
-    const n = node as {type?: string; text?: string; content?: unknown[]}
-    if (typeof n.text === "string") return n.text
-    if (!Array.isArray(n.content)) return ""
-    const parts = n.content.map((child) => flattenTipTapText(child))
-    const isBlock = n.type === "doc" || n.type === "paragraph" || n.type?.startsWith("heading")
-    return parts.join(isBlock ? "\n" : " ")
-}
 
 /** Approximate word count for a chapter's stored content. Content is
  *  TipTap JSON serialised as a string (or legacy plain text); both are
