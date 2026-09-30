@@ -39,6 +39,7 @@ binary via the repo-level `.gitattributes` (`*.png binary`) — plain git, no LF
 | Article dashboard | ![Article Dashboard](dashboard/article-dashboard.png) |
 | Recent documents | ![Recent Documents](dashboard/recent-documents.png) |
 | Trash view | ![Trash View](dashboard/trash-view.png) |
+| Writing statistics (#668) | _pending capture_ — `dashboard/writing-statistics.png` |
 
 ## Book Creation
 
@@ -59,9 +60,10 @@ binary via the repo-level `.gitattributes` (`*.png binary`) — plain git, no LF
 | Writing goals | ![Writing Goals](book-editor/writing-goals.png) |
 | Storyboard | ![Storyboard](book-editor/storyboard.png) |
 | Story Bible | ![Story Bible](book-editor/story-bible.png) |
+| Story-Bible auto-detect proposals (#732) | _pending capture_ — `book-editor/story-bible-auto-detect.png` |
 | Editor context menu | ![Context Menu](book-editor/context-menu.png) |
-| Read-aloud player (Web Speech API, offline #666) | ![Read Aloud](book-editor/web-speech-tts.png) |
-| AI grammar + translation tools (offline, key-required #661/#669) | ![AI Text Tools](book-editor/ai-text-tools-offline.png) |
+| Read-aloud player (Web Speech API, offline #666) | _pending capture_ — `book-editor/web-speech-tts.png` |
+| AI grammar + translation tools (offline, key-required #661/#669) | _pending capture_ — `book-editor/ai-text-tools-offline.png` |
 
 ## Article Editor
 
@@ -102,7 +104,7 @@ binary via the repo-level `.gitattributes` (`*.png binary`) — plain git, no LF
 
 | Feature | Screenshot |
 | --- | --- |
-| Shortcuts overview dialog (Ctrl+/ or ?, #662) | ![Shortcuts Overview](shortcuts/overview-dialog.png) |
+| Shortcuts overview dialog (Ctrl+/ or ?, #662) | _pending capture_ — `shortcuts/overview-dialog.png` |
 
 ## Quality Report
 
@@ -151,8 +153,16 @@ additionally generates the export package (a real backend Pandoc export, up to
 ~60 s). Both blocks are crash-resistant — if a gate blocks, they screenshot
 whatever rendered — so verify these two when running `make capture-screenshots`.
 
-> The PNGs for the features added since the catalog shipped (Chapter
-> collections, Settings auto-save, Scrivener import — and the synopsis +
-> Inspector-notes columns folded into the Chapter-outliner shot) are generated
-> by `make capture-screenshots` in a browser-enabled environment; the capture
-> spec already covers them.
+## Pending captures
+
+A row marked _pending capture_ has a block in the capture spec but no
+committed PNG yet: `make capture-screenshots` needs a browser-enabled
+environment, so the spec and the images land in separate steps. Swap the
+marker for the image link in the same commit that adds the PNG.
+
+Both halves are machine-checked by `make verify-docs-completeness`
+(`scripts/verify_docs_completeness.py`, #925): a broken image link in this
+file **fails** the gate, and a capture target with no committed PNG is
+reported as an advisory warning listing exactly which ones are outstanding.
+Before #925 neither was checked — this file sat outside the image check's
+scope, which is how three rows shipped rendering broken.
