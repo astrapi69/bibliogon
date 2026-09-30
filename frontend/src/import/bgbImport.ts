@@ -29,6 +29,11 @@
 import { strFromU8, unzipSync } from "fflate";
 
 import type {
+    ComicBubbleOut,
+    ComicPanelOut,
+    Page,
+    PageCreate,
+    StoryEntityLinkOut,
     Article,
     Asset,
     Author,
@@ -51,8 +56,12 @@ export interface BgbImportCounts {
     articles: number;
     authors: number;
     story_entities: number;
+    story_entity_links: number;
     chapter_labels: number;
     aplus_documents: number;
+    pages: number;
+    comic_panels: number;
+    comic_bubbles: number;
 }
 
 /** Result of {@link importBgbFile}: what was created vs skipped. */
@@ -86,8 +95,12 @@ function zeroCounts(): BgbImportCounts {
         articles: 0,
         authors: 0,
         story_entities: 0,
+        story_entity_links: 0,
         chapter_labels: 0,
         aplus_documents: 0,
+        pages: 0,
+        comic_panels: 0,
+        comic_bubbles: 0,
     };
 }
 
@@ -274,10 +287,16 @@ async function importBooks(
         imported.books++;
 
         await importBookAssets(entries, bookDir, book, newId, storage, imported);
-        await importChapters(entries, bookDir, oldId, newId, storage, imported);
-        await importStoryEntities(entries, bookDir, newId, storage, imported);
+        const chapterIds = await importChapters(
+            entries, bookDir, oldId, newId, storage, imported,
+        );
+        const entityIds = await importStoryEntities(entries, bookDir, newId, storage, imported);
         await importChapterLabels(entries, bookDir, newId, storage, imported);
         await importAplusDocuments(entries, bookDir, newId, storage, imported);
+        const pageIds = await importPages(entries, bookDir, newId, storage, imported);
+        await importEntityLinks(
+            entries, bookDir, {entityIds, pageIds, chapterIds}, storage, imported, skipped,
+        );
     }
 }
 
@@ -317,7 +336,7 @@ async function importChapters(
     newBookId: string,
     storage: Storage,
     imported: BgbImportCounts,
-): Promise<void> {
+): Promise<Map<string, string>> {
     const chaptersPrefix = `${bookDir}chapters/`;
     const chapters: Chapter[] = [];
     for (const path of Object.keys(entries)) {
@@ -327,19 +346,22 @@ async function importChapters(
         }
     }
     chapters.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+    const idMap = new Map<string, string>();
     for (const chapter of chapters) {
         const content =
             typeof chapter.content === "string"
                 ? rewriteBookUrls(chapter.content, oldBookId, newBookId)
                 : chapter.content;
-        await storage.chapters.create(newBookId, {
+        const created = await storage.chapters.create(newBookId, {
             title: chapter.title,
             content,
             chapter_type: chapter.chapter_type,
             position: chapter.position,
         });
+        idMap.set(chapter.id, created.id);
         imported.chapters++;
     }
+    return idMap;
 }
 
 async function importStoryEntities(
@@ -348,18 +370,130 @@ async function importStoryEntities(
     newBookId: string,
     storage: Storage,
     imported: BgbImportCounts,
-): Promise<void> {
+): Promise<Map<string, string>> {
     const entitiesData =
-        readJson<StoryEntityCreate[]>(entries, `${bookDir}story_entities.json`) ?? [];
+        readJson<Array<StoryEntityCreate & {id?: string}>>(
+            entries,
+            `${bookDir}story_entities.json`,
+        ) ?? [];
+    const idMap = new Map<string, string>();
     for (const entity of entitiesData) {
-        await storage.storyBible.createEntity(newBookId, {
+        const created = await storage.storyBible.createEntity(newBookId, {
             entity_type: entity.entity_type,
             name: entity.name,
             description: entity.description,
             entity_metadata: entity.entity_metadata,
             relationships: entity.relationships,
         });
+        if (entity.id) idMap.set(entity.id, created.id);
         imported.story_entities++;
+    }
+    return idMap;
+}
+
+/**
+ * Restore a book's pages with their comic panels and speech bubbles.
+ *
+ * The archive carries one flat file per level (`pages.json`,
+ * `comic_panels.json`, `comic_bubbles.json`) in the layout the backend
+ * importer already reads; children are matched to their new parent by
+ * the id they carried at export time.
+ *
+ * @returns old page id -> new page id, for the entity links.
+ */
+async function importPages(
+    entries: ZipEntries,
+    bookDir: string,
+    newBookId: string,
+    storage: Storage,
+    imported: BgbImportCounts,
+): Promise<Map<string, string>> {
+    const pages = readJson<Page[]>(entries, `${bookDir}pages.json`) ?? [];
+    const pageIds = new Map<string, string>();
+    if (!pages.length) return pageIds;
+
+    const panels = readJson<ComicPanelOut[]>(entries, `${bookDir}comic_panels.json`) ?? [];
+    const bubbles = readJson<ComicBubbleOut[]>(entries, `${bookDir}comic_bubbles.json`) ?? [];
+
+    for (const page of [...pages].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))) {
+        const created = await storage.pages.create(newBookId, {
+            layout: page.layout,
+            text_content: page.text_content,
+            image_asset_id: page.image_asset_id,
+            layout_config: page.layout_config,
+            notes: page.notes,
+            story_beat: page.story_beat as PageCreate["story_beat"],
+            mood_color: page.mood_color,
+            act_group: page.act_group,
+        });
+        pageIds.set(page.id, created.id);
+        imported.pages++;
+
+        for (const panel of panels.filter((p) => p.page_id === page.id)) {
+            const newPanel = await storage.comics.createPanel(newBookId, created.id, {
+                bounds: panel.bounds,
+                panel_config: panel.panel_config,
+            });
+            imported.comic_panels++;
+            for (const bubble of bubbles.filter((b) => b.panel_id === panel.id)) {
+                await storage.comics.createBubble(newBookId, newPanel.id, {
+                    bubble_type: bubble.bubble_type,
+                    anchor: bubble.anchor,
+                    width_pct: bubble.width_pct,
+                    height_pct: bubble.height_pct,
+                    tail_direction: bubble.tail_direction,
+                    tail_position_pct: bubble.tail_position_pct,
+                    tail_length_px: bubble.tail_length_px,
+                    bubble_config: bubble.bubble_config,
+                    text_content: bubble.text_content,
+                });
+                imported.comic_bubbles++;
+            }
+        }
+    }
+    return pageIds;
+}
+
+/**
+ * Restore the entity-page/chapter links once every parent has its new id.
+ *
+ * A link whose entity, page or chapter did not survive is counted as
+ * skipped rather than dropped silently - it means the archive was
+ * partial, and the caller reports the number.
+ */
+async function importEntityLinks(
+    entries: ZipEntries,
+    bookDir: string,
+    maps: {
+        entityIds: Map<string, string>;
+        pageIds: Map<string, string>;
+        chapterIds: Map<string, string>;
+    },
+    storage: Storage,
+    imported: BgbImportCounts,
+    skipped: BgbImportCounts,
+): Promise<void> {
+    const links =
+        readJson<Array<Omit<StoryEntityLinkOut, "entity">>>(
+            entries,
+            `${bookDir}story_entity_page_links.json`,
+        ) ?? [];
+    for (const link of links) {
+        const entityId = maps.entityIds.get(link.entity_id);
+        const pageId = link.page_id ? maps.pageIds.get(link.page_id) : null;
+        const chapterId = link.chapter_id ? maps.chapterIds.get(link.chapter_id) : null;
+        if (!entityId || (!pageId && !chapterId)) {
+            skipped.story_entity_links++;
+            continue;
+        }
+        await storage.storyBible.createLink({
+            entity_id: entityId,
+            page_id: pageId ?? null,
+            chapter_id: chapterId ?? null,
+            role: link.role,
+            notes: link.notes,
+        });
+        imported.story_entity_links++;
     }
 }
 

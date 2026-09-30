@@ -44,6 +44,33 @@ const fakeStorage = {
     writingSessions: { list: vi.fn(async () => []) },
     storyBible: {
         listEntities: vi.fn(async () => [{ id: "e1", book_id: "b1", name: "Hero" }]),
+        appearances: vi.fn(async (entityId: string) => [
+            {
+                id: "lnk1",
+                entity_id: entityId,
+                page_id: "p1",
+                chapter_id: null,
+                role: "lead",
+                entity: { id: entityId, name: "Hero" },
+            },
+        ]),
+    },
+    pages: {
+        list: vi.fn(async () => [
+            {
+                id: "p1",
+                book_id: "b1",
+                position: 0,
+                layout: "comic_panel_grid",
+                text_content: "Seitentext",
+            },
+        ]),
+    },
+    comics: {
+        listPanels: vi.fn(async () => [{ id: "pan1", page_id: "p1", bounds: { x: 0 } }]),
+        listBubbles: vi.fn(async () => [
+            { id: "bub1", panel_id: "pan1", bubble_type: "speech", text_content: "Hallo" },
+        ]),
     },
     chapterLabels: {
         list: vi.fn(async () => [{ id: "l1", book_id: "b1", name: "Draft", color: "#abc" }]),
@@ -179,5 +206,24 @@ describe("bgb filenames", () => {
         expect(selectiveBgbFilename("2026-06-16T09:30:00Z")).toBe(
             "bibliogon-export-2026-06-16.bgb",
         );
+    });
+
+    it("writes pages, panels, bubbles and entity links into the archive (#931)", async () => {
+        const blob = await exportBgbBackup("2026-09-30T12:00:00Z");
+        const entries = unzipSync(new Uint8Array(await blob.arrayBuffer()));
+
+        // The filenames are the ones the importers already read; the
+        // client simply never wrote them, so a comic came back bare.
+        expect(JSON.parse(strFromU8(entries["books/b1/pages.json"]))).toHaveLength(1);
+        expect(JSON.parse(strFromU8(entries["books/b1/comic_panels.json"]))[0].id).toBe("pan1");
+        expect(JSON.parse(strFromU8(entries["books/b1/comic_bubbles.json"]))[0].text_content).toBe(
+            "Hallo",
+        );
+
+        const links = JSON.parse(strFromU8(entries["books/b1/story_entity_page_links.json"]));
+        expect(links[0].page_id).toBe("p1");
+        // The embedded entity is a UI convenience; a row importer would
+        // trip over the nested object.
+        expect(links[0]).not.toHaveProperty("entity");
     });
 });

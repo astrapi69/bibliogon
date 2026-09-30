@@ -26,7 +26,14 @@
  * "BACKUP-AKZEPTANZTEST").
  */
 
-import {test, expect, createBook, createChapter, createArticle} from "../fixtures/base";
+import {
+    test,
+    expect,
+    createBook,
+    createChapter,
+    createArticle,
+    createComicBook,
+} from "../fixtures/base";
 import {readFileSync} from "node:fs";
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
@@ -78,9 +85,49 @@ test.describe("BACKUP-AKZEPTANZTEST (#61)", () => {
         await createAuthor("Autor Eins");
         await createAuthor("Autor Zwei");
         await createAuthor("Autor Drei");
-        await api(`/story-bible/books/${book.id}/entities`, {
+        const entity = await api<{id: string}>(`/story-bible/books/${book.id}/entities`, {
             method: "POST",
             body: JSON.stringify({entity_type: "character", name: "Held"}),
+        });
+
+        // A comic book exercises the deepest chain the bundle carries:
+        // Book -> Page -> ComicPanel -> ComicBubble, plus the entity link
+        // onto the page. The prose-only fixture this test shipped with is
+        // why #931 (pages, panels, bubbles and links missing from the
+        // bundle entirely) stayed invisible behind a green gate.
+        const comic = await createComicBook("Akzeptanz Comic", "Autor X");
+        const comicPage = await api<{id: string}>(`/books/${comic.id}/pages`, {
+            method: "POST",
+            body: JSON.stringify({
+                layout: "comic_panel_grid",
+                position: 0,
+                text_content: "Seitentext",
+                notes: "Seitennotiz",
+                mood_color: "#abcdef",
+            }),
+        });
+        const panel = await api<{id: string}>(
+            `/books/${comic.id}/comic-pages/${comicPage.id}/panels`,
+            {
+                method: "POST",
+                body: JSON.stringify({bounds: {x: 0, y: 0, w: 50, h: 50}}),
+            },
+        );
+        await api(`/books/${comic.id}/comic-panels/${panel.id}/bubbles`, {
+            method: "POST",
+            body: JSON.stringify({
+                bubble_type: "speech",
+                anchor: {x: 10, y: 10},
+                text_content: "Sprechblasentext",
+            }),
+        });
+        await api("/story-bible/links", {
+            method: "POST",
+            body: JSON.stringify({
+                entity_id: entity.id,
+                page_id: comicPage.id,
+                role: "lead",
+            }),
         });
         await api(`/aplus/${book.id}/document?language=es`, {
             method: "PUT",
@@ -171,12 +218,14 @@ test.describe("BACKUP-AKZEPTANZTEST (#61)", () => {
         // reflects the restore - reading once (or polling only getBooks)
         // races a still-in-progress restore (the book row appears before its
         // chapters/articles/entities do).
+        // Two books now: the prose one and the comic the #931 fixture adds.
         await expect
             .poll(async () => (await getBooks()).length, {timeout: 15000})
-            .toBe(1);
+            .toBe(2);
 
         // 5. Verify the whole graph.
-        const books = await getBooks();
+        const allBooks = await getBooks();
+        const books = allBooks.filter((b) => b.title === "Akzeptanz Buch");
         expect(books[0].title).toBe("Akzeptanz Buch");
 
         await expect
@@ -196,6 +245,41 @@ test.describe("BACKUP-AKZEPTANZTEST (#61)", () => {
                 {timeout: 15000},
             )
             .toBe(true);
+
+        // #931: the comic graph must survive the round trip. Before the
+        // fix the book row came back with zero pages, so every assertion
+        // below failed at the first one.
+        const restoredComic = allBooks.find((b) => b.title === "Akzeptanz Comic");
+        expect(restoredComic).toBeTruthy();
+
+        await expect
+            .poll(
+                async () => (await api<unknown[]>(`/books/${restoredComic!.id}/pages`)).length,
+                {timeout: 15000},
+            )
+            .toBe(1);
+        const restoredPages = await api<
+            {id: string; text_content: string | null; notes: string | null; mood_color: string | null}[]
+        >(`/books/${restoredComic!.id}/pages`);
+        expect(restoredPages[0].text_content).toBe("Seitentext");
+        expect(restoredPages[0].notes).toBe("Seitennotiz");
+        expect(restoredPages[0].mood_color).toBe("#abcdef");
+
+        const restoredPanels = await api<{id: string}[]>(
+            `/books/${restoredComic!.id}/comic-pages/${restoredPages[0].id}/panels`,
+        );
+        expect(restoredPanels).toHaveLength(1);
+        const restoredBubbles = await api<{text_content: string | null}[]>(
+            `/books/${restoredComic!.id}/comic-panels/${restoredPanels[0].id}/bubbles`,
+        );
+        expect(restoredBubbles).toHaveLength(1);
+        expect(restoredBubbles[0].text_content).toBe("Sprechblasentext");
+
+        const restoredLinks = await api<{role: string | null}[]>(
+            `/story-bible/pages/${restoredPages[0].id}/entities`,
+        );
+        expect(restoredLinks).toHaveLength(1);
+        expect(restoredLinks[0].role).toBe("lead");
 
         await expect
             .poll(

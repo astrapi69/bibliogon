@@ -21,7 +21,25 @@ const fakeStorage = {
         get: vi.fn(async (id: string) => ({id, title: "Art", content_json: '{"a":1}'})),
     },
     writingSessions: {list: vi.fn(async () => [{id: "ws1", words: 100}])},
-    storyBible: {listEntities: vi.fn(async () => [{id: "e1", name: "Hero"}])},
+    storyBible: {
+        listEntities: vi.fn(async () => [{id: "e1", name: "Hero"}]),
+        appearances: vi.fn(async (entityId: string) => [
+            {id: "lnk1", entity_id: entityId, page_id: "p1", chapter_id: null, role: "lead"},
+        ]),
+    },
+    pages: {
+        list: vi.fn(async (bookId: string) => [
+            {id: "p1", book_id: bookId, position: 0, layout: "text_only", text_content: "Seite"},
+        ]),
+    },
+    comics: {
+        listPanels: vi.fn(async (_bookId: string, pageId: string) => [
+            {id: "pan1", page_id: pageId, position: 0, bounds: {x: 0}},
+        ]),
+        listBubbles: vi.fn(async (_bookId: string, panelId: string) => [
+            {id: "bub1", panel_id: panelId, position: 0, bubble_type: "speech", anchor: {x: 1}},
+        ]),
+    },
     chapterLabels: {list: vi.fn(async () => [{id: "l1", name: "Draft"}])},
     aplusDocuments: {
         listForBook: vi.fn(async (bookId: string) => [
@@ -81,5 +99,26 @@ describe("buildBackupBundle", () => {
 describe("backupFilename", () => {
     it("uses only the date part", () => {
         expect(backupFilename("2026-06-10T12:34:56Z")).toBe("bibliogon-backup-2026-06-10.json");
+    });
+
+    it("treats a book-type gate as 'no pages' instead of failing the export", async () => {
+        // Online the pages router answers 400 for a prose book and the
+        // panels router 400 for a picture-book page. Letting that
+        // propagate aborted the whole export on the first prose book.
+        const gate = Object.assign(new Error("not a picture book"), {status: 400});
+        fakeStorage.pages.list.mockRejectedValueOnce(gate);
+
+        const bundle = await buildBackupBundle("2026-09-30T12:00:00Z");
+
+        expect(bundle.data.books[0].pages).toEqual([]);
+    });
+
+    it("still fails the export on a real error", async () => {
+        const boom = Object.assign(new Error("server exploded"), {status: 500});
+        fakeStorage.pages.list.mockRejectedValueOnce(boom);
+
+        await expect(buildBackupBundle("2026-09-30T12:00:00Z")).rejects.toThrow(
+            "server exploded",
+        );
     });
 });
