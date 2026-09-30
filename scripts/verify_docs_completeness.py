@@ -173,10 +173,24 @@ IMG_MD = re.compile(r"!\[[^\]]*\]\(([^)]+)\)")
 IMG_HTML = re.compile(r'<img[^>]+src=["\']([^"\']+)["\']')
 STALE_DAYS = 30
 
+# The screenshot catalog index is the one doc whose whole job is referencing
+# images, so it is exactly where a broken reference is most likely — and it
+# sat outside this check's scope until #925. Its stale-age warning is
+# suppressed: the catalog is captured on demand, so an old PNG is the normal
+# state there rather than a signal.
+SCREENSHOTS = REPO / "docs" / "screenshots"
+
+
+def _image_doc_sources() -> list[tuple[Path, bool]]:
+    """Every doc whose image references are checked, with its stale-age flag."""
+    docs = [(md, True) for md in HELP.rglob("*.md")]
+    docs += [(md, False) for md in SCREENSHOTS.rglob("*.md")]
+    return docs
+
 
 def check_screenshots() -> None:
     now = time.time()
-    for md in HELP.rglob("*.md"):
+    for md, check_age in _image_doc_sources():
         text = md.read_text("utf-8")
         refs = IMG_MD.findall(text) + IMG_HTML.findall(text)
         for ref in refs:
@@ -186,11 +200,42 @@ def check_screenshots() -> None:
             if not target.exists():
                 fail(f"[img] {md.relative_to(REPO)} references missing image '{ref}'")
                 continue
+            if not check_age:
+                continue
             age_days = (now - target.stat().st_mtime) / 86400
             if age_days > STALE_DAYS:
                 warn(
                     f"[img] {target.relative_to(REPO)} is {int(age_days)}d old (stale-candidate; advisory)"
                 )
+
+
+# --- Check 5b: capture-spec targets exist -------------------------------
+#
+# The check above only sees what the catalog index links. A capture block
+# whose PNG was never committed stays invisible until someone adds the row
+# — which is how three of them reached the index broken (#925) and two more
+# were never indexed at all. Comparing the spec's own write targets against
+# disk catches it at the source.
+#
+# Advisory, not a gate: the capture needs a browser, so a checkout that has
+# never run `make capture-screenshots` cannot make this green, and failing
+# the release gate on it would only teach people to skip the gate.
+
+CAPTURE_SPEC = REPO / "e2e" / "feature-screenshots" / "capture-features.spec.ts"
+SHOT_TARGET = re.compile(r"\$\{OUT\}/([A-Za-z0-9._/-]+\.png)")
+
+
+def check_capture_targets() -> None:
+    if not CAPTURE_SPEC.exists():
+        warn(f"[shots] capture spec not found at {CAPTURE_SPEC.relative_to(REPO)}")
+        return
+    targets = sorted(set(SHOT_TARGET.findall(CAPTURE_SPEC.read_text("utf-8"))))
+    missing = [t for t in targets if not (SCREENSHOTS / t).exists()]
+    if missing:
+        warn(
+            f"[shots] {len(missing)} capture target(s) have no committed PNG "
+            f"(run `make capture-screenshots`): {', '.join(missing)}"
+        )
 
 
 # --- Check 6: cross-reference integrity ---------------------------------
@@ -301,6 +346,7 @@ def main() -> int:
     check_feature_coverage(en, de)
     check_i18n_parity(en, de)
     check_screenshots()
+    check_capture_targets()
     check_cross_refs()
     check_readme_features()
     check_test_counts()
