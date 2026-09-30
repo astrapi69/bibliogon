@@ -743,7 +743,12 @@
       "final_thoughts": "Τελικές σκέψεις",
       "also_by_author": "Επίσης από τον συγγραφέα",
       "excerpt": "Απόσπασμα",
-      "call_to_action": "Πρόσκληση σε δράση"
+      "call_to_action": "Πρόσκληση σε δράση",
+      "half_title": "Ψευδότιτλος",
+      "title_page": "Σελίδα τίτλου",
+      "copyright": "Πνευματικά δικαιώματα",
+      "section": "Ενότητα",
+      "conclusion": "Συμπέρασμα"
     },
     "content_types": {
       "fields_section_heading": "Πεδία ειδικά για τον τύπο",

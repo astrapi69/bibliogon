@@ -717,6 +717,11 @@ ui:
     also_by_author: "Tambem do autor"
     excerpt: "Trecho"
     call_to_action: "Chamada para acao"
+    half_title: "Falsa folha de rosto"
+    title_page: "Folha de rosto"
+    copyright: "Direitos autorais"
+    section: "Seção"
+    conclusion: "Conclusão"
   content_types:
     # ARTICLE-TYPES-SSOT-01 (2026-05-29).
     fields_section_heading: "Campos especificos do tipo"

@@ -6,7 +6,7 @@ type TranslateFn = (key: string, fallback?: string) => string;
  * Translated display labels for every {@link ChapterType}.
  *
  * Extracted so the BookEditor and the ChapterSidebar share one map instead of
- * each carrying an identical 26-entry literal (a copy-paste that drifted apart
+ * each carrying an identical 31-entry literal (a copy-paste that drifted apart
  * on edits). Call it inside a component with the active `t` so the labels stay
  * reactive to the UI language.
  *
@@ -41,5 +41,10 @@ export function chapterTypeLabels(t: TranslateFn): Record<ChapterType, string> {
         also_by_author: t("ui.chapter_types.also_by_author", "Weitere Bücher"),
         excerpt: t("ui.chapter_types.excerpt", "Leseprobe"),
         call_to_action: t("ui.chapter_types.call_to_action", "Aufruf zur Aktion"),
+        half_title: t("ui.chapter_types.half_title", "Schmutztitel"),
+        title_page: t("ui.chapter_types.title_page", "Titelseite"),
+        copyright: t("ui.chapter_types.copyright", "Copyright"),
+        section: t("ui.chapter_types.section", "Abschnitt"),
+        conclusion: t("ui.chapter_types.conclusion", "Fazit"),
     };
 }

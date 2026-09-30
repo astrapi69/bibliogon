@@ -743,7 +743,12 @@
       "final_thoughts": "Reflexions finales",
       "also_by_author": "Du meme auteur",
       "excerpt": "Extrait",
-      "call_to_action": "Appel a l'action"
+      "call_to_action": "Appel a l'action",
+      "half_title": "Faux-titre",
+      "title_page": "Page de titre",
+      "copyright": "Copyright",
+      "section": "Section",
+      "conclusion": "Conclusion"
     },
     "content_types": {
       "fields_section_heading": "Champs specifiques au type",

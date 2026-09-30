@@ -743,7 +743,12 @@
       "final_thoughts": "Son dusunceler",
       "also_by_author": "Ayni yazardan",
       "excerpt": "Alinti",
-      "call_to_action": "Eylem cagrisi"
+      "call_to_action": "Eylem cagrisi",
+      "half_title": "Yarım başlık",
+      "title_page": "Başlık sayfası",
+      "copyright": "Telif hakkı",
+      "section": "Ayrım",
+      "conclusion": "Sonuç"
     },
     "content_types": {
       "fields_section_heading": "Tipe ozgu alanlar",
