@@ -218,12 +218,14 @@ test.describe("BACKUP-AKZEPTANZTEST (#61)", () => {
         // reflects the restore - reading once (or polling only getBooks)
         // races a still-in-progress restore (the book row appears before its
         // chapters/articles/entities do).
+        // Two books now: the prose one and the comic the #931 fixture adds.
         await expect
             .poll(async () => (await getBooks()).length, {timeout: 15000})
-            .toBe(1);
+            .toBe(2);
 
         // 5. Verify the whole graph.
-        const books = await getBooks();
+        const allBooks = await getBooks();
+        const books = allBooks.filter((b) => b.title === "Akzeptanz Buch");
         expect(books[0].title).toBe("Akzeptanz Buch");
 
         await expect
@@ -247,10 +249,7 @@ test.describe("BACKUP-AKZEPTANZTEST (#61)", () => {
         // #931: the comic graph must survive the round trip. Before the
         // fix the book row came back with zero pages, so every assertion
         // below failed at the first one.
-        await expect
-            .poll(async () => (await getBooks()).length, {timeout: 15000})
-            .toBe(2);
-        const restoredComic = (await getBooks()).find((b) => b.title === "Akzeptanz Comic");
+        const restoredComic = allBooks.find((b) => b.title === "Akzeptanz Comic");
         expect(restoredComic).toBeTruthy();
 
         await expect
