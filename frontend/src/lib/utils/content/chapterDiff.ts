@@ -42,10 +42,15 @@ const LCS_CELL_CAP = 1_000_000;
  *
  * Mirrors the backend `_flatten_tiptap`: block nodes (`doc`, `paragraph`,
  * any `heading*`) join their children with a newline, inline siblings with
- * a space. Deliberately a private copy rather than a shared export — the
- * two Storyboard preview flatteners disagree on the inline join char
- * (`" "` vs `""`), so unifying all three is a behaviour adjudication, not
- * a mechanical extraction, and belongs in its own change.
+ * a space.
+ *
+ * Still a private copy after #849 unified the two Storyboard flatteners
+ * into `./tiptapText`, and deliberately so: the shared helper implements
+ * the CORRECT walk, while the backend still splits a paragraph at every
+ * mark boundary and drops `hardBreak` (#929). This module has to render
+ * the same diff the online path does, so it mirrors the backend's current
+ * behaviour rather than the right one. Drop it for the shared helper once
+ * #929 lands.
  */
 function flattenTipTapText(node: unknown): string {
     if (!node || typeof node !== "object") return "";
