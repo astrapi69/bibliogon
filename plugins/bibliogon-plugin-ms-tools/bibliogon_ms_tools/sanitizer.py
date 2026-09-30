@@ -88,8 +88,19 @@ def fix_quotes(text: str, language: str = "de") -> tuple[str, int]:
     return "".join(result), count
 
 
-def fix_whitespace(text: str) -> tuple[str, int]:
+def fix_whitespace(text: str, trim_last_line: bool = True) -> tuple[str, int]:
     """Fix whitespace issues: multiple spaces, trailing, excessive blank lines.
+
+    ``trim_last_line=False`` leaves the final line's trailing whitespace
+    alone. Callers pass it when ``text`` is a FRAGMENT rather than a whole
+    document - a text node between two tags, where the last line does not
+    end at a line break but at the next tag, so its trailing space is
+    carrying meaning rather than being noise (#939). Every earlier line in
+    the fragment does end where it says it ends and is trimmed as usual.
+
+    Accepted trade-off: the walker cannot tell mid-stream which text node
+    is the document's last, so a document ending in whitespace after a tag
+    keeps one space. Cosmetic, where eating a space mid-sentence was not.
 
     Returns (fixed_text, number_of_replacements).
     """
@@ -109,8 +120,12 @@ def fix_whitespace(text: str) -> tuple[str, int]:
 
     # Trim trailing whitespace per line
     lines = fixed.split("\n")
+    last = len(lines) - 1
     trimmed_lines = []
-    for line in lines:
+    for index, line in enumerate(lines):
+        if index == last and not trim_last_line:
+            trimmed_lines.append(line)
+            continue
         stripped = line.rstrip()
         if stripped != line:
             count += 1
@@ -299,16 +314,21 @@ def _looks_like_html(text: str) -> bool:
     return bool(_HTML_TAG_RE.search(text))
 
 
-def _apply_html_aware(text: str, transform) -> tuple[str, int]:
+def _apply_html_aware(text: str, transform, fragment_transform=None) -> tuple[str, int]:
     """Run ``transform`` over every text node of ``text`` if it looks
     like HTML, else over the whole string.
 
     ``transform`` is a ``(text) -> (fixed_text, count)`` function -
     exactly the shape ``fix_quotes``/``fix_whitespace`` already have.
+
+    ``fragment_transform`` is the variant used on the text-node path, for
+    a fix whose behaviour differs between a whole document and a fragment
+    (``fix_whitespace``'s per-line trailing trim; see #939). It defaults to
+    ``transform``, so a fix that does not care passes one callable.
     """
     if not _looks_like_html(text):
         return transform(text)
-    parser = _TextNodeTransformer(transform, text)
+    parser = _TextNodeTransformer(fragment_transform or transform, text)
     parser.feed(text)
     parser.close()
     return "".join(parser.chunks), parser.count
@@ -340,7 +360,9 @@ def sanitize(
         fixes["quotes"] = n
 
     if fix_spaces:
-        result, n = _apply_html_aware(result, fix_whitespace)
+        result, n = _apply_html_aware(
+            result, fix_whitespace, lambda t: fix_whitespace(t, trim_last_line=False)
+        )
         fixes["whitespace"] = n
 
     if fix_dash_marks:
