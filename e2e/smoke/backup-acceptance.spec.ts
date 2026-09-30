@@ -107,7 +107,7 @@ test.describe("BACKUP-AKZEPTANZTEST (#61)", () => {
             }),
         });
         const panel = await api<{id: string}>(
-            `/books/${comic.id}/pages/${comicPage.id}/comic-panels`,
+            `/books/${comic.id}/comic-pages/${comicPage.id}/panels`,
             {
                 method: "POST",
                 body: JSON.stringify({bounds: {x: 0, y: 0, w: 50, h: 50}}),
@@ -267,7 +267,7 @@ test.describe("BACKUP-AKZEPTANZTEST (#61)", () => {
         expect(restoredPages[0].mood_color).toBe("#abcdef");
 
         const restoredPanels = await api<{id: string}[]>(
-            `/books/${restoredComic!.id}/pages/${restoredPages[0].id}/comic-panels`,
+            `/books/${restoredComic!.id}/comic-pages/${restoredPages[0].id}/panels`,
         );
         expect(restoredPanels).toHaveLength(1);
         const restoredBubbles = await api<{text_content: string | null}[]>(
