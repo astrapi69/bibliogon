@@ -7,15 +7,19 @@
  * Radix's default close-on-select. Fix (commit 02fc66b) removed
  * the preventDefault from every menu-item that triggers a dialog.
  *
- * Two surfaces pinned here:
+ * Surfaces pinned here:
  *  1. ArticleCard's "Endgültig löschen" → AppDialog confirm.
  *  2. BookCard's "Endgültig löschen" → AppDialog confirm.
+ *  3. ArticleRow (list view) — "Endgültig löschen".
  *
- * The other affected surfaces (BookListView, ArticleEditor
- * reclassify, Toolbar copy items, Dashboard theme toggle) follow
- * the same Radix pattern; pinning the two card variants is the
- * minimum to catch a regression in the family. If a future
- * surface diverges, add a sibling test here.
+ * (3) was added by #923. The original two-card pin rested on the
+ * assumption that "pinning the two card variants is the minimum to
+ * catch a regression in the family", and that assumption failed:
+ * ArticleRow kept the preventDefault through the whole Bug-6 sweep
+ * and through every green run of this spec, because the list view
+ * uses its own testid namespace (`article-list-row-menu-*`) that no
+ * spec touched. A view-mode-split surface is not covered by its
+ * sibling - it needs its own case.
  *
  * The Vitest layer's Radix DropdownMenu + happy-dom limitation
  * (per the established lessons-learned rule) is why this lives
@@ -70,6 +74,46 @@ test.describe("Bug 6: menu auto-closes before dialog opens", () => {
         await expect(permanentItem).not.toBeVisible({timeout: 3000});
 
         // Cancel out so the test fixture stays clean.
+        await dialog
+            .getByRole("button", {name: /Abbrechen|Cancel/i})
+            .click()
+            .catch(() => page.keyboard.press("Escape"));
+    });
+
+    test("ArticleRow list-view kebab: permanent-delete closes menu before AppDialog", async ({
+        page,
+    }) => {
+        const article = await postJson<{id: string}>("/articles", {
+            title: "List-row menu-close regression target",
+            author: "Asterios",
+        });
+
+        await page.goto("/articles");
+        await page.getByTestId("view-toggle-list").click();
+
+        // Only the permanent-delete item is pinned, for the same reason
+        // the card cases are: "In den Papierkorb" deletes straight away
+        // without a confirm (ArticleList's handleDelete opens no dialog),
+        // so there would be nothing to assert the menu closed *before*.
+        // Both items carried the same preventDefault and are fixed
+        // together in the component.
+        const kebab = page.getByTestId(`article-list-row-menu-${article.id}`);
+        await expect(kebab).toBeVisible({timeout: 5000});
+        await kebab.click();
+
+        const permanentItem = page.getByTestId(
+            `article-list-row-menu-delete-permanent-${article.id}`,
+        );
+        await expect(permanentItem).toBeVisible({timeout: 3000});
+        await permanentItem.click();
+
+        const dialog = page.getByRole("dialog");
+        await expect(dialog).toBeVisible({timeout: 3000});
+
+        // The Bug-6 assertion: the menu content is gone by the time the
+        // dialog is up, rather than lingering behind it.
+        await expect(permanentItem).not.toBeVisible({timeout: 3000});
+
         await dialog
             .getByRole("button", {name: /Abbrechen|Cancel/i})
             .click()

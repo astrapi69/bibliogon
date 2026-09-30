@@ -171,10 +171,7 @@ export default function ArticleRow({
                                 <DropdownMenu.Item
                                     className="hamburger-menu-item"
                                     data-testid={`article-list-row-menu-delete-${article.id}`}
-                                    onSelect={(e) => {
-                                        e.preventDefault();
-                                        onDelete();
-                                    }}
+                                    onSelect={() => onDelete()}
                                 >
                                     <Trash2 size={14} />{" "}
                                     {t("ui.articles.move_to_trash", "In den Papierkorb")}
@@ -185,10 +182,7 @@ export default function ArticleRow({
                                         <DropdownMenu.Item
                                             className="hamburger-menu-item"
                                             data-testid={`article-list-row-menu-delete-permanent-${article.id}`}
-                                            onSelect={(e) => {
-                                                e.preventDefault();
-                                                onDeletePermanent();
-                                            }}
+                                            onSelect={() => onDeletePermanent()}
                                             style={{ color: "var(--danger)" }}
                                         >
                                             <AlertTriangle size={14} />{" "}
