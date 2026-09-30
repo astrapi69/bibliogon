@@ -743,7 +743,12 @@
       "final_thoughts": "Schlussgedanken",
       "also_by_author": "Weitere Bücher des Autors",
       "excerpt": "Leseprobe",
-      "call_to_action": "Aufruf zur Aktion"
+      "call_to_action": "Aufruf zur Aktion",
+      "half_title": "Schmutztitel",
+      "title_page": "Titelseite",
+      "copyright": "Copyright",
+      "section": "Abschnitt",
+      "conclusion": "Fazit"
     },
     "content_types": {
       "fields_section_heading": "Typ-spezifische Felder",

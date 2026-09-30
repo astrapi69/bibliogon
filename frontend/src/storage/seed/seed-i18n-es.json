@@ -743,7 +743,12 @@
       "final_thoughts": "Reflexiones finales",
       "also_by_author": "Tambien del autor",
       "excerpt": "Extracto",
-      "call_to_action": "Llamada a la accion"
+      "call_to_action": "Llamada a la accion",
+      "half_title": "Anteportada",
+      "title_page": "Portada",
+      "copyright": "Créditos",
+      "section": "Sección",
+      "conclusion": "Conclusión"
     },
     "content_types": {
       "fields_section_heading": "Campos especificos del tipo",

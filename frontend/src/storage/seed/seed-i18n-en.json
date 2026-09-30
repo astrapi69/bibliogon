@@ -743,7 +743,12 @@
       "final_thoughts": "Final Thoughts",
       "also_by_author": "Also by the Author",
       "excerpt": "Excerpt",
-      "call_to_action": "Call to Action"
+      "call_to_action": "Call to Action",
+      "half_title": "Half Title",
+      "title_page": "Title Page",
+      "copyright": "Copyright",
+      "section": "Section",
+      "conclusion": "Conclusion"
     },
     "content_types": {
       "fields_section_heading": "Type-specific fields",

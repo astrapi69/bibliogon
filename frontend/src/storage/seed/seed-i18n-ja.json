@@ -743,7 +743,12 @@
       "final_thoughts": "最後に",
       "also_by_author": "同じ著者の他の本",
       "excerpt": "抜粋",
-      "call_to_action": "行動の呼びかけ"
+      "call_to_action": "行動の呼びかけ",
+      "half_title": "中扉",
+      "title_page": "扉",
+      "copyright": "著作権表示",
+      "section": "節",
+      "conclusion": "結論"
     },
     "content_types": {
       "fields_section_heading": "タイプ固有のフィールド",

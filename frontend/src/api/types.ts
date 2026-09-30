@@ -36,7 +36,12 @@ export type ChapterType =
     | "endnotes"
     | "also_by_author"
     | "excerpt"
-    | "call_to_action";
+    | "call_to_action"
+    | "half_title"
+    | "title_page"
+    | "copyright"
+    | "section"
+    | "conclusion";
 
 /** PB-PHASE4: discriminator for the book's authoring shape.
  *  ``prose`` keeps the existing Chapter-based editor; ``picture_book``

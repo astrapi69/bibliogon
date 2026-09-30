@@ -25,15 +25,16 @@ export const CHAPTER_TEMPLATE_FORMAT = "bibliogon-chapter-template";
 export const CHAPTER_TEMPLATE_FORMAT_VERSION = "1.0";
 
 /**
- * Every `chapter_type` the BACKEND enum accepts.
+ * Every `chapter_type` the backend enum accepts, as a runtime list.
  *
- * Deliberately a superset of the frontend `ChapterType` union, which is five
- * values behind (`half_title`, `title_page`, `copyright`, `section`,
- * `conclusion` exist in `backend/app/models/ChapterType` but not in
- * `api/types.ts`). Validating against the narrower union would reject a file
- * the desktop app exports and re-imports happily, so the wire format is
- * checked against the backend's set. Widening the union is its own change —
- * it touches every consumer of the type.
+ * A TypeScript union has no runtime form, so validating a parsed file needs
+ * an array. Since #852 widened `ChapterType` to the backend's full set, this
+ * list and the union are the same 31 values, and the guard below enforces
+ * that in both directions — a value here that the union lacks, or a union
+ * member missing here, is a compile error.
+ *
+ * `chapterTypeLabels.test.ts` closes the remaining link by asserting the
+ * union matches the Python enum it mirrors.
  */
 export const CHAPTER_TEMPLATE_TYPE_VALUES = [
     "chapter",
@@ -69,16 +70,21 @@ export const CHAPTER_TEMPLATE_TYPE_VALUES = [
     "conclusion",
 ] as const;
 
-/** Compile-time guard: every frontend `ChapterType` must be in the runtime
- *  list above, so widening the union cannot silently leave the validator
- *  behind. The list may be a superset (see the note above); it may not be a
- *  subset. */
+/** Compile-time guard, both directions: the runtime list and the
+ *  `ChapterType` union must hold exactly the same values, so neither can be
+ *  widened without the other. */
 type _UncoveredChapterType = Exclude<
     ChapterType,
     (typeof CHAPTER_TEMPLATE_TYPE_VALUES)[number]
 >;
+type _UnknownListedType = Exclude<
+    (typeof CHAPTER_TEMPLATE_TYPE_VALUES)[number],
+    ChapterType
+>;
 const _chapterTypesCovered: _UncoveredChapterType extends never ? true : never = true;
+const _listedTypesKnown: _UnknownListedType extends never ? true : never = true;
 void _chapterTypesCovered;
+void _listedTypesKnown;
 
 /** The portable fields of a chapter template, as written to / read from a
  *  `.chapter-template.json` file. `is_builtin` and `id` are deliberately
