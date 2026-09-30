@@ -50,23 +50,6 @@ class MsToolsPlugin(BasePlugin):
         """Return FastAPI routers."""
         return [self._router]
 
-    def get_frontend_manifest(self) -> dict:
-        """Declare UI extensions."""
-        return {
-            "sidebar_actions": [
-                {
-                    "id": "ms_style_check",
-                    "label": {"de": "Stil prüfen", "en": "Check Style"},
-                    "icon": "text-search",
-                },
-                {
-                    "id": "ms_sanitize",
-                    "label": {"de": "Text bereinigen", "en": "Sanitize Text"},
-                    "icon": "eraser",
-                },
-            ],
-        }
-
     def health(self) -> dict:
         """Report plugin health."""
         return {"status": "ok"}

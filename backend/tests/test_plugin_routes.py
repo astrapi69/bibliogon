@@ -147,36 +147,6 @@ class TestKdpCategories:
                 f"Drift-regression entry missing from catalog: {restored!r}"
             )
 
-    def test_kdp_plugin_manifest_categories_match_routes(
-        self, client: TestClient
-    ) -> None:
-        """KdpPlugin.get_frontend_manifest() exposes the same catalog
-        as GET /api/kdp/categories.
-
-        Pre-fix the manifest read ``_settings.get("categories", [])``
-        from a YAML that had no categories block at runtime, so the
-        manifest shipped ``[]`` while the endpoint shipped a 10-entry
-        subset. This test pins the two sources to a single catalog so
-        any future drift fires immediately, not silently.
-        """
-        from bibliogon_kdp.plugin import KdpPlugin
-
-        plugin = KdpPlugin()
-        plugin.activate()
-        manifest = plugin.get_frontend_manifest()
-        assert manifest is not None
-        manifest_categories = manifest["categories"]
-
-        resp = client.get("/api/kdp/categories")
-        assert resp.status_code == 200
-        endpoint_categories = resp.json()
-
-        assert manifest_categories == endpoint_categories, (
-            "KdpPlugin manifest categories diverged from "
-            "/api/kdp/categories. Both must read from "
-            "KDP_CATEGORIES in bibliogon_kdp.routes."
-        )
-
 
 class TestKdpCheckMetadata:
     """Tests for POST /api/kdp/check-metadata."""

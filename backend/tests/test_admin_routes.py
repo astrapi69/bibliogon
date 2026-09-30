@@ -1,7 +1,7 @@
 """Integration tests for app/routes_admin.py.
 
-Exercises the plugin-introspection endpoints (manifests / health /
-errors), the editor plugin-status endpoint (including its 30s cache
+Exercises the plugin-introspection endpoints (health / errors), the
+editor plugin-status endpoint (including its 30s cache
 path), and the debug-only test-reset route + its non-fatal WAL
 checkpoint fallback. These handlers were previously uncovered.
 """
@@ -15,14 +15,6 @@ from app.routes_admin import (
     invalidate_plugin_status_cache,
     register_admin_routes,
 )
-
-
-def test_plugins_manifests_endpoint_returns_dict():
-    with TestClient(app) as client:
-        resp = client.get("/api/plugins/manifests")
-
-    assert resp.status_code == 200
-    assert isinstance(resp.json(), dict)
 
 
 def test_plugins_health_endpoint_returns_dict():

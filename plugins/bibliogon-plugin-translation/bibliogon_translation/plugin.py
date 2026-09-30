@@ -29,18 +29,6 @@ class TranslationPlugin(BasePlugin):
         """Return FastAPI routers."""
         return [self._router]
 
-    def get_frontend_manifest(self) -> dict[str, Any]:
-        """Declare UI extensions."""
-        return {
-            "sidebar_actions": [
-                {
-                    "id": "translate_chapter",
-                    "label": {"de": "Kapitel übersetzen", "en": "Translate Chapter"},
-                    "icon": "languages",
-                },
-            ],
-        }
-
     def health(self) -> dict[str, Any]:
         """Report plugin health."""
         settings = (self.config or {}).get("settings", {})

@@ -38,18 +38,3 @@ class ExportPlugin(BasePlugin):
         """
         from .routes import parent_router
         return [parent_router]
-
-    def get_frontend_manifest(self) -> dict[str, Any] | None:
-        """Return export-related UI manifest."""
-        ui_formats = self.config.get("ui_formats", [])
-        return {
-            "sidebar_actions": [
-                {
-                    "id": f"export_{fmt['id']}",
-                    "label": fmt.get("label", fmt["id"]),
-                    "icon": "download",
-                    "action": f"/api/books/{{book_id}}/export/{fmt['id']}",
-                }
-                for fmt in ui_formats
-            ],
-        }

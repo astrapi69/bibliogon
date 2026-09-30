@@ -19,15 +19,3 @@ class GetStartedPlugin(BasePlugin):
     def get_routes(self) -> list[Any]:
         from .routes import router
         return [router]
-
-    def get_frontend_manifest(self) -> dict[str, Any] | None:
-        return {
-            "pages": [
-                {
-                    "id": "getstarted",
-                    "path": "/get-started",
-                    "label": {"de": "Erste Schritte", "en": "Get Started"},
-                    "icon": "rocket",
-                },
-            ],
-        }

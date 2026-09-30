@@ -39,16 +39,6 @@ def test_plugin_get_routes_returns_router() -> None:
     assert routes == [router]
 
 
-def test_plugin_frontend_manifest_has_settings_section() -> None:
-    plugin = _make_plugin()
-    plugin.activate()
-    manifest = plugin.get_frontend_manifest()
-    assert manifest is not None
-    assert manifest["settings_section"]["id"] == "medium-import"
-    assert "de" in manifest["settings_section"]["label"]
-    assert "en" in manifest["settings_section"]["label"]
-
-
 def test_health_endpoint_signature() -> None:
     """The health route should be registered under /medium-import."""
     paths = [route.path for route in router.routes]

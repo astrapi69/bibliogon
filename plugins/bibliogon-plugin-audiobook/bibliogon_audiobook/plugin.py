@@ -36,25 +36,6 @@ class AudiobookPlugin(BasePlugin):
         """Return FastAPI routers."""
         return [self._router]
 
-    def get_frontend_manifest(self) -> dict[str, Any]:
-        """Declare UI extensions."""
-        return {
-            "sidebar_actions": [
-                {
-                    "id": "generate_audiobook",
-                    "label": {"de": "Audiobook generieren", "en": "Generate Audiobook"},
-                    "icon": "headphones",
-                },
-            ],
-            "export_options": [
-                {
-                    "id": "audiobook",
-                    "label": {"de": "Audiobook (MP3)", "en": "Audiobook (MP3)"},
-                    "icon": "headphones",
-                },
-            ],
-        }
-
     def health(self) -> dict[str, Any]:
         """Report plugin health."""
         return {"status": "ok", "engine": "edge-tts"}

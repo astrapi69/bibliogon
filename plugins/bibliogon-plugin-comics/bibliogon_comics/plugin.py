@@ -104,17 +104,6 @@ class ComicsPlugin(BasePlugin):
 
         return [router]
 
-    def get_frontend_manifest(self) -> dict[str, Any] | None:
-        """Frontend manifest consumed by ``/api/plugins/manifests``.
-
-        Session 1 returns a stable minimal manifest so the frontend
-        can detect plugin-comics is mounted without depending on
-        Session-2 UI slots that do not exist yet.
-        """
-        return {
-            "settings": getattr(self, "_settings", {}),
-        }
-
     @property
     def settings(self) -> dict[str, Any]:
         return getattr(self, "_settings", {})

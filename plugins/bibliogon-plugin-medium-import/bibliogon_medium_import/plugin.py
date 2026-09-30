@@ -28,20 +28,3 @@ class MediumImportPlugin(BasePlugin):
         from .routes import router
 
         return [router]
-
-    def get_frontend_manifest(self) -> dict[str, Any] | None:
-        return {
-            "settings_section": {
-                "id": "medium-import",
-                "label": {
-                    "de": "Medium-Import",
-                    "en": "Medium Import",
-                    "es": "Importar de Medium",
-                    "fr": "Importer depuis Medium",
-                    "el": "Εισαγωγή από Medium",
-                    "pt": "Importar do Medium",
-                    "tr": "Medium'dan İçe Aktar",
-                    "ja": "Medium からインポート",
-                },
-            },
-        }

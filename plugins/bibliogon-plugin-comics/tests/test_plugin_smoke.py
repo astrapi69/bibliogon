@@ -4,11 +4,10 @@ These tests pin the plugin's contract at the Session 1 boundary:
 - Class attributes (name, version, api_version, license_tier, depends_on)
 - ``init`` + ``activate`` lifecycle without configuration crashes
 - ``get_routes`` returns an empty list (no routes ship in Session 1)
-- ``get_frontend_manifest`` returns a stable minimal manifest
 
-Session 2 will extend these with route-presence + manifest-slot
-assertions; the regression-pin shape is set up here so future
-sessions cannot silently regress the contract.
+Session 2 will extend these with route-presence assertions; the
+regression-pin shape is set up here so future sessions cannot
+silently regress the contract.
 """
 
 from bibliogon_comics.plugin import ComicsPlugin
@@ -35,7 +34,7 @@ class TestComicsPluginContract:
 
 
 class TestComicsPluginLifecycle:
-    """Plugin lifecycle: init -> activate -> get_routes / get_frontend_manifest."""
+    """Plugin lifecycle: init -> activate -> get_routes."""
 
     def _make_plugin(self, plugin_config: dict | None = None) -> ComicsPlugin:
         plugin = ComicsPlugin()
@@ -78,17 +77,6 @@ class TestComicsPluginLifecycle:
 
         endpoint_paths = [getattr(r, "path", "") for r in info_router.routes]
         assert "/comics/info" in endpoint_paths
-
-    def test_get_frontend_manifest_is_minimal(self) -> None:
-        plugin = self._make_plugin({"settings": {}})
-        manifest = plugin.get_frontend_manifest()
-        assert manifest is not None
-        assert manifest == {"settings": {}}
-
-    def test_get_frontend_manifest_exposes_settings(self) -> None:
-        plugin = self._make_plugin({"settings": {"reading_direction": "rtl"}})
-        manifest = plugin.get_frontend_manifest()
-        assert manifest == {"settings": {"reading_direction": "rtl"}}
 
 
 class TestComicsPluginEntryPoint:

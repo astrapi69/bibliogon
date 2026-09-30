@@ -23,18 +23,6 @@ class KinderbuchPlugin(BasePlugin):
         from .routes import router
         return [router]
 
-    def get_frontend_manifest(self) -> dict[str, Any] | None:
-        # ``editor_extensions`` slot will be re-added in Session 3 when the
-        # frontend PageEditor lands. v1.0.0 previously declared a
-        # ``kinderbuch-page-layout`` slot that no frontend code consumed.
-        return {
-            "templates": getattr(self, "_templates", []),
-            "settings": {
-                "image_position": getattr(self, "_settings", {}).get("image_position", "top"),
-                "default_font_size": getattr(self, "_settings", {}).get("default_font_size", 24),
-            },
-        }
-
     @property
     def templates(self) -> list[dict[str, Any]]:
         return getattr(self, "_templates", [])

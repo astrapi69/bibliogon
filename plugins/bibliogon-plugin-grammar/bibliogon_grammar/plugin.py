@@ -38,18 +38,6 @@ class GrammarPlugin(BasePlugin):
         from .routes import router
         return [router]
 
-    def get_frontend_manifest(self) -> dict[str, Any] | None:
-        return {
-            "editor_extensions": ["grammar-check"],
-            "sidebar_actions": [
-                {
-                    "id": "grammar_check",
-                    "label": {"de": "Grammatik prüfen", "en": "Check Grammar"},
-                    "icon": "spell-check",
-                },
-            ],
-        }
-
     def health(self) -> dict[str, Any]:
         client = getattr(self, "_client", None)
         if client is None:
