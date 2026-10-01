@@ -183,3 +183,85 @@ def test_hook_is_configured_with_an_explicit_interpreter() -> None:
     assert len(hooks) == 1
     assert hooks[0]["entry"].startswith("python3 ")
     assert hooks[0]["language"] == "system"
+
+
+def run_on_identities(identities: list[str]) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        [sys.executable, str(HOOK), "--stdin-identities"],
+        input="\x00".join(identities),
+        capture_output=True,
+        text=True,
+    )
+
+
+class TestIdentityMode:
+    """#786: the trailer is a symptom; the commit AUTHOR is the cause.
+
+    GitHub's squash merge adds the squashed commits' author as a
+    co-author on the squash commit. A session committing as
+    ``Claude <noreply@anthropic.com>`` therefore produces the exact
+    trailer #768 forbids - created by GitHub at merge time, after the
+    commit-msg hook and after the pull-request CI job, both of which only
+    ever see a clean message. All six squash commits merged into develop
+    on 2026-10-01 carry it.
+
+    So the identity is what has to be checked, and checking it on the
+    branch is what makes it fixable: a pull request can be rewritten,
+    while a merge commit on develop needs a force-push the repo forbids.
+    """
+
+    def test_a_human_identity_passes(self):
+        result = run_on_identities(["Asterios Raptis <asterios.raptis@web.de>"])
+        assert result.returncode == 0, result.stdout + result.stderr
+
+    def test_the_identity_this_issue_was_filed_for_is_rejected(self):
+        result = run_on_identities(["Claude <noreply@anthropic.com>"])
+        assert result.returncode == 1
+        assert "noreply@anthropic.com" in result.stdout
+
+    def test_a_bot_identity_is_rejected(self):
+        result = run_on_identities(["github-actions[bot] <bot@example.com>"])
+        assert result.returncode == 1
+
+    def test_one_bad_identity_among_several_fails_the_whole_run(self):
+        result = run_on_identities(
+            [
+                "Asterios Raptis <asterios.raptis@web.de>",
+                "Claude <noreply@anthropic.com>",
+                "Asterios Raptis <asterios.raptis@web.de>",
+            ]
+        )
+        assert result.returncode == 1
+
+    def test_a_private_github_address_is_not_a_bot(self):
+        """`users.noreply.github.com` is what every human with a hidden
+        address gets, so it must not trip the check (#779)."""
+        result = run_on_identities(["Some Human <12345+someone@users.noreply.github.com>"])
+        assert result.returncode == 0, result.stdout + result.stderr
+
+    def test_empty_input_passes(self):
+        assert run_on_identities([]).returncode == 0
+
+
+class TestConfiguredIdentityMode:
+    """The local half: reject the configured identity before a commit exists."""
+
+    def _run(self, tmp_path: Path, name: str, email: str) -> subprocess.CompletedProcess:
+        subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+        subprocess.run(["git", "-C", str(tmp_path), "config", "user.name", name], check=True)
+        subprocess.run(["git", "-C", str(tmp_path), "config", "user.email", email], check=True)
+        return subprocess.run(
+            [sys.executable, str(HOOK), "--configured-identity"],
+            cwd=str(tmp_path),
+            capture_output=True,
+            text=True,
+        )
+
+    def test_a_human_identity_passes(self, tmp_path: Path):
+        result = self._run(tmp_path, "Asterios Raptis", "asterios.raptis@web.de")
+        assert result.returncode == 0, result.stdout + result.stderr
+
+    def test_a_non_human_identity_is_refused_with_the_remedy(self, tmp_path: Path):
+        result = self._run(tmp_path, "Claude", "noreply@anthropic.com")
+        assert result.returncode == 1
+        assert "git config user.name" in result.stdout

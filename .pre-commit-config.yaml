@@ -67,6 +67,18 @@ repos:
         language: system
         stages: [commit-msg]
 
+      # #786: the trailer is a symptom. GitHub's squash merge adds the
+      # squashed commits' AUTHOR as a co-author, so a non-human identity
+      # produces the forbidden trailer at merge time - after the hook above
+      # and after the pull-request job, both of which see a clean message.
+      # The identity is the only thing that can be refused beforehand.
+      - id: no-ai-commit-identity
+        name: commit identity is a person, not a tool
+        entry: python3 scripts/check_no_ai_coauthor.py --configured-identity
+        language: system
+        stages: [pre-commit]
+        pass_filenames: false
+
       - id: roadmap-archive-reminder
         name: Remind about ROADMAP archival
         entry: scripts/check_roadmap_for_done_items.sh

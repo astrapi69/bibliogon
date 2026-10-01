@@ -249,6 +249,16 @@ jobs:
           git log --format='%B%x00' \
             ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} \
             | python scripts/check_no_ai_coauthor.py --stdin-messages
+      # #786: and the authors themselves, because the squash commit's
+      # trailer is synthesised from them at merge time - too late for any
+      # message check. Checked on the PULL REQUEST on purpose: a branch can
+      # be rewritten, a merge commit on develop would need the force-push
+      # the repo's safety rules forbid.
+      - name: Reject non-human commit authors
+        run: |
+          git log --format='%an <%ae>%x00%cn <%ce>%x00' \
+            ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} \
+            | python scripts/check_no_ai_coauthor.py --stdin-identities
 
   lint-and-type-check:
     name: Backend ruff + mypy

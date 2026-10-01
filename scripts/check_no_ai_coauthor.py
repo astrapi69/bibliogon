@@ -13,6 +13,14 @@ session can slip one in unnoticed. This script is the enforcement:
 - **range mode** (``check_no_ai_coauthor.py --stdin-messages``): CI
   feeds every commit message of a PR, NUL-separated, so a bypassed
   local hook still gets caught.
+- **identity modes** (``--stdin-identities`` / ``--configured-identity``):
+  the trailer is a symptom. GitHub's squash merge adds the squashed
+  commits' AUTHOR as a co-author on the squash commit, so a session
+  committing as ``Claude <noreply@anthropic.com>`` produces the forbidden
+  trailer at merge time - after the commit-msg hook and after the
+  pull-request job, both of which only ever see a clean message (#786).
+  CI feeds the authors and committers of a PR's commits; the local hook
+  checks the configured identity before a commit exists.
 
 Documented exception: the rule allows the trailer when the commit body
 explicitly states who authorized it. A ``Co-Authored-By-Authorized-By:``
@@ -54,6 +62,12 @@ NON_HUMAN_MARKERS = (
 AUTHORIZED_MARKER = "co-authored-by-authorized-by:"
 
 
+def is_non_human(identity: str) -> bool:
+    """Whether ``identity`` ("Name <mail>") names a tool rather than a person."""
+    haystack = identity.lower()
+    return any(marker in haystack for marker in NON_HUMAN_MARKERS)
+
+
 def offending_trailers(message: str) -> list[str]:
     """Return every non-human ``Co-Authored-By`` trailer in ``message``.
 
@@ -75,8 +89,7 @@ def offending_trailers(message: str) -> list[str]:
         if not match:
             continue
         who = match.group("who")
-        haystack = who.lower()
-        if any(marker in haystack for marker in NON_HUMAN_MARKERS):
+        if is_non_human(who):
             offenders.append(who)
     return offenders
 
@@ -91,6 +104,29 @@ def _report(offenders: list[str], subject: str) -> None:
     print("a 'Co-Authored-By-Authorized-By: <name> (<reason>)' line to the body.")
 
 
+def _report_identity(identity: str, where: str) -> None:
+    print(f"ERROR: commit {where} is not a person: {identity}")
+    print()
+    print("GitHub's squash merge turns a non-human author into exactly the")
+    print("Co-Authored-By trailer coding-standards.md forbids, on a commit")
+    print("created after every message check has already passed (#786).")
+    print("Set a human identity instead:")
+    print('  git config user.name "Your Name"')
+    print('  git config user.email "you@example.com"')
+
+
+def _configured_identity() -> str:
+    import subprocess
+
+    def read(key: str) -> str:
+        result = subprocess.run(
+            ["git", "config", "--get", key], capture_output=True, text=True, check=False
+        )
+        return result.stdout.strip()
+
+    return f"{read('user.name')} <{read('user.email')}>"
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument(
@@ -103,9 +139,34 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Read NUL-separated commit messages from stdin (CI range check)",
     )
+    parser.add_argument(
+        "--stdin-identities",
+        action="store_true",
+        help="Read NUL-separated 'Name <mail>' identities from stdin (CI range check)",
+    )
+    parser.add_argument(
+        "--configured-identity",
+        action="store_true",
+        help="Check this repository's configured user.name / user.email",
+    )
     args = parser.parse_args(argv)
 
     failed = False
+
+    if args.stdin_identities:
+        for identity in sys.stdin.read().split("\x00"):
+            identity = identity.strip()
+            if not identity or identity == "<>":
+                continue
+            if is_non_human(identity):
+                _report_identity(identity, "author or committer")
+                failed = True
+
+    if args.configured_identity:
+        identity = _configured_identity()
+        if is_non_human(identity):
+            _report_identity(identity, "identity configured here")
+            failed = True
 
     if args.stdin_messages:
         for message in sys.stdin.read().split("\x00"):
