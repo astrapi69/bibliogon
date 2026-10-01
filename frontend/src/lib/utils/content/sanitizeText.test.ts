@@ -332,13 +332,13 @@ describe("the class rule scans instead of backtracking (#949)", () => {
     });
 
     it("still matches a second attribute right after the first", () => {
-        // On <section>: the div rule would delete a <div> before its
-        // attributes mattered (#948).
-        const [fixed, count] = fixHtmlArtifacts(
-            '<section class="MsoNormal" class="c1">x</section>',
-        );
-        expect(fixed).toBe("<section>x</section>");
-        expect(count).toBe(2);
+        // On <div> since #948; this read <section> while the div rule still
+        // deleted the tag before its attributes mattered. The div is left
+        // bare by the class rule and then removed as an empty wrapper, so
+        // the assertion is on the text rather than on the tag.
+        const [fixed, count] = fixHtmlArtifacts('<div class="MsoNormal" class="c1">x</div>');
+        expect(fixed).toBe("x");
+        expect(count).toBe(4);
     });
 });
 
@@ -374,5 +374,73 @@ describe("the style rules scan instead of backtracking (#955)", () => {
         expect(fixHtmlArtifacts('<section data-x="style="">y</section>')[0]).toBe(
             '<section data-x="style="">y</section>',
         );
+    });
+});
+
+describe("attributed wrappers survive (#948)", () => {
+    // `/<\/?div[^>]*>/gi` matched any div, so the project's OWN markup went
+    // with Word's leftovers: scaffolder.py wraps twelve front- and back-matter
+    // chapter types in <div class="dedication"> and friends, and a book's
+    // custom_css styles exactly those. The chapter still read correctly
+    // afterwards and lost its styling silently.
+    //
+    // Deciding each tag alone is not enough: an attributed opening tag would
+    // survive while its own closing tag, bare by definition, still went. The
+    // pair is decided together, so the result stays balanced.
+
+    const EXPORTER_WRAPPERS = [
+        "dedication",
+        "epigraph",
+        "imprint",
+        "prologue",
+        "epilogue",
+        "afterword",
+        "final-thoughts",
+        "part",
+        "also-by-author",
+        "next-in-series",
+        "excerpt",
+        "call-to-action",
+    ];
+
+    it("keeps every exporter chapter wrapper", () => {
+        for (const name of EXPORTER_WRAPPERS) {
+            const html = `<div class="${name}">Text</div>`;
+            expect(fixHtmlArtifacts(html)[0]).toBe(html);
+        }
+    });
+
+    it("keeps both tags of a nested exporter wrapper", () => {
+        const html = '<div class="epigraph"><p>Zitat</p></div>';
+        expect(fixHtmlArtifacts(html)[0]).toBe(html);
+    });
+
+    it("keeps an inline styling hook", () => {
+        const html = '<span class="smallcaps">Kapitel</span>';
+        expect(fixHtmlArtifacts(html)[0]).toBe(html);
+    });
+
+    it("still removes a bare wrapper", () => {
+        expect(fixHtmlArtifacts("<div>Text</div>")[0]).toBe("Text");
+        expect(fixHtmlArtifacts("<span>Text</span>")[0]).toBe("Text");
+        expect(fixHtmlArtifacts("<DIV >Text</DIV >")[0]).toBe("Text");
+    });
+
+    it("still removes a Word wrapper once its attributes are gone", () => {
+        expect(fixHtmlArtifacts('<span style="font-weight:700">Text</span>')[0]).toBe("Text");
+        expect(fixHtmlArtifacts('<div class="MsoNormal">Text</div>')[0]).toBe("Text");
+    });
+
+    it("drops the bare wrapper around an attributed one and keeps the inner", () => {
+        expect(fixHtmlArtifacts('<div><div class="part">A</div></div>')[0]).toBe(
+            '<div class="part">A</div>',
+        );
+        expect(fixHtmlArtifacts('<div class="part"><div>A</div></div>')[0]).toBe(
+            '<div class="part">A</div>',
+        );
+    });
+
+    it("no longer eats a tag that merely starts with div", () => {
+        expect(fixHtmlArtifacts("<divider>Text</divider>")[0]).toBe("<divider>Text</divider>");
     });
 });

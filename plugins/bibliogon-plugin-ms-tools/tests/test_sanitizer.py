@@ -488,13 +488,13 @@ class TestStructuralClasses:
         """`scaffolder.py` writes these around front/back-matter chapters,
         and a book's custom_css styles them.
 
-        Asserted on `<section>`: the wrappers themselves are `<div>`, and
-        the separate div rule deletes every div whatever its class - a
-        wider instance of this same over-broad-removal class, filed on its
-        own rather than widened into here.
+        On the real `<div>` since #948. This asserted on `<section>` while
+        the div rule still deleted every div whatever its class, which made
+        the test pass without covering the tag the exporter actually
+        writes.
         """
         for name in ("dedication", "epigraph", "imprint", "part", "also-by-author"):
-            html = f'<section class="{name}">Text</section>'
+            html = f'<div class="{name}">Text</div>'
             assert fix_html_artifacts(html)[0] == html, name
 
     def test_counts_one_replacement_per_changed_attribute(self):
@@ -547,13 +547,14 @@ class TestClassRuleScalesLinearly:
     def test_a_second_attribute_right_after_the_first_still_matches(self):
         """The scan must not consume the separator the next attribute needs.
 
-        On ``<section>`` rather than ``<div>`` for the reason the
-        structural-class test above gives: the div rule would delete the
-        tag before its attributes mattered (#948).
+        On ``<div>`` since #948; it read ``<section>`` while the div rule
+        still deleted the tag before its attributes mattered. The div is
+        left bare by the class rule and then removed as an empty wrapper,
+        so the assertion is on the text rather than on the tag.
         """
-        fixed, count = fix_html_artifacts('<section class="MsoNormal" class="c1">x</section>')
-        assert fixed == "<section>x</section>"
-        assert count == 2
+        fixed, count = fix_html_artifacts('<div class="MsoNormal" class="c1">x</div>')
+        assert fixed == "x"
+        assert count == 4
 
 
 class TestStyleRulesScaleLinearly:
@@ -598,3 +599,62 @@ class TestStyleRulesScaleLinearly:
         assert fix_html_artifacts('<section data-x="style="">y</section>')[0] == (
             '<section data-x="style="">y</section>'
         )
+
+
+class TestAttributedWrappersSurvive:
+    """#948: the div and span rules deleted the tag whatever it carried.
+
+    ``</?div[^>]*>`` matched any div, so the project's OWN markup went
+    with Word's leftovers: ``scaffolder.py`` wraps twelve front- and
+    back-matter chapter types in ``<div class="dedication">`` and
+    friends, export writes them, import brings them back as chapter HTML,
+    and a book's ``custom_css`` is what styles them. The chapter still
+    read correctly afterwards and lost its styling silently.
+
+    The rules now match only an attribute-less tag, which is what their
+    comment always claimed. Word's wrappers still go, because the style
+    and class rules run first and leave them bare.
+    """
+
+    #: Every wrapper `_CHAPTER_TYPE_WRAPPERS` in plugin-export writes.
+    EXPORTER_WRAPPERS = (
+        "dedication",
+        "epigraph",
+        "imprint",
+        "prologue",
+        "epilogue",
+        "afterword",
+        "final-thoughts",
+        "part",
+        "also-by-author",
+        "next-in-series",
+        "excerpt",
+        "call-to-action",
+    )
+
+    def test_every_exporter_chapter_wrapper_survives(self):
+        for name in self.EXPORTER_WRAPPERS:
+            html = f'<div class="{name}">Text</div>'
+            assert fix_html_artifacts(html)[0] == html, name
+
+    def test_a_nested_exporter_wrapper_keeps_both_tags(self):
+        html = '<div class="epigraph"><p>Zitat</p></div>'
+        assert fix_html_artifacts(html)[0] == html
+
+    def test_an_inline_styling_hook_survives(self):
+        html = '<span class="smallcaps">Kapitel</span>'
+        assert fix_html_artifacts(html)[0] == html
+
+    def test_a_bare_wrapper_is_still_removed(self):
+        assert fix_html_artifacts("<div>Text</div>")[0] == "Text"
+        assert fix_html_artifacts("<span>Text</span>")[0] == "Text"
+        assert fix_html_artifacts("<DIV >Text</DIV >")[0] == "Text"
+
+    def test_a_word_wrapper_is_still_removed_once_its_attributes_are(self):
+        """The ordering does the work: style and class run before these."""
+        assert fix_html_artifacts('<span style="font-weight:700">Text</span>')[0] == "Text"
+        assert fix_html_artifacts('<div class="MsoNormal">Text</div>')[0] == "Text"
+
+    def test_a_tag_that_merely_starts_with_div_is_no_longer_eaten(self):
+        """``[^>]*`` also matched ``<divider>``; ``\\s*>`` cannot."""
+        assert fix_html_artifacts("<divider>Text</divider>")[0] == "<divider>Text</divider>"
