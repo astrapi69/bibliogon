@@ -95,6 +95,27 @@ def _app_yaml_plugins(text: str) -> set[str]:
     return set(plugins.get("enabled") or []) | set(plugins.get("disabled") or [])
 
 
+def _help_overview_bullets(text: str, heading: str) -> set[str]:
+    """Slugs from a help page's plugin list.
+
+    The bullets read ``- **Export** (`export`) - …``: the display name is
+    what a reader wants, the slug in backticks is what Settings > Plugins,
+    ``plugins.enabled`` and a plugin ZIP's ``plugin.yaml`` call the same
+    thing. Carrying both is what lets this guard check the page at all.
+    """
+    return _table_rows(text, heading, r"^- \*\*[^*]+\*\* \(`([a-z-]+)`\)")
+
+
+def _parity_table_rows(text: str) -> set[str]:
+    """Plugin names from the offline-parity table's first column.
+
+    Several plugins hold more than one row (``export`` once per format,
+    ``git-sync`` for import and for push), so the first cell is
+    ``**export** (PDF)`` and only the bolded slug is taken.
+    """
+    return _table_rows(text, "## Parity table", r"^\| \*\*([a-z-]+)\*\*")
+
+
 def _config_plugin_yamls(_: str) -> set[str]:
     return {path.stem for path in (_REPO_ROOT / "backend" / "config" / "plugins").glob("*.yaml")}
 
@@ -168,6 +189,30 @@ HANDLISTS: tuple[HandList, ...] = (
         "backend/pyproject.toml",
         _pyproject_path_deps,
         "entry-point discovery only sees installed packages; a plugin missing here is 404 in CI",
+    ),
+    HandList(
+        "CONCEPT.md plugin catalog",
+        "docs/CONCEPT.md",
+        lambda text: _table_rows(text, "### 5.1 Plugin catalog", r"^\| `plugin-([a-z-]+)`"),
+        "the design record of what the plugin layer contains (#871)",
+    ),
+    HandList(
+        "help overview, German",
+        "docs/help/de/plugins/uebersicht.md",
+        lambda text: _help_overview_bullets(text, "## Verfügbare Plugins"),
+        "what a user reads in the app to learn which plugins exist (#871)",
+    ),
+    HandList(
+        "help overview, English",
+        "docs/help/en/plugins/uebersicht.md",
+        lambda text: _help_overview_bullets(text, "## Available plugins"),
+        "the same page for every non-German UI language (#871)",
+    ),
+    HandList(
+        "offline-parity table",
+        "docs/MAXIMAL-OFFLINE-PARITY.md",
+        _parity_table_rows,
+        "the design record of which plugin works in the backendless build (#871)",
     ),
     HandList(
         "app.yaml.example plugins.enabled",

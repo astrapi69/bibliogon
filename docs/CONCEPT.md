@@ -597,26 +597,55 @@ Importing a backup restores the entire state. Independent of the export plugin (
 
 ### 5.1 Plugin catalog
 
-**Free (MIT):**
-
-| Plugin | Type | Description |
-|--------|------|-------------|
-| `plugin-export` | Export | EPUB, PDF, write-book-template ZIP |
-| `plugin-characters` | Structure | Character database, relationship graph |
-| `plugin-wordcount` | Editor | Word count per chapter and total |
-
-**Premium:**
+Every plugin is free and MIT-licensed. The catalog used to be split into
+"Free" and "Premium" tiers; that split described a business model the project
+did not take. `license_tier` is `"core"` on every plugin and the licensing
+infrastructure is dormant (`LICENSING_ENABLED = False`), so one table is the
+honest shape.
 
 | Plugin | Type | Description | Depends on |
 |--------|------|-------------|------------|
-| `plugin-kinderbuch` | Export + editor | One-image-per-page layout, special templates | plugin-export |
-| `plugin-kdp` | Export | KDP metadata, cover validation, preview | plugin-export |
-| `plugin-audiobook` | Export | Text-to-speech, MP3/M4B, chapter markers | plugin-export |
-| `plugin-grammar` | Editor | LanguageTool integration | - |
-| `plugin-ai-assist` | Editor | AI writing help | - |
-| `plugin-collaboration` | Structure | Multi-user real-time editing (exploration) | - |
-| `plugin-versioning` | Editor | Chapter version history with diff | - |
-| `plugin-docx` | Export | Word export for editors | plugin-export |
+| `plugin-aplus` | Marketing | Amazon A+ Content package, AI-generated from the book's metadata and validated against a per-language ruleset | - |
+| `plugin-audiobook` | Export | Text-to-speech via manuscripta (Edge / Google / ElevenLabs / pyttsx3), per-book config | - |
+| `plugin-comics` | Editor + export | Multi-panel comic pages, speech bubbles, comic-book PDF | export |
+| `plugin-export` | Export | EPUB, PDF, DOCX, HTML, Markdown, LaTeX, write-book-template ZIP, async jobs with SSE | - |
+| `plugin-getstarted` | Onboarding | Onboarding flow and example book | - |
+| `plugin-git-sync` | Structure | Git-backed import and sync for write-book-template repositories | - |
+| `plugin-grammar` | Editor | LanguageTool integration (self-hosted and premium auth) | - |
+| `plugin-help` | Core UI | In-app help, shortcuts, FAQ | - |
+| `plugin-kdp` | Export | KDP metadata, cover validation, completeness check | export |
+| `plugin-kinderbuch` | Editor + export | One-image-per-page picture-book layouts | export |
+| `plugin-learnset` | Export | Export a book as a schema-validated adaptive-learner learn set | export |
+| `plugin-medium-import` | Structure | Medium HTML-export importer: articles, publications, provenance | - |
+| `plugin-ms-tools` | Editor | Style checks, sanitization, text metrics, per-book thresholds | - |
+| `plugin-promotion` | Marketing | Portfolio board of retail formats per book: status, store URLs, ASIN | - |
+| `plugin-story-bible` | Structure | Per-book fiction-entity database, Storyboard integration, Arc View, continuity checker | - |
+| `plugin-translation` | Editor | DeepL / LMStudio translation with a custom settings panel | - |
+
+`backend/tests/test_plugin_handlists.py` checks this table against
+`plugins/` in both directions, so a new plugin cannot ship without a row and
+a removed one cannot leave a row behind.
+
+**Considered and not built as plugins.** Earlier drafts of this catalog listed
+five names that never became packages. Four of them describe work that
+happened elsewhere, which is why they are recorded here rather than dropped:
+
+- A `characters` plugin for a character database with a relationship graph -
+  shipped as `plugin-story-bible`, which covers characters, settings, plot
+  points, items and lore rather than characters alone.
+- A `wordcount` plugin for per-chapter and total counts - shipped inside
+  `plugin-ms-tools` (metrics) and the editor's own character-count extension.
+- A `docx` plugin for Word export - shipped as one of `plugin-export`'s
+  formats; a separate package would have split one pipeline across two.
+- A `versioning` plugin for chapter history with a diff - shipped in the
+  core, not as a plugin: `chapter_versions` plus the manual snapshots are
+  part of the editor rather than an add-on.
+- An `ai-assist` plugin for AI writing help - the AI surfaces live in the
+  core instead (provider abstraction, browser-direct calls with the user's
+  own key), because every editor surface wants them, not one plugin.
+
+Real-time multi-user collaboration remains an exploration with no
+implementation; see the roadmap rather than this catalog for its state.
 
 ### 5.2 Plugin dependencies
 
