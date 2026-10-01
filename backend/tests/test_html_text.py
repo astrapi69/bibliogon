@@ -49,6 +49,52 @@ def test_lists_render_one_item_per_line() -> None:
     assert result == "Eins\nZwei"
 
 
+class TestLineBreaks:
+    """A bare ``<br>`` must end a line (#913).
+
+    ``br`` is in ``_BLOCK_TAGS``, so the intent was always "a line break
+    ends a line". But the newline marker was appended from
+    ``handle_endtag``, which ``html.parser`` calls only for an explicit
+    ``</br>``. A bare ``<br>`` - the shape every real document uses -
+    fires ``handle_starttag`` only, so the two data chunks were
+    concatenated with NO separator at all.
+
+    That is worse than losing the break. ``Max<br>Mira`` became the
+    single token ``MaxMira``, so plugin-story-bible's word-boundary
+    name-matching stopped finding EITHER name - a silent false negative
+    reading as "no mentions found". ms-tools counted one word where
+    there were two, audiobook narrated the glued token, and translation
+    sent it to the provider as one word. Imported chapters are the
+    affected corpus and they are the majority (#787).
+    """
+
+    def test_a_bare_br_ends_the_line(self) -> None:
+        assert html_to_plain_text("<p>Erste<br>Zweite</p>") == "Erste\nZweite"
+
+    def test_a_self_closing_br_ends_the_line(self) -> None:
+        assert html_to_plain_text("<p>Erste<br/>Zweite</p>") == "Erste\nZweite"
+
+    def test_an_explicitly_closed_br_ends_the_line_exactly_once(self) -> None:
+        """All three spellings must agree, and none may break twice."""
+        assert html_to_plain_text("<p>Erste<br></br>Zweite</p>") == "Erste\nZweite"
+
+    def test_consecutive_breaks_do_not_produce_blank_lines(self) -> None:
+        """Blank lines are dropped by the collapse, as for any block."""
+        assert html_to_plain_text("<p>Erste<br><br>Zweite</p>") == "Erste\nZweite"
+
+    def test_a_name_split_by_a_break_stays_two_tokens(self) -> None:
+        """The story-bible symptom, pinned at the extractor."""
+        assert html_to_plain_text("<p>Max<br>Mira</p>").split() == ["Max", "Mira"]
+
+    def test_other_void_elements_still_do_not_break(self) -> None:
+        """Only ``br`` is a line break; an ``<img>`` or ``<hr>`` is not
+        in the block set and must not start inventing newlines."""
+        assert html_to_plain_text('<p>Vor <img src="a.png"> nach</p>') == "Vor nach"
+
+    def test_a_block_closer_still_breaks_from_its_end_tag(self) -> None:
+        assert html_to_plain_text("<p>Eins</p><p>Zwei</p>") == "Eins\nZwei"
+
+
 class TestContentToPlainText:
     """``content_to_plain_text`` handles all four shapes a chapter body
     actually arrives in (#835). Promoted here from

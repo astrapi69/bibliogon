@@ -23,17 +23,25 @@ import json
 import re
 from html.parser import HTMLParser
 
-_BLOCK_TAGS = frozenset(
-    {"p", "div", "h1", "h2", "h3", "h4", "h5", "h6", "li", "blockquote", "br", "tr"}
-)
+_BLOCK_TAGS = frozenset({"p", "div", "h1", "h2", "h3", "h4", "h5", "h6", "li", "blockquote", "tr"})
+
+# Void elements that end a line. They have no closing tag to hang the
+# break on: ``html.parser`` calls ``handle_endtag`` only for an explicit
+# ``</br>``, so a bare ``<br>`` - the shape every real document uses -
+# fires ``handle_starttag`` alone. Breaking there, and leaving ``br`` out
+# of ``_BLOCK_TAGS``, makes all three spellings break exactly once:
+# ``<br>`` via the start tag, ``<br/>`` and ``<br></br>`` via the start
+# tag that ``handle_startendtag`` / the parser emits first (#913).
+_VOID_BREAK_TAGS = frozenset({"br"})
+
 _SKIPPED_CONTENT_TAGS = frozenset({"script", "style"})
 
 
 class _HtmlToTextParser(HTMLParser):
     """Strips markup, keeping only the readable prose.
 
-    One newline per block-level element close, everything else joined
-    with a single space.
+    One newline per block-level element close and per void line break,
+    everything else joined with a single space.
     """
 
     def __init__(self) -> None:
@@ -44,6 +52,8 @@ class _HtmlToTextParser(HTMLParser):
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         if tag in _SKIPPED_CONTENT_TAGS:
             self._skip_depth += 1
+        elif tag in _VOID_BREAK_TAGS:
+            self.chunks.append("\n")
 
     def handle_endtag(self, tag: str) -> None:
         if tag in _SKIPPED_CONTENT_TAGS:
