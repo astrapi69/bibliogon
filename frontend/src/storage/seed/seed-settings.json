@@ -68,18 +68,24 @@
   },
   "ui": {
     "logo": "assets/logo.svg",
-    "subtitle": "Bücher schreiben und exportieren",
-    "theme": "cool-modern",
+    "theme": "warm-literary",
     "title": "Bibliogon",
     "dashboard": {
       "books_view": "grid",
       "articles_view": "list",
       "books_page_size": 25,
       "articles_page_size": 25
+    },
+    "defaults": {
+      "book_type": "prose",
+      "content_type": "blogpost"
+    },
+    "picture_book": {
+      "pdf_default_format": "8.5x8.5",
+      "pdf_default_bleed_marks": false
     }
   },
   "topics": [],
-  "features": null,
   "donations": {
     "enabled": true,
     "landing_page_url": null,
@@ -117,5 +123,11 @@
     "last_check_at": null,
     "dismissed_version": null
   },
-  "_secrets_managed_externally": false
+  "_secrets_managed_externally": false,
+  "behavior": {
+    "skip_non_destructive_confirmations": false
+  },
+  "kdp": {
+    "default_marketplace": "US"
+  }
 }
