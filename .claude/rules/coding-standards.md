@@ -76,6 +76,20 @@
   re-checks every commit of a PR so a bypassed or uninstalled hook
   is still caught. Install the stage once with `make install-hooks`
   (plain `pre-commit install` does NOT cover `commit-msg`).
+- Commit under a human identity. `git config user.name` /
+  `user.email` must name a person, not a tool: GitHub's squash
+  merge adds the squashed commits' AUTHOR as a co-author on the
+  squash commit, so a session committing as
+  `Claude <noreply@anthropic.com>` produces exactly the trailer
+  above - created at merge time, after the `commit-msg` hook and
+  after the pull-request job, both of which only ever see a clean
+  message (#786). ENFORCED on both sides: the `pre-commit`-stage
+  hook `no-ai-commit-identity` refuses the configured identity
+  locally, and the `Commit trailers` CI job checks the author and
+  committer of every commit in a pull request. Checked on the
+  BRANCH on purpose - a pull request can be rewritten, while a
+  merge commit on `develop` would need the force-push the safety
+  rules forbid.
 
 ## Function design and cohesion
 
