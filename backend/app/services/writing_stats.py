@@ -29,23 +29,56 @@ class DailyTotal:
     words_written: int
 
 
-def _flatten_tiptap(node: object) -> str:
-    """Flatten a TipTap node tree to plain text (mirrors the frontend
-    ``flattenTipTapText`` + the prose Storyboard word-count helper)."""
+_BLOCK_TYPES = frozenset({"doc", "paragraph"})
+
+
+def _is_block(node_type: object) -> bool:
+    """Whether a node ends a line once its content is emitted.
+
+    Wrappers like ``listItem`` and ``blockquote`` are deliberately absent:
+    the paragraph they contain already ends the line, and adding them
+    yields a blank line per list entry.
+    """
+    if not isinstance(node_type, str):
+        return False
+    return node_type in _BLOCK_TYPES or node_type.startswith("heading")
+
+
+def _walk_tiptap(node: object) -> str:
+    """Emit one node's plain text, ending a line after a block's content.
+
+    Children always concatenate. A block ENDS a line rather than
+    separating its own children - which is what keeps a paragraph whose
+    text is split across mark runs on one line (#929). ProseMirror stores
+    ``sehr <strong>wichtig</strong>`` as the text nodes ``"sehr "`` and
+    ``"wichtig"``, so the space already belongs to the first node and
+    joining inline siblings with anything at all is wrong.
+
+    A ``hardBreak`` carries neither text nor content, so it needs its own
+    branch or the break is lost.
+    """
     if not isinstance(node, dict):
         return ""
     text = node.get("text")
     if isinstance(text, str):
         return text
+    if node.get("type") == "hardBreak":
+        return "\n"
     content = node.get("content")
     if not isinstance(content, list):
         return ""
-    parts = [_flatten_tiptap(child) for child in content]
-    node_type = node.get("type")
-    is_block = node_type in ("doc", "paragraph") or (
-        isinstance(node_type, str) and node_type.startswith("heading")
-    )
-    return ("\n" if is_block else " ").join(parts)
+    inner = "".join(_walk_tiptap(child) for child in content)
+    return inner + "\n" if _is_block(node.get("type")) else inner
+
+
+def _flatten_tiptap(node: object) -> str:
+    """Flatten a TipTap node tree to plain text.
+
+    Byte-identical to the frontend's ``flattenTipTapText``
+    (``frontend/src/lib/utils/content/tiptapText.ts``), trailing newlines
+    included - the two are checked against each other on the same nodes.
+    """
+    return _walk_tiptap(node).rstrip("\n")
 
 
 def count_words(content: str | None) -> int:
