@@ -15,7 +15,7 @@
        generate-trial-key \
        docs-install docs-build docs-serve \
        sync-mkdocs-nav verify-mkdocs-nav check-mkdocs-orphans verify-docs-discipline verify-external-hosts \
-       lock-all-plugins verify-plugin-locks verify-theme verify-components verify-seed-i18n verify-i18n-quotes check-cohesion check-complexity \
+       lock-all-plugins verify-plugin-locks verify-theme verify-components verify-seed-i18n verify-seed-drift verify-i18n-quotes check-cohesion check-complexity \
        bump-version update-doc-headers finalize-changelog release-prepare release-finish \
        clean prod prod-down prod-logs help
 
@@ -845,6 +845,9 @@ verify-components: ## Advisory (non-blocking): CSS-module classes that re-declar
 verify-seed-i18n: ## Guard: the offline i18n seed mirror matches the YAML catalogs (#699)
 	@cd backend && poetry run python ../scripts/check_seed_i18n_drift.py --enforce
 
+verify-seed-drift: ## Guard: every GENERATED offline-seed file matches a fresh generation (#853)
+	@cd backend && poetry run python ../scripts/check_seed_drift.py --enforce
+
 verify-i18n-quotes: ## Guard: no typographic quote closed by an ASCII one in the catalogs (#924)
 	@python3 scripts/check_i18n_quote_pairs.py
 
@@ -916,6 +919,9 @@ release-test: test ## Aggregate pre-tag test gate (release-workflow.md Step 5)
 	@echo ""
 	@echo "=== offline i18n seed mirror in sync with the YAML catalogs ==="
 	@$(MAKE) verify-seed-i18n
+	@echo ""
+	@echo "=== offline seed files in sync with a fresh generation ==="
+	@$(MAKE) verify-seed-drift
 	@echo ""
 	@echo "=== i18n typographic quote pairs ==="
 	@$(MAKE) verify-i18n-quotes

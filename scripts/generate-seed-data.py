@@ -9,8 +9,6 @@ This script reads the canonical backend config and writes JSON to
 ``frontend/src/storage/seed/`` whose shapes mirror the API responses exactly:
 
   - i18n catalogs    -> raw YAML dict (same as GET /api/i18n/{lang})
-  - settings         -> backend/config/app.yaml + _secrets_managed_externally
-                        (secrets blanked), matching GET /api/settings/app defaults
   - book-types       -> {id: BookTypeDef} via the real loader (Pydantic defaults
                         applied), matching GET /api/book-types
   - content-types    -> {id: ContentTypeDef} via the real loader, matching
@@ -19,14 +17,29 @@ This script reads the canonical backend config and writes JSON to
                         GET /api/settings/plugins/discovered shape
 
 Run via ``make generate-seed-data`` (backend poetry env, so ``app.*`` imports
-resolve). Re-run and commit the JSON whenever a backend i18n catalog, the
-app.yaml defaults, or a type registry changes - this is a manual step, the
-JSON is a committed derived artifact so the pure frontend / GH-Pages build
-needs no Python.
+resolve). Re-run and commit the JSON whenever a backend i18n catalog or a
+type registry changes - this is a manual step, the JSON is a committed
+derived artifact so the pure frontend / GH-Pages build needs no Python.
+``make verify-seed-drift`` is the gate that catches a forgotten re-run.
+
+``seed-settings.json`` is deliberately NOT generated here (#853). It used to
+be produced from ``backend/config/app.yaml``, which is gitignored - so every
+regeneration overwrote the committed offline defaults with whatever that
+developer's machine had, and a personal theme and AI provider had already
+reached the shipped artifact that way. Deriving it from the committed
+``app.yaml.example`` instead does not work either: that file is what a
+developer copies for a LOCAL install, and the two want different values
+(``ai.enabled: false`` there opens the setup wizard on first run, which is
+right locally and wrong for a build whose AI runs browser-direct against the
+user's own key). It is the offline build's own shipped defaults, maintained
+by hand; the drift gate checks its KEY STRUCTURE against
+``app.yaml.example`` so a new backend setting cannot silently miss it, and
+leaves the values alone.
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import re
 import sys
@@ -76,44 +89,30 @@ def _load_yaml(path: Path) -> object:
     return data
 
 
+# Where the generated JSON lands. Overridden by ``--out-dir`` so the drift
+# gate can regenerate into a temp directory and diff against the committed
+# files without touching the working tree (#853).
+_OUT_DIR = SEED_DIR
+
+
 def _write_json(name: str, data: object) -> None:
-    SEED_DIR.mkdir(parents=True, exist_ok=True)
-    path = SEED_DIR / name
+    _OUT_DIR.mkdir(parents=True, exist_ok=True)
+    path = _OUT_DIR / name
     path.write_text(
         json.dumps(data, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
-    print(f"  wrote {path.relative_to(REPO_ROOT)}")
+    try:
+        shown = path.relative_to(REPO_ROOT)
+    except ValueError:
+        shown = path
+    print(f"  wrote {shown}")
 
 
 def generate_i18n() -> None:
     for lang in LANGS:
         catalog = _load_yaml(CONFIG_DIR / "i18n" / f"{lang}.yaml")
         _write_json(f"seed-i18n-{lang}.json", catalog)
-
-
-def generate_settings() -> None:
-    """Emit the offline settings seed from app.yaml.
-
-    Blanks the AI api_key so no secret ships in the committed seed, blanks the
-    author defaults so a developer's local (gitignored) app.yaml never leaks
-    personal data into the public seed, and adds the
-    ``_secrets_managed_externally`` flag the getApp endpoint injects so the seed
-    matches the API response shape. The offline build starts with an empty
-    author profile, matching app.yaml.example.
-    """
-    config = _load_yaml(CONFIG_DIR / "app.yaml")
-    if not isinstance(config, dict):
-        raise SystemExit("ERROR: app.yaml did not parse to a mapping")
-    ai = config.get("ai")
-    if isinstance(ai, dict) and "api_key" in ai:
-        ai["api_key"] = ""
-    author = config.get("author")
-    if isinstance(author, dict):
-        author["name"] = ""
-        author["pen_names"] = []
-    config["_secrets_managed_externally"] = False
-    _write_json("seed-settings.json", config)
 
 
 def generate_book_types() -> None:
@@ -375,10 +374,20 @@ def _slug(name: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
+    global _OUT_DIR
+
+    parser = argparse.ArgumentParser(description="Generate the offline-PWA seed JSON.")
+    parser.add_argument(
+        "--out-dir",
+        type=Path,
+        default=SEED_DIR,
+        help="where to write the JSON (default: the committed seed directory)",
+    )
+    _OUT_DIR = parser.parse_args(argv).out_dir
+
     print("Generating offline seed data from backend YAML sources...")
     generate_i18n()
-    generate_settings()
     generate_book_types()
     generate_content_types()
     generate_story_entity_types()
