@@ -22,6 +22,10 @@ on:
     branches:
       - "release/**"
 
+permissions:
+  contents: read
+  issues: write
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
@@ -102,3 +106,31 @@ jobs:
             exit 0
           fi
           bash scripts/check_live_chunk.sh "${LIVE_URL}" "${EXPECTED_MARKER}"
+
+  manual-automation-alarm:
+    name: Red-run alarm
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: always() && github.event_name == 'schedule'
+    needs: [manual-automation, live-bundle-freshness]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      # #951: a scheduled workflow is not a required check, so a red run
+      # surfaces nowhere unless someone opens the Actions tab. One tracking
+      # issue per workflow, closed automatically on the next green run.
+      - name: Open, update or close the tracking issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JOB_RESULTS: ${{ join(needs.*.result, ' ') }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          result=success
+          case "$JOB_RESULTS" in
+            *failure*|*timed_out*) result=failure ;;
+          esac
+          echo "job results: $JOB_RESULTS -> $result"
+          python scripts/nightly_alarm.py \
+            --workflow "Manual-Testplan Automation" --result "$result" --run-url "$RUN_URL"

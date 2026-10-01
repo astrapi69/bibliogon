@@ -121,3 +121,32 @@ class TestMain:
             runner=runner,
         )
         assert exit_code == 0
+
+
+WORKFLOWS = REPO_ROOT / ".github" / "workflows"
+
+
+def _scheduled_workflows() -> list[Path]:
+    """Every workflow that runs on a cron, sorted for a stable report."""
+    return sorted(p for p in WORKFLOWS.glob("*.yml") if "schedule:" in p.read_text())
+
+
+def test_there_are_scheduled_workflows_to_check():
+    """Guard the guard: a glob that matches nothing would pass vacuously."""
+    assert _scheduled_workflows(), f"no scheduled workflow found under {WORKFLOWS}"
+
+
+def test_every_scheduled_workflow_calls_the_alarm():
+    """A scheduled workflow blocks no PR, so a red run is invisible (#951).
+
+    Visual Regression was red 19 nights and Security Scan 3 weeks before
+    anyone looked, while the two workflows that do call the alarm were
+    tracked correctly over the same period. Open-set discovery: a
+    workflow added later is covered the day its cron lands.
+    """
+    missing = [p.name for p in _scheduled_workflows() if "nightly_alarm.py" not in p.read_text()]
+    assert not missing, (
+        "scheduled workflows without a red-run alarm: "
+        + ", ".join(missing)
+        + " - add an alarm step calling scripts/nightly_alarm.py"
+    )
