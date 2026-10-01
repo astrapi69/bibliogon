@@ -524,8 +524,8 @@ class TestClassRuleScalesLinearly:
         folded in here, so pinning the whole function would pin their
         cost instead of this fix.
 
-        The bound is deliberately loose: the fixed rule needs about two
-        milliseconds, the broken one 17 seconds, so a slow or contended
+        The bound is deliberately loose: the fixed rule needs about a
+        millisecond, the broken one 17 seconds, so a slow or contended
         runner cannot flip it either way.
         """
         import time
@@ -545,7 +545,7 @@ class TestClassRuleScalesLinearly:
         )
 
     def test_a_second_attribute_right_after_the_first_still_matches(self):
-        """Anchoring must not consume the separator the next match needs.
+        """The scan must not consume the separator the next attribute needs.
 
         On ``<section>`` rather than ``<div>`` for the reason the
         structural-class test above gives: the div rule would delete the

@@ -228,15 +228,23 @@ const PASTE_CLASS_RES: readonly RegExp[] = [
 ];
 
 /**
- * `(?<!\s)` is load-bearing, not decoration: without it a run of k
- * spaces offers k starting positions for `(\s+)`, so a chapter with a
- * long whitespace run that no class attribute follows costs O(n^2) on
- * content a user imported. Asserting that the run starts where it does
- * leaves exactly one attempt per run. It asserts rather than consumes,
- * so `class="a" class="b"` still matches twice. Mirrors the Python
- * rule, which CodeQL flagged as `py/polynomial-redos` on #949.
+ * The OPENING of the attribute only, with the whitespace before it and the
+ * value after it both walked in code. `(\s+)class="([^"]*)"` reads better
+ * and was the first shape here, but it lets a run of k spaces start a match
+ * attempt at each of its k positions, so a chapter carrying a long
+ * whitespace run that no class attribute follows costs O(n^2) - 1.8s at 64k
+ * spaces in the browser. Anchoring it with `(?<!\s)` removed the cost but
+ * not the ambiguity CodeQL reports on the Python mirror
+ * (`py/polynomial-redos`, #949), so the repetition is gone from the pattern
+ * instead. A literal has nothing to backtrack over.
  */
-const CLASS_ATTR_RE = /(?<!\s)(\s+)class="([^"]*)"/gi;
+const CLASS_OPEN_RE = /class="/gi;
+
+/**
+ * One character at a time, so the whitespace walk agrees with `\s+` exactly
+ * rather than approximately.
+ */
+const WS_RE = /\s/;
 
 function isPasteClass(token: string): boolean {
     return PASTE_CLASS_RES.some((pattern) => pattern.test(token));
@@ -248,17 +256,56 @@ function isPasteClass(token: string): boolean {
  * An attribute whose tokens are all cruft is removed entirely, as is an
  * empty `class=""`; one with survivors is rewritten with them. Each
  * changed attribute counts once, as the all-or-nothing rule did.
+ *
+ * Reproduces what the regular expression it replaced accepted, which is
+ * load-bearing in two places a quick reading misses. An occurrence with no
+ * whitespace in front of it is not an attribute of the tag being read, so
+ * it is skipped by its OPENING rather than by its whole span - skipping the
+ * span would swallow a real attribute nested inside the value, as
+ * `class="\nclass=""` does. And the value ends at the next quote, because
+ * `[^"]*` could not cross one either; with no next quote there is no match
+ * here and none later, since any later opening would itself contain one.
  */
 function stripPasteClasses(text: string): [string, number] {
+    const out: string[] = [];
     let count = 0;
-    const fixed = text.replace(CLASS_ATTR_RE, (whole, leading: string, value: string) => {
-        const tokens = value.split(/\s+/).filter(Boolean);
+    let cursor = 0;
+
+    CLASS_OPEN_RE.lastIndex = 0;
+    let opening = CLASS_OPEN_RE.exec(text);
+    while (opening !== null) {
+        const start = opening.index;
+        const afterQuote = start + opening[0].length;
+        let run = start;
+        while (run > cursor && WS_RE.test(text[run - 1])) run -= 1;
+
+        if (run === start) {
+            CLASS_OPEN_RE.lastIndex = afterQuote;
+            opening = CLASS_OPEN_RE.exec(text);
+            continue;
+        }
+
+        const closing = text.indexOf('"', afterQuote);
+        if (closing === -1) break;
+
+        const tokens = text.slice(afterQuote, closing).split(/\s+/).filter(Boolean);
         const kept = tokens.filter((token) => !isPasteClass(token));
-        if (kept.length > 0 && kept.length === tokens.length) return whole;
-        count += 1;
-        return kept.length > 0 ? `${leading}class="${kept.join(" ")}"` : "";
-    });
-    return [fixed, count];
+        out.push(text.slice(cursor, run));
+        if (kept.length > 0 && kept.length === tokens.length) {
+            out.push(text.slice(run, closing + 1));
+        } else {
+            count += 1;
+            if (kept.length > 0) {
+                out.push(`${text.slice(run, start)}class="${kept.join(" ")}"`);
+            }
+        }
+        cursor = closing + 1;
+        CLASS_OPEN_RE.lastIndex = cursor;
+        opening = CLASS_OPEN_RE.exec(text);
+    }
+
+    out.push(text.slice(cursor));
+    return [out.join(""), count];
 }
 
 /**

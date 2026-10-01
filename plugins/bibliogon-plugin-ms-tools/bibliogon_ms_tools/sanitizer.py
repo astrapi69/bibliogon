@@ -177,14 +177,20 @@ _PASTE_CLASS_RES = (
     re.compile(r"^kix-", re.IGNORECASE),
 )
 
-#: ``(?<!\s)`` is load-bearing, not decoration: without it a run of k
-#: spaces offers k starting positions for ``(\s+)``, so a chapter with a
-#: long whitespace run that no class attribute follows costs O(n^2) -
-#: 1.0s at 16k spaces, 60s at 64k, on content a user imported
-#: (``py/polynomial-redos``, CodeQL on #949). Asserting that the run
-#: starts where it does leaves exactly one attempt per run. It asserts
-#: rather than consumes, so ``class="a" class="b"`` still matches twice.
-_CLASS_ATTR_RE = re.compile(r'(?<!\s)(\s+)class="([^"]*)"', re.IGNORECASE)
+#: The OPENING of the attribute only, with the whitespace before it and the
+#: value after it both walked in code. ``(\s+)class="([^"]*)"`` reads better
+#: and was the first shape here, but it lets a run of k spaces start a match
+#: attempt at each of its k positions: a chapter carrying a long whitespace
+#: run that no class attribute follows then costs O(n^2) - 1.0s at 16k
+#: spaces, 17s at 64k, on content a user imported (``py/polynomial-redos``,
+#: CodeQL on #949). Anchoring it with ``(?<!\s)`` removed the cost but not
+#: the ambiguity the query reports, so the repetition is gone from the
+#: pattern instead. A literal has nothing to backtrack over.
+_CLASS_OPEN_RE = re.compile(r'class="', re.IGNORECASE)
+
+#: One character at a time, so the whitespace walk agrees with ``\s+``
+#: exactly rather than approximately - ``str.isspace()`` is a different set.
+_WS_RE = re.compile(r"\s")
 
 
 def _is_paste_class(token: str) -> bool:
@@ -204,20 +210,48 @@ def _strip_paste_classes(text: str) -> tuple[str, int]:
     An attribute whose tokens are all cruft is removed entirely, as is an
     empty ``class=""``; one with survivors is rewritten with them. Each
     changed attribute counts once, as the all-or-nothing rule did.
+
+    Reproduces what the regular expression it replaced accepted, which is
+    load-bearing in two places a quick reading misses. An occurrence with
+    no whitespace in front of it is not an attribute of the tag being
+    read, so it is skipped by its OPENING rather than by its whole span -
+    skipping the span would swallow a real attribute nested inside the
+    value, as ``class="\nclass=""`` does. And the value ends at the next
+    quote, because ``[^"]*`` could not cross one either; with no next
+    quote there is no match here and none later, since any later opening
+    would itself contain one.
     """
+    out: list[str] = []
     count = 0
+    cursor = 0
+    pos = 0
 
-    def replace(match: re.Match[str]) -> str:
-        nonlocal count
-        leading, value = match.group(1), match.group(2)
-        tokens = value.split()
+    while (opening := _CLASS_OPEN_RE.search(text, pos)) is not None:
+        start, after_quote = opening.start(), opening.end()
+        run = start
+        while run > cursor and _WS_RE.match(text, run - 1):
+            run -= 1
+        if run == start:
+            pos = after_quote
+            continue
+
+        closing = text.find('"', after_quote)
+        if closing == -1:
+            break
+
+        tokens = text[after_quote:closing].split()
         kept = [token for token in tokens if not _is_paste_class(token)]
+        out.append(text[cursor:run])
         if kept and kept == tokens:
-            return match.group(0)
-        count += 1
-        return f'{leading}class="{" ".join(kept)}"' if kept else ""
+            out.append(text[run : closing + 1])
+        else:
+            count += 1
+            if kept:
+                out.append(f'{text[run:start]}class="{" ".join(kept)}"')
+        cursor = pos = closing + 1
 
-    return _CLASS_ATTR_RE.sub(replace, text), count
+    out.append(text[cursor:])
+    return "".join(out), count
 
 
 def fix_html_artifacts(text: str) -> tuple[str, int]:
