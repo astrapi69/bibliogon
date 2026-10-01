@@ -22,49 +22,76 @@ export async function resetDb(): Promise<void> {
 }
 
 // Cross-test settings isolation. /test/reset wipes DB rows but NOT the
-// app settings (ui.dashboard view-modes + page-sizes, topics), which live
-// in app.yaml and are read fresh on every page load. A test that flips a
-// global setting (view-mode default, page-size, topics) would otherwise
-// leak into every later test in the serial run — the dominant cause of
-// "passes in isolation, fails in the full suite". Capture the pre-suite
-// baseline once, then restore the mutation-prone keys before each test.
-let _settingsBaseline: {ui?: Record<string, unknown>; topics?: unknown} | null =
-    null;
+// app settings, which live in app.yaml and are read fresh on every page
+// load. A spec that flips a global setting would otherwise leak it into
+// every later spec in the serial run - the dominant cause of "passes in
+// isolation, fails in the full suite", and of the harder shape where a
+// spec fails on every retry within one run and is green in the next
+// (#954). Capture the pre-suite baseline once, then restore it per test.
+//
+// EVERY key PATCH /settings/app accepts is restored, not just the ones a
+// spec is known to write today. The earlier version restored `ui` and
+// `topics` only, so `author`, `plugins`, `ai`, `editor`, `behavior`,
+// `updates` and the `app` block leaked (#958);
+// backend/tests/test_e2e_settings_reset_covers_schema.py compares this
+// array against AppSettingsUpdate so a new writable field cannot repeat
+// that.
+const RESTORED_SETTINGS_KEYS = [
+    "app",
+    "ui",
+    "author",
+    "plugins",
+    "ai",
+    "editor",
+    "behavior",
+    "topics",
+    "updates",
+] as const;
+
+type SettingsBaseline = Record<string, unknown>;
+
+let _settingsBaseline: SettingsBaseline | null = null;
 
 export async function resetSettings(): Promise<void> {
     if (_settingsBaseline === null) {
         // First call (start of the run): capture the clean baseline.
-        _settingsBaseline = await request<{
-            ui?: Record<string, unknown>;
-            topics?: unknown;
-        }>("/settings/app");
+        _settingsBaseline = await request<SettingsBaseline>("/settings/app");
         return;
     }
-    const ui = _settingsBaseline.ui ?? {};
+    const payload: Record<string, unknown> = {};
+    for (const key of RESTORED_SETTINGS_KEYS) {
+        const value = _settingsBaseline[key];
+        // An absent key is left out rather than sent as null: PATCH merges,
+        // and a null would be a write of "no value" instead of a no-op.
+        if (value !== undefined && value !== null) payload[key] = value;
+    }
+    // `topics` is the one key whose empty state is meaningful - a spec that
+    // clears it must not have an absent baseline silently keep its [].
+    payload.topics = _settingsBaseline.topics ?? [];
+
+    const ui = (_settingsBaseline.ui as Record<string, unknown> | undefined) ?? {};
     const dashboard = (ui.dashboard as Record<string, unknown> | undefined) ?? {};
+    payload.ui = {
+        ...ui,
+        // The vast majority of dashboard specs drive the grid-only card
+        // testids (book-card-* / article-card-*). The app DEFAULT for
+        // articles_view is "list", so the E2E baseline explicitly forces
+        // BOTH dashboards to grid. Also force the TRASH view-modes to grid:
+        // trash-view-mode-defaults flips them to "list", which otherwise
+        // leaks into trash.spec.ts (grid trash-card-* testids).
+        // List-specific specs set their own view after this reset.
+        dashboard: {
+            ...dashboard,
+            books_view: "grid",
+            articles_view: "grid",
+            books_trash_view: "grid",
+            articles_trash_view: "grid",
+        },
+    };
+
     await request("/settings/app", {
         method: "PATCH",
-        body: JSON.stringify({
-            ui: {
-                ...ui,
-                // The vast majority of dashboard specs drive the grid-only
-                // card testids (book-card-* / article-card-*). The app
-                // DEFAULT for articles_view is "list", so the E2E baseline
-                // explicitly forces BOTH dashboards to grid. Also force the
-                // TRASH view-modes to grid: trash-view-mode-defaults flips
-                // them to "list", which otherwise leaks into trash.spec.ts
-                // (grid trash-card-* testids). List-specific specs set
-                // their own view after this reset.
-                dashboard: {
-                    ...dashboard,
-                    books_view: "grid",
-                    articles_view: "grid",
-                    books_trash_view: "grid",
-                    articles_trash_view: "grid",
-                },
-            },
-            topics: _settingsBaseline.topics ?? [],
-        }),
+        body: JSON.stringify(payload),
     });
 }
 
