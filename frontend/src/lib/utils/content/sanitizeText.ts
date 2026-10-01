@@ -228,23 +228,88 @@ const PASTE_CLASS_RES: readonly RegExp[] = [
 ];
 
 /**
- * The OPENING of the attribute only, with the whitespace before it and the
- * value after it both walked in code. `(\s+)class="([^"]*)"` reads better
- * and was the first shape here, but it lets a run of k spaces start a match
+ * The OPENING of an attribute only, with the whitespace before it and the
+ * value after it both walked in code. `(\s+)style="[^"]*"` reads better and
+ * was the first shape here, but it lets a run of k spaces start a match
  * attempt at each of its k positions, so a chapter carrying a long
- * whitespace run that no class attribute follows costs O(n^2) - 1.8s at 64k
- * spaces in the browser. Anchoring it with `(?<!\s)` removed the cost but
- * not the ambiguity CodeQL reports on the Python mirror
- * (`py/polynomial-redos`, #949), so the repetition is gone from the pattern
- * instead. A literal has nothing to backtrack over.
+ * whitespace run that no such attribute follows costs O(n^2) - on one 64k
+ * payload, 1.77s for the double-quoted style rule, 1.60s for the
+ * single-quoted one and 1.8s for the class rule in the browser. CodeQL
+ * reported the class one on the Python mirror (`py/polynomial-redos`, #949)
+ * and counted the older style ones as existing alerts (#955). Anchoring with
+ * `(?<!\s)` removes the cost but not the ambiguity the query reports, so the
+ * repetition is gone from the patterns instead. A literal has nothing to
+ * backtrack over.
  */
 const CLASS_OPEN_RE = /class="/gi;
+const STYLE_OPEN_DQ_RE = /style="/gi;
+const STYLE_OPEN_SQ_RE = /style='/gi;
 
 /**
  * One character at a time, so the whitespace walk agrees with `\s+` exactly
  * rather than approximately.
  */
 const WS_RE = /\s/;
+
+/**
+ * Rewrite every quoted attribute `opening` introduces.
+ *
+ * `rewrite` receives the whitespace in front of the attribute and the
+ * attribute's value, and returns what to put in their place - or null to
+ * leave the attribute alone.
+ *
+ * Reproduces what the regular expressions this replaced accepted, which is
+ * load-bearing in two places a quick reading misses. An occurrence with no
+ * whitespace in front of it is not an attribute of the tag being read, so it
+ * is skipped by its OPENING rather than by its whole span - skipping the span
+ * would swallow a real attribute nested inside the value, as
+ * `class="\nclass=""` does. And the value ends at the next quote, because
+ * `[^"]*` could not cross one either; with no next quote there is no match
+ * here and none later, since any later opening would itself contain one.
+ */
+function replaceAttribute(
+    text: string,
+    opening: RegExp,
+    quote: string,
+    rewrite: (leading: string, value: string) => string | null,
+): [string, number] {
+    const out: string[] = [];
+    let count = 0;
+    let cursor = 0;
+
+    opening.lastIndex = 0;
+    let match = opening.exec(text);
+    while (match !== null) {
+        const start = match.index;
+        const afterQuote = start + match[0].length;
+        let run = start;
+        while (run > cursor && WS_RE.test(text[run - 1])) run -= 1;
+
+        if (run === start) {
+            opening.lastIndex = afterQuote;
+            match = opening.exec(text);
+            continue;
+        }
+
+        const closing = text.indexOf(quote, afterQuote);
+        if (closing === -1) break;
+
+        const replacement = rewrite(text.slice(run, start), text.slice(afterQuote, closing));
+        out.push(text.slice(cursor, run));
+        if (replacement === null) {
+            out.push(text.slice(run, closing + 1));
+        } else {
+            count += 1;
+            out.push(replacement);
+        }
+        cursor = closing + 1;
+        opening.lastIndex = cursor;
+        match = opening.exec(text);
+    }
+
+    out.push(text.slice(cursor));
+    return [out.join(""), count];
+}
 
 function isPasteClass(token: string): boolean {
     return PASTE_CLASS_RES.some((pattern) => pattern.test(token));
@@ -254,58 +319,28 @@ function isPasteClass(token: string): boolean {
  * Remove paste-cruft class tokens, keeping every other one.
  *
  * An attribute whose tokens are all cruft is removed entirely, as is an
- * empty `class=""`; one with survivors is rewritten with them. Each
- * changed attribute counts once, as the all-or-nothing rule did.
- *
- * Reproduces what the regular expression it replaced accepted, which is
- * load-bearing in two places a quick reading misses. An occurrence with no
- * whitespace in front of it is not an attribute of the tag being read, so
- * it is skipped by its OPENING rather than by its whole span - skipping the
- * span would swallow a real attribute nested inside the value, as
- * `class="\nclass=""` does. And the value ends at the next quote, because
- * `[^"]*` could not cross one either; with no next quote there is no match
- * here and none later, since any later opening would itself contain one.
+ * empty `class=""`; one with survivors is rewritten with them. Each changed
+ * attribute counts once, as the all-or-nothing rule did.
  */
 function stripPasteClasses(text: string): [string, number] {
-    const out: string[] = [];
-    let count = 0;
-    let cursor = 0;
-
-    CLASS_OPEN_RE.lastIndex = 0;
-    let opening = CLASS_OPEN_RE.exec(text);
-    while (opening !== null) {
-        const start = opening.index;
-        const afterQuote = start + opening[0].length;
-        let run = start;
-        while (run > cursor && WS_RE.test(text[run - 1])) run -= 1;
-
-        if (run === start) {
-            CLASS_OPEN_RE.lastIndex = afterQuote;
-            opening = CLASS_OPEN_RE.exec(text);
-            continue;
-        }
-
-        const closing = text.indexOf('"', afterQuote);
-        if (closing === -1) break;
-
-        const tokens = text.slice(afterQuote, closing).split(/\s+/).filter(Boolean);
+    return replaceAttribute(text, CLASS_OPEN_RE, '"', (leading, value) => {
+        const tokens = value.split(/\s+/).filter(Boolean);
         const kept = tokens.filter((token) => !isPasteClass(token));
-        out.push(text.slice(cursor, run));
-        if (kept.length > 0 && kept.length === tokens.length) {
-            out.push(text.slice(run, closing + 1));
-        } else {
-            count += 1;
-            if (kept.length > 0) {
-                out.push(`${text.slice(run, start)}class="${kept.join(" ")}"`);
-            }
-        }
-        cursor = closing + 1;
-        CLASS_OPEN_RE.lastIndex = cursor;
-        opening = CLASS_OPEN_RE.exec(text);
-    }
+        if (kept.length > 0 && kept.length === tokens.length) return null;
+        return kept.length > 0 ? `${leading}class="${kept.join(" ")}"` : "";
+    });
+}
 
-    out.push(text.slice(cursor));
-    return [out.join(""), count];
+/**
+ * Remove every style attribute, in either quoting.
+ *
+ * Word writes a style attribute on nearly every element it exports; the
+ * book's own CSS is what should decide how a chapter looks.
+ */
+function stripStyleAttributes(text: string): [string, number] {
+    const [afterDouble, double] = replaceAttribute(text, STYLE_OPEN_DQ_RE, '"', () => "");
+    const [afterSingle, single] = replaceAttribute(afterDouble, STYLE_OPEN_SQ_RE, "'", () => "");
+    return [afterSingle, double + single];
 }
 
 /**
@@ -344,8 +379,7 @@ export function fixHtmlArtifacts(text: string): [string, number] {
         // quantifier the linter flags; the shape mirrors the Python rule.
         // eslint-disable-next-line security/detect-unsafe-regex
         [/<(\w+)(\s[^>]*)?>(\s*)<\/\1>/gi, "$3"],
-        [/\s+style="[^"]*"/gi, ""],
-        [/\s+style='[^']*'/gi, ""],
+        stripStyleAttributes,
         stripPasteClasses,
         [/<!--\[if[^>]*>[\s\S]*?<!\[endif\]-->/g, ""],
         [/<!--[\s\S]*?-->/g, ""],

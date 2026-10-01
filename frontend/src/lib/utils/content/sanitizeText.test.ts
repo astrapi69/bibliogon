@@ -341,3 +341,38 @@ describe("the class rule scans instead of backtracking (#949)", () => {
         expect(count).toBe(2);
     });
 });
+
+describe("the style rules scan instead of backtracking (#955)", () => {
+    // `\s+style="[^"]*"` had the shape #949 took out of the class rule, and
+    // was worse: 1.77s and 1.60s against the class rule's 1.8s on the same
+    // 64k payload, with the Python mirror at 23.4s and 24.5s. Older than the
+    // class rule, which is why CodeQL counted them as existing alerts rather
+    // than new ones.
+
+    it("does not blow up on a long whitespace run", () => {
+        // On the whole function now: with the style rules quadratic, a
+        // function-level bound measured them rather than what it guarded.
+        const payload = "<p" + " ".repeat(64_000) + "x>";
+        const start = performance.now();
+        fixHtmlArtifacts(payload);
+        expect(performance.now() - start).toBeLessThan(5_000);
+    });
+
+    it("still removes both quotings with their whitespace", () => {
+        expect(fixHtmlArtifacts('<p style="color: red">x</p>')[0]).toBe("<p>x</p>");
+        expect(fixHtmlArtifacts("<p style='color: red'>x</p>")[0]).toBe("<p>x</p>");
+        expect(fixHtmlArtifacts('<p STYLE="color: red">x</p>')[0]).toBe("<p>x</p>");
+    });
+
+    it("still matches a second attribute right after the first", () => {
+        const [fixed, count] = fixHtmlArtifacts('<section style="a" style="b">x</section>');
+        expect(fixed).toBe("<section>x</section>");
+        expect(count).toBe(2);
+    });
+
+    it("leaves a style opening with no whitespace in front alone", () => {
+        expect(fixHtmlArtifacts('<section data-x="style="">y</section>')[0]).toBe(
+            '<section data-x="style="">y</section>',
+        );
+    });
+});
