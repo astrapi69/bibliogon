@@ -243,13 +243,12 @@ def test_sanitize_includes_new_fixes():
 
 class TestSanitizeIsHtmlAware:
     def _sanitized(self, html: str, language: str = "de") -> str:
-        # fix_html=False: fix_html_artifacts strips class/style/span/div
-        # UNCONDITIONALLY by design (it targets Word-paste cruft) - a
-        # separate, scope-bearing concern from #805's fix_quotes/
-        # fix_whitespace markup-corruption bug. Isolating it here keeps
-        # this suite testing exactly what this fix touches. Tracked as
-        # its own issue (#818).
-        return sanitize(html, language, fix_html=False)["sanitized"]
+        # fix_html stays ON: this suite now exercises the real default.
+        # It was disabled while the class rule removed EVERY class
+        # attribute, which would have destroyed these fixtures' structural
+        # markup for reasons unrelated to #805's quote/whitespace bug;
+        # #818 made that rule per-token, so the two no longer collide.
+        return sanitize(html, language)["sanitized"]
 
     def test_prose_quotes_in_text_nodes_are_still_fixed_per_language(self):
         cases = {
@@ -430,3 +429,128 @@ class TestFragmentBoundaries:
         html = '<p>Ein <em>Satz</em> mit "Zitat" <img src="a.png" alt="B" /> Ende.</p>'
         once = self._sanitized(html)
         assert self._sanitized(once) == once
+
+
+# --- Structural classes (#818) ---
+#
+# The class rule removed EVERY `class="..."`, Word-originated or not. Its
+# docstring framed it as Word-paste cleanup, but the regex could not tell
+# `MsoNormal` from the structural classes the project's own exporter
+# writes (`<div class="dedication">`, `epigraph`, `part`, …) or from
+# anything a book's `custom_css` targets. A damage scan on the production
+# library counted 156 `class="..."` occurrences on section/figure/p/img
+# tags across imported chapters, all of which the default `fix_html`
+# would delete.
+#
+# The rule is now per-token and conservative: a token is removed only
+# when it MATCHES a known paste-cruft shape. Anything unrecognised is
+# presumed intentional and kept, so a class shape nobody has catalogued
+# yet survives rather than being destroyed.
+
+
+class TestStructuralClasses:
+    def test_a_word_class_is_still_removed(self):
+        fixed, count = fix_html_artifacts('<p class="MsoNormal">Text</p>')
+        assert fixed == "<p>Text</p>"
+        assert count == 1
+
+    def test_a_structural_class_survives(self):
+        html = '<section class="dedication">Fuer Mira</section>'
+        assert fix_html_artifacts(html)[0] == html
+
+    def test_a_mixed_attribute_keeps_only_the_structural_token(self):
+        """The case the all-or-nothing regex could not express."""
+        fixed, _ = fix_html_artifacts('<p class="MsoNormal dedication">Text</p>')
+        assert fixed == '<p class="dedication">Text</p>'
+
+    def test_google_docs_classes_are_removed(self):
+        fixed, _ = fix_html_artifacts('<p class="c1 c12">Text</p>')
+        assert fixed == "<p>Text</p>"
+
+    def test_a_kix_class_is_removed(self):
+        fixed, _ = fix_html_artifacts('<span class="kix-wrapper">x</span>')
+        assert "kix-" not in fixed
+
+    def test_a_word_section_wrapper_is_removed(self):
+        fixed, _ = fix_html_artifacts('<section class="WordSection1">Text</section>')
+        assert fixed == "<section>Text</section>"
+
+    def test_an_unknown_class_is_kept_rather_than_guessed_at(self):
+        """Conservative by construction: not recognised means not touched."""
+        html = '<section class="chapter-intro layout-wide">Text</section>'
+        assert fix_html_artifacts(html)[0] == html
+
+    def test_an_empty_class_attribute_is_removed(self):
+        fixed, _ = fix_html_artifacts('<p class="">Text</p>')
+        assert fixed == "<p>Text</p>"
+
+    def test_the_exporter_s_own_chapter_wrapper_names_all_survive(self):
+        """`scaffolder.py` writes these around front/back-matter chapters,
+        and a book's custom_css styles them.
+
+        Asserted on `<section>`: the wrappers themselves are `<div>`, and
+        the separate div rule deletes every div whatever its class - a
+        wider instance of this same over-broad-removal class, filed on its
+        own rather than widened into here.
+        """
+        for name in ("dedication", "epigraph", "imprint", "part", "also-by-author"):
+            html = f'<section class="{name}">Text</section>'
+            assert fix_html_artifacts(html)[0] == html, name
+
+    def test_counts_one_replacement_per_changed_attribute(self):
+        _, count = fix_html_artifacts(
+            '<p class="MsoNormal">A</p><p class="dedication">B</p><p class="c1">C</p>'
+        )
+        assert count == 2
+
+
+class TestClassRuleScalesLinearly:
+    """#949/CodeQL: the class rule backtracked quadratically (`py/polynomial-redos`).
+
+    ``(\\s+)class="..."`` lets a run of k spaces start a match attempt at
+    every one of its k positions, so a chapter carrying a long whitespace
+    run that no class attribute follows costs O(n^2). Measured on the
+    pre-fix rule: 2k spaces 0.018s, 4k 0.072s, 8k 0.283s, 16k 1.02s - a
+    clean fourfold per doubling. Imported chapter HTML is user-provided,
+    which is what makes it a finding rather than a nit.
+    """
+
+    def test_a_long_whitespace_run_does_not_blow_up(self):
+        """On the rule itself, not on ``fix_html_artifacts``.
+
+        The two ``\\s+style="..."`` rules in that function have the same
+        shape and are worse still - 23s and 25s on this payload - but
+        they predate this change and are reported separately rather than
+        folded in here, so pinning the whole function would pin their
+        cost instead of this fix.
+
+        The bound is deliberately loose: the fixed rule needs about a
+        millisecond, the broken one 17 seconds, so a slow or contended
+        runner cannot flip it either way.
+        """
+        import time
+
+        from bibliogon_ms_tools.sanitizer import _strip_paste_classes
+
+        payload = "<p" + " " * 64_000 + "x>"
+        start = time.perf_counter()
+        _strip_paste_classes(payload)
+        assert time.perf_counter() - start < 5.0
+
+    def test_the_whitespace_run_is_still_consumed_and_preserved(self):
+        """The guard against fixing the cost by changing the behaviour."""
+        assert fix_html_artifacts('<p\n\tclass="MsoNormal">x</p>')[0] == "<p>x</p>"
+        assert fix_html_artifacts('<p  class="MsoNormal dedication">x</p>')[0] == (
+            '<p  class="dedication">x</p>'
+        )
+
+    def test_a_second_attribute_right_after_the_first_still_matches(self):
+        """The scan must not consume the separator the next attribute needs.
+
+        On ``<section>`` rather than ``<div>`` for the reason the
+        structural-class test above gives: the div rule would delete the
+        tag before its attributes mattered (#948).
+        """
+        fixed, count = fix_html_artifacts('<section class="MsoNormal" class="c1">x</section>')
+        assert fixed == "<section>x</section>"
+        assert count == 2
