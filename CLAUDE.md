@@ -103,12 +103,13 @@ make test-frontend        # Vitest
 make verify-theme         # theme gates: token completeness/undefined-refs + WCAG contrast (12 variants) + no hardcoded hex
 make verify-components    # advisory (non-blocking): CSS-module classes re-declaring a shared control surface (CSS-first rule)
 make verify-seed-i18n     # guard: the offline i18n seed mirror matches the YAML catalogs
+make verify-seed-drift    # guard: every generated offline-seed file matches a fresh generation
 make verify-docs-discipline    # mkdocs nav sync (_meta.yaml) + orphan-page detection (mandatory pre-tag)
 make verify-docs-completeness  # version headers + help i18n parity + image/xref integrity (FAIL blocks, WARN advisory)
 make prod                 # Docker Compose (port 7880)
 make prod-down            # stop Docker
 make generate-trial-key   # 30-day trial key (dormant, licensing disabled)
-make generate-seed-data   # regen offline-PWA seed JSON (frontend/src/storage/seed/) from backend YAML; re-run + commit after changing i18n catalogs, app.yaml defaults, or book/content-type registries
+make generate-seed-data   # regen offline-PWA seed JSON (frontend/src/storage/seed/) from backend YAML; re-run + commit after changing i18n catalogs, help docs, or book/content-type registries. `seed-settings.json` is hand-maintained, not generated (#853)
 make clean                # remove build artifacts
 make help                 # all targets
 ```

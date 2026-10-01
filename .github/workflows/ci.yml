@@ -63,6 +63,13 @@ jobs:
         working-directory: backend
         run: poetry run python ../scripts/check_seed_i18n_drift.py --enforce
 
+      # The same class for every OTHER generated mirror: regenerate into a
+      # temp dir and diff. #816's help page shipped missing from the offline
+      # help navigation because only the i18n catalogs were covered (#853).
+      - name: Offline seed files in sync with a fresh generation
+        working-directory: backend
+        run: poetry run python ../scripts/check_seed_drift.py --enforce
+
       # TIA (#332): pytest-testmon is a CI-only selector, installed ad-hoc into
       # the cached Poetry venv (kept out of the lockfile so it never reaches a
       # release). It builds a per-test impact map (.testmondata) and on later
