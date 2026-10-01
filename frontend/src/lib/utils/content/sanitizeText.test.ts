@@ -311,3 +311,33 @@ describe("structural classes (#818)", () => {
         ).toBe(2);
     });
 });
+
+describe("the class rule is anchored (#949)", () => {
+    // `(\s+)class="..."` let a run of k spaces start a match attempt at every
+    // one of its k positions, so a chapter carrying a long run that no class
+    // attribute follows cost O(n^2): 1.8s at 64k spaces, 0.4ms once anchored.
+    // CodeQL flagged the Python mirror as `py/polynomial-redos`.
+    //
+    // The cost itself is pinned on the Python side, where the rule can be
+    // timed on its own. Timing `fixHtmlArtifacts` here would measure the two
+    // `\s+style="..."` rules instead - same shape, 1.8s and 1.6s, older than
+    // this change and reported separately. These two cases pin what the
+    // anchoring must not change.
+
+    it("still consumes and preserves the whitespace run", () => {
+        expect(fixHtmlArtifacts('<p\n\tclass="MsoNormal">x</p>')[0]).toBe("<p>x</p>");
+        expect(fixHtmlArtifacts('<p  class="MsoNormal dedication">x</p>')[0]).toBe(
+            '<p  class="dedication">x</p>',
+        );
+    });
+
+    it("still matches a second attribute right after the first", () => {
+        // On <section>: the div rule would delete a <div> before its
+        // attributes mattered (#948).
+        const [fixed, count] = fixHtmlArtifacts(
+            '<section class="MsoNormal" class="c1">x</section>',
+        );
+        expect(fixed).toBe("<section>x</section>");
+        expect(count).toBe(2);
+    });
+});

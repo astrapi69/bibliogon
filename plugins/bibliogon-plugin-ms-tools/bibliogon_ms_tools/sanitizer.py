@@ -177,7 +177,14 @@ _PASTE_CLASS_RES = (
     re.compile(r"^kix-", re.IGNORECASE),
 )
 
-_CLASS_ATTR_RE = re.compile(r'(\s+)class="([^"]*)"', re.IGNORECASE)
+#: ``(?<!\s)`` is load-bearing, not decoration: without it a run of k
+#: spaces offers k starting positions for ``(\s+)``, so a chapter with a
+#: long whitespace run that no class attribute follows costs O(n^2) -
+#: 1.0s at 16k spaces, 60s at 64k, on content a user imported
+#: (``py/polynomial-redos``, CodeQL on #949). Asserting that the run
+#: starts where it does leaves exactly one attempt per run. It asserts
+#: rather than consumes, so ``class="a" class="b"`` still matches twice.
+_CLASS_ATTR_RE = re.compile(r'(?<!\s)(\s+)class="([^"]*)"', re.IGNORECASE)
 
 
 def _is_paste_class(token: str) -> bool:

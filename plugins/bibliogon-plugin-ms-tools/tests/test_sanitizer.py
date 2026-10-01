@@ -502,3 +502,55 @@ class TestStructuralClasses:
             '<p class="MsoNormal">A</p><p class="dedication">B</p><p class="c1">C</p>'
         )
         assert count == 2
+
+
+class TestClassRuleScalesLinearly:
+    """#949/CodeQL: the class rule backtracked quadratically (`py/polynomial-redos`).
+
+    ``(\\s+)class="..."`` lets a run of k spaces start a match attempt at
+    every one of its k positions, so a chapter carrying a long whitespace
+    run that no class attribute follows costs O(n^2). Measured on the
+    pre-fix rule: 2k spaces 0.018s, 4k 0.072s, 8k 0.283s, 16k 1.02s - a
+    clean fourfold per doubling. Imported chapter HTML is user-provided,
+    which is what makes it a finding rather than a nit.
+    """
+
+    def test_a_long_whitespace_run_does_not_blow_up(self):
+        """On the rule itself, not on ``fix_html_artifacts``.
+
+        The two ``\\s+style="..."`` rules in that function have the same
+        shape and are worse still - 23s and 25s on this payload - but
+        they predate this change and are reported separately rather than
+        folded in here, so pinning the whole function would pin their
+        cost instead of this fix.
+
+        The bound is deliberately loose: the fixed rule needs about two
+        milliseconds, the broken one 17 seconds, so a slow or contended
+        runner cannot flip it either way.
+        """
+        import time
+
+        from bibliogon_ms_tools.sanitizer import _strip_paste_classes
+
+        payload = "<p" + " " * 64_000 + "x>"
+        start = time.perf_counter()
+        _strip_paste_classes(payload)
+        assert time.perf_counter() - start < 5.0
+
+    def test_the_whitespace_run_is_still_consumed_and_preserved(self):
+        """The guard against fixing the cost by changing the behaviour."""
+        assert fix_html_artifacts('<p\n\tclass="MsoNormal">x</p>')[0] == "<p>x</p>"
+        assert fix_html_artifacts('<p  class="MsoNormal dedication">x</p>')[0] == (
+            '<p  class="dedication">x</p>'
+        )
+
+    def test_a_second_attribute_right_after_the_first_still_matches(self):
+        """Anchoring must not consume the separator the next match needs.
+
+        On ``<section>`` rather than ``<div>`` for the reason the
+        structural-class test above gives: the div rule would delete the
+        tag before its attributes mattered (#948).
+        """
+        fixed, count = fix_html_artifacts('<section class="MsoNormal" class="c1">x</section>')
+        assert fixed == "<section>x</section>"
+        assert count == 2

@@ -227,7 +227,16 @@ const PASTE_CLASS_RES: readonly RegExp[] = [
     /^kix-/i,
 ];
 
-const CLASS_ATTR_RE = /(\s+)class="([^"]*)"/gi;
+/**
+ * `(?<!\s)` is load-bearing, not decoration: without it a run of k
+ * spaces offers k starting positions for `(\s+)`, so a chapter with a
+ * long whitespace run that no class attribute follows costs O(n^2) on
+ * content a user imported. Asserting that the run starts where it does
+ * leaves exactly one attempt per run. It asserts rather than consumes,
+ * so `class="a" class="b"` still matches twice. Mirrors the Python
+ * rule, which CodeQL flagged as `py/polynomial-redos` on #949.
+ */
+const CLASS_ATTR_RE = /(?<!\s)(\s+)class="([^"]*)"/gi;
 
 function isPasteClass(token: string): boolean {
     return PASTE_CLASS_RES.some((pattern) => pattern.test(token));
