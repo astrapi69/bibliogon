@@ -554,3 +554,47 @@ class TestClassRuleScalesLinearly:
         fixed, count = fix_html_artifacts('<section class="MsoNormal" class="c1">x</section>')
         assert fixed == "<section>x</section>"
         assert count == 2
+
+
+class TestStyleRulesScaleLinearly:
+    """#955: the style rules had the shape #949 took out of the class rule.
+
+    ``\\s+style="[^"]*"`` lets a run of k spaces start a match attempt at
+    each of its k positions, so a chapter carrying a long whitespace run
+    that no style attribute follows costs O(n^2). Measured before this
+    change, on the same 64k payload #949 used: 23.4s for the
+    double-quoted rule and 24.5s for the single-quoted one, against the
+    class rule's 17s. Worse than the one CodeQL reported, and older -
+    which is why CodeQL counted them as existing branch alerts rather
+    than new ones.
+    """
+
+    def test_a_long_whitespace_run_does_not_blow_up(self):
+        """On the whole function now, which #949 could not pin.
+
+        With the style rules quadratic, a function-level bound measured
+        them rather than whatever it was meant to guard. It can be the
+        real guard once they are not.
+        """
+        import time
+
+        payload = "<p" + " " * 64_000 + "x>"
+        start = time.perf_counter()
+        fix_html_artifacts(payload)
+        assert time.perf_counter() - start < 5.0
+
+    def test_both_quotings_are_still_removed_with_their_whitespace(self):
+        assert fix_html_artifacts('<p style="color: red">x</p>')[0] == "<p>x</p>"
+        assert fix_html_artifacts("<p style='color: red'>x</p>")[0] == "<p>x</p>"
+        assert fix_html_artifacts('<p STYLE="color: red">x</p>')[0] == "<p>x</p>"
+
+    def test_a_second_attribute_right_after_the_first_still_matches(self):
+        fixed, count = fix_html_artifacts('<section style="a" style="b">x</section>')
+        assert fixed == "<section>x</section>"
+        assert count == 2
+
+    def test_a_style_opening_with_no_whitespace_in_front_is_left_alone(self):
+        """``[^>]*style="…"`` inside a value is not an attribute of the tag."""
+        assert fix_html_artifacts('<section data-x="style="">y</section>')[0] == (
+            '<section data-x="style="">y</section>'
+        )
