@@ -344,6 +344,72 @@ function stripStyleAttributes(text: string): [string, number] {
 }
 
 /**
+ * Both forms of a wrapper tag in one pass, so a closing tag can be decided
+ * against the opening tag it belongs to. Group 1 is the slash, group 2 the
+ * attribute text.
+ */
+const WRAPPER_RES: Record<string, RegExp> = {
+    span: /<(\/?)span([^>]*)>/gi,
+    div: /<(\/?)div([^>]*)>/gi,
+};
+
+/**
+ * Remove `<tag>` pairs that carry no attributes, keeping the rest.
+ *
+ * The rule used to be `/<\/?div[^>]*>/gi`, which deleted every div and span
+ * whatever it carried. That took the project's own markup with Word's
+ * leftovers: `scaffolder.py` wraps twelve chapter types in
+ * `<div class="dedication">` and friends, and a book's `custom_css` styles
+ * exactly those (#948).
+ *
+ * Deciding each tag on its own does not work, which is why this is a scan
+ * and not a tighter regular expression: an attributed opening tag would
+ * survive while its own closing tag, which carries nothing by definition,
+ * still went - leaving unbalanced HTML, worse than the original bug. So a
+ * closing tag is decided against the opening tag it belongs to, through a
+ * stack that tracks nesting.
+ *
+ * An unmatched closing tag is dropped when it is bare, which is what the old
+ * rule did with the unbalanced debris a paste leaves behind.
+ *
+ * Word's own wrappers still go: the style and class rules run first and
+ * leave them attribute-less.
+ */
+function stripBareWrappers(text: string, tag: "span" | "div"): [string, number] {
+    const pattern = WRAPPER_RES[tag];
+    const out: string[] = [];
+    let count = 0;
+    let cursor = 0;
+    const dropped: boolean[] = [];
+
+    pattern.lastIndex = 0;
+    let match = pattern.exec(text);
+    while (match !== null) {
+        const isClosing = match[1] === "/";
+        const attributes = match[2].trim();
+        const bare = attributes === "" || attributes === "/";
+
+        let drop: boolean;
+        if (isClosing) {
+            drop = dropped.length > 0 ? (dropped.pop() as boolean) : bare;
+        } else {
+            drop = bare;
+            dropped.push(drop);
+        }
+
+        if (drop) {
+            out.push(text.slice(cursor, match.index));
+            cursor = match.index + match[0].length;
+            count += 1;
+        }
+        match = pattern.exec(text);
+    }
+
+    out.push(text.slice(cursor));
+    return [out.join(""), count];
+}
+
+/**
  * Remove the debris a Word or browser copy-paste leaves behind: empty
  * tags, style and class attributes, conditional and plain comments,
  * Word namespace tags, and bare span/div wrappers.
@@ -363,9 +429,8 @@ function stripStyleAttributes(text: string): [string, number] {
  * from the `dedication` / `epigraph` / `part` wrappers the project's own
  * exporter writes and a book's `custom_css` styles.
  *
- * Known issue still carried over: the `div` / `span` rules delete those
- * tags whatever attributes they carry, so an exporter wrapper is removed
- * before its class matters (#948).
+ * The `div` / `span` rules remove a pair only when it carries nothing, so
+ * an exporter wrapper survives with its class intact (#948).
  */
 export function fixHtmlArtifacts(text: string): [string, number] {
     let count = 0;
@@ -384,8 +449,8 @@ export function fixHtmlArtifacts(text: string): [string, number] {
         [/<!--\[if[^>]*>[\s\S]*?<!\[endif\]-->/g, ""],
         [/<!--[\s\S]*?-->/g, ""],
         [/<\/?[owm]:[^>]*>/gi, ""],
-        [/<\/?span[^>]*>/gi, ""],
-        [/<\/?div[^>]*>/gi, ""],
+        (input) => stripBareWrappers(input, "span"),
+        (input) => stripBareWrappers(input, "div"),
     ];
     for (const rule of rules) {
         const [next, n] = Array.isArray(rule)

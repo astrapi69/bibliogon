@@ -291,6 +291,63 @@ def _strip_style_attributes(text: str) -> tuple[str, int]:
     return stripped, count + n
 
 
+#: Both forms of a wrapper tag in one pass, so a closing tag can be decided
+#: against the opening tag it belongs to. Group 1 is the slash, group 2 the
+#: attribute text.
+_WRAPPER_RES = {
+    "span": re.compile(r"<(/?)span([^>]*)>", re.IGNORECASE),
+    "div": re.compile(r"<(/?)div([^>]*)>", re.IGNORECASE),
+}
+
+
+def _strip_bare_wrappers(text: str, tag: str) -> tuple[str, int]:
+    """Remove ``<tag>`` pairs that carry no attributes, keeping the rest.
+
+    The rule used to be ``</?div[^>]*>``, which deleted every div and span
+    whatever it carried. That took the project's own markup with Word's
+    leftovers: ``scaffolder.py`` wraps twelve chapter types in
+    ``<div class="dedication">`` and friends, and a book's ``custom_css``
+    styles exactly those (#948).
+
+    Deciding each tag on its own does not work, which is the reason this
+    is a scan and not a tighter regular expression: an attributed opening
+    tag would survive while its own closing tag, which carries nothing by
+    definition, still went - leaving unbalanced HTML, worse than the
+    original bug. So a closing tag is decided against the opening tag it
+    belongs to, through a stack that tracks nesting.
+
+    An unmatched closing tag is dropped when it is bare, which is what the
+    old rule did with the unbalanced debris a paste leaves behind.
+
+    Word's own wrappers still go: the style and class rules run first and
+    leave them attribute-less.
+    """
+    out: list[str] = []
+    count = 0
+    cursor = 0
+    dropped: list[bool] = []
+
+    for match in _WRAPPER_RES[tag].finditer(text):
+        is_closing = bool(match.group(1))
+        attributes = match.group(2).strip()
+        bare = attributes in ("", "/")
+
+        if is_closing:
+            drop = dropped.pop() if dropped else bare
+        else:
+            drop = bare
+            dropped.append(drop)
+
+        if not drop:
+            continue
+        out.append(text[cursor : match.start()])
+        cursor = match.end()
+        count += 1
+
+    out.append(text[cursor:])
+    return "".join(out), count
+
+
 def fix_html_artifacts(text: str) -> tuple[str, int]:
     """Remove HTML and Word artifacts from copy-pasted content.
 
@@ -333,10 +390,11 @@ def fix_html_artifacts(text: str) -> tuple[str, int]:
     fixed, n = re.subn(r"</?[owm]:[^>]*>", "", fixed, flags=re.IGNORECASE)
     count += n
 
-    # <span> and <div> tags themselves (after emptying their attributes)
-    fixed, n = re.subn(r"</?span[^>]*>", "", fixed, flags=re.IGNORECASE)
+    # <span> and <div> pairs that carry nothing, which is what the comment
+    # here always claimed while the regex matched any div or span (#948).
+    fixed, n = _strip_bare_wrappers(fixed, "span")
     count += n
-    fixed, n = re.subn(r"</?div[^>]*>", "", fixed, flags=re.IGNORECASE)
+    fixed, n = _strip_bare_wrappers(fixed, "div")
     count += n
 
     return fixed, count
