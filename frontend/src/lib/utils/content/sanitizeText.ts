@@ -210,6 +210,49 @@ export function fixEllipsis(text: string): [string, number] {
 }
 
 /**
+ * Class tokens a paste leaves behind, by the shape their producer gives
+ * them. Deliberately narrow: a token is dropped only when it MATCHES one
+ * of these, so a class nobody has catalogued survives rather than being
+ * destroyed (#818).
+ *
+ * - `Mso…` Word (MsoNormal, MsoListParagraph, MsoBodyText, …)
+ * - `WordSection1` Word's page-section wrapper
+ * - `c1`, `c12` Google Docs
+ * - `kix-…` Google Docs' editor internals
+ */
+const PASTE_CLASS_RES: readonly RegExp[] = [
+    /^mso/i,
+    /^wordsection\d+$/i,
+    /^c\d+$/,
+    /^kix-/i,
+];
+
+const CLASS_ATTR_RE = /(\s+)class="([^"]*)"/gi;
+
+function isPasteClass(token: string): boolean {
+    return PASTE_CLASS_RES.some((pattern) => pattern.test(token));
+}
+
+/**
+ * Remove paste-cruft class tokens, keeping every other one.
+ *
+ * An attribute whose tokens are all cruft is removed entirely, as is an
+ * empty `class=""`; one with survivors is rewritten with them. Each
+ * changed attribute counts once, as the all-or-nothing rule did.
+ */
+function stripPasteClasses(text: string): [string, number] {
+    let count = 0;
+    const fixed = text.replace(CLASS_ATTR_RE, (whole, leading: string, value: string) => {
+        const tokens = value.split(/\s+/).filter(Boolean);
+        const kept = tokens.filter((token) => !isPasteClass(token));
+        if (kept.length > 0 && kept.length === tokens.length) return whole;
+        count += 1;
+        return kept.length > 0 ? `${leading}class="${kept.join(" ")}"` : "";
+    });
+    return [fixed, count];
+}
+
+/**
  * Remove the debris a Word or browser copy-paste leaves behind: empty
  * tags, style and class attributes, conditional and plain comments,
  * Word namespace tags, and bare span/div wrappers.
@@ -223,14 +266,23 @@ export function fixEllipsis(text: string): [string, number] {
  * fixed the backend the same way, so this is now plain parity rather than
  * a divergence.
  *
- * Known issue carried over deliberately: the class-attribute rule strips
- * EVERY class, not only Word's, so legitimate structural classes are
- * lost too (#818). That one is the backend's call, not this port's.
+ * The class rule is per-token: a token is dropped only when it matches a
+ * known paste-cruft shape, so a structural class survives (#818). Until
+ * then it removed EVERY class attribute, which could not tell `MsoNormal`
+ * from the `dedication` / `epigraph` / `part` wrappers the project's own
+ * exporter writes and a book's `custom_css` styles.
+ *
+ * Known issue still carried over: the `div` / `span` rules delete those
+ * tags whatever attributes they carry, so an exporter wrapper is removed
+ * before its class matters (#948).
  */
 export function fixHtmlArtifacts(text: string): [string, number] {
     let count = 0;
     let fixed = text;
-    const rules: Array<[RegExp, string]> = [
+    // Order matters and mirrors the Python exactly: the class rule runs
+    // BEFORE the span/div rules, so a `<span class="MsoNormal">` is counted
+    // once for its class and once for its tag, as it is on the backend.
+    const rules: Array<[RegExp, string] | Transform> = [
         // `[^>]*` cannot consume the `>` that follows it and `\s*` cannot
         // consume the `<`, so backtracking is bounded despite the nested
         // quantifier the linter flags; the shape mirrors the Python rule.
@@ -238,15 +290,17 @@ export function fixHtmlArtifacts(text: string): [string, number] {
         [/<(\w+)(\s[^>]*)?>(\s*)<\/\1>/gi, "$3"],
         [/\s+style="[^"]*"/gi, ""],
         [/\s+style='[^']*'/gi, ""],
-        [/\s+class="[^"]*"/gi, ""],
+        stripPasteClasses,
         [/<!--\[if[^>]*>[\s\S]*?<!\[endif\]-->/g, ""],
         [/<!--[\s\S]*?-->/g, ""],
         [/<\/?[owm]:[^>]*>/gi, ""],
         [/<\/?span[^>]*>/gi, ""],
         [/<\/?div[^>]*>/gi, ""],
     ];
-    for (const [pattern, replacement] of rules) {
-        const [next, n] = replaceCounting(fixed, pattern, replacement);
+    for (const rule of rules) {
+        const [next, n] = Array.isArray(rule)
+            ? replaceCounting(fixed, rule[0], rule[1])
+            : rule(fixed);
         fixed = next;
         count += n;
     }

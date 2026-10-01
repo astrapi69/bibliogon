@@ -259,3 +259,55 @@ describe("tags carrying '>' inside an attribute value (#941)", () => {
         expect(sanitizeText(html).sanitized).toBe(html);
     });
 });
+
+// Mirrors TestStructuralClasses in the Python suite. The class rule used
+// to remove EVERY class attribute, which could not tell `MsoNormal` from
+// the `dedication` / `epigraph` / `part` wrappers the exporter writes and
+// a book's custom_css styles (#818). Every expectation is the backend's
+// own output for the same input.
+describe("structural classes (#818)", () => {
+    it("still removes a Word class", () => {
+        expect(fixHtmlArtifacts('<p class="MsoNormal">Text</p>')).toEqual(["<p>Text</p>", 1]);
+    });
+
+    it("keeps a structural class", () => {
+        const html = '<section class="dedication">Fuer Mira</section>';
+        expect(fixHtmlArtifacts(html)[0]).toBe(html);
+    });
+
+    it("keeps only the structural token of a mixed attribute", () => {
+        expect(fixHtmlArtifacts('<p class="MsoNormal dedication">Text</p>')[0]).toBe(
+            '<p class="dedication">Text</p>',
+        );
+    });
+
+    it("removes Google-Docs classes", () => {
+        expect(fixHtmlArtifacts('<p class="c1 c12">Text</p>')[0]).toBe("<p>Text</p>");
+        expect(fixHtmlArtifacts('<section class="kix-wrapper">x</section>')[0]).not.toContain(
+            "kix-",
+        );
+    });
+
+    it("removes a Word section wrapper", () => {
+        expect(fixHtmlArtifacts('<section class="WordSection1">Text</section>')[0]).toBe(
+            "<section>Text</section>",
+        );
+    });
+
+    it("keeps an unknown class rather than guessing at it", () => {
+        const html = '<section class="chapter-intro layout-wide">Text</section>';
+        expect(fixHtmlArtifacts(html)[0]).toBe(html);
+    });
+
+    it("removes an empty class attribute", () => {
+        expect(fixHtmlArtifacts('<p class="">Text</p>')[0]).toBe("<p>Text</p>");
+    });
+
+    it("counts one replacement per changed attribute", () => {
+        expect(
+            fixHtmlArtifacts(
+                '<p class="MsoNormal">A</p><p class="dedication">B</p><p class="c1">C</p>',
+            )[1],
+        ).toBe(2);
+    });
+});

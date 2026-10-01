@@ -161,6 +161,58 @@ def fix_ellipsis(text: str) -> tuple[str, int]:
     return fixed, n
 
 
+# Class tokens a paste leaves behind, by the shape their producer gives
+# them. Deliberately narrow: a token is dropped only when it MATCHES one
+# of these, so a class nobody has catalogued survives rather than being
+# destroyed (#818).
+#
+#   Mso…            Word (MsoNormal, MsoListParagraph, MsoBodyText, …)
+#   WordSection1    Word's page-section wrapper
+#   c1, c12         Google Docs
+#   kix-…           Google Docs' editor internals
+_PASTE_CLASS_RES = (
+    re.compile(r"^mso", re.IGNORECASE),
+    re.compile(r"^wordsection\d+$", re.IGNORECASE),
+    re.compile(r"^c\d+$"),
+    re.compile(r"^kix-", re.IGNORECASE),
+)
+
+_CLASS_ATTR_RE = re.compile(r'(\s+)class="([^"]*)"', re.IGNORECASE)
+
+
+def _is_paste_class(token: str) -> bool:
+    return any(pattern.match(token) for pattern in _PASTE_CLASS_RES)
+
+
+def _strip_paste_classes(text: str) -> tuple[str, int]:
+    """Remove paste-cruft class tokens, keeping every other one.
+
+    The rule used to delete the whole attribute, which cannot tell
+    ``MsoNormal`` from the structural classes the project's own exporter
+    writes (``<div class="dedication">``, ``epigraph``, ``part``, …) or
+    from anything a book's ``custom_css`` targets. A damage scan on the
+    production library counted 156 such attributes across imported
+    chapters (#818).
+
+    An attribute whose tokens are all cruft is removed entirely, as is an
+    empty ``class=""``; one with survivors is rewritten with them. Each
+    changed attribute counts once, as the all-or-nothing rule did.
+    """
+    count = 0
+
+    def replace(match: re.Match[str]) -> str:
+        nonlocal count
+        leading, value = match.group(1), match.group(2)
+        tokens = value.split()
+        kept = [token for token in tokens if not _is_paste_class(token)]
+        if kept and kept == tokens:
+            return match.group(0)
+        count += 1
+        return f'{leading}class="{" ".join(kept)}"' if kept else ""
+
+    return _CLASS_ATTR_RE.sub(replace, text), count
+
+
 def fix_html_artifacts(text: str) -> tuple[str, int]:
     """Remove HTML and Word artifacts from copy-pasted content.
 
@@ -187,8 +239,8 @@ def fix_html_artifacts(text: str) -> tuple[str, int]:
     fixed, n = re.subn(r"\s+style='[^']*'", "", fixed, flags=re.IGNORECASE)
     count += n
 
-    # Class attributes from Word
-    fixed, n = re.subn(r'\s+class="[^"]*"', "", fixed, flags=re.IGNORECASE)
+    # Class attributes from Word / Google Docs, per token (#818)
+    fixed, n = _strip_paste_classes(fixed)
     count += n
 
     # Word-specific XML comments: <!--[if ...]> ... <![endif]-->
