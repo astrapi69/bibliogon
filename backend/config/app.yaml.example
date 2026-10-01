@@ -76,9 +76,16 @@ plugins:
   entry_point_group: bibliogon.plugins
 ui:
   logo: assets/logo.svg
-  subtitle: ''
   theme: warm-literary
   title: Bibliogon
+  # Dashboard defaults the Book and Article lists start from. A view-mode
+  # switch in the UI persists over these per user; they are what a fresh
+  # install shows. The offline build carries the same four (#946).
+  dashboard:
+    books_view: grid
+    articles_view: list
+    books_page_size: 25
+    articles_page_size: 25
   defaults:
     # Pre-selected type when creating a new book / text. The Dashboard
     # "Neues Buch" / Article-list "Neuer Artikel" main buttons and the
@@ -153,3 +160,9 @@ donations:
       url: https://www.paypal.com/donate/?cmd=_s-xclick&hosted_button_id=MJ7V43GU2H386
       icon: paypal
       description_key: ui.donations.channels.paypal_desc
+
+# Settings-managed list of article topics. The ArticleEditor's topic
+# dropdown reads exactly this list; empty means the field offers nothing
+# until the user adds topics under Settings. Top-level because
+# AppSettingsUpdate takes it there (settings.py).
+topics: []
