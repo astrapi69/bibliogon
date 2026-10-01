@@ -12,7 +12,13 @@ concern-first folder (`export/`, `lib/utils/`, `import/`, `medium-import/`,
 See [`frontend/src/modules/README.md`](../frontend/src/modules/README.md) and
 [`MODULE-ARCHITECTURE.md`](MODULE-ARCHITECTURE.md).
 
-## Parity table (all 13 plugins)
+## Parity table
+
+Every plugin under `plugins/` has a row; several have more than one, because
+`export` differs per format and `git-sync` differs between import and push.
+The count that used to stand in this heading is gone on purpose - it was
+already two plugins stale, and `backend/tests/test_plugin_handlists.py` now
+checks the first column against the directory instead (#871).
 
 | Plugin | Purpose | Frontend module | Offline impl (canonical) | Offline? | Gate |
 |--------|---------|-----------------|--------------------------|----------|------|
@@ -33,6 +39,8 @@ See [`frontend/src/modules/README.md`](../frontend/src/modules/README.md) and
 | **translation** | DeepL / LMStudio translation + AI translation | _(no module)_ | `ai/text-tools/aiTextTools.ts` (browser-direct) + `components/TranslationLinks.tsx` (links) | **Yes** via the configured AI provider (browser-direct, key required, #661/#669); DeepL/LMStudio server path No | `ai-translate` (`REQUIRES_AI_KEY`); execution server: `translation` (`DESKTOP_ONLY`) |
 | **help** | In-app help | _(no module)_ | `storage/seed/seed-help*.json` | **Yes (static)** | active |
 | **getstarted** | Onboarding + sample book | _(no module)_ | `storage/seed/seed-getstarted.json` | **Yes (static)** | active |
+| **aplus** | Amazon A+ Content package | _(no module)_ | `storage/dexie/aplus.ts` (documents) | **Partial** - the editable A+ document per book + language is storage-seam CRUD and works offline (#887); the AI fill is server-side, because the package is built from the plugin's Python ruleset and checked by its Python validator | active (document); `aplus-ai` (`DESKTOP_ONLY`, #891) |
+| **learnset** | Export a book as an adaptive-learner learn set | _(no module)_ | — | **No** - by design (#763/#775): the ZIP is assembled server-side and every lesson validated against the vendored engine's JSON schemas with Python `jsonschema` + `regex` (Unicode property escapes), so there is no browser path to route through the seam | `learnset-export` (`DESKTOP_ONLY`) |
 | **promotion** | Portfolio board: per-format retail state | _(no module)_ | — | **No** — the `book_format_states` table has no Dexie mirror and no client-side source | `portfolio-board` (`DESKTOP_ONLY`) |
 
 > The 11 `module-*` directories cover the plugins named in the #34 module plan.
