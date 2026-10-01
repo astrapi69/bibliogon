@@ -23,10 +23,11 @@ describe("snapshotPlainText", () => {
         expect(snapshotPlainText(doc("Text", "", "  ", "Mehr"))).toBe("Text\nMehr");
     });
 
-    it("splits a block's children onto their own lines, joins non-block ones with a space", () => {
-        // Verified against the backend snapshot_plain_text: `paragraph` is a
-        // block, so its two text siblings (a bold run splits them) land on
-        // separate lines; a bulletList is not, so its items join with a space.
+    it("keeps a paragraph split across mark runs on one line", () => {
+        // Verified against the backend snapshot_plain_text after #929: a
+        // paragraph's children are INLINE, so a bold run inside it is not a
+        // line break. ProseMirror keeps the whitespace inside the text node,
+        // so the siblings concatenate with nothing between them.
         const mixed = JSON.stringify({
             type: "doc",
             content: [
@@ -40,21 +41,59 @@ describe("snapshotPlainText", () => {
                 { type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: "H2" }] },
             ],
         });
-        expect(snapshotPlainText(mixed)).toBe("fett\nkursiv\nH2");
+        expect(snapshotPlainText(mixed)).toBe("fettkursiv\nH2");
+    });
 
+    it("gives each list item its own line", () => {
         const list = JSON.stringify({
             type: "doc",
             content: [
                 {
                     type: "bulletList",
                     content: [
-                        { type: "listItem", content: [{ type: "text", text: "eins" }] },
-                        { type: "listItem", content: [{ type: "text", text: "zwei" }] },
+                        {
+                            type: "listItem",
+                            content: [
+                                { type: "paragraph", content: [{ type: "text", text: "eins" }] },
+                            ],
+                        },
+                        {
+                            type: "listItem",
+                            content: [
+                                { type: "paragraph", content: [{ type: "text", text: "zwei" }] },
+                            ],
+                        },
                     ],
                 },
             ],
         });
-        expect(snapshotPlainText(list)).toBe("eins zwei");
+        expect(snapshotPlainText(list)).toBe("eins\nzwei");
+    });
+
+    it("turns a hard break into a line break", () => {
+        const withBreak = JSON.stringify({
+            type: "doc",
+            content: [
+                {
+                    type: "paragraph",
+                    content: [
+                        { type: "text", text: "Zeile1" },
+                        { type: "hardBreak" },
+                        { type: "text", text: "Zeile2" },
+                    ],
+                },
+            ],
+        });
+        expect(snapshotPlainText(withBreak)).toBe("Zeile1\nZeile2");
+    });
+
+    it("unwraps an imported chapter's HTML instead of diffing raw markup", () => {
+        // The backend's snapshot_plain_text got this branch in #847; the port
+        // never did, so the offline diff counted every tag as content for the
+        // 778-of-833 chapters that are still HTML (#787, #943). The expected
+        // string is the backend's own output for this input.
+        const html = "<p>Ein Buch über <strong>Bewusstsein</strong> und Zeit.</p>";
+        expect(snapshotPlainText(html)).toBe("Ein Buch über Bewusstsein und Zeit.");
     });
 
     it("passes legacy plain text through", () => {

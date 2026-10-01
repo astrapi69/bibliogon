@@ -8,16 +8,20 @@
  * history renders the same shape the `/versions/{id}/diff` endpoint
  * returns and {@link ChapterVersionDiff} consumers need no branch (#728).
  *
- * Library-grade: no app imports, no i18n, no storage. Built in-house
- * (stage 4) because no diff library is installed and the two things a
- * library would add — word-level intra-line diffing and patch output —
- * are not what this surface renders; it needs exactly `difflib.ndiff`'s
- * line classification, in under 50 lines.
+ * Library-grade: no app imports, no i18n, no storage - only the two
+ * sibling flatteners in this folder. Built in-house (stage 4) because no
+ * diff library is installed and the two things a library would add —
+ * word-level intra-line diffing and patch output — are not what this
+ * surface renders; it needs exactly `difflib.ndiff`'s line
+ * classification, in under 50 lines.
  *
  * @example
  * lineDiff(snapshotPlainText(version.content), snapshotPlainText(chapter.content))
  * // => [{type: "unchanged", text: "Kapitel 1"}, {type: "added", text: "Neuer Absatz"}]
  */
+
+import { htmlToPlainText } from "./htmlToPlainText";
+import { flattenTipTapText } from "./tiptapText";
 
 /** How a line relates the snapshot to the current text. */
 export type DiffLineType = "unchanged" | "added" | "removed";
@@ -38,44 +42,20 @@ export interface DiffLine {
 const LCS_CELL_CAP = 1_000_000;
 
 /**
- * Flatten a TipTap node tree to plain text, one line per block node.
- *
- * Mirrors the backend `_flatten_tiptap`: block nodes (`doc`, `paragraph`,
- * any `heading*`) join their children with a newline, inline siblings with
- * a space.
- *
- * Still a private copy after #849 unified the two Storyboard flatteners
- * into `./tiptapText`, and deliberately so: the shared helper implements
- * the CORRECT walk, while the backend still splits a paragraph at every
- * mark boundary and drops `hardBreak` (#929). This module has to render
- * the same diff the online path does, so it mirrors the backend's current
- * behaviour rather than the right one. Drop it for the shared helper once
- * #929 lands.
- */
-function flattenTipTapText(node: unknown): string {
-    if (!node || typeof node !== "object") return "";
-    const record = node as { type?: string; text?: string; content?: unknown[] };
-    if (typeof record.text === "string") return record.text;
-    if (!Array.isArray(record.content)) return "";
-    const parts = record.content.map(flattenTipTapText);
-    const isBlock =
-        record.type === "doc" ||
-        record.type === "paragraph" ||
-        (typeof record.type === "string" && record.type.startsWith("heading"));
-    return parts.join(isBlock ? "\n" : " ");
-}
-
-/**
  * Flatten a chapter's stored content to line-broken plain text.
  *
- * TipTap JSON (a string starting with `{`) is flattened; legacy plain text
- * passes through. Blank lines are dropped so the diff is line-oriented over
- * real content only.
+ * Covers the three shapes a chapter body arrives in, as the backend's
+ * `snapshot_plain_text` does: TipTap JSON (a string starting with `{`),
+ * HTML (an imported chapter stays HTML until someone opens and saves it,
+ * #787 - 778 of 833 chapters in the measured library), and legacy plain
+ * text. Blank lines are dropped so the diff is line-oriented over real
+ * content only.
  *
- * Note: like the backend helper this mirrors, HTML content (an imported,
- * never-opened chapter — #787) is NOT unwrapped and diffs as raw markup.
- * Both sides do it identically, so a diff stays correct; fixing it is a
- * backend-side change to `snapshot_plain_text`.
+ * The TipTap walk is {@link flattenTipTapText}, shared with the
+ * Storyboard surfaces since #849. It was a private copy here until #929,
+ * because the backend split a paragraph at every mark boundary and this
+ * module has to render the same diff the online path does; with the
+ * backend corrected, the shared helper IS that behaviour.
  */
 export function snapshotPlainText(content: string | null | undefined): string {
     const raw = (content ?? "").trim();
@@ -87,6 +67,8 @@ export function snapshotPlainText(content: string | null | undefined): string {
         } catch {
             plain = raw;
         }
+    } else if (raw.startsWith("<")) {
+        plain = htmlToPlainText(raw);
     }
     return plain
         .split("\n")
