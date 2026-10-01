@@ -39,8 +39,12 @@ describe("htmlToPlainText", () => {
         );
     });
 
-    it("treats <br> as a line break", () => {
+    // Was the port's one divergence until #913 fixed the backend the same
+    // way; now a parity pin. All three spellings break exactly once.
+    it("treats <br> as a line break, however it is spelled", () => {
         expect(htmlToPlainText("<p>Erste<br>Zweite</p>")).toBe("Erste\nZweite");
+        expect(htmlToPlainText("<p>Erste<br/>Zweite</p>")).toBe("Erste\nZweite");
+        expect(htmlToPlainText("<p>Erste<br></br>Zweite</p>")).toBe("Erste\nZweite");
     });
 
     it("keeps list items on separate lines", () => {

@@ -51,13 +51,13 @@ const SKIPPED_CONTENT_TAGS: ReadonlySet<string> = new Set(["script", "style"]);
  * block element, internal whitespace collapsed to single spaces and
  * empty lines dropped. Empty or whitespace-only input yields `""`.
  *
- * Known deliberate divergence from the Python original: a void `<br>`
- * breaks the line here. The backend lists `br` in its block tags but
- * feeds them to `HTMLParser`, which only calls `handle_endtag` for an
- * explicit `</br>`, so a bare `<br>` silently glues the two lines into
- * one word there. Mirroring that would turn `Foo<br>Bar` into the single
- * token `FooBar` and lose both names to the word-boundary matcher, so
- * this follows the backend's evident intent rather than its behaviour.
+ * A void `<br>` breaks the line. This was the port's one deliberate
+ * divergence: the backend listed `br` among its block tags but fed them
+ * to `HTMLParser`, which calls `handle_endtag` only for an explicit
+ * `</br>`, so a bare `<br>` silently glued the two lines into one word -
+ * `Foo<br>Bar` became the token `FooBar`, losing both names to the
+ * word-boundary matcher. #913 fixed the backend the same way, so this is
+ * now plain parity rather than a divergence.
  */
 export function htmlToPlainText(html: string): string {
     if (!html || !html.trim()) return "";
