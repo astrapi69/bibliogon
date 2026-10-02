@@ -14,6 +14,9 @@
 
 import {expect, type Page} from "@playwright/test";
 import {readFileSync} from "node:fs";
+import {mkdtemp} from "node:fs/promises";
+import {tmpdir} from "node:os";
+import {join} from "node:path";
 import {strFromU8, unzipSync} from "fflate";
 
 export class BackupHelper {
@@ -28,6 +31,15 @@ export class BackupHelper {
      * NOT the legacy imageless JSON bundle. We unzip it node-side and
      * reconstruct the bundle shape the spec sanity-checks (manifest +
      * books-with-chapters + articles + authors + story-bible entities).
+     *
+     * Saved under its REAL download name rather than returning
+     * `download.path()`, which is an extensionless temp artifact. Since #906
+     * routed the API-mode `.bgb` import to the backend, the upload's filename
+     * is validated first thing and anything not ending in `.bgb` comes back
+     * 400 "Datei muss eine .bgb-Datei sein" - so re-uploading the temp path
+     * restored nothing and TC-040 polled an empty library for 15 s (#963).
+     * Uploading the file under its own name is also what a user does. The
+     * canonical spec at `e2e/smoke/backup-acceptance.spec.ts` does the same.
      */
     async exportFull(): Promise<{path: string; bundle: BackupBundle}> {
         await this.page.goto("/settings?tab=backups");
@@ -36,9 +48,12 @@ export class BackupHelper {
             this.page.waitForEvent("download"),
             this.page.getByTestId("backups-export-full").click(),
         ]);
-        const path = await download.path();
-        const bundle = parseBgbArchive(readFileSync(path));
-        return {path, bundle};
+        const dir = await mkdtemp(join(tmpdir(), "bibliogon-manual-backup-"));
+        const saved = join(dir, download.suggestedFilename());
+        await download.saveAs(saved);
+        expect(saved.endsWith(".bgb")).toBe(true);
+        const bundle = parseBgbArchive(readFileSync(saved));
+        return {path: saved, bundle};
     }
 
     /**
