@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 from bibliogon_aplus.book_context import BookContext
 from bibliogon_aplus.prompts import build_system_prompt, build_user_prompt
 from bibliogon_aplus.rules import get_ruleset
@@ -58,6 +60,22 @@ class TestUserPrompt:
         assert "bullets" in prompt
         assert "module_header" in prompt
         assert "module_three_images" in prompt
+
+    def test_every_length_in_the_spec_comes_from_the_ruleset(self) -> None:
+        """#896: the prompt told the model 200 characters of alt text while
+        the ruleset (and Amazon) said less, so the model was asked for copy
+        the validator then rejected. Every number in the reply skeleton must
+        be one the ruleset carries."""
+        prompt = build_user_prompt(_context(), rules=RULES, prior_findings=None)
+        spec = prompt.split("short_description: <string", 1)[1]
+        quoted = {int(n) for n in re.findall(r"max (\d+) characters", spec)}
+        assert quoted
+        assert quoted <= set(RULES.schema_limits.values())
+
+    def test_states_the_rulesets_alt_text_limit(self) -> None:
+        prompt = build_user_prompt(_context(), rules=RULES, prior_findings=None)
+        limit = RULES.schema_limits["alt_text"]
+        assert f"alt_text: <string, max {limit} characters" in prompt
 
     def test_no_prior_findings_produces_no_correction_section(self) -> None:
         prompt = build_user_prompt(_context(), rules=RULES, prior_findings=None)

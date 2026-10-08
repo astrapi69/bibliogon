@@ -10,13 +10,16 @@
 # keys as the existing ones. Adding a genre-style override: add an
 # entry under `image_style.genres`.
 
-version: "3"
+version: "4"
 
+# Mirrors Amazon's A+ Content API model (aplusContent_2020-11-01.json).
+# alt_text is ImageComponent.altText, maxLength 100 - the A+ manager caps
+# image keywords at the same length (#896).
 schema_limits:
   short_description: 300
   bullet_heading: 160
   bullet_body: 1000
-  alt_text: 200
+  alt_text: 100
 
 languages:
   de:

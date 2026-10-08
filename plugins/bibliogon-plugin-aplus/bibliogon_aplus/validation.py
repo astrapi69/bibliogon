@@ -364,7 +364,7 @@ def validate_package(
     findings += _check_alt_text(
         "module_header.alt_text",
         package.module_header.alt_text,
-        max_length=limits.get("alt_text", 200),
+        max_length=limits.get("alt_text", 100),
     )
 
     if len(package.module_three_images) != 3:
@@ -389,7 +389,7 @@ def validate_package(
         findings += _check_alt_text(
             f"module_three_images[{index}].alt_text",
             entry.alt_text,
-            max_length=limits.get("alt_text", 200),
+            max_length=limits.get("alt_text", 100),
         )
 
     return findings

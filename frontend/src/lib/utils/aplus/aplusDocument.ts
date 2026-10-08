@@ -60,7 +60,7 @@ export const APLUS_FIELD_LIMITS = {
     short_description: 300,
     bullet_heading: 160,
     bullet_body: 1000,
-    alt_text: 200,
+    alt_text: 100,
 } as const;
 
 export const APLUS_BULLET_COUNT = 3;
