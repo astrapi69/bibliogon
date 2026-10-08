@@ -43,12 +43,24 @@ def build_system_prompt(language: str) -> str:
     )
 
 
-def _yaml_field_spec() -> str:
+def _yaml_field_spec(limits: dict[str, int]) -> str:
+    """The reply skeleton, with every length taken from the ruleset.
+
+    The numbers used to be written out here as well as in
+    ``rules/ruleset.yaml``, which is how the alt-text limit came to
+    tell the model 200 while Amazon accepts 100 (#896). The validator
+    reads the ruleset, so the prompt has to read it too - otherwise
+    the model is asked for text the gate then rejects.
+    """
+    short = limits["short_description"]
+    heading = limits["bullet_heading"]
+    body = limits["bullet_body"]
+    alt = limits["alt_text"]
     return (
-        "short_description: <string, max 300 characters>\n"
+        f"short_description: <string, max {short} characters>\n"
         "bullets:\n"
-        "  - heading: <string, max 160 characters>\n"
-        "    body: <string, max 1000 characters>\n"
+        f"  - heading: <string, max {heading} characters>\n"
+        f"    body: <string, max {body} characters>\n"
         "  - heading: ...\n"
         "    body: ...\n"
         "  - heading: ...\n"
@@ -57,12 +69,12 @@ def _yaml_field_spec() -> str:
         "  title: <string>\n"
         "  text: <string>\n"
         "  image_prompt: <comma-separated descriptive keywords>\n"
-        "  alt_text: <string, max 200 characters, never empty>\n"
+        f"  alt_text: <string, max {alt} characters, never empty>\n"
         "module_three_images:\n"
         "  - title: <string>\n"
         "    text: <string>\n"
         "    image_prompt: <comma-separated descriptive keywords>\n"
-        "    alt_text: <string, max 200 characters, never empty>\n"
+        f"    alt_text: <string, max {alt} characters, never empty>\n"
         "  - title: ...\n"
         "  - title: ...\n"
     )
@@ -119,7 +131,7 @@ def build_user_prompt(
     lines.append(context.description_text or "(no description provided)")
     lines.append("")
     lines.append("Reply with exactly this YAML shape, filled in:")
-    lines.append(_yaml_field_spec())
+    lines.append(_yaml_field_spec(rules.schema_limits))
     lines.append(_correction_section(prior_findings))
 
     return "\n".join(lines)

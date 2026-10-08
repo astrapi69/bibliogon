@@ -18,11 +18,14 @@ class TestVendoredRuleset:
             assert language in rules.languages
 
     def test_schema_limits_match_the_spec(self) -> None:
+        """The spec is Amazon's A+ Content API model
+        (``aplusContent_2020-11-01.json``); ``alt_text`` is
+        ``ImageComponent.altText``, maxLength 100 (#896)."""
         rules = get_ruleset()
         assert rules.schema_limits["short_description"] == 300
         assert rules.schema_limits["bullet_heading"] == 160
         assert rules.schema_limits["bullet_body"] == 1000
-        assert rules.schema_limits["alt_text"] == 200
+        assert rules.schema_limits["alt_text"] == 100
 
     def test_get_ruleset_returns_the_same_cached_instance(self) -> None:
         assert get_ruleset() is get_ruleset()

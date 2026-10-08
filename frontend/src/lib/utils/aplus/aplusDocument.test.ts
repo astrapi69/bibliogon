@@ -72,7 +72,7 @@ describe("createModule", () => {
             short_description: 300,
             bullet_heading: 160,
             bullet_body: 1000,
-            alt_text: 200,
+            alt_text: 100,
         });
     });
 });

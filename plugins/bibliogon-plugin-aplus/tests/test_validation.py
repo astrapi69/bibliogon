@@ -389,12 +389,12 @@ class TestSchemaLengthLimits:
         assert any(f.field == "bullets[0].body" for f in _errors(findings))
 
     def test_alt_text_at_the_limit_is_fine(self) -> None:
-        pkg = _package(header_alt="A" * 200)
+        pkg = _package(header_alt="A" * 100)
         findings = validate_package(pkg, language="en", genre_key=None, rules=RULES)
         assert not any(f.field == "module_header.alt_text" for f in _errors(findings))
 
     def test_alt_text_one_over_the_limit_is_an_error(self) -> None:
-        pkg = _package(header_alt="A" * 201)
+        pkg = _package(header_alt="A" * 101)
         findings = validate_package(pkg, language="en", genre_key=None, rules=RULES)
         assert any(f.field == "module_header.alt_text" for f in _errors(findings))
 

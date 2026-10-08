@@ -16,7 +16,7 @@ interface AplusFieldProps {
  * copy button and character counter, grown to fit the text.
  *
  * @example
- * <AplusField label="Alt-Text" value={slot.alt_text} onChange={set} testId="alt" maxChars={200} />
+ * <AplusField label="Alt-Text" value={slot.alt_text} onChange={set} testId="alt" maxChars={100} />
  */
 export default function AplusField({ label, value, onChange, testId, maxChars, rows = 1, mono }: AplusFieldProps) {
     return (
