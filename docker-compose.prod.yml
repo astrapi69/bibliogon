@@ -33,8 +33,14 @@ services:
 
   frontend:
     build: ./frontend
+    # Published on the loopback interface only. Bibliogon has no
+    # authentication - the threat model names the host machine as the trust
+    # boundary - so the artifact must not be reachable from the network
+    # unless somebody chooses that. Set BIBLIOGON_BIND_ADDRESS=0.0.0.0 to
+    # open it deliberately, and read docs/help/*/developers/deployment.md
+    # before doing so (#710).
     ports:
-      - "${BIBLIOGON_PORT:-7880}:80"
+      - "${BIBLIOGON_BIND_ADDRESS:-127.0.0.1}:${BIBLIOGON_PORT:-7880}:80"
     depends_on:
       backend:
         condition: service_healthy

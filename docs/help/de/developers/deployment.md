@@ -9,7 +9,7 @@ Bibliogon liefert zwei Docker-Container hinter einem Port aus:
 - **backend** — Python + FastAPI + SQLAlchemy + SQLite. Läuft Uvicorn mit 2 Workern. Health-Endpoint unter `/api/health`.
 - **frontend** — Vite-gebaute statische Dateien, ausgeliefert von nginx. Proxyt `/api/*` an das Backend im internen Docker-Netzwerk.
 
-Der Frontend-Container exponiert standardmäßig Port `7880` (übersteuern mit `BIBLIOGON_PORT`). Der Backend-Container ist nur intern — Port 8000 sollte **nicht** ins öffentliche Internet exponiert werden.
+Der Frontend-Container veröffentlicht standardmäßig Port `7880` (übersteuern mit `BIBLIOGON_PORT`), und zwar nur auf `127.0.0.1`. Bibliogon hat keine Authentifizierung, der Default ist also von dem Rechner aus erreichbar, auf dem er läuft, und sonst nirgends. Mit `BIBLIOGON_BIND_ADDRESS=0.0.0.0` öffnest du ihn fürs Netz, in dem Wissen, dass dann jeder in diesem Netz deine Bibliothek öffnen kann. Der Backend-Container ist nur intern — Port 8000 sollte **nicht** ins öffentliche Internet exponiert werden.
 
 Die Compose-Datei: `docker-compose.prod.yml`. Quelle: <https://github.com/astrapi69/bibliogon/blob/main/docker-compose.prod.yml>.
 
@@ -28,6 +28,7 @@ cd bibliogon
 | Variable | Default | Zweck |
 |----------|---------|-------|
 | `BIBLIOGON_PORT` | `7880` | Host-Port, an den das Frontend bindet. Ändern, wenn 7880 belegt ist oder wenn ein Reverse-Proxy auf einem anderen Port davorsteht. |
+| `BIBLIOGON_BIND_ADDRESS` | `127.0.0.1` | Interface, auf dem der Frontend-Port veröffentlicht wird. Der Default ist nur von dem Rechner aus erreichbar, auf dem Bibliogon läuft. `0.0.0.0` öffnet ihn ins Netz, und da Bibliogon keine Anmeldung hat, heißt das: für jeden in diesem Netz. Nur in einem Netz, dem du traust, und am besten hinter einem Reverse-Proxy mit Authentifizierung. |
 | `BIBLIOGON_DEBUG` | `false` | Bei `true` aktiviert `/api/test/reset` und die API-Docs unter `/api/docs` und liefert Stacktraces in 5xx-Antworten zurück. **Im Produktivbetrieb nicht aktivieren.** |
 | `BIBLIOGON_SECRET_KEY` | (von `start.sh` generiert) | Für Lizenz-Signatur und CSRF-Schutz. Das Startup-Skript schreibt einen Zufallswert in `.env`, falls nicht gesetzt. |
 | `BIBLIOGON_CREDENTIALS_SECRET` | (von `start.sh` generiert) | Fernet-verschlüsselt API-Keys + Service-Account-Dateien at-rest in der DB. Gleiche Auto-Generierung. |
