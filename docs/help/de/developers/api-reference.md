@@ -21,7 +21,7 @@ Konsequenzen:
 
 - **Bibliogons API nicht ins öffentliche Internet exponieren.** Selbst hinter einem Reverse-Proxy: Basic Auth oder die Auth-Schicht des Reverse-Proxies davorschalten, wenn mehrere Benutzer eine Instanz teilen.
 - **`/api/test/reset` ist durch `BIBLIOGON_DEBUG=true` geschützt** — der Endpoint löscht alle Bücher, Artikel, Kapitel und Assets. Das Debug-Flag-Gate ist der einzige Schutz.
-- **Der Bibliogon-Launcher bindet per Default an `localhost`**; das Docker-Produktiv-Setup bindet an den Host auf `BIBLIOGON_PORT`. Reverse-Proxy davor bei öffentlichen Deployments.
+- **Bibliogon bindet per Default an `localhost`**, sowohl über den Launcher als auch über `docker-compose.prod.yml`, auf `BIBLIOGON_PORT`. Das Öffnen fürs Netz ist ein ausdrücklicher Schritt (`BIBLIOGON_BIND_ADDRESS=0.0.0.0`). Reverse-Proxy davor bei öffentlichen Deployments.
 
 Eine echte Auth-Schicht (Multi-User, RBAC, Session-Tokens) ist für die aktuelle Single-Author-/Local-First-Phase **außerhalb des Scopes**. Wer Multi-Tenant-Bibliogon braucht: die Architektur unterstützt es, aber die Arbeit ist nicht eingeplant.
 

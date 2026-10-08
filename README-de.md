@@ -284,6 +284,7 @@ Umgebungsvariablen (in `.env` oder Shell setzen):
 | Variable | Standard | Beschreibung |
 |----------|----------|--------------|
 | `BIBLIOGON_PORT` | 7880 | Port der Web-App |
+| `BIBLIOGON_BIND_ADDRESS` | 127.0.0.1 | Interface, auf dem der Port veröffentlicht wird. Default: nur dieser Rechner; `0.0.0.0` öffnet ihn fürs Netz, vor dem keine Anmeldung steht |
 | `BIBLIOGON_DEBUG` | false | Debug-Modus (aktiviert Test-Endpoints, API-Docs) |
 | `BIBLIOGON_AI_API_KEY` | (nicht gesetzt) | Überschreibt `ai.api_key` aus jeder yaml-Schicht |
 | `BIBLIOGON_SECRET_KEY` | (generiert) | Geheimnis für Lizenz-Validierung |
