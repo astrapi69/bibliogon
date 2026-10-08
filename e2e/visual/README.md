@@ -49,6 +49,14 @@ A red run is one of two things:
    npx playwright test --project=visual --update-snapshots
    ```
 
+   Or, without a linux box: dispatch the **Visual Regression** workflow
+   with the `update_snapshots` input. It pushes the regenerated PNGs to a
+   `chore/visual-baselines-<run-id>` branch, which you review as an
+   ordinary diff and open a pull request from. Review the
+   `visual-regression-diff` artifact of the red run too, or compare the
+   old and new PNGs on that branch — the point of looking is to confirm
+   the change is the one you intended.
+
 Never silence a real regression with `--update-snapshots`. That is the
 visual-test equivalent of deleting a failing unit test.
 
@@ -65,9 +73,10 @@ linux PNGs must be generated once on a linux runner (the snapshots are
 platform-suffixed). Either run `make test-visual-update` on a linux box
 and commit `e2e/visual/viewport-regression.spec.ts-snapshots/`, or
 trigger the **Visual Regression** GitHub workflow with the
-`update_snapshots` input and download the `visual-regression-baselines`
-artifact. Until the baselines exist the spec's first run "fails" while
-writing them — that is the intended bootstrap, not a regression.
+`update_snapshots` input, which pushes them to a branch (and uploads the
+`visual-regression-baselines` artifact). Until the baselines exist the
+spec's first run "fails" while writing them — that is the intended
+bootstrap, not a regression.
 
 ## CI
 
