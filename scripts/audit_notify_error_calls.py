@@ -5,7 +5,7 @@ pass the caught error as the second argument.
 
 Why this exists
 ---------------
-``frontend/src/utils/notify.ts`` exports ``notify.error(message,
+``frontend/src/utils/platform/notify.ts`` exports ``notify.error(message,
 apiError?)``. When the second argument is an ``ApiError``, the
 toast renders a "Issue melden" button that opens an
 ``ErrorReportDialog`` prefilled with endpoint, status, stacktrace,

@@ -103,7 +103,7 @@ test.describe("Bulk delete - data-destructive UI guards", () => {
         ).toBeHidden()
 
         // The notify.bulkAction toast carries the Undo button. The
-        // testid lives in BulkActionContent (see utils/notify.ts).
+        // testid lives in BulkActionContent (see utils/platform/notify.ts).
         const undoBtn = page.getByTestId("bulk-action-undo")
         await expect(undoBtn).toBeVisible({timeout: 5000})
 
