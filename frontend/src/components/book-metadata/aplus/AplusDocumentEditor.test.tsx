@@ -12,7 +12,7 @@ vi.mock("../../shared/AppDialog", () => ({
     useDialog: () => ({ confirm: confirmMock }),
 }));
 
-import { createModule, emptyDocument, type AplusDocumentDraft } from "../../../lib/utils/aplus/aplusDocument";
+import { APLUS_FIELD_LIMITS, createModule, emptyDocument, type AplusDocumentDraft } from "../../../lib/utils/aplus/aplusDocument";
 import AplusDocumentEditor from "./AplusDocumentEditor";
 
 const t = (key: string, fallback?: string) => fallback ?? key;
@@ -49,14 +49,20 @@ describe("AplusDocumentEditor", () => {
         expect((screen.getByTestId("aplus-content-name") as HTMLTextAreaElement).value).toBe(
             "El caballo - A+Content",
         );
-        expect(screen.getByTestId("aplus-short-description-char-count").textContent).toContain("/ 300");
+        expect(screen.getByTestId("aplus-short-description-char-count").textContent).toContain(
+            `/ ${APLUS_FIELD_LIMITS.short_description}`,
+        );
         expect(screen.getByTestId("aplus-bullet-2-heading")).toBeTruthy();
         expect(screen.getByTestId("aplus-module-0").textContent).toContain("970x600");
         expect(screen.getByTestId("aplus-module-1").textContent).toContain("300x300");
         openModule(0);
         openModule(1);
         expect(screen.getByTestId("aplus-module-1-slot-2-alt")).toBeTruthy();
-        expect(screen.getByTestId("aplus-module-1-slot-2-alt-char-count").textContent).toContain("/ 200");
+        // Read from the limits rather than repeating them: the counter's job is
+        // to show the ruleset's limit, and #896 is what repeating it costs.
+        expect(screen.getByTestId("aplus-module-1-slot-2-alt-char-count").textContent).toContain(
+            `/ ${APLUS_FIELD_LIMITS.alt_text}`,
+        );
     });
 
     it("reports a typed short description as a new document", () => {
