@@ -181,7 +181,7 @@ Pre-condition: the 209-article Medium-imported corpus loaded in the DB.
 
 - After every commit touching `frontend/src/components/articles/ConvertToBookWizard.tsx`
 - After every commit touching `backend/app/routers/books.py` `/from-articles` handler
-- After every commit touching `frontend/src/utils/notify.ts` `successAction` helper
+- After every commit touching the `frontend/src/utils/platform/notify.ts` `successAction` helper
 - After every commit touching `backend/config/i18n/*.yaml` `convert_to_book` namespace
 - Before v0.33.0 release tag
 
