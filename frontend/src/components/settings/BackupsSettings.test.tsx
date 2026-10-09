@@ -5,8 +5,9 @@
  * Pins the Settings > Backups tab contract:
  * - Tab heading and section headings render with the new
  *   ui.backups.* / ui.settings.tab_backups keys.
- * - api.backup.history(20) fires on mount (eager fetch, no
- *   toggle gate like the old Dashboard version).
+ * - the history reads through the storage seam on mount
+ *   (`backupHistory.list(20)`), with no storage-mode branch: the
+ *   backend's store online, the browser's own log offline (#748).
  * - Empty-state branch shows the no_history line.
  * - Populated branch renders one row per history entry.
  * - The Compare-Backups button is wired (testid present +
@@ -43,12 +44,15 @@ vi.mock("../../hooks/useI18n", () => ({
 const mockHistory = vi.fn();
 const mockDeleteHistoryEntry = vi.fn();
 const mockClearHistory = vi.fn();
+// The component no longer touches `api.*` for history (#748); the mock
+// stays so the module graph resolves and so a regression that reaches back
+// to the API client is visible as an unexpected call.
 vi.mock("../../api/client", () => ({
     api: {
         backup: {
-            history: (...args: unknown[]) => mockHistory(...args),
-            deleteHistoryEntry: (...args: unknown[]) => mockDeleteHistoryEntry(...args),
-            clearHistory: (...args: unknown[]) => mockClearHistory(...args),
+            history: vi.fn(),
+            deleteHistoryEntry: vi.fn(),
+            clearHistory: vi.fn(),
         },
     },
 }));
@@ -77,6 +81,12 @@ const mockGetApp = vi.fn().mockResolvedValue({ app: { max_upload_mb: 500 } });
 vi.mock("../../storage", () => ({
     getStorage: () => ({
         settings: { getApp: mockGetApp },
+        backupHistory: {
+            list: (...args: unknown[]) => mockHistory(...args),
+            record: vi.fn(),
+            delete: (...args: unknown[]) => mockDeleteHistoryEntry(...args),
+            clear: (...args: unknown[]) => mockClearHistory(...args),
+        },
     }),
 }));
 
@@ -110,7 +120,7 @@ describe("BackupsSettings", () => {
         expect(screen.getByText("Versionsgeschichte")).toBeTruthy();
     });
 
-    it("calls api.backup.history(20) once on mount", async () => {
+    it("reads the history through the seam once on mount", async () => {
         mockHistory.mockResolvedValue([]);
         render(<BackupsSettings />);
         await waitFor(() => expect(mockHistory).toHaveBeenCalled());

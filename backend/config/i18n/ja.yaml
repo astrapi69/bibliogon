@@ -1086,7 +1086,7 @@ ui:
       reset_dialog_warning_settings: "すべての設定と環境設定"
       reset_dialog_warning_ai_key: "AI API キー"
       reset_dialog_warning_drafts: "ブラウザ内の未保存の下書きすべて"
-      reset_dialog_warning_keeps: "保持されるもの: アプリ本体とランチャーのインストール状態。"
+      reset_dialog_warning_keeps: "保持されるもの: アプリ本体、ランチャーのインストール状態、バックアップ履歴 (リセット後もどのバックアップがあるか確認できます)。"
       reset_dialog_backup_offer: "先にバックアップを作成しますか？"
       reset_dialog_backup_button: "バックアップを作成"
       reset_confirm_prompt: "確認のため RESET と入力してください"

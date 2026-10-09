@@ -1089,7 +1089,7 @@ ui:
       reset_dialog_warning_settings: "Alle Einstellungen und Voreinstellungen"
       reset_dialog_warning_ai_key: "Der KI-API-Schlüssel"
       reset_dialog_warning_drafts: "Alle ungespeicherten Entwürfe im Browser"
-      reset_dialog_warning_keeps: "Erhalten bleiben: Die App selbst und der Launcher-Installationsstatus."
+      reset_dialog_warning_keeps: "Erhalten bleiben: Die App selbst, der Launcher-Installationsstatus und das Backup-Protokoll (damit nach einem Reset noch sichtbar ist, welches Backup existiert)."
       reset_dialog_backup_offer: "Möchtest du vorher ein Backup erstellen?"
       reset_dialog_backup_button: "Backup erstellen"
       reset_confirm_prompt: "Tippe RESET um zu bestätigen"

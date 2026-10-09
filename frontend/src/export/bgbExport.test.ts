@@ -15,6 +15,8 @@ const coverBytes = new Uint8Array([10, 20, 30]);
 const figBytes = new Uint8Array([1, 2, 3, 4]);
 const featuredBytes = new Uint8Array([9, 9, 9]);
 
+const recordHistory = vi.fn();
+
 const fakeStorage = {
     mode: "dexie" as const,
     settings: {
@@ -81,6 +83,7 @@ const fakeStorage = {
     // swallows a 400/404 and rethrows everything else, including the
     // TypeError from reading `.list` off undefined.
     publications: { list: vi.fn(async () => []) },
+    backupHistory: { record: (event: unknown) => recordHistory(event) },
     kdp: {
         getPublishingState: vi.fn(async (bookId: string) => ({
             book_id: bookId,
@@ -209,6 +212,22 @@ describe("buildBgbFiles", () => {
         // archiving precedes finalizing, and finalizing is the last phase.
         expect(steps.indexOf("archiving")).toBeLessThan(steps.indexOf("finalizing"));
         expect(steps[steps.length - 1]).toBe("finalizing");
+    });
+
+    it("exportBgbBackup logs the backup to the history (#748)", async () => {
+        // The PRIMARY export button, which is the .bgb path - not the
+        // legacy JSON one. Instrumenting only `exportFullBackup` would have
+        // left the button every user presses unlogged.
+        recordHistory.mockClear();
+        const blob = await exportBgbBackup("2026-06-16T12:00:00Z");
+        expect(recordHistory).toHaveBeenCalledTimes(1);
+        const [event] = recordHistory.mock.calls[0];
+        expect(event).toMatchObject({
+            action: "backup",
+            timestamp: "2026-06-16T12:00:00Z",
+            filename: bgbBackupFilename("2026-06-16T12:00:00Z"),
+        });
+        expect(event.file_size_bytes).toBe(blob.size);
     });
 
     it("exportBgbBackup returns a real ZIP blob that unzips", async () => {

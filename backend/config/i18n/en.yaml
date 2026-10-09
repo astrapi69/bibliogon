@@ -1088,7 +1088,7 @@ ui:
       reset_dialog_warning_settings: "All settings and preferences"
       reset_dialog_warning_ai_key: "The AI API key"
       reset_dialog_warning_drafts: "All unsaved drafts in the browser"
-      reset_dialog_warning_keeps: "Preserved: The app itself and the launcher install state."
+      reset_dialog_warning_keeps: "Preserved: The app itself, the launcher install state and the backup log (so you can still see which backup exists after a reset)."
       reset_dialog_backup_offer: "Would you like to create a backup first?"
       reset_dialog_backup_button: "Create backup"
       reset_confirm_prompt: "Type RESET to confirm"

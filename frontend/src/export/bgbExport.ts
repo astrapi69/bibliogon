@@ -39,7 +39,12 @@ import { strToU8, zipSync } from "fflate";
 import type { Article, Asset } from "../api/client";
 import { toStoredRow } from "../lib/utils/aplus/aplusDocument";
 import { getStorage } from "../storage";
-import { buildBackupBundle, type BackupBundleV1 } from "./backupExport";
+import {
+    buildBackupBundle,
+    countChapters,
+    recordBackupEvent,
+    type BackupBundleV1,
+} from "./backupExport";
 import { buildSelectiveBundle, type ExportSelection } from "./selectiveExport";
 
 /** Manifest format tag every Bibliogon backup carries (matches the backend). */
@@ -291,6 +296,14 @@ export async function exportBgbBackup(
     onProgress?.({ step: "archiving" });
     const blob = zipToBgbBlob(files);
     onProgress?.({ step: "finalizing" });
+    await recordBackupEvent({
+        action: "backup",
+        timestamp: exportedAt,
+        book_count: bundle.data.books.length,
+        chapter_count: countChapters(bundle),
+        file_size_bytes: blob.size,
+        filename: bgbBackupFilename(exportedAt),
+    });
     return blob;
 }
 
@@ -309,5 +322,13 @@ export async function exportSelectiveBgb(
     onProgress?.({ step: "archiving" });
     const blob = zipToBgbBlob(files);
     onProgress?.({ step: "finalizing" });
+    await recordBackupEvent({
+        action: "selective-export",
+        timestamp: exportedAt,
+        book_count: bundle.data.books.length,
+        chapter_count: countChapters(bundle),
+        file_size_bytes: blob.size,
+        filename: selectiveBgbFilename(exportedAt),
+    });
     return blob;
 }

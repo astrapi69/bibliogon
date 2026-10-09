@@ -1132,7 +1132,7 @@
         "reset_dialog_warning_settings": "Todas as definições e preferências",
         "reset_dialog_warning_ai_key": "A chave da API de IA",
         "reset_dialog_warning_drafts": "Todos os rascunhos por guardar no navegador",
-        "reset_dialog_warning_keeps": "Preservado: a própria aplicação e o estado de instalação do launcher.",
+        "reset_dialog_warning_keeps": "Preservado: a própria aplicação, o estado de instalação do launcher e o registo de backups (para que, depois de um reset, ainda se veja qual backup existe).",
         "reset_dialog_backup_offer": "Pretende criar uma cópia de segurança primeiro?",
         "reset_dialog_backup_button": "Criar cópia de segurança",
         "reset_confirm_prompt": "Escreva RESET para confirmar",

@@ -16,6 +16,7 @@
 import { api } from "../api/client";
 import { importBgbFile, importBgbSettings } from "../import/bgbImport";
 import { getStorage } from "../storage";
+import { recordBackupEvent } from "./backupExport";
 import { importFullBackup, type BaseUrlConfirm } from "./backupImport";
 
 /** The subset of restore counts every backup surface reports. */
@@ -40,6 +41,10 @@ async function isZipArchive(file: File): Promise<boolean> {
  * safe default: the bundle's other settings still restore, the endpoints
  * the keys talk to do not move.
  *
+ * The restore is logged to the backup history (#748) once it succeeds,
+ * best-effort: the counts come from the restore itself, the filename from
+ * the picked file.
+ *
  * A ZIP archive carries image bytes and routes through {@link importBgbFile}
  * in Dexie mode; API mode uses the backend `/api/backup/import` so the full
  * server-side graph (assets, pages, comments, etc.) is restored. Everything
@@ -48,6 +53,21 @@ async function isZipArchive(file: File): Promise<boolean> {
  * format toast still fires).
  */
 export async function restoreBackupFile(
+    file: File,
+    confirmBaseUrlChange?: BaseUrlConfirm,
+): Promise<RestoreCounts> {
+    const counts = await runRestore(file, confirmBaseUrlChange);
+    await recordBackupEvent({
+        action: "restore",
+        book_count: counts.books,
+        chapter_count: counts.chapters,
+        file_size_bytes: file.size,
+        filename: file.name,
+    });
+    return counts;
+}
+
+async function runRestore(
     file: File,
     confirmBaseUrlChange?: BaseUrlConfirm,
 ): Promise<RestoreCounts> {

@@ -247,5 +247,11 @@ export function makeQueueingStorage(base: IStorageService): IStorageService {
         // the JSON round-trip is a pure browser file operation with nothing
         // to replay. Passthrough.
         chapterTemplates: base.chapterTemplates,
+        // Backup history (#748): a log of what this BROWSER backed up, in
+        // its own IndexedDB database. There is nothing to replay - the
+        // server keeps its own log of its own routes - and syncing one
+        // device's backup log onto another would be a lie about where the
+        // file is. Passthrough.
+        backupHistory: base.backupHistory,
     };
 }
