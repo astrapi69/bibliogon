@@ -75,6 +75,26 @@ const fakeStorage = {
     chapterLabels: {
         list: vi.fn(async () => [{ id: "l1", book_id: "b1", name: "Draft", color: "#abc" }]),
     },
+    // #1008: buildBackupBundle reads these three now. Empty is fine here -
+    // this suite is about the .bgb archive layout, not the bundle's
+    // contents - but the namespaces must exist, because listOrNone only
+    // swallows a 400/404 and rethrows everything else, including the
+    // TypeError from reading `.list` off undefined.
+    publications: { list: vi.fn(async () => []) },
+    kdp: {
+        getPublishingState: vi.fn(async (bookId: string) => ({
+            book_id: bookId,
+            book_updated_at: "t",
+            state: null,
+        })),
+    },
+    translations: {
+        list: vi.fn(async (bookId: string) => ({
+            book_id: bookId,
+            translation_group_id: null,
+            siblings: [],
+        })),
+    },
     aplusDocuments: {
         listForBook: vi.fn(async (bookId: string) => [
             {

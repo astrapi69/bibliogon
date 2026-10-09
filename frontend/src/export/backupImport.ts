@@ -33,6 +33,9 @@ export interface ImportCounts {
     pages: number;
     comic_panels: number;
     comic_bubbles: number;
+    publications: number;
+    kdp_publishing_state: number;
+    translation_groups: number;
 }
 
 /** Result of {@link importFullBackup}: what was created vs skipped. */
@@ -79,6 +82,9 @@ function zeroCounts(): ImportCounts {
         pages: 0,
         comic_panels: 0,
         comic_bubbles: 0,
+        publications: 0,
+        kdp_publishing_state: 0,
+        translation_groups: 0,
     };
 }
 
@@ -309,12 +315,16 @@ export async function importFullBackup(
     const existingArticleIds = new Set(
         (await storage.articles.list()).map((article) => article.id),
     );
+    // Publications hang off articles under their NEW ids, the same way the
+    // story-bible links hang off pages and chapters.
+    const articleIdMap = new Map<string, string>();
     for (const article of data.articles ?? []) {
         if (existingArticleIds.has(article.id)) {
             skipped.articles++;
             continue;
         }
         const created = await storage.articles.create(articleCreateFrom(article));
+        articleIdMap.set(article.id, created.id);
         await storage.articles.update(created.id, {
             content_json: article.content_json,
             status: article.status,
@@ -386,6 +396,84 @@ export async function importFullBackup(
             modules: doc.modules,
         });
         imported.aplus_documents++;
+    }
+
+    for (const publication of data.publications ?? []) {
+        const newArticleId = articleIdMap.get(publication.article_id);
+        if (!newArticleId) {
+            skipped.publications++;
+            continue;
+        }
+        const created = await storage.publications.create(newArticleId, {
+            platform: publication.platform,
+            is_promo: publication.is_promo,
+            platform_metadata: publication.platform_metadata,
+            scheduled_at: publication.scheduled_at,
+            notes: publication.notes,
+        });
+        // A create always lands as "planned". Re-running mark-published is
+        // what restores the snapshot, and the snapshot is the whole point:
+        // without it every restored row reads `out_of_sync` the moment the
+        // panel opens, because drift compares that field to the article's
+        // current content.
+        if (publication.status === "published" || publication.status === "out_of_sync") {
+            await storage.publications.markPublished(newArticleId, created.id, {
+                published_at: publication.published_at,
+            });
+        } else if (publication.status !== "planned") {
+            await storage.publications.update(newArticleId, created.id, {
+                status: publication.status,
+            });
+        }
+        imported.publications++;
+    }
+
+    for (const entry of data.kdp_publishing_state ?? []) {
+        const newBookId = bookIdMap.get(entry.book_id);
+        if (!newBookId) {
+            skipped.kdp_publishing_state++;
+            continue;
+        }
+        const state = entry.state;
+        await storage.kdp.upsertPublishingState(newBookId, {
+            royalty_plan: state.royalty_plan,
+            kdp_select_enrolled: state.kdp_select_enrolled,
+            kdp_select_enrollment_date: state.kdp_select_enrollment_date,
+            expanded_distribution: state.expanded_distribution,
+            prices: state.prices,
+            launch_checklist_state: state.launch_checklist_state,
+            publication_target_date: state.publication_target_date,
+            last_kdp_upload_at: state.last_kdp_upload_at,
+        });
+        // addReviewer takes only the name and email; everything the
+        // reviewer accumulated afterwards needs the follow-up update.
+        for (const reviewer of state.arc_reviewers) {
+            const createdReviewer = await storage.kdp.addReviewer(newBookId, {
+                reviewer_name: reviewer.reviewer_name,
+                reviewer_email: reviewer.reviewer_email,
+            });
+            await storage.kdp.updateReviewer(newBookId, createdReviewer.id, {
+                review_status: reviewer.review_status,
+                copy_version: reviewer.copy_version,
+                review_permalink: reviewer.review_permalink,
+                review_text_excerpt: reviewer.review_text_excerpt,
+                reviewed_at: reviewer.reviewed_at,
+            });
+        }
+        imported.kdp_publishing_state++;
+    }
+
+    // Last: a group needs every one of its books to exist under its new id,
+    // and a partially-restored group would silently claim two books are
+    // translations of each other when a third is missing.
+    for (const group of data.translation_groups ?? []) {
+        const newIds = group.map((oldId) => bookIdMap.get(oldId));
+        if (newIds.some((id) => !id) || newIds.length < 2) {
+            skipped.translation_groups++;
+            continue;
+        }
+        await storage.translations.link(newIds as string[]);
+        imported.translation_groups++;
     }
 
     return {imported, skipped};
