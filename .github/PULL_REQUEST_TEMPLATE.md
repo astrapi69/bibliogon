@@ -15,6 +15,12 @@
 
 - [ ] `make test` passes locally
 - [ ] Manual smoke test performed (link or describe in PR body)
+- [ ] For a bug fix: the red run is **linked**, not asserted — CI run URL
+      or the failing output plus the command that produced it. If the bug
+      cannot be reproduced in any suite, say so here and name the gate
+      that does cover it.
+
+<!-- Red run: -->
 
 ## Documentation
 

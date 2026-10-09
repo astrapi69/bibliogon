@@ -266,6 +266,32 @@ Before claiming a regression test, confirm it FAILS on the pre-fix code
 (or would fail if the bug were reintroduced) — a test that is green
 either way proves nothing.
 
+### A red-pin claim needs the red run linked
+
+"Verified red before the fix" is a claim about a run that happened, not
+an inference from reading the code. A PR, commit message or report may
+carry it only when the evidence is attached: the CI run URL, or the
+failing output together with the command that produced it. No
+anticipation — not even at high confidence, because confidence is
+exactly what the claim is supposed to replace.
+
+The cost of getting this wrong is not the wording. A reviewer who reads
+"verified red" stops checking whether the test tests anything; if the
+claim was an inference, the review has been spent on a possibly inert
+test, and the next person to touch that code inherits a green suite that
+would not notice the bug returning. PR #984 carried the sentence before
+any red run existed; the run, when it was finally made, came back GREEN
+on the pre-fix component — in the default palette, in every palette, and
+again after awaiting `document.fonts.ready`. The body had to be
+rewritten and #995 filed (see #998).
+
+When the red run genuinely cannot be produced — the bug needs an
+environment the suite does not have — say that instead, and name the
+gate that does cover the class. "Not reproducible in this suite; the
+theme baselines are what catch it" is a legitimate statement about
+coverage. "Verified red" without a run is not a statement about
+anything.
+
 Mock only true external boundaries (network calls to third-party APIs,
 the clock, the filesystem when isolation demands it). Do NOT mock the
 layer the bug lives in: an API-contract bug needs a `TestClient` test
