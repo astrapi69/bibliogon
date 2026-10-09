@@ -491,6 +491,123 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await expect(page.locator('[data-testid^="translation-sibling-"]')).toHaveCount(1);
     });
 
+    test("publications work offline: add, mark published, drift, verify (#747)", async ({
+        page,
+    }) => {
+        // Create + two publishes + an autosave round-trip + a reload does not
+        // fit the 30s default; the first run of this spec died on that
+        // timeout mid-assertion rather than on the assertion itself.
+        test.setTimeout(90_000);
+
+        // The editor's autosave logs "Autosave failed:" to the console
+        // before deciding whether to toast, and `persistContent` catches
+        // without rethrowing - so when a save is dropped, the console is
+        // the only place that says why. Collect it and hand it to the
+        // assertions below, so a failure arrives with its cause attached
+        // instead of needing another run to find out.
+        const consoleErrors: string[] = [];
+        page.on("console", (msg) => {
+            if (msg.type() === "error") consoleErrors.push(msg.text());
+        });
+        page.on("pageerror", (err) => consoleErrors.push(`pageerror: ${err.message}`));
+
+        await page.goto("/articles/new");
+        await page.getByTestId("create-article-title").fill("Publiziert");
+        await page.getByTestId("create-article-submit").click();
+        await page.waitForURL(
+            (url) =>
+                /\/articles\/[^/]+$/.test(url.pathname) &&
+                !url.pathname.endsWith("/new"),
+        );
+        await expect(page.getByTestId("article-editor")).toBeVisible({timeout: 15_000});
+        await expect(page.getByTestId("publications-panel")).toBeVisible({
+            timeout: 15_000,
+        });
+        await expect(page.getByTestId("publications-empty")).toBeVisible();
+
+        // The add form validates against the SEEDED platform schema (#1015),
+        // so a refusal offline names the missing field instead of the
+        // generic line it used to - medium requires title + tags.
+        await page.getByTestId("publications-add-btn").click();
+        await expect(page.getByTestId("publications-add-modal")).toBeVisible();
+        await page.getByTestId("publications-add-submit").click();
+        await expect(page.getByTestId("publications-add-errors")).toContainText("title");
+
+        await page.getByTestId("publications-add-field-title").fill("Publiziert");
+        await page.getByTestId("publications-add-field-tags").fill("offline, dexie");
+        await page.getByTestId("publications-add-submit").click();
+
+        // Before #747 the create went straight to /api and the row never
+        // appeared offline; the hard gate in afterEach proves it does not now.
+        await expect(
+            page.locator('[data-testid^="publication-row-"]').first(),
+        ).toBeVisible({timeout: 10_000});
+        // The row id is the Dexie-minted publication id, so read it off the
+        // button rather than guessing it.
+        const pubId = await page
+            .locator('[data-testid^="publication-mark-published-"]')
+            .first()
+            .getAttribute("data-testid");
+        const id = (pubId ?? "").replace("publication-mark-published-", "");
+        expect(id).toBeTruthy();
+        await expect(page.getByTestId(`publication-row-status-${id}`)).toContainText(
+            /planned|geplant/i,
+        );
+
+        await page.getByTestId(`publication-mark-published-${id}`).click();
+        await expect(page.getByTestId(`publication-row-status-${id}`)).toContainText(
+            /published|veröffentlicht/i,
+        );
+
+        // Drift: the article moves after publication, so the next READ of the
+        // panel has to notice.
+        //
+        // The save indicator is NOT the signal to wait on. Its testid renders
+        // for "saving" AND "error" and for neither "saved" nor "idle", and a
+        // failure that is not an ApiError leaves the status stuck on "saving"
+        // forever (#1021) - so both "it worked" and "it failed silently" can
+        // look like a spinner that never clears. Assert the outcome instead:
+        // reload until the panel reports drift. A reload re-reads the
+        // publication, and only a committed content change flips it, so this
+        // passes exactly when the write landed.
+        await page.locator(".ProseMirror").first().click();
+        await page.keyboard.type("Ein Satz, der nach dem Publizieren dazukam.");
+        // The editor's autosave debounce is 1s of inactivity; this waits out
+        // that constant, not a race.
+        await page.waitForTimeout(2_000);
+
+        // One reload, then two assertions in the order that makes a failure
+        // name its own cause. Polling reloads was wrong: a reload discards
+        // whatever has not been written, so only the first one can ever
+        // succeed and the retries just re-read the same empty state.
+        await page.reload();
+        await expect(page.getByTestId("article-editor")).toBeVisible({timeout: 15_000});
+
+        // Did the content survive? This separates "the offline write never
+        // landed" from "it landed and the drift rule did not fire" - the two
+        // readings of the previous run, where drift stayed at 0.
+        await expect(
+            page.locator(".ProseMirror").first(),
+            `the typed sentence did not survive the reload, so the offline ` +
+                `content write never landed. Console: ` +
+                `${consoleErrors.join(" || ") || "(nothing logged)"}`,
+        ).toContainText("nach dem Publizieren", {timeout: 10_000});
+
+        // Only now is drift meaningful.
+        await expect(
+            page.getByTestId(`publication-drift-warning-${id}`),
+            `the content survived but the publication did not flip to ` +
+                `out_of_sync, so the drift rule is what is wrong. Console: ` +
+                `${consoleErrors.join(" || ") || "(nothing logged)"}`,
+        ).toBeVisible({timeout: 10_000});
+
+        // And the user's "yes, I updated it there too" clears the warning.
+        await page.getByTestId(`publication-verify-live-${id}`).click();
+        await expect(page.getByTestId(`publication-drift-warning-${id}`)).toHaveCount(0, {
+            timeout: 10_000,
+        });
+    });
+
     test("story bible works offline: add an entity, it persists in Dexie", async ({
         page,
     }) => {

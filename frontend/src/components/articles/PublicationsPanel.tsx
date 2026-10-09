@@ -2,8 +2,14 @@
  * AR-02 Phase 2 PublicationsPanel.
  *
  * Renders the per-article publications list + add modal in the
- * ArticleEditor sidebar. Drift detection is server-driven; this
- * component just reflects the status the backend returns.
+ * ArticleEditor sidebar.
+ *
+ * Every read and mutation goes through the storage seam, so the panel
+ * works offline (#747): online it is the backend's endpoints, offline the
+ * Dexie namespace, which mirrors the same drift rule - a published row
+ * whose article has moved since the snapshot reads `out_of_sync`. The
+ * component only reflects the status the seam returns; it never computes
+ * drift itself.
  */
 
 import { useEffect, useState } from "react";
@@ -17,12 +23,12 @@ import {
 } from "lucide-react";
 
 import {
-    api,
     ApiError,
     PlatformSchema,
     Publication,
     PublicationStatus,
 } from "../../api/client";
+import { PlatformMetadataError } from "../../lib/utils/publishing/platformMetadata";
 import { getStorage } from "../../storage";
 import { useDialog } from "../shared/AppDialog";
 import { useI18n } from "../../hooks/useI18n";
@@ -60,15 +66,10 @@ export function PublicationsPanel({
             setPublications(pubs);
             setSchemas(sch);
         } catch (err) {
-            if (err instanceof ApiError) {
-                notify.error(
-                    t(
-                        "ui.publications.load_error",
-                        "Konnte Publikationen nicht laden.",
-                    ),
-                    err,
-                );
-            }
+            notify.error(
+                t("ui.publications.load_error", "Konnte Publikationen nicht laden."),
+                err,
+            );
         } finally {
             setLoading(false);
         }
@@ -137,6 +138,23 @@ export function PublicationsPanel({
     );
 }
 
+/**
+ * The field-level validation errors of a failed create, or `null` when
+ * the failure was something else (and so belongs in a toast).
+ *
+ * Returns an empty array for a refusal that carried no list, which the
+ * caller renders as the generic line - distinct from `null`, which means
+ * "not a validation failure at all".
+ */
+function metadataErrorsOf(err: unknown): string[] | null {
+    if (err instanceof PlatformMetadataError) return err.errors;
+    if (err instanceof ApiError && err.status === 400) {
+        const body = err.detailBody as { errors?: string[] } | undefined;
+        return body?.errors ?? [];
+    }
+    return null;
+}
+
 function PublicationRow({
     articleId,
     publication,
@@ -156,7 +174,7 @@ function PublicationRow({
 
     async function handleMarkPublished(): Promise<void> {
         try {
-            await api.publications.markPublished(
+            await getStorage().publications.markPublished(
                 articleId,
                 publication.id,
                 {},
@@ -169,21 +187,19 @@ function PublicationRow({
             );
             onChanged();
         } catch (err) {
-            if (err instanceof ApiError) {
-                notify.error(
-                    t(
-                        "ui.publications.mark_published_error",
-                        "Konnte nicht markiert werden.",
-                    ),
-                    err,
-                );
-            }
+            notify.error(
+                t(
+                    "ui.publications.mark_published_error",
+                    "Konnte nicht markiert werden.",
+                ),
+                err,
+            );
         }
     }
 
     async function handleVerifyLive(): Promise<void> {
         try {
-            await api.publications.verifyLive(articleId, publication.id);
+            await getStorage().publications.verifyLive(articleId, publication.id);
             notify.success(
                 t(
                     "ui.publications.verify_live_success",
@@ -192,15 +208,13 @@ function PublicationRow({
             );
             onChanged();
         } catch (err) {
-            if (err instanceof ApiError) {
-                notify.error(
-                    t(
-                        "ui.publications.verify_live_error",
-                        "Konnte Live-Version nicht bestätigen.",
-                    ),
-                    err,
-                );
-            }
+            notify.error(
+                t(
+                    "ui.publications.verify_live_error",
+                    "Konnte Live-Version nicht bestätigen.",
+                ),
+                err,
+            );
         }
     }
 
@@ -216,18 +230,16 @@ function PublicationRow({
         );
         if (!ok) return;
         try {
-            await api.publications.delete(articleId, publication.id);
+            await getStorage().publications.delete(articleId, publication.id);
             onChanged();
         } catch (err) {
-            if (err instanceof ApiError) {
-                notify.error(
-                    t(
-                        "ui.publications.delete_error",
-                        "Löschen fehlgeschlagen.",
-                    ),
-                    err,
-                );
-            }
+            notify.error(
+                t(
+                    "ui.publications.delete_error",
+                    "Löschen fehlgeschlagen.",
+                ),
+                err,
+            );
         }
     }
 
@@ -374,7 +386,7 @@ function AddPublicationModal({
                     meta[k] = v;
                 }
             }
-            await api.publications.create(articleId, {
+            await getStorage().publications.create(articleId, {
                 platform,
                 is_promo: isPromo,
                 platform_metadata: meta,
@@ -384,18 +396,21 @@ function AddPublicationModal({
             );
             onCreated();
         } catch (err) {
-            if (err instanceof ApiError) {
-                if (err.status === 400) {
-                    const detail = err.detailBody as
-                        | { errors?: string[] }
-                        | undefined;
-                    setErrors(detail?.errors ?? [t("ui.publications.add_failed", "Validierung fehlgeschlagen.")]);
-                } else {
-                    notify.error(
-                        t("ui.publications.add_failed", "Konnte nicht hinzufügen."),
-                        err,
-                    );
-                }
+            // The same refusal arrives in two shapes: a 400 whose body
+            // carries `errors` online, a PlatformMetadataError offline.
+            // Both belong under the fields, not in a toast.
+            const fields = metadataErrorsOf(err);
+            if (fields) {
+                setErrors(
+                    fields.length > 0
+                        ? fields
+                        : [t("ui.publications.add_failed", "Validierung fehlgeschlagen.")],
+                );
+            } else {
+                notify.error(
+                    t("ui.publications.add_failed", "Konnte nicht hinzufügen."),
+                    err,
+                );
             }
         } finally {
             setSubmitting(false);

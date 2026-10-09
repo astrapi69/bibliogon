@@ -157,6 +157,16 @@ const GUARDED: readonly GuardedNamespace[] = [
         allowlist: IMPLEMENTATION_LAYER,
     },
     {
+        // Publications: the whole namespace, because all seven methods are
+        // seam-backed since #747. There is no external call anywhere in it -
+        // `markPublished` and `verifyLive` are the user asserting what they
+        // did by hand, which is why the mutations could port at all.
+        label: "api.publications",
+        pattern: /\bapi\.publications\b/,
+        remedy: "getStorage().publications.<same method> (see #747)",
+        allowlist: IMPLEMENTATION_LAYER,
+    },
+    {
         // The article-scoped comment read the editor panel uses. Guarded
         // on its own rather than all of api.articles: the remaining
         // api.articles surfaces are not ported yet (epic #727).

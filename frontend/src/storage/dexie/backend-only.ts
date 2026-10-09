@@ -4,19 +4,13 @@
  * `/api` request. The publish mutations are not seam-routed (they push to
  * external platforms via the desktop backend).
  *
- * `articlePlatforms` used to live here answering `{}`. The schemas are
- * reference data, so they moved to `reference.ts` and the seed (#1015) -
- * with an empty map the publish form had no fields to render offline.
+ * Two namespaces have left: `articlePlatforms`, whose schemas are
+ * reference data and moved to `reference.ts` plus the seed (#1015), and
+ * `publications`, which turned out to be per-article record-keeping with
+ * no external call and moved to `publishing/publications.ts` (#747).
  */
 
 import type { IStorageService } from "../types";
-
-// Publications read as an empty list offline so opening an article never
-// fires a doomed `/api` request. The mutations are not seam-routed yet
-// (#747).
-export const publications: IStorageService["publications"] = {
-    list: async () => [],
-};
 
 // AI / grammar / audiobook / ms-tools are backend plugins. Offline the
 // probe returns an empty map, so every editor plugin reads as

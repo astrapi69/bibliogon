@@ -1311,12 +1311,137 @@ describe("DexieStorage — comic panels + bubbles", () => {
 });
 
 describe("DexieStorage — publishing surfaces (offline defaults)", () => {
-    it("returns empty publications + an empty plugin-status map", async () => {
-        // These backend-only reads must resolve to empty offline so opening
-        // the article/chapter editor in Dexie mode fires no /api request and
-        // never errors. The publish MUTATIONS stay desktop-only (#747).
-        expect(await dexieStorage.publications.list("any-article")).toEqual([]);
+    it("returns an empty plugin-status map", async () => {
+        // A backend-only read: offline every editor plugin reads as
+        // unavailable, which the toolbar already degrades on.
         expect(await dexieStorage.editorPluginStatus.get()).toEqual({});
+    });
+});
+
+describe("DexieStorage — publications (#747)", () => {
+    // `create` seeds the empty doc whatever the payload says (the backend's
+    // ArticleCreate has no content field either), so content arrives by PATCH.
+    async function article(content: string) {
+        const row = await dexieStorage.articles.create({ title: "Ein Text" } as never);
+        return dexieStorage.articles.update(row.id, { content_json: content } as never);
+    }
+
+    it("creates as planned, lists per article, deletes", async () => {
+        const a = await article('{"type":"doc","content":[]}');
+        const other = await article('{"type":"doc","content":[]}');
+        expect(await dexieStorage.publications.list(a.id)).toEqual([]);
+
+        const pub = await dexieStorage.publications.create(a.id, {
+            platform: "medium",
+            platform_metadata: { title: "T", tags: ["a"] },
+        });
+        // The backend's column default is "planned", not "draft".
+        expect(pub.status).toBe("planned");
+        expect(pub.content_snapshot_at_publish).toBeNull();
+        expect(pub.published_at).toBeNull();
+
+        await dexieStorage.publications.create(other.id, {
+            platform: "substack",
+            platform_metadata: { title: "Other", section: "Essays" },
+        });
+        expect((await dexieStorage.publications.list(a.id)).map((p) => p.platform)).toEqual([
+            "medium",
+        ]);
+
+        await dexieStorage.publications.delete(a.id, pub.id);
+        expect(await dexieStorage.publications.list(a.id)).toEqual([]);
+        // The other article's row is untouched.
+        expect(await dexieStorage.publications.list(other.id)).toHaveLength(1);
+    });
+
+    it("refuses metadata the platform schema rejects", async () => {
+        const a = await article('{"type":"doc","content":[]}');
+        // Medium requires title + tags; the seeded schema is what says so.
+        await expect(
+            dexieStorage.publications.create(a.id, { platform: "medium" }),
+        ).rejects.toThrow(/missing required field/);
+        // An unknown platform passes, deliberately.
+        const custom = await dexieStorage.publications.create(a.id, { platform: "nowhere" });
+        expect(custom.platform).toBe("nowhere");
+    });
+
+    it("mark-published snapshots the article and merges the URL", async () => {
+        const content = '{"type":"doc","content":[{"type":"paragraph"}]}';
+        const a = await article(content);
+        const pub = await dexieStorage.publications.create(a.id, {
+            platform: "medium",
+            platform_metadata: { title: "T", tags: ["a"] },
+        });
+
+        const published = await dexieStorage.publications.markPublished(a.id, pub.id, {
+            published_url: "https://medium.com/p/1",
+        });
+        expect(published.status).toBe("published");
+        expect(published.content_snapshot_at_publish).toBe(content);
+        expect(published.published_at).toBeTruthy();
+        expect(published.last_verified_at).toBe(published.published_at);
+        // The URL lands inside platform_metadata beside what the form stored.
+        expect(published.platform_metadata).toMatchObject({
+            title: "T",
+            published_url: "https://medium.com/p/1",
+        });
+    });
+
+    it("flips to out_of_sync on read once the article changes, and verify-live clears it", async () => {
+        const a = await article('{"type":"doc","content":[]}');
+        const pub = await dexieStorage.publications.create(a.id, {
+            platform: "medium",
+            platform_metadata: { title: "T", tags: ["a"] },
+        });
+        await dexieStorage.publications.markPublished(a.id, pub.id, {});
+        // Unchanged article: the read must not flip anything.
+        expect((await dexieStorage.publications.list(a.id))[0].status).toBe("published");
+
+        await dexieStorage.articles.update(a.id, {
+            content_json: '{"type":"doc","content":[{"type":"paragraph"}]}',
+        } as never);
+
+        // This is the whole point of the feature: the READ notices.
+        const drifted = await dexieStorage.publications.list(a.id);
+        expect(drifted[0].status).toBe("out_of_sync");
+        // And the flip is persisted, so the next read does not redo the work.
+        expect(
+            ((await offlineDb.publications.get(pub.id)) as unknown as { status: string }).status,
+        ).toBe("out_of_sync");
+
+        const verified = await dexieStorage.publications.verifyLive(a.id, pub.id);
+        expect(verified.status).toBe("published");
+        expect(verified.last_verified_at).toBeTruthy();
+        // The snapshot moved forward, so a re-read stays published.
+        expect((await dexieStorage.publications.list(a.id))[0].status).toBe("published");
+    });
+
+    it("leaves a planned publication alone however much the article moves", async () => {
+        const a = await article('{"type":"doc","content":[]}');
+        await dexieStorage.publications.create(a.id, {
+            platform: "medium",
+            platform_metadata: { title: "T", tags: ["a"] },
+        });
+        await dexieStorage.articles.update(a.id, {
+            content_json: '{"type":"doc","content":[{"type":"paragraph"}]}',
+        } as never);
+        // A row that was never published has nothing to be out of sync with.
+        expect((await dexieStorage.publications.list(a.id))[0].status).toBe("planned");
+    });
+
+    it("refuses to touch a publication through another article", async () => {
+        const mine = await article('{"type":"doc","content":[]}');
+        const other = await article('{"type":"doc","content":[]}');
+        const pub = await dexieStorage.publications.create(mine.id, {
+            platform: "medium",
+            platform_metadata: { title: "T", tags: ["a"] },
+        });
+        await expect(
+            dexieStorage.publications.verifyLive(other.id, pub.id),
+        ).rejects.toThrow(/Publication/);
+        await expect(dexieStorage.publications.delete(other.id, pub.id)).rejects.toThrow(
+            /Publication/,
+        );
     });
 });
 
