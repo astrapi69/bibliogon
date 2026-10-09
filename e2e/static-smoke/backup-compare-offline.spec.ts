@@ -62,11 +62,22 @@ test("two offline exports compare in the browser with no /api call", async ({pag
     const fileA = await exportBackup("a.bgb");
 
     // Change the library between the two exports so the diff has something
-    // to report rather than passing on an empty one.
+    // to report rather than passing on an empty one. The author field is
+    // required, so Erstellen stays disabled without it - the first create
+    // above fills it too.
     await page.goto("/books/new?type=prose");
     await page.getByTestId("create-book-title").fill("Zweites Buch");
+    const secondAuthor = page.getByTestId("create-book-author");
+    if (await secondAuthor.isVisible()) await secondAuthor.fill("Asterios Raptis");
     await page.getByTestId("create-book-submit").click();
-    await page.waitForURL(/\/books\/new|\/book\//, {timeout: 20_000});
+    // Submit returns to the dashboard rather than opening the editor, so
+    // the card appearing is the signal that the Dexie write landed. Without
+    // it the next export could race the commit and both archives would be
+    // identical - a green test that measured nothing.
+    await page
+        .getByRole("button", {name: /Zweites Buch/})
+        .first()
+        .waitFor({state: "visible", timeout: 20_000});
 
     const fileB = await exportBackup("b.bgb");
 
@@ -83,6 +94,10 @@ test("two offline exports compare in the browser with no /api call", async ({pag
 
     await expect(page.getByTestId("backup-compare-summary")).toBeVisible();
     await expect(page.getByTestId("backup-compare-footer")).toBeVisible();
+    // The second book exists only in B. Asserting it proves the compare
+    // read both archives and found a real difference, rather than
+    // rendering an empty result from two identical files.
+    await expect(page.getByText(/Nur in B/)).toBeVisible();
 
     expect(apiCalls).toEqual([]);
 });
