@@ -197,7 +197,14 @@ describe("DataManagementSettings", () => {
         const input = screen.getByTestId("data-import-input") as HTMLInputElement;
         const file = new File(["{}"], "backup.json", { type: "application/json" });
         fireEvent.change(input, { target: { files: [file] } });
-        await waitFor(() => expect(mockRestoreBackupFile).toHaveBeenCalledWith(file));
+        // #985: the second argument is the base-URL confirmation the
+        // restore asks before it moves the endpoint a stored key talks to.
+        await waitFor(() =>
+            expect(mockRestoreBackupFile).toHaveBeenCalledWith(
+                file,
+                expect.any(Function),
+            ),
+        );
         await waitFor(() => expect(mockNotify.success).toHaveBeenCalled());
         // refreshStats fires once on mount + once after import.
         await waitFor(() =>

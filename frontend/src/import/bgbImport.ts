@@ -43,7 +43,12 @@ import type {
 } from "../api/client";
 import { articleCreateFrom, bookCreateFrom } from "../export/backupImport";
 import { planAuthorsImport } from "../components/settings/authorsImportExport";
-import { preserveLocalSecrets } from "../utils/ai/scrubSecrets";
+import {
+    baseUrlChangesBesideKeys,
+    preserveLocalBaseUrls,
+    preserveLocalSecrets,
+} from "../utils/ai/scrubSecrets";
+import type { BaseUrlConfirm } from "../export/backupImport";
 import { fromStoredRow, type AplusStoredRow } from "../lib/utils/aplus/aplusDocument";
 import { getStorage } from "../storage";
 import { coverFilenameFromPath } from "../storage/asset-url";
@@ -173,7 +178,10 @@ function childDirIds(entries: ZipEntries, segmentPrefix: string): string[] {
  *
  * @throws BgbImportError when the file is not a valid Bibliogon backup ZIP.
  */
-export async function importBgbFile(file: File): Promise<BgbImportResult> {
+export async function importBgbFile(
+    file: File,
+    confirmBaseUrlChange?: BaseUrlConfirm,
+): Promise<BgbImportResult> {
     let entries: ZipEntries;
     try {
         entries = unzipSync(new Uint8Array(await file.arrayBuffer()));
@@ -207,7 +215,7 @@ export async function importBgbFile(file: File): Promise<BgbImportResult> {
     const imported = zeroCounts();
     const skipped = zeroCounts();
 
-    await importSettings(entries, prefix, storage, imported);
+    await importSettings(entries, prefix, storage, imported, confirmBaseUrlChange);
     await importBooks(entries, booksPrefix, bookIds, storage, imported, skipped);
     await importArticles(entries, articlesPrefix, articleIds, storage, imported, skipped);
     await importAuthors(entries, prefix, storage, imported, skipped);
@@ -234,12 +242,21 @@ async function importSettings(
     prefix: string,
     storage: Storage,
     imported: BgbImportCounts,
+    confirmBaseUrlChange?: BaseUrlConfirm,
 ): Promise<void> {
     const settings = readJson<Record<string, unknown>>(entries, `${prefix}globals/settings.json`);
     if (!settings || typeof settings !== "object") return;
     let next: Record<string, unknown>;
     try {
-        next = { ...(preserveLocalSecrets(await storage.settings.getApp(), settings) as Record<string, unknown>) };
+        const live = await storage.settings.getApp();
+        const changes = baseUrlChangesBesideKeys(live, settings);
+        const keepEndpoints =
+            changes.length > 0 &&
+            !(confirmBaseUrlChange ? await confirmBaseUrlChange(changes) : false);
+        const merged = keepEndpoints
+            ? preserveLocalBaseUrls(live, settings)
+            : preserveLocalSecrets(live, settings);
+        next = { ...(merged as Record<string, unknown>) };
     } catch (err) {
         console.warn("Live settings unreadable; restoring without the AI section", err);
         next = { ...settings };
@@ -265,7 +282,10 @@ async function importSettings(
  * The author PROFILE is preserved, exactly as in the full client import.
  * Returns whether a settings file was found and applied.
  */
-export async function importBgbSettings(file: File): Promise<boolean> {
+export async function importBgbSettings(
+    file: File,
+    confirmBaseUrlChange?: BaseUrlConfirm,
+): Promise<boolean> {
     let entries: ZipEntries;
     try {
         entries = unzipSync(new Uint8Array(await file.arrayBuffer()));
@@ -274,7 +294,7 @@ export async function importBgbSettings(file: File): Promise<boolean> {
     }
     const prefix = findPrefix(entries);
     const counts: BgbImportCounts = zeroCounts();
-    await importSettings(entries, prefix, getStorage(), counts);
+    await importSettings(entries, prefix, getStorage(), counts, confirmBaseUrlChange);
     return counts.settings === 1;
 }
 

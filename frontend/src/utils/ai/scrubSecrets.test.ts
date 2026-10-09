@@ -6,9 +6,15 @@
  * is what gets mailed around.
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
-import { preserveLocalSecrets, scrubSecrets } from "./scrubSecrets";
+import { makeBaseUrlConfirm } from "./baseUrlConfirm";
+import {
+  baseUrlChangesBesideKeys,
+  preserveLocalBaseUrls,
+  preserveLocalSecrets,
+  scrubSecrets,
+} from "./scrubSecrets";
 
 describe("scrubSecrets", () => {
   it("empties the canonical per-provider key map (#460 shape)", () => {
@@ -177,5 +183,162 @@ describe("preserveLocalSecrets", () => {
     const { settings: bundled } = scrubSecrets(live);
     const merged = preserveLocalSecrets(live, bundled) as { ai: { keys: Record<string, string> } };
     expect(merged.ai.keys).toEqual({ google: "AIza-live" });
+  });
+});
+
+describe("baseUrlChangesBesideKeys", () => {
+  it("reports a changed override for a provider that holds a key", () => {
+    expect(
+      baseUrlChangesBesideKeys(
+        {
+          ai: {
+            keys: { custom: "k" },
+            base_url_overrides: { custom: "http://localhost:1234/v1" },
+          },
+        },
+        { ai: { base_url_overrides: { custom: "https://elsewhere.test/v1" } } },
+      ),
+    ).toEqual([
+      {
+        provider: "custom",
+        from: "http://localhost:1234/v1",
+        to: "https://elsewhere.test/v1",
+      },
+    ]);
+  });
+
+  it("says nothing for a provider with no key - a wrong endpoint there just fails", () => {
+    expect(
+      baseUrlChangesBesideKeys(
+        { ai: { keys: {}, base_url_overrides: { custom: "http://a/v1" } } },
+        { ai: { base_url_overrides: { custom: "http://b/v1" } } },
+      ),
+    ).toEqual([]);
+  });
+
+  it("treats an absent or empty value in the bundle as no opinion", () => {
+    const live = { ai: { keys: { custom: "k" }, base_url_overrides: { custom: "http://a/v1" } } };
+    expect(baseUrlChangesBesideKeys(live, { ai: { base_url_overrides: {} } })).toEqual([]);
+    expect(
+      baseUrlChangesBesideKeys(live, { ai: { base_url_overrides: { custom: "" } } }),
+    ).toEqual([]);
+  });
+
+  it("says nothing when the bundle agrees with this device", () => {
+    expect(
+      baseUrlChangesBesideKeys(
+        { ai: { keys: { custom: "k" }, base_url_overrides: { custom: "http://a/v1" } } },
+        { ai: { base_url_overrides: { custom: "http://a/v1" } } },
+      ),
+    ).toEqual([]);
+  });
+
+  it("reports a first-time override as a change, with an empty from", () => {
+    expect(
+      baseUrlChangesBesideKeys(
+        { ai: { keys: { custom: "k" } } },
+        { ai: { base_url_overrides: { custom: "http://b/v1" } } },
+      ),
+    ).toEqual([{ provider: "custom", from: "", to: "http://b/v1" }]);
+  });
+
+  it("covers the derived top-level mirror, but only for the active provider", () => {
+    const restored = { ai: { base_url: "https://proxy.test/v1" } };
+    expect(
+      baseUrlChangesBesideKeys(
+        { ai: { active_provider: "openai", keys: { openai: "k" }, base_url: "https://api.openai.com/v1" } },
+        restored,
+      ),
+    ).toEqual([
+      { provider: "", from: "https://api.openai.com/v1", to: "https://proxy.test/v1" },
+    ]);
+    // Active provider holds no key -> the mirror does not matter.
+    expect(
+      baseUrlChangesBesideKeys(
+        { ai: { active_provider: "lmstudio", keys: { openai: "k" }, base_url: "http://localhost:1234/v1" } },
+        restored,
+      ),
+    ).toEqual([]);
+  });
+
+  it("also counts a key held only in the #459 side-store", () => {
+    expect(
+      baseUrlChangesBesideKeys(
+        { ai: { provider_keys: { custom: { api_key: "k" } } } },
+        { ai: { base_url_overrides: { custom: "http://b/v1" } } },
+      ),
+    ).toEqual([{ provider: "custom", from: "", to: "http://b/v1" }]);
+  });
+
+  it("survives a malformed bundle or missing settings", () => {
+    expect(baseUrlChangesBesideKeys(undefined, { ai: {} })).toEqual([]);
+    expect(baseUrlChangesBesideKeys({ ai: { keys: { a: "k" } } }, "nope")).toEqual([]);
+    expect(baseUrlChangesBesideKeys({ ai: "nope" }, { ai: {} })).toEqual([]);
+  });
+});
+
+describe("preserveLocalBaseUrls", () => {
+  it("keeps the live endpoints while still restoring everything else", () => {
+    const merged = preserveLocalBaseUrls(
+      {
+        ai: {
+          keys: { custom: "live-key" },
+          base_url: "http://localhost:1234/v1",
+          base_url_overrides: { custom: "http://localhost:1234/v1" },
+        },
+      },
+      {
+        ai: {
+          keys: {},
+          temperature: 0.9,
+          base_url: "https://elsewhere.test/v1",
+          base_url_overrides: { custom: "https://elsewhere.test/v1" },
+        },
+      },
+    ) as { ai: Record<string, unknown> };
+    expect(merged.ai.base_url).toBe("http://localhost:1234/v1");
+    expect(merged.ai.base_url_overrides).toEqual({
+      custom: "http://localhost:1234/v1",
+    });
+    expect(merged.ai.keys).toEqual({ custom: "live-key" });
+    expect(merged.ai.temperature).toBe(0.9);
+  });
+
+  it("takes the bundle's endpoint for a provider this device has none for", () => {
+    const merged = preserveLocalBaseUrls(
+      { ai: { keys: { custom: "k" } } },
+      { ai: { base_url_overrides: { custom: "http://b/v1", other: "http://c/v1" } } },
+    ) as { ai: { base_url_overrides: Record<string, string> } };
+    expect(merged.ai.base_url_overrides.other).toBe("http://c/v1");
+  });
+});
+
+describe("makeBaseUrlConfirm", () => {
+  it("names every affected endpoint in the message", async () => {
+    const confirm = vi.fn(
+      async (
+        _title: string,
+        _message: string,
+        _variant?: "default" | "danger" | "success" | "info",
+      ) => true,
+    );
+    const ask = makeBaseUrlConfirm(confirm, (_k, fallback) => fallback);
+    await ask([
+      { provider: "custom", from: "http://localhost:1234/v1", to: "https://b.test/v1" },
+      { provider: "", from: "", to: "https://c.test/v1" },
+    ]);
+    const [, message, variant] = confirm.mock.calls[0];
+    expect(message).toContain("custom: http://localhost:1234/v1 -> https://b.test/v1");
+    // The top-level mirror has no provider id and no previous value.
+    expect(message).toContain("aktiver Anbieter: - -> https://c.test/v1");
+    expect(variant).toBe("danger");
+  });
+
+  it("passes the dialog's answer straight through", async () => {
+    const ask = makeBaseUrlConfirm(
+      vi.fn(async () => false),
+      (_k, fallback) => fallback,
+    );
+    expect(await ask([{ provider: "custom", from: "a", to: "b" }])).toBe(false);
   });
 });

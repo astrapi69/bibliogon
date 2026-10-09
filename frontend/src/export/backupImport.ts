@@ -10,7 +10,12 @@ import {
 } from "../api/client";
 import type {AplusDocumentRecord} from "../api/platform";
 import {getStorage} from "../storage";
-import {preserveLocalSecrets} from "../utils/ai/scrubSecrets";
+import {
+    baseUrlChangesBesideKeys,
+    preserveLocalBaseUrls,
+    preserveLocalSecrets,
+    type BaseUrlChange,
+} from "../utils/ai/scrubSecrets";
 import {planAuthorsImport} from "../components/settings/authorsImportExport";
 import {type BackupBundleV1} from "./backupExport";
 
@@ -129,6 +134,16 @@ export function articleCreateFrom(article: Article): ArticleCreate {
 }
 
 /**
+ * Asked before a restore moves the endpoint a configured key talks to.
+ *
+ * Returning false keeps this device's endpoints; everything else in the
+ * bundle still restores. An importer called WITHOUT this callback
+ * declines on the user's behalf, because the alternative is pointing a
+ * key at a host nobody chose with nothing on screen about it.
+ */
+export type BaseUrlConfirm = (changes: BaseUrlChange[]) => Promise<boolean>;
+
+/**
  * The settings blob to write during a restore, with the live secrets kept.
  *
  * When the live settings cannot be read, the AI section is dropped from the
@@ -141,9 +156,19 @@ export function articleCreateFrom(article: Article): ArticleCreate {
 async function mergeSettingsForRestore(
     storage: ReturnType<typeof getStorage>,
     restored: unknown,
+    confirmBaseUrlChange?: BaseUrlConfirm,
 ): Promise<Record<string, unknown>> {
     try {
         const live = await storage.settings.getApp();
+        const changes = baseUrlChangesBesideKeys(live, restored);
+        if (changes.length > 0) {
+            const accepted = confirmBaseUrlChange
+                ? await confirmBaseUrlChange(changes)
+                : false;
+            if (!accepted) {
+                return preserveLocalBaseUrls(live, restored) as Record<string, unknown>;
+            }
+        }
         return preserveLocalSecrets(live, restored) as Record<string, unknown>;
     } catch (err) {
         console.warn("Live settings unreadable; restoring without the AI section", err);
@@ -165,7 +190,10 @@ async function mergeSettingsForRestore(
  *
  * @throws BackupImportError on an invalid / unsupported bundle.
  */
-export async function importFullBackup(file: File): Promise<ImportResult> {
+export async function importFullBackup(
+    file: File,
+    confirmBaseUrlChange?: BaseUrlConfirm,
+): Promise<ImportResult> {
     const bundle = await parseBackupBundle(await file.text());
     const storage = getStorage();
     const data = bundle.data;
@@ -179,7 +207,13 @@ export async function importFullBackup(file: File): Promise<ImportResult> {
         // does not log them out of their AI provider. An older bundle still
         // carries real keys and still restores them - the rule is "empty
         // does not overwrite", not "never overwrite".
-        const settings = {...(await mergeSettingsForRestore(storage, data.settings))};
+        const settings = {
+            ...(await mergeSettingsForRestore(
+                storage,
+                data.settings,
+                confirmBaseUrlChange,
+            )),
+        };
         delete settings.author;
         if (Object.keys(settings).length > 0) {
             await storage.settings.updateApp(settings);

@@ -38,6 +38,7 @@ import { bgbBackupFilename, exportBgbBackup, type BgbProgress } from "../../expo
 import { BackupImportError } from "../../export/backupImport";
 import { BgbImportError } from "../../import/bgbImport";
 import { restoreBackupFile } from "../../export/restoreBackup";
+import { makeBaseUrlConfirm } from "../../utils/ai/baseUrlConfirm";
 import { getStorage } from "../../storage";
 import {
     DEFAULT_MAX_UPLOAD_MB,
@@ -116,7 +117,10 @@ export function BackupsSettings() {
                 );
                 return;
             }
-            const counts = await restoreBackupFile(file);
+            const counts = await restoreBackupFile(
+                file,
+                makeBaseUrlConfirm(dialog.confirm, t),
+            );
             notify.success(
                 t(
                     "ui.backups.import_result",
@@ -240,6 +244,15 @@ export function BackupsSettings() {
                     {t(
                         "ui.backups.full_backup_import_hint",
                         "Desktop-App: .bgb-Import läuft serverseitig, damit Cover und Assets vollständig wiederhergestellt werden. Web-App importiert im Browser.",
+                    )}
+                </p>
+                <p
+                    className="mt-0 mb-3 text-sm text-muted-foreground"
+                    data-testid="backups-legacy-plaintext-note"
+                >
+                    {t(
+                        "ui.backups.legacy_keys_plaintext",
+                        "Backups, die vor dieser Version erstellt wurden, können KI-Schlüssel im Klartext enthalten. Neue Backups enthalten keine Schlüssel mehr - behandle ältere Dateien entsprechend oder erstelle sie neu.",
                     )}
                 </p>
                 <div className="flex flex-wrap gap-2">
