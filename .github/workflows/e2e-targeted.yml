@@ -18,7 +18,10 @@ name: E2E Targeted
 #                        `vite preview` (no backend at all)
 #   feature-screenshots  the capture spec; the PNGs it writes under
 #                        docs/screenshots/ are uploaded as the artifact
-#                        `feature-screenshots` to download and commit
+#                        `feature-screenshots` AND pushed to the branch
+#                        `chore/feature-screenshots-<run_id>` (#1006), so
+#                        they can be reviewed and committed as an ordinary
+#                        diff without downloading the artifact
 #
 # Inputs reach the shell only through env vars and are checked against a
 # plain path/pattern charset, so a crafted input cannot inject commands.
@@ -40,6 +43,8 @@ on:
         type: string
         default: ""
 
+# The job needs `contents: write` for the screenshot push below (#1006);
+# the top-level default stays read so nothing else inherits write.
 permissions:
   contents: read
 
@@ -55,6 +60,8 @@ jobs:
     name: E2E ${{ inputs.suite }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    permissions:
+      contents: write
     env:
       SUITE: ${{ inputs.suite }}
       SPECS: ${{ inputs.specs }}
@@ -154,3 +161,42 @@ jobs:
           name: feature-screenshots
           path: docs/screenshots/
           retention-days: 7
+
+      # #1006: the artifact was the ONLY way the captured PNGs left the
+      # runner, and artifact downloads are served from blob storage, which
+      # an agent session cannot reach - so "feature screenshot in PR", which
+      # every PWA-parity port carries in its acceptance criteria, was a
+      # human-only step. Pushing a branch makes the captures reviewable as
+      # an ordinary diff by whoever (or whatever) dispatched the run. Same
+      # shape as the visual-baseline push added in #950.
+      #
+      # Committed as the dispatching actor, which is accurate (someone asked
+      # for this capture) and keeps the #768/#786 identity guard satisfied -
+      # `github-actions[bot]` would carry the `[bot]` marker it refuses.
+      - name: Push the captured screenshots to a branch
+        if: ${{ always() && inputs.suite == 'feature-screenshots' }}
+        env:
+          ACTOR: ${{ github.actor }}
+          ACTOR_ID: ${{ github.actor_id }}
+          BRANCH: chore/feature-screenshots-${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain -- docs/screenshots)" ]; then
+            echo "Captures are byte-identical; nothing to push." \
+              >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git config user.name "$ACTOR"
+          git config user.email "${ACTOR_ID}+${ACTOR}@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add -- docs/screenshots
+          git commit -m "docs(screenshots): refresh the feature-screenshot catalog" \
+            -m "Captured by E2E Targeted run ${{ github.run_id }}."
+          git push origin "$BRANCH"
+          {
+            echo "### Captured screenshots pushed"
+            echo
+            echo "Branch \`$BRANCH\`, $(git diff --name-only HEAD~1 -- docs/screenshots | wc -l) file(s) changed:"
+            echo
+            git diff --name-only HEAD~1 -- docs/screenshots | sed 's/^/- /'
+          } >> "$GITHUB_STEP_SUMMARY"

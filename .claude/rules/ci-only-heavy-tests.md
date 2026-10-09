@@ -40,7 +40,7 @@ drive the CPU up; everything heavy runs on GitHub Actions.**
 | Backend + frontend suites, tsc, build, pre-commit, ruff, mypy | open the PR, or `make ci-remote` before one | `ci.yml` |
 | Specific Playwright specs against the real backend | `make e2e-remote SUITE=smoke SPECS="smoke/a.spec.ts smoke/b.spec.ts"` | `e2e-targeted.yml` |
 | Static Dexie build (no backend) | `make e2e-remote SUITE=static-smoke SPECS="static-smoke/x.spec.ts"` | `e2e-targeted.yml` |
-| Feature screenshots | `make e2e-remote SUITE=feature-screenshots GREP="<test title>"`, then `gh run download <id> -n feature-screenshots` and commit the PNGs | `e2e-targeted.yml` |
+| Feature screenshots | `make e2e-remote SUITE=feature-screenshots GREP="<test title>"`, then merge the `chore/feature-screenshots-<run-id>` branch the run pushes (#1006) — an artifact download is served from blob storage an agent session cannot reach | `e2e-targeted.yml` |
 | Whole smoke suite | nightly, or `gh workflow run e2e-smoke.yml --ref <branch>` | `e2e-smoke.yml` |
 | Plugin suites | nightly, or `gh workflow run nightly.yml --ref <branch>` | `nightly.yml` |
 
