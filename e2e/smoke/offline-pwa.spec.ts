@@ -498,6 +498,19 @@ test.describe("Offline PWA (Dexie mode)", () => {
         // fit the 30s default; the first run of this spec died on that
         // timeout mid-assertion rather than on the assertion itself.
         test.setTimeout(90_000);
+
+        // The editor's autosave logs "Autosave failed:" to the console
+        // before deciding whether to toast, and `persistContent` catches
+        // without rethrowing - so when a save is dropped, the console is
+        // the only place that says why. Collect it and hand it to the
+        // assertions below, so a failure arrives with its cause attached
+        // instead of needing another run to find out.
+        const consoleErrors: string[] = [];
+        page.on("console", (msg) => {
+            if (msg.type() === "error") consoleErrors.push(msg.text());
+        });
+        page.on("pageerror", (err) => consoleErrors.push(`pageerror: ${err.message}`));
+
         await page.goto("/articles/new");
         await page.getByTestId("create-article-title").fill("Publiziert");
         await page.getByTestId("create-article-submit").click();
@@ -573,15 +586,20 @@ test.describe("Offline PWA (Dexie mode)", () => {
         // Did the content survive? This separates "the offline write never
         // landed" from "it landed and the drift rule did not fire" - the two
         // readings of the previous run, where drift stayed at 0.
-        await expect(page.locator(".ProseMirror").first()).toContainText(
-            "nach dem Publizieren",
-            {timeout: 10_000},
-        );
+        await expect(
+            page.locator(".ProseMirror").first(),
+            `the typed sentence did not survive the reload, so the offline ` +
+                `content write never landed. Console: ` +
+                `${consoleErrors.join(" || ") || "(nothing logged)"}`,
+        ).toContainText("nach dem Publizieren", {timeout: 10_000});
 
         // Only now is drift meaningful.
-        await expect(page.getByTestId(`publication-drift-warning-${id}`)).toBeVisible({
-            timeout: 10_000,
-        });
+        await expect(
+            page.getByTestId(`publication-drift-warning-${id}`),
+            `the content survived but the publication did not flip to ` +
+                `out_of_sync, so the drift rule is what is wrong. Console: ` +
+                `${consoleErrors.join(" || ") || "(nothing logged)"}`,
+        ).toBeVisible({timeout: 10_000});
 
         // And the user's "yes, I updated it there too" clears the warning.
         await page.getByTestId(`publication-verify-live-${id}`).click();
