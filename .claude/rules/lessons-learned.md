@@ -4989,6 +4989,80 @@ test is the arbiter, not the green unit-test count.
 - release-workflow.md "Pre-Release Gate: Aster E2E Confirmation" —
   the process gate that makes the Playwright half mandatory.
 
+## A layout assertion whose bound comes from the box under test cannot see the bug
+
+Filed 2026-10-09 (#1003) after the same fault shipped twice in one file,
+three releases apart.
+
+**First instance.** `e2e/smoke/dashboard-header-single-line.spec.ts`
+graded the header's height at every viewport width against its height at
+`REFERENCE_WIDTH` (1440px). When the header wrapped at 1440 itself, the
+reference WAS the wrap, so every comparison passed. #971 is the bug that
+walked through it.
+
+**Second instance.** The fix for that replaced the relative sweep with an
+"absolute" assertion - and compared the header's height against the
+tallest visible control INSIDE the same header, plus the header's own
+padding. A control that wraps its label becomes two lines tall, so the
+bound grew by exactly the amount it was meant to catch:
+
+| | header | tallest control | assertion (padding 24, tolerance 8) |
+|---|---|---|---|
+| nord, pre-fix | 76px | ~52px (wrapped) | `76 <= 52 + 24 + 8` → passes |
+| nord, post-fix | 62px | ~38px | `62 <= 38 + 24 + 8` → passes |
+
+Green in both states. Three CI runs on the pre-fix component came back
+green and were initially misread as the smoke environment rendering
+differently from the visual one (#995, filed on that premise and
+retitled). Closed by #1001 with a bound taken from each control's own
+computed line-height.
+
+### The rule
+
+Before writing a layout assertion, ask: **can the right-hand side move
+when the bug appears?** If yes, the assertion is inert. This is not
+specific to heights or to that file - it applies to any width, overflow
+or position pin:
+
+- "the panel is no wider than its container" - if the bug widens both.
+- "the row is no taller than its tallest cell" - if the bug grows a cell.
+- "the sidebar takes at most half the grid" - if the bug grows the grid.
+
+Two shapes are safe:
+
+- **A constant from the design.** `.headerInner` is capped at
+  `max-width: 1100px`; that number is in the stylesheet, not in the
+  measurement, so an assertion against it holds.
+- **A value computed from the element's own typography.** Line height,
+  padding and border come from computed style and cannot change because a
+  sibling wrapped. The #1001 check is `content-box height <= ~1.6 line
+  heights` per control: one line carrying an icon sits at 1.0-1.3, two
+  lines at 2.0.
+
+### Why it survives review
+
+Both versions read as careful, and the second looks like the textbook fix
+for the first - it swapped a relative comparison across widths for an
+absolute one at a single width. The self-reference moved from "across
+runs of the same measurement" to "within one measurement", which is
+harder to see and produces identical green.
+
+The failure message helps it hide: three values (`header`, `tallest`,
+`padding`) read like an independent calculation, when two of the three
+come from the box being measured. A message that names the offending
+elements instead of reciting arithmetic is harder to write and easier to
+audit.
+
+### Pairs with
+
+- "Playwright-visible != User-visible: assert bounding-box dimensions for
+  CSS-collapse class bugs" (this file) - that rule says measure the
+  dimension rather than trusting `toBeVisible()`; this one says where the
+  number you compare it against may come from.
+- `coding-standards.md` "A red-pin claim needs the red run linked" -
+  #995's three green runs are what finally exposed this, and only because
+  someone ran them instead of asserting the red.
+
 ## Store IndexedDB binary as ArrayBuffer, not Blob (fake-indexeddb round-trip)
 
 Filed 2026-06-06 (P3c offline assets). When persisting binary (image
