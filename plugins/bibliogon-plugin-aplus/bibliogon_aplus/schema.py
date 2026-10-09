@@ -18,11 +18,27 @@ Severity = Literal["error", "warning"]
 
 class ValidationFinding(BaseModel):
     """One deterministic-validator result, attached to the field it
-    concerns so a UI can highlight exactly the offending section."""
+    concerns so a UI can highlight exactly the offending section.
+
+    ``code`` plus ``params`` is what a localized UI renders (#889): the
+    code names the rule, the params carry the offending term or the two
+    numbers of a length finding. ``message`` is the English sentence the
+    validator has always produced - kept as the fallback for a code the
+    UI does not know yet, and as the diagnostic in a bug report. A
+    cached package written before codes existed has an empty ``code``
+    and falls back to its message, which is why the field defaults
+    rather than being required.
+
+    Params are strings on purpose. They cross a JSON boundary into a
+    template that only ever interpolates them, so a number would gain
+    nothing and would make the type a union the frontend has to narrow.
+    """
 
     field: str
     severity: Severity
     message: str
+    code: str = ""
+    params: dict[str, str] = Field(default_factory=dict)
 
 
 class Bullet(BaseModel):
