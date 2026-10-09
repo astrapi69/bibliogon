@@ -532,7 +532,15 @@ test.describe("Feature Screenshots", () => {
                 .getByTestId("publications-panel")
                 .waitFor({state: "visible"})
                 .catch(() => {});
-            await page.getByTestId("publications-panel").scrollIntoViewIfNeeded().catch(() => {});
+            // The sidebar is its own scroll container, and the panel sits well
+            // below its fold. `scrollIntoViewIfNeeded` left it off-frame (the
+            // first capture of this block showed the Metadaten fields and no
+            // panel at all), so scroll the panel to the middle of its
+            // scrollable ancestor explicitly.
+            await page
+                .getByTestId("publications-panel")
+                .evaluate((el) => el.scrollIntoView({block: "center", behavior: "instant"}))
+                .catch(() => {});
             await page.waitForTimeout(500);
             await page.screenshot({
                 path: `${OUT}/article-editor/publications-panel.png`,
