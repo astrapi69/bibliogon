@@ -543,19 +543,34 @@ test.describe("Offline PWA (Dexie mode)", () => {
         );
 
         // Drift: the article moves after publication, so the next READ of the
-        // panel has to notice. Typing fires the 1s autosave; the save
-        // indicator appearing and clearing is the signal that the Dexie write
-        // committed before the reload.
+        // panel has to notice.
+        //
+        // The save indicator is NOT the signal to wait on. Its testid renders
+        // for "saving" AND "error" and for neither "saved" nor "idle", and a
+        // failure that is not an ApiError leaves the status stuck on "saving"
+        // forever (#1021) - so both "it worked" and "it failed silently" can
+        // look like a spinner that never clears. Assert the outcome instead:
+        // reload until the panel reports drift. A reload re-reads the
+        // publication, and only a committed content change flips it, so this
+        // passes exactly when the write landed.
         await page.locator(".ProseMirror").first().click();
         await page.keyboard.type("Ein Satz, der nach dem Publizieren dazukam.");
-        const saving = page.getByTestId("article-editor-save-status");
-        await expect(saving).toBeVisible({timeout: 10_000});
-        await expect(saving).toHaveCount(0, {timeout: 15_000});
+        // The editor's autosave debounce is 1s of inactivity; this waits out
+        // that constant, not a race.
+        await page.waitForTimeout(1_500);
 
-        await page.reload();
-        await expect(page.getByTestId(`publication-drift-warning-${id}`)).toBeVisible({
-            timeout: 15_000,
-        });
+        await expect
+            .poll(
+                async () => {
+                    await page.reload();
+                    await page
+                        .getByTestId("publications-panel")
+                        .waitFor({state: "visible", timeout: 15_000});
+                    return page.getByTestId(`publication-drift-warning-${id}`).count();
+                },
+                {timeout: 45_000, intervals: [1_000, 2_000, 3_000, 5_000]},
+            )
+            .toBeGreaterThan(0);
 
         // And the user's "yes, I updated it there too" clears the warning.
         await page.getByTestId(`publication-verify-live-${id}`).click();
