@@ -19,11 +19,19 @@ import { request } from "../http";
  * if (isAplusMissingFields(result)) showMissing(result.missing_fields);
  */
 
-/** One deterministic-validator finding, attached to the field it concerns. */
+/** One deterministic-validator finding, attached to the field it concerns.
+ *
+ *  `code` names the rule and `params` carries its term or numbers (#889), so
+ *  the UI can render `ui.aplus.finding.<code>` in the reader's language.
+ *  `message` is the validator's English sentence: the fallback for a code
+ *  this build does not know, and the diagnostic in a bug report. Both are
+ *  optional because a package cached before #889 carries neither. */
 export interface AplusFinding {
     field: string;
     severity: "error" | "warning";
     message: string;
+    code?: string;
+    params?: Record<string, string>;
 }
 
 /** One image slot; `rendered` is the copy-and-paste prompt derived per response. */

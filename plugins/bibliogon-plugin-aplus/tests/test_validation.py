@@ -446,3 +446,74 @@ class TestUnknownGenreKeyDoesNotCrash:
         findings = validate_package(pkg, language="en", genre_key="totally-unknown", rules=RULES)
         assert _errors(findings) == []
         assert any(f.field == "short_description" for f in _warnings(findings))
+
+
+class TestFindingCodes:
+    """#889: every finding carries a stable code plus its parameters, so a
+    non-English UI can render its own sentence instead of the English
+    ``message``. The message stays as the fallback and as the diagnostic."""
+
+    def test_every_finding_carries_a_code(self) -> None:
+        pkg = _package(
+            short_description="Entdecken Sie 😀 — jetzt nur 9,99 EUR bei Kindle.",
+            language="de",
+        )
+        findings = validate_package(pkg, language="de", genre_key=None, rules=RULES)
+        assert findings, "expected the stuffed field to produce findings"
+        assert all(f.code for f in findings)
+        # The English sentence survives as the fallback.
+        assert all(f.message for f in findings)
+
+    def test_the_code_names_the_rule_and_the_params_name_the_term(self) -> None:
+        pkg = _package(short_description="Entdecken Sie das Buch.", language="de")
+        findings = validate_package(pkg, language="de", genre_key=None, rules=RULES)
+        imperative = [f for f in findings if f.code == "marketing_imperative"]
+        assert imperative, [f.code for f in findings]
+        assert imperative[0].params.get("term") == "Entdecken Sie"
+
+    def test_a_length_finding_carries_both_numbers(self) -> None:
+        pkg = _package(short_description="x" * 5000)
+        findings = validate_package(pkg, language="en", genre_key=None, rules=RULES)
+        too_long = [f for f in findings if f.code == "over_max_length"]
+        assert too_long, [f.code for f in findings]
+        assert too_long[0].params["length"] == "5000"
+        assert int(too_long[0].params["max"]) < 5000
+
+    def test_codes_are_stable_across_the_whole_rule_set(self) -> None:
+        # A code the frontend cannot translate is worse than no code at
+        # all, so the set is pinned here and the catalogs follow it.
+        expected = {
+            "invalid_character",
+            "dash_not_allowed",
+            "emoji_not_allowed",
+            "hidden_character",
+            "over_max_length",
+            "marketing_imperative",
+            "leading_imperative",
+            "price_claim",
+            "brand_reference",
+            "genre_word_forbidden",
+            "genre_word_tone",
+            "alt_text_required",
+            "alt_text_over_max_length",
+            "bullet_count",
+            "image_count",
+        }
+        from bibliogon_aplus.validation import FINDING_CODES
+
+        assert FINDING_CODES == expected
+
+    def test_no_rule_emits_a_code_the_pinned_set_does_not_carry(self) -> None:
+        # The set above is a literal, so on its own it only pins itself.
+        # This reads the codes the module actually emits, which is what
+        # makes adding a rule without a catalog entry fail here rather
+        # than silently fall back to English for every non-English reader.
+        import re
+        from pathlib import Path as _Path
+
+        from bibliogon_aplus import validation
+        from bibliogon_aplus.validation import FINDING_CODES
+
+        source = _Path(validation.__file__).read_text(encoding="utf-8")
+        emitted = set(re.findall(r'code="([a-z_]+)"', source))
+        assert emitted == set(FINDING_CODES)
