@@ -94,12 +94,10 @@ export function useArticleEditorActions({
                 setTopics(next);
                 return true;
             } catch (err) {
-                if (err instanceof ApiError) {
-                    notify.error(
-                        t("ui.articles.topic_add_failed", "Thema konnte nicht angelegt werden."),
-                        err,
-                    );
-                }
+                notify.error(
+                    t("ui.articles.topic_add_failed", "Thema konnte nicht angelegt werden."),
+                    err,
+                );
                 return false;
             }
         },
@@ -240,9 +238,7 @@ export function useArticleEditorActions({
             notify.info(t("ui.articles.moved_to_trash", "In den Papierkorb verschoben"));
             navigate("/articles");
         } catch (err) {
-            if (err instanceof ApiError) {
-                notify.error(t("ui.articles.delete_failed", "Löschen fehlgeschlagen."), err);
-            }
+            notify.error(t("ui.articles.delete_failed", "Löschen fehlgeschlagen."), err);
         }
     }
 
@@ -276,12 +272,10 @@ export function useArticleEditorActions({
                 t("ui.articles.reclassify_view", "Open Comments admin"),
             );
         } catch (err) {
-            if (err instanceof ApiError) {
-                notify.error(
-                    t("ui.articles.reclassify_failed", "Could not move the article."),
-                    err,
-                );
-            }
+            notify.error(
+                t("ui.articles.reclassify_failed", "Could not move the article."),
+                err,
+            );
         }
     }
 

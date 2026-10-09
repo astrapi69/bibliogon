@@ -445,15 +445,13 @@ export function useBookEditorData({
                 ).replace("{title}", newChapter.title),
             );
         } catch (err) {
-            if (err instanceof ApiError) {
-                notify.error(
-                    t(
-                        "ui.conflict.save_as_new_failed",
-                        "Speichern als neues Kapitel fehlgeschlagen.",
-                    ),
-                    err,
-                );
-            }
+            notify.error(
+                t(
+                    "ui.conflict.save_as_new_failed",
+                    "Speichern als neues Kapitel fehlgeschlagen.",
+                ),
+                err,
+            );
         }
     };
 

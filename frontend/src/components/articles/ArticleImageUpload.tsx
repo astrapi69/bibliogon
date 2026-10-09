@@ -124,15 +124,13 @@ export default function ArticleImageUpload({ articleId, value, assetId, onChange
             } catch (err) {
                 // Soft-fail removal of the file - clear the field anyway
                 // so the user is not stuck with a broken state.
-                if (err instanceof ApiError) {
-                    notify.error(
-                        t(
-                            "ui.articles.featured_image_remove_failed",
-                            "Bild entfernen fehlgeschlagen",
-                        ),
-                        err,
-                    );
-                }
+                notify.error(
+                    t(
+                        "ui.articles.featured_image_remove_failed",
+                        "Bild entfernen fehlgeschlagen",
+                    ),
+                    err,
+                );
             }
         }
         onChange(null, null);
