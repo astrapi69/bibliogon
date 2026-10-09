@@ -38,29 +38,23 @@ vi.mock("../../hooks/useI18n", () => ({
     }),
 }))
 
-// C10: mock the publishing-state API. Default returns ``state:
+// C10: mock the publishing-state seam (#737). Default returns ``state:
 // null`` so existing nav tests (which assume fresh-mount
 // behavior) keep working. Per-test overrides via
 // ``mockGetPublishingState.mockResolvedValueOnce(...)``.
 const mockGetPublishingState = vi.fn()
 const mockUpsertPublishingState = vi.fn()
 
-vi.mock("../../api/client", async () => {
-    const actual = await vi.importActual<typeof import("../../api/client")>(
-        "../../api/client",
-    )
-    return {
-        ...actual,
-        api: {
-            kdp: {
-                getPublishingState: (...args: unknown[]) =>
-                    mockGetPublishingState(...args),
-                upsertPublishingState: (...args: unknown[]) =>
-                    mockUpsertPublishingState(...args),
-            },
+vi.mock("../../storage", () => ({
+    getStorage: () => ({
+        kdp: {
+            getPublishingState: (...args: unknown[]) =>
+                mockGetPublishingState(...args),
+            upsertPublishingState: (...args: unknown[]) =>
+                mockUpsertPublishingState(...args),
         },
-    }
-})
+    }),
+}))
 
 // Module-level mocks: each child fires its result callback on
 // mount so the wizard machine's guards pass + Next enables. Per-

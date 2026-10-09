@@ -1,9 +1,10 @@
 /**
  * ArcStep component tests (C9).
  *
- * Covers the server-driven contract: mount fetches reviewers,
- * add/delete/status-update round-trip through the API client +
- * trigger a refresh. Email integration is mailto-only per A16.
+ * Covers the persistence contract: mount fetches reviewers,
+ * add/delete/status-update round-trip through the storage seam (#737,
+ * so the step works offline) + trigger a refresh. Email integration is
+ * mailto-only per A16.
  */
 
 import {describe, it, expect, vi, beforeEach} from "vitest"
@@ -25,26 +26,16 @@ const mockAddReviewer = vi.fn()
 const mockUpdateReviewer = vi.fn()
 const mockDeleteReviewer = vi.fn()
 
-vi.mock("../../api/client", async () => {
-    const actual = await vi.importActual<typeof import("../../api/client")>(
-        "../../api/client",
-    )
-    return {
-        ...actual,
-        api: {
-            kdp: {
-                listReviewers: (...args: unknown[]) =>
-                    mockListReviewers(...args),
-                addReviewer: (...args: unknown[]) =>
-                    mockAddReviewer(...args),
-                updateReviewer: (...args: unknown[]) =>
-                    mockUpdateReviewer(...args),
-                deleteReviewer: (...args: unknown[]) =>
-                    mockDeleteReviewer(...args),
-            },
+vi.mock("../../storage", () => ({
+    getStorage: () => ({
+        kdp: {
+            listReviewers: (...args: unknown[]) => mockListReviewers(...args),
+            addReviewer: (...args: unknown[]) => mockAddReviewer(...args),
+            updateReviewer: (...args: unknown[]) => mockUpdateReviewer(...args),
+            deleteReviewer: (...args: unknown[]) => mockDeleteReviewer(...args),
         },
-    }
-})
+    }),
+}))
 
 function makeBook(overrides: Partial<BookDetail> = {}): BookDetail {
     return {

@@ -871,6 +871,110 @@ describe("DexieStorage — chapter labels", () => {
     });
 });
 
+describe("DexieStorage — KDP publishing state (#737)", () => {
+    it("upsert creates with server defaults, then partial-updates", async () => {
+        // Nothing stored yet: the GET must not create a row, and must
+        // report the book's updated_at as the conflict baseline.
+        const book = await dexieStorage.books.create({ title: "KDP Book", author: "Aster" });
+        const before = await dexieStorage.kdp.getPublishingState(book.id);
+        expect(before.state).toBeNull();
+        expect(before.book_updated_at).toBe(book.updated_at);
+
+        const created = await dexieStorage.kdp.upsertPublishingState(book.id, {
+            royalty_plan: "70",
+            prices: { US: { currency: "USD", list_price: 4.99 } },
+        });
+        expect(created.royalty_plan).toBe("70");
+        // Untouched fields carry the server's defaults, not undefined.
+        expect(created.kdp_select_enrolled).toBe(false);
+        expect(created.expanded_distribution).toBe(false);
+        expect(created.launch_checklist_state).toEqual({});
+
+        // A second call patches the same row: absent fields survive, and
+        // an explicit null clears royalty_plan (the one nullable field).
+        const patched = await dexieStorage.kdp.upsertPublishingState(book.id, {
+            kdp_select_enrolled: true,
+            launch_checklist_state: { wizard_step: "pricing" },
+        });
+        expect(patched.id).toBe(created.id);
+        expect(patched.royalty_plan).toBe("70");
+        expect(patched.kdp_select_enrolled).toBe(true);
+        expect(patched.prices).toEqual({ US: { currency: "USD", list_price: 4.99 } });
+
+        const cleared = await dexieStorage.kdp.upsertPublishingState(book.id, {
+            royalty_plan: null,
+        });
+        expect(cleared.royalty_plan).toBeNull();
+        expect(cleared.kdp_select_enrolled).toBe(true);
+
+        const loaded = await dexieStorage.kdp.getPublishingState(book.id);
+        expect(loaded.state?.id).toBe(created.id);
+    });
+
+    it("adding a reviewer auto-creates the state row and stamps the invite", async () => {
+        const book = await dexieStorage.books.create({ title: "ARC Book", author: "Aster" });
+        expect(await dexieStorage.kdp.listReviewers(book.id)).toEqual([]);
+
+        const reviewer = await dexieStorage.kdp.addReviewer(book.id, {
+            reviewer_name: "Lena",
+            reviewer_email: null,
+        });
+        expect(reviewer.review_status).toBe("invited");
+        expect(reviewer.invited_at).toBeTruthy();
+        expect(reviewer.reviewed_at).toBeNull();
+
+        // The state row now exists even though the wizard never saved one.
+        const state = await dexieStorage.kdp.getPublishingState(book.id);
+        expect(state.state).not.toBeNull();
+        expect(state.state?.arc_reviewers.map((r) => r.reviewer_name)).toEqual(["Lena"]);
+    });
+
+    it("flipping a reviewer to reviewed stamps reviewed_at exactly once", async () => {
+        const book = await dexieStorage.books.create({ title: "Status Book", author: "Aster" });
+        const reviewer = await dexieStorage.kdp.addReviewer(book.id, { reviewer_name: "Jo" });
+
+        const sent = await dexieStorage.kdp.updateReviewer(book.id, reviewer.id, {
+            review_status: "sent",
+        });
+        expect(sent.reviewed_at).toBeNull();
+
+        const reviewed = await dexieStorage.kdp.updateReviewer(book.id, reviewer.id, {
+            review_status: "reviewed",
+            review_permalink: "https://example.com/r/1",
+        });
+        expect(reviewed.reviewed_at).toBeTruthy();
+        expect(reviewed.review_permalink).toBe("https://example.com/r/1");
+
+        // A later update keeps the original stamp rather than re-stamping.
+        const again = await dexieStorage.kdp.updateReviewer(book.id, reviewer.id, {
+            review_status: "reviewed",
+        });
+        expect(again.reviewed_at).toBe(reviewed.reviewed_at);
+    });
+
+    it("refuses to touch a reviewer through another book, and deletes its own", async () => {
+        const mine = await dexieStorage.books.create({ title: "Mine", author: "A" });
+        const other = await dexieStorage.books.create({ title: "Other", author: "A" });
+        const reviewer = await dexieStorage.kdp.addReviewer(mine.id, { reviewer_name: "Kim" });
+        // The other book needs a state row of its own, so the rejection is
+        // about ownership rather than a missing parent.
+        await dexieStorage.kdp.addReviewer(other.id, { reviewer_name: "Sam" });
+
+        await expect(
+            dexieStorage.kdp.updateReviewer(other.id, reviewer.id, { review_status: "sent" }),
+        ).rejects.toThrow(/ArcReviewer/);
+        await expect(dexieStorage.kdp.deleteReviewer(other.id, reviewer.id)).rejects.toThrow(
+            /ArcReviewer/,
+        );
+
+        await dexieStorage.kdp.deleteReviewer(mine.id, reviewer.id);
+        expect(await dexieStorage.kdp.listReviewers(mine.id)).toEqual([]);
+        expect((await dexieStorage.kdp.listReviewers(other.id)).map((r) => r.reviewer_name)).toEqual(
+            ["Sam"],
+        );
+    });
+});
+
 describe("DexieStorage — story bible", () => {
     it("entity CRUD + relationships + links + export round-trip", async () => {
         // Entity types come from the seeded registry.

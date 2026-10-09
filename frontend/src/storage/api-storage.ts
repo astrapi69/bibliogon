@@ -25,6 +25,7 @@ import type {
     BookStorage,
     BookTypesStorage,
     ChapterLabelStorage,
+    KdpStorage,
     ChapterStorage,
     ChapterTemplateStorage,
     CommentStorage,
@@ -103,6 +104,9 @@ export const apiStorage: IStorageService = {
             remove: api.aplus.deleteDocument,
             listForBook: api.aplus.listDocuments,
         };
+    },
+    get kdp(): KdpStorage {
+        return api.kdp;
     },
     get storyBible(): StoryBibleStorage {
         return api.storyBible;

@@ -215,6 +215,9 @@ export function makeQueueingStorage(base: IStorageService): IStorageService {
         chapterLabels: base.chapterLabels,
         // A+ documents (#891): local-only offline writes, like chapter labels.
         aplusDocuments: base.aplusDocuments,
+        // KDP wizard state + ARC reviewers (#737): local-only offline writes,
+        // like chapter labels and A+ documents.
+        kdp: base.kdp,
         // Story Bible: local-only offline writes (replay deferred); passthrough.
         storyBible: base.storyBible,
         // Picture-book pages + comic panels/bubbles: local-only offline writes

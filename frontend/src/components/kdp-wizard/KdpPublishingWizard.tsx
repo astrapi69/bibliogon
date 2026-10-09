@@ -26,7 +26,8 @@ import {useEffect, useRef, useState} from "react"
 import {useMachine} from "@xstate/react"
 import {AlertTriangle, Check, X, Rocket} from "lucide-react"
 
-import {BookDetail, api} from "../../api/client"
+import {BookDetail} from "../../api/client"
+import {getStorage} from "../../storage"
 import {useI18n} from "../../hooks/useI18n"
 import WizardShell, {WizardNav} from "../wizards/WizardShell"
 import ArcStep from "./ArcStep"
@@ -126,15 +127,16 @@ export default function KdpPublishingWizard({open, book, onClose}: Props) {
     )
     const [conflictDismissed, setConflictDismissed] = useState(false)
 
-    // C10 mount-time hydration. Fetches the persisted publishing-
-    // state row + dispatches STATE_LOADED if one exists. Failure
-    // is non-blocking (fail-open) — the wizard still starts with
-    // default context.
+    // C10 mount-time hydration. Reads the persisted publishing-
+    // state row through the storage seam (#737, so it hydrates from
+    // IndexedDB on the backendless build) + dispatches STATE_LOADED if
+    // one exists. Failure is non-blocking (fail-open) — the wizard
+    // still starts with default context.
     useEffect(() => {
         if (!open) return
         let cancelled = false
-        api.kdp
-            .getPublishingState(book.id)
+        getStorage()
+            .kdp.getPublishingState(book.id)
             .then((response) => {
                 if (cancelled) return
                 setBookUpdatedAt(response.book_updated_at)
@@ -163,7 +165,7 @@ export default function KdpPublishingWizard({open, book, onClose}: Props) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, book.id])
 
-    // C10 auto-save. PATCHes the publishing-state row whenever
+    // C10 auto-save. Writes the publishing-state row whenever
     // ``context.pricing`` content changes from the last saved
     // snapshot. Skips the initial default (royalty_plan === null).
     // Failure is non-blocking: log + continue, retry on next
@@ -177,8 +179,8 @@ export default function KdpPublishingWizard({open, book, onClose}: Props) {
         const pricingJson = JSON.stringify(pricing)
         if (pricingJson === lastSavedPricingRef.current) return
         lastSavedPricingRef.current = pricingJson
-        api.kdp
-            .upsertPublishingState(book.id, {
+        getStorage()
+            .kdp.upsertPublishingState(book.id, {
                 royalty_plan: pricing.royalty_plan,
                 kdp_select_enrolled: pricing.kdp_select_enrolled,
                 expanded_distribution: pricing.expanded_distribution,
