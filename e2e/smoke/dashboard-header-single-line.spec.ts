@@ -6,18 +6,62 @@
  * Switching language or the default book type must not change which state is
  * shown at a given viewport - no toggling, and never a two-line wrap.
  *
- * 1200px is the worst-case full-bar width (widest locale es/pt/el, where
- * "Backup" is an ~18-char phrase, + the longest default-type label + margin).
- * Above it the full bar always fits; below it the hamburger takes over.
+ * 1200px is the breakpoint between the two states. It measures the VIEWPORT,
+ * which is not what constrains the bar: `.headerInner` is capped at
+ * max-width 1100px (shared with `.main`, so the header aligns with the cards
+ * below), so above 1100 the bar has ~1052px no matter how wide the window
+ * gets. Raising the breakpoint therefore cannot buy the bar a single pixel -
+ * #971 found it wrapping at 1440 while this spec was green. When the bar
+ * outgrows that container the answer is to fold a control into the Import
+ * chevron, the way #398 did on the Article Dashboard, not to move the
+ * breakpoint.
  *
  * `Playwright-visible != User-visible`: the height assertions use
  * boundingBox().height (a wrap adds a full control row) rather than just
  * asserting visibility. The hamburger trigger is always in the DOM (CSS-
  * hidden above the breakpoint), so visibility is asserted with
  * toBeVisible()/toBeHidden(), not toHaveCount.
+ *
+ * The wrap is PALETTE-dependent, which is the second reason #971 escaped.
+ * Label widths follow the palette's font, and the committed theme
+ * baselines show the pre-fix header one control row tall under
+ * warm-literary and classic and two rows tall under cool-modern, nord,
+ * studio and notebook. The rest of this suite runs in the default theme,
+ * warm-literary, where the bar fitted - so no assertion written here
+ * could have seen it. The absolute test below therefore sets the palette
+ * itself and checks every one, the way the visual suite does.
  */
 
 import {test, expect} from "../fixtures/base";
+
+/**
+ * Every palette, because the bar's width depends on the font the palette
+ * picks. Same ids and same localStorage keys `useTheme` reads as the
+ * visual suite's `applyTheme`, set through addInitScript so the app boots
+ * in the target palette with no repaint from the default.
+ */
+const PALETTES = [
+    "warm-literary",
+    "cool-modern",
+    "nord",
+    "classic",
+    "studio",
+    "notebook",
+] as const;
+
+async function bootInPalette(
+    page: import("@playwright/test").Page,
+    palette: string,
+): Promise<void> {
+    await page.addInitScript((id) => {
+        try {
+            localStorage.setItem("bibliogon-app-theme", id);
+        } catch {
+            // localStorage unavailable (privacy mode); the default palette
+            // is still a valid case to measure.
+        }
+    }, palette);
+}
 
 const API = "http://localhost:8000/api";
 
@@ -63,7 +107,7 @@ test.describe("MENU-SINGLE-LINE Book Dashboard", () => {
     }) => {
         await page.goto("/");
         await ready(page, ABOVE);
-        await expect(page.getByTestId("backup-export-btn")).toBeVisible();
+        await expect(page.getByTestId("import-group")).toBeVisible();
         await expect(page.getByTestId("dashboard-hamburger")).toBeHidden();
     });
 
@@ -71,7 +115,7 @@ test.describe("MENU-SINGLE-LINE Book Dashboard", () => {
         await page.goto("/");
         await ready(page, BELOW);
         await expect(page.getByTestId("dashboard-hamburger")).toBeVisible();
-        await expect(page.getByTestId("backup-export-btn")).toBeHidden();
+        await expect(page.getByTestId("import-group")).toBeHidden();
         // All actions reachable from the hamburger (incl. the Artikel
         // cross-nav Aster asked for).
         await page.getByTestId("dashboard-hamburger").click();
@@ -81,7 +125,62 @@ test.describe("MENU-SINGLE-LINE Book Dashboard", () => {
         await page.keyboard.press("Escape");
     });
 
-    test("never wraps to two lines at any width", async ({page}) => {
+    for (const palette of PALETTES) {
+    test(`is one control row tall at the reference width (${palette})`, async ({
+        page,
+    }) => {
+        // #971: the loop below grades every width against REFERENCE_WIDTH, so
+        // once 1440 itself wraps the reference IS the wrap and every
+        // comparison passes - the one width the file calls "single-line
+        // guaranteed" was the only one never checked. This asserts it
+        // absolutely: the header is its tallest control plus its own padding,
+        // both read from the DOM so a theme or font change does not need a
+        // new magic number.
+        //
+        // Once per palette, because the pre-fix header fitted in
+        // warm-literary (this suite's default) and wrapped in four of the
+        // other five. A single-palette version of this test is green on the
+        // bug it is meant to pin.
+        await bootInPalette(page, palette);
+        await page.goto("/");
+        await ready(page, REFERENCE_WIDTH);
+        // The palette picks the font, the font decides the label widths,
+        // and the web fonts land asynchronously. Measuring before they do
+        // measures fallback metrics - a layout no user ever sees, and the
+        // reason an assertion here can be green while the theme baselines
+        // show the bar wrapped.
+        await page.evaluate(() => document.fonts.ready);
+        const measured = await page.evaluate(() => {
+            const header = document.querySelector(
+                '[data-testid="dashboard-header"]',
+            ) as HTMLElement;
+            const inner = header.firstElementChild as HTMLElement;
+            const padding =
+                parseFloat(getComputedStyle(inner).paddingTop) +
+                parseFloat(getComputedStyle(inner).paddingBottom);
+            const controls = [
+                ...header.querySelectorAll("button, a, input, select"),
+            ] as HTMLElement[];
+            const tallest = Math.max(
+                ...controls
+                    .filter((el) => el.offsetParent !== null)
+                    .map((el) => el.getBoundingClientRect().height),
+            );
+            return {header: header.getBoundingClientRect().height, tallest, padding};
+        });
+        expect(
+            measured.header,
+            `header is ${measured.header}px at ${REFERENCE_WIDTH}px under ` +
+                `${palette}; one row of ${measured.tallest}px controls plus ` +
+                `${measured.padding}px padding is ` +
+                `${measured.tallest + measured.padding}px. A taller header means a ` +
+                `control wrapped its label. Fold one into the Import chevron ` +
+                `(#971) - the breakpoint cannot help, the container is capped at 1100px.`,
+        ).toBeLessThanOrEqual(measured.tallest + measured.padding + WRAP_TOLERANCE);
+    });
+    }
+
+    test("never wraps to two lines at any narrower width", async ({page}) => {
         await page.goto("/");
         await ready(page, REFERENCE_WIDTH);
         const reference = await headerHeight(page);
@@ -121,7 +220,7 @@ test.describe("MENU-SINGLE-LINE Book Dashboard", () => {
         await ready(page, ABOVE);
         // Still the full bar, hamburger still hidden, height unchanged: the
         // layout did not toggle even though the labels got wider.
-        await expect(page.getByTestId("backup-export-btn")).toBeVisible();
+        await expect(page.getByTestId("import-group")).toBeVisible();
         await expect(page.getByTestId("dashboard-hamburger")).toBeHidden();
         expect(await headerHeight(page)).toBeLessThanOrEqual(
             before + WRAP_TOLERANCE,
@@ -153,7 +252,7 @@ test.describe("MENU-SINGLE-LINE Book Dashboard", () => {
 
         await page.goto("/");
         await ready(page, ABOVE);
-        await expect(page.getByTestId("backup-export-btn")).toBeVisible();
+        await expect(page.getByTestId("import-group")).toBeVisible();
         await expect(page.getByTestId("dashboard-hamburger")).toBeHidden();
         expect(await headerHeight(page)).toBeLessThanOrEqual(
             before + WRAP_TOLERANCE,

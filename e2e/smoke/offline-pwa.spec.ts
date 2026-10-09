@@ -79,8 +79,13 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await expect(page.getByTestId("new-book-group")).toBeVisible();
         // Policy #78: desktop-only features are VISIBLE + DISABLED (with a
         // reason), never hidden. The .bgb backup-export is backend-only.
-        await expect(page.getByTestId("backup-export-btn")).toBeVisible();
-        await expect(page.getByTestId("backup-export-btn")).toBeDisabled();
+        // It sits in the Import-group chevron since #971 folded it there, so
+        // "visible" means reachable in one click, not already on screen.
+        await page.getByTestId("import-chevron").click();
+        const backupItem = page.getByTestId("backup-export-btn");
+        await expect(backupItem).toBeVisible();
+        await expect(backupItem).toHaveAttribute("data-disabled", "");
+        await page.keyboard.press("Escape");
         // Import WORKS offline (client-side OfflineImportDialog): visible + enabled.
         await expect(page.getByTestId("import-wizard-btn")).toBeVisible();
         await expect(page.getByTestId("import-wizard-btn")).toBeEnabled();

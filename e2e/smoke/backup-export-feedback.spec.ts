@@ -32,8 +32,10 @@ test.describe("Backup export feedback", () => {
         );
 
         await page.goto("/");
+        // #971 folded Backup into the Import-group chevron.
+        await page.getByTestId("import-chevron").click();
         const backupButton = page.getByTestId("backup-export-btn");
-        await expect(backupButton).toBeEnabled({timeout: 10_000});
+        await expect(backupButton).toBeVisible({timeout: 10_000});
 
         const pagesBefore = context.pages().length;
         await backupButton.click();
