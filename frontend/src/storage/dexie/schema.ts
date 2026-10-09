@@ -16,6 +16,8 @@
 
 import Dexie, { type Table } from "dexie";
 
+import { storageDbName } from "../../lib/storageNamespace";
+
 import type { AplusDocumentRecord } from "../../api/platform";
 import type { TranslationGroupRow } from "./translations/groups";
 import type {
@@ -230,8 +232,10 @@ class BibliogonOfflineDB extends Dexie {
     kdpReviewers!: Table<GraphRow, string>;
 
     constructor() {
-        // Separate DB from the crash-recovery drafts store ("bibliogon").
-        super("bibliogon-offline");
+        // Separate DB from the crash-recovery drafts store ("bibliogon"),
+        // and from the production store when this is the preview build
+        // (#991 - same origin, different path, one IndexedDB).
+        super(storageDbName("bibliogon-offline"));
         this.version(1).stores({
             books: "id, updated_at, offline_available, status",
             chapters: "id, book_id, position, updated_at",
