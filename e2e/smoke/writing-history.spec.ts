@@ -5,7 +5,8 @@
  * Covers the chart surface Vitest mocks away (recharts needs a real
  * browser): edit a chapter to record writing, open the history from the
  * Dashboard widget (now navigates to the page), and verify the summary +
- * per-book breakdown + window switch + CSV link render.
+ * per-book breakdown + window switch, and that the CSV export downloads
+ * the client-serialised series (#744).
  *
  * Testid namespace: writing-history-* / writing-goal-history-open.
  */
@@ -39,9 +40,20 @@ test.describe("Writing history", () => {
     // The book appears in the per-book breakdown.
     await expect(page.getByTestId(`writing-history-book-${book.id}`)).toBeVisible()
 
-    // The CSV export link targets the export endpoint.
+    // The CSV export downloads the client-serialised series - same
+    // implementation as the offline build (#744), no /api round-trip.
     const csv = page.getByTestId("writing-history-export-csv")
-    await expect(csv).toHaveAttribute("href", /writing-stats\/export\.csv/)
+    await expect(csv).toBeEnabled()
+    const downloadPromise = page.waitForEvent("download")
+    await csv.click()
+    const download = await downloadPromise
+    expect(download.suggestedFilename()).toBe("writing-history-90d.csv")
+    const stream = await download.createReadStream()
+    const chunks: Buffer[] = []
+    for await (const chunk of stream) chunks.push(chunk as Buffer)
+    const csvText = Buffer.concat(chunks).toString("utf-8")
+    expect(csvText.split("\r\n")[0]).toBe("day,words_written")
+    expect(csvText).toMatch(/\d{4}-\d{2}-\d{2},\d+/)
 
     // Switching the window keeps the summary rendered.
     await page.getByTestId("writing-history-window-30").click()

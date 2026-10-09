@@ -596,9 +596,6 @@ export const booksApi = {
       request<WritingChapterStats[]>(
         `/writing-stats/by-chapter/${bookId}?days=${days}`,
       ),
-    /** Absolute URL for the CSV download (used as an <a href>). */
-    exportCsvUrl: (days = 90) =>
-      `${BASE}/writing-stats/export.csv?days=${days}`,
   },
 
   /** PB-PHASE4 picture-book pages CRUD. Endpoints come from the

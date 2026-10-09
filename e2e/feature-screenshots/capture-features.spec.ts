@@ -925,6 +925,24 @@ test.describe("Feature Screenshots", () => {
     });
 
     test.describe("Statistics", () => {
+        test("writing-history csv export", async ({page}) => {
+            // #744: the CSV is serialised in the browser from the same daily
+            // series the chart renders, so the button is active in both
+            // storage modes. Sessions are not API-seedable, so the window
+            // may be empty — the shot is of the control, not the data.
+            await page.goto("/writing-history");
+            await page
+                .getByTestId("writing-history-view")
+                .waitFor({state: "visible"})
+                .catch(() => {});
+            await page
+                .getByTestId("writing-history-export-csv")
+                .waitFor({state: "visible"})
+                .catch(() => {});
+            await page.waitForTimeout(400);
+            await page.screenshot({path: `${OUT}/dashboard/writing-history-csv.png`});
+        });
+
         test("writing-statistics dashboard", async ({page}) => {
             // The dashboard surfaces today/weekly/project/heatmap widgets;
             // writing sessions are not API-seedable, so a fresh DB renders
