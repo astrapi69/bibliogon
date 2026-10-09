@@ -1,8 +1,15 @@
 # Bibliogon Roadmap
 
 Current phase: Phase 2 - build for real users, not just developers
-Last updated: 2026-08-15 (v0.60.0 release: the boot-resilience + PWA-update-flow + release-automation release. Fixed the data-dir-migration boot crash-loop (502 on everything, #715), the i18n boot race that left the UI German (#714), and the client-side picture-book PDF colour loss (#692); added the PWA `version.json` update signal + banner dedup (#697) and the iOS-standalone restart hint (#700); docker-app-launcher bumped ^0.12.1 → ^0.28.0 (#702/#705/#709); release orchestration moved into Makefile targets + a one-click Gitflow workflow (#686/#688). Post-release next: the overdue GH-ACTIONS-PERIODIC-AUDIT-01 (due 2026-08-14) and the P2 tails.)
+Last updated: 2026-10-09 (every open issue scored and labelled P0..P5 - see
+[docs/audits/issue-prioritization-2026-10-09.md](audits/issue-prioritization-2026-10-09.md);
+the two long-red CI gates are closed: the pixel gate, red for 26 nights on two
+intended UI changes (#950), and the weekly security scan, red for four weeks on
+dependency CVEs (#952/#968). This header states where the project is, not what
+shipped - unreleased work lives in the CHANGELOG's [Unreleased] section.)
 Latest release: v0.60.0 (2026-08-15). See [docs/CHANGELOG.md](CHANGELOG.md) for the full per-release notes.
+Both this line and the ones below it are checked against the CHANGELOG by
+`backend/tests/test_docs_version_claims.py` (#982).
 
 This file is a **thematic overview** of open work. Detailed scope,
 trigger conditions, and effort estimates live in [docs/backlog.md](backlog.md).
@@ -282,7 +289,7 @@ Detailed per-theme work lives in the tiers below.
 
 ## P0 - Deadline / Blocker / Security
 
-(none) — gitflow is clean: `main` holds v0.57.0 and `develop` carries
+(none) — gitflow is clean: `main` holds v0.60.0 and `develop` carries
 the post-release work; nothing on `main` is missing from `develop`, so
 no main→develop sync is pending.
 
