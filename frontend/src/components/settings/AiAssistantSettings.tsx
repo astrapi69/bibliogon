@@ -37,6 +37,7 @@ import {
 } from "./ConfiguredProvidersTable";
 import { HelpText } from "./HelpText";
 import { SectionHeader } from "./SectionHeader";
+import { SharedOriginNote } from "../ui/SharedOriginNote";
 import { Toggle } from "./Toggle";
 import { useSettingsAutoSave } from "./useSettingsAutoSave";
 
@@ -515,6 +516,7 @@ export function AiAssistantSettings({
                                         "Der Schlüssel wird unverschlüsselt auf diesem Gerät gespeichert und nur an den unter 'Base URL' angegebenen Dienst übertragen. Verwende einen eigenen, eng begrenzten Schlüssel und tausche ihn regelmässig aus.",
                                     )}
                                 </HelpText>
+                                <SharedOriginNote testId="ai-key-shared-origin-note" />
                                 {KEY_SCOPE_HINTS[aiProvider] ? (
                                     <HelpText testId="ai-key-scope-note">
                                         {t(

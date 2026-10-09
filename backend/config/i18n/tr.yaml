@@ -1252,6 +1252,7 @@ ui:
     ai_max_tokens: "Maks. Token"
     ai_api_key: "API Anahtari"
     ai_key_not_required: "Gerekli degil"
+    shared_origin_note: "Bu web sürümü, deposunu aynı hesabın diğer siteleriyle paylaşan bir sunucuda çalışır. Orada bir site yayınlayabilen herkes bu depoyu okuyabilir. Kalıcı kimlik bilgileri için masaüstü uygulaması daha güvenli."
     ai_key_hint: "Anahtar bu cihazda şifrelenmeden saklanır ve yalnızca 'Base URL' altında belirtilen hizmete gönderilir. Kapsamı sınırlı, ayrı bir anahtar kullan ve düzenli olarak değiştir."
     ai_key_scope_anthropic: "Anahtarı kendi çalışma alanında oluştur ve o alana bir harcama limiti tanımla."
     ai_key_scope_openai: "Yalnızca kendi projesiyle sınırlı bir proje anahtarı kullan ve orada bir kullanım limiti belirle."

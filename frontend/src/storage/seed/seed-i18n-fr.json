@@ -1282,6 +1282,7 @@
       "ai_max_tokens": "Tokens max.",
       "ai_api_key": "Cle API",
       "ai_key_not_required": "Non requise",
+      "shared_origin_note": "Cette version web est hébergée sur un hôte qui partage son stockage avec les autres sites du même compte. Quiconque peut y publier un site peut lire ce stockage. Pour un identifiant que vous conservez, l'application de bureau est plus sûre.",
       "ai_key_hint": "La clé est stockée en clair sur cet appareil et n'est envoyée qu'au service indiqué sous 'Base URL'. Utilisez une clé dédiée aux droits restreints et renouvelez-la régulièrement.",
       "ai_key_scope_anthropic": "Créez la clé dans un espace de travail dédié et attribuez-lui une limite de dépenses.",
       "ai_key_scope_openai": "Utilisez une clé de projet limitée à un projet dédié et définissez-y une limite d'utilisation.",

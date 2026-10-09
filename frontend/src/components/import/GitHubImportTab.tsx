@@ -28,6 +28,7 @@ import { FEATURES } from "../../features/featureConfig";
 import { FeatureNotice } from "../../features/FeatureNotice";
 import { loadGitHubToken, saveGitHubToken } from "../../import/credentials/githubToken";
 import { TokenInput } from "../../lib/components/TokenInput";
+import { SharedOriginNote } from "../ui/SharedOriginNote";
 import {
     GitHubNotFoundError,
     GitHubRateLimitError,
@@ -293,6 +294,7 @@ export default function GitHubImportTab({ onImported, onClose }: GitHubImportTab
                                 "Das Token liegt unverschlüsselt in diesem Browser; ein Skript, das hier ausgeführt wird, kann es lesen. Lege ein Fine-grained Token an: nur die Repositories, die du importieren willst, Berechtigung Contents: Read-only, mit Ablaufdatum. Ein klassisches Token mit repo-Scope erlaubt Schreibzugriff auf alle deine Repositories.",
                             )}
                         </p>
+                        <SharedOriginNote testId="github-import-token-shared-origin" />
                         <div className="flex flex-wrap items-center gap-x-4">
                             <a
                                 className="inline-flex min-h-[44px] items-center text-xs underline"
