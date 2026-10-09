@@ -116,11 +116,14 @@ test("settings loads without a CSP violation", async ({page}) => {
     await expectNoViolations(page, "settings");
 });
 
-test("the statistics dashboard loads without a CSP violation", async ({page}) => {
-    // recharts renders SVG with inline style attributes, so a style-src
-    // without 'unsafe-inline' surfaces here first.
+test("the statistics page loads without a CSP violation", async ({page}) => {
+    // The PageLayout testid, not the chart container: a fresh build has no
+    // writing sessions, so the page renders its empty state and the
+    // recharts SVG never mounts. That costs nothing here - recharts' inline
+    // style attributes are covered by the same 'unsafe-inline' the editor
+    // below exercises.
     await page.goto("/statistics");
-    await page.getByTestId("statistics-dashboard").waitFor({state: "visible"});
+    await page.getByTestId("statistics-dashboard-page").waitFor({state: "visible"});
     await expectNoViolations(page, "statistics");
 });
 
@@ -136,5 +139,9 @@ test("the chapter editor loads without a CSP violation", async ({page}) => {
     await page.getByRole("button", {name: /CSP Testbuch/}).first().click();
     await page.waitForURL(/\/book\/[^/?]+/, {timeout: 20_000});
     await page.getByTestId("chapter-sidebar").waitFor({state: "visible"});
+    // Type, so TipTap has actually rendered content with the inline style
+    // attributes `style-src 'unsafe-inline'` exists for.
+    await page.locator(".ProseMirror").first().click();
+    await page.keyboard.type("Ein Satz mit Inhalt.");
     await expectNoViolations(page, "chapter editor");
 });

@@ -46,8 +46,12 @@ style-src 'self' 'unsafe-inline'
 # imports without downloading the files.
 img-src 'self' data: blob: https:
 
-# Fonts are bundled under public/fonts - there is no CDN to allow.
-font-src 'self'
+# Fonts are bundled under public/fonts - there is no CDN to allow. data:
+# is for the ones Vite inlines at build time: KaTeX ships woff files small
+# enough to fall under assetsInlineLimit, so the built vendor-katex CSS
+# carries `src:url(data:font/woff...)`. The gate found this on its first
+# run, on every page, which is what a report-only phase is for.
+font-src 'self' data:
 
 # The audiobook player and every export preview read from a blob: URL.
 media-src 'self' blob:
