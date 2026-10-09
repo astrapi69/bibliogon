@@ -67,9 +67,7 @@ export default function TranslationLinks({ bookId }: { bookId: string }) {
             );
             await load();
         } catch (err) {
-            if (err instanceof ApiError) {
-                notify.error(t("ui.translations.unlink_error", "Entfernen fehlgeschlagen."), err);
-            }
+            notify.error(t("ui.translations.unlink_error", "Entfernen fehlgeschlagen."), err);
         } finally {
             setUnlinking(false);
         }
@@ -236,12 +234,10 @@ function LinkPickerDialog({
             .books.list()
             .then((all) => setBooks(all.filter((b) => b.id !== bookId)))
             .catch((err) => {
-                if (err instanceof ApiError) {
-                    notify.error(
-                        t("ui.translations.list_books_error", "Konnte Buchliste nicht laden."),
-                        err,
-                    );
-                }
+                notify.error(
+                    t("ui.translations.list_books_error", "Konnte Buchliste nicht laden."),
+                    err,
+                );
             })
             .finally(() => setLoading(false));
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -266,9 +262,7 @@ function LinkPickerDialog({
             );
             onLinked();
         } catch (err) {
-            if (err instanceof ApiError) {
-                notify.error(t("ui.translations.link_error", "Verknüpfen fehlgeschlagen."), err);
-            }
+            notify.error(t("ui.translations.link_error", "Verknüpfen fehlgeschlagen."), err);
         } finally {
             setLinking(false);
         }

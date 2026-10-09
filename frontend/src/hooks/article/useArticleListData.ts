@@ -1,6 +1,6 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 
-import { ApiError, Article } from "../../api/client";
+import { Article } from "../../api/client";
 import { getStorage } from "../../storage";
 import { notify } from "../../utils/platform/notify";
 
@@ -61,9 +61,7 @@ export function useArticleListData(
             const rows = await getStorage().articles.listTrash();
             setTrash(rows);
         } catch (err) {
-            if (err instanceof ApiError) {
-                console.error("Failed to load article trash:", err);
-            }
+            console.error("Failed to load article trash:", err);
         }
     };
 
@@ -85,9 +83,7 @@ export function useArticleListData(
             void loadTrash();
             notify.info(t("ui.articles.moved_to_trash", "In den Papierkorb verschoben"));
         } catch (err) {
-            if (err instanceof ApiError) {
-                notify.error(t("ui.articles.delete_failed", "Löschen fehlgeschlagen."), err);
-            }
+            notify.error(t("ui.articles.delete_failed", "Löschen fehlgeschlagen."), err);
         }
     }
 
@@ -121,9 +117,7 @@ export function useArticleListData(
             void loadTrash();
             notify.success(t("ui.articles.deleted_permanently", "Artikel endgültig gelöscht."));
         } catch (err) {
-            if (err instanceof ApiError) {
-                notify.error(t("ui.articles.delete_failed", "Löschen fehlgeschlagen."), err);
-            }
+            notify.error(t("ui.articles.delete_failed", "Löschen fehlgeschlagen."), err);
         }
     }
 
@@ -177,9 +171,7 @@ export function useArticleListData(
             selection.remove(article.id);
             notify.success(t("ui.articles.deleted_permanently", "Artikel endgültig gelöscht."));
         } catch (err) {
-            if (err instanceof ApiError) {
-                notify.error(t("ui.articles.delete_failed", "Löschen fehlgeschlagen."), err);
-            }
+            notify.error(t("ui.articles.delete_failed", "Löschen fehlgeschlagen."), err);
         }
     }
 
@@ -197,9 +189,7 @@ export function useArticleListData(
             await getStorage().articles.emptyTrash();
             setTrash([]);
         } catch (err) {
-            if (err instanceof ApiError) {
-                notify.error(t("ui.articles.delete_failed", "Löschen fehlgeschlagen."), err);
-            }
+            notify.error(t("ui.articles.delete_failed", "Löschen fehlgeschlagen."), err);
         }
     }
 
@@ -216,9 +206,7 @@ export function useArticleListData(
                 setArticles(rows);
             })
             .catch((err) => {
-                if (err instanceof ApiError) {
-                    notify.error("Konnte Artikelliste nicht laden.", err);
-                }
+                notify.error("Konnte Artikelliste nicht laden.", err);
             })
             .finally(() => {
                 if (showSpinner) setLoading(false);
@@ -237,9 +225,7 @@ export function useArticleListData(
                 if (!cancelled) setArticles(rows);
             })
             .catch((err) => {
-                if (err instanceof ApiError) {
-                    notify.error("Konnte Artikelliste nicht laden.", err);
-                }
+                notify.error("Konnte Artikelliste nicht laden.", err);
             })
             .finally(() => {
                 if (!cancelled) setLoading(false);

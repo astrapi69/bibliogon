@@ -111,12 +111,10 @@ export default function ArticleTranslatePanel({ article }: { article: Article })
             setTranslateOpen(false);
             navigate(`/articles/${result.article_id}`);
         } catch (err) {
-            if (err instanceof ApiError) {
-                // Surface the backend detail (e.g. "No DeepL API key
-                // configured...") via notify's ApiError content - the
-                // generic title alone wasn't actionable.
-                notify.error(t("ui.articles.translate_failed", "Übersetzung fehlgeschlagen."), err);
-            }
+            // Surface the backend detail (e.g. "No DeepL API key
+            // configured...") via notify's ApiError content - the
+            // generic title alone wasn't actionable.
+            notify.error(t("ui.articles.translate_failed", "Übersetzung fehlgeschlagen."), err);
         } finally {
             setTranslating(false);
         }
