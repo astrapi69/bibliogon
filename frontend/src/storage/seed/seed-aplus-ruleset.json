@@ -1,0 +1,225 @@
+{
+  "version": "4",
+  "schema_limits": {
+    "short_description": 300,
+    "bullet_heading": 160,
+    "bullet_body": 1000,
+    "alt_text": 100
+  },
+  "languages": {
+    "de": {
+      "marketing_imperatives": [
+        "Lernen Sie",
+        "Entdecken Sie",
+        "Meistern Sie",
+        "Erfahren Sie",
+        "Erleben Sie",
+        "Erschliessen Sie",
+        "Verwandeln Sie",
+        "Steigern Sie",
+        "Starten Sie",
+        "Bauen Sie",
+        "Erhalten Sie",
+        "Nehmen Sie",
+        "Tauchen Sie ein",
+        "Erreichen Sie"
+      ],
+      "price_shipping_terms": [
+        "kostenlos",
+        "versandkostenfrei",
+        "rabatt",
+        "prozent rabatt",
+        "% rabatt",
+        "preis",
+        "gratis"
+      ],
+      "soft_words_default": [
+        "Diebstahl",
+        "Kampf",
+        "Streit",
+        "Gewalt",
+        "Mord",
+        "Waffe"
+      ],
+      "genre_escalations": {
+        "kinderbuch": [
+          "Diebstahl",
+          "Gewalt",
+          "Mord",
+          "Waffe"
+        ]
+      },
+      "leading_only_imperatives": []
+    },
+    "en": {
+      "marketing_imperatives": [
+        "Learn",
+        "Discover",
+        "Find out",
+        "Explore",
+        "Uncover",
+        "Master",
+        "Unlock",
+        "Transform",
+        "Boost",
+        "Dive",
+        "Achieve"
+      ],
+      "price_shipping_terms": [
+        "free shipping",
+        "discount",
+        "% off",
+        "price",
+        "sale",
+        "free"
+      ],
+      "soft_words_default": [
+        "theft",
+        "fight",
+        "conflict",
+        "violence",
+        "murder",
+        "weapon"
+      ],
+      "genre_escalations": {
+        "kinderbuch": [
+          "theft",
+          "violence",
+          "murder",
+          "weapon"
+        ]
+      },
+      "leading_only_imperatives": [
+        "Start",
+        "Build",
+        "Get",
+        "Take"
+      ]
+    },
+    "fr": {
+      "marketing_imperatives": [
+        "Apprenez",
+        "Decouvrez",
+        "Maitrisez",
+        "Explorez",
+        "Debloquez",
+        "Transformez",
+        "Boostez",
+        "Commencez",
+        "Construisez",
+        "Obtenez",
+        "Prenez",
+        "Plongez",
+        "Atteignez"
+      ],
+      "price_shipping_terms": [
+        "gratuit",
+        "livraison",
+        "prix",
+        "reduction",
+        "solde"
+      ],
+      "soft_words_default": [
+        "vol",
+        "combat",
+        "conflit",
+        "violence",
+        "meurtre",
+        "arme"
+      ],
+      "genre_escalations": {
+        "kinderbuch": [
+          "vol",
+          "violence",
+          "meurtre",
+          "arme"
+        ]
+      },
+      "leading_only_imperatives": []
+    },
+    "es": {
+      "marketing_imperatives": [
+        "Aprenda",
+        "Descubra",
+        "Domine",
+        "Explore",
+        "Desbloquee",
+        "Transforme",
+        "Impulse",
+        "Comience",
+        "Construya",
+        "Obtenga",
+        "Tome",
+        "Sumerjase",
+        "Logre"
+      ],
+      "price_shipping_terms": [
+        "gratis",
+        "envio",
+        "precio",
+        "descuento",
+        "oferta"
+      ],
+      "soft_words_default": [
+        "robo",
+        "lucha",
+        "conflicto",
+        "violencia",
+        "asesinato",
+        "arma"
+      ],
+      "genre_escalations": {
+        "kinderbuch": [
+          "robo",
+          "violencia",
+          "asesinato",
+          "arma"
+        ]
+      },
+      "leading_only_imperatives": []
+    }
+  },
+  "competitor_brands": [
+    "Kindle Unlimited",
+    "Audible",
+    "Barnes & Noble",
+    "Apple Books",
+    "Kobo",
+    "Google Play Books"
+  ],
+  "max_regeneration_retries": 2,
+  "image_style": {
+    "aspect_ratios": {
+      "module_header": "97:60",
+      "module_three_images": "1:1"
+    },
+    "target_pixel_sizes": {
+      "module_header": "970x600",
+      "module_three_images": "300x300"
+    },
+    "default_model_hint": "flux-1.1-pro",
+    "default_style_flags": [
+      "photorealistic",
+      "editorial",
+      "no text overlay"
+    ],
+    "genre_model_hints": {
+      "kinderbuch": "flux-1.1-pro"
+    },
+    "genre_style_flags": {
+      "kinderbuch": [
+        "friendly illustration",
+        "warm colors",
+        "children's book art style",
+        "no text overlay"
+      ]
+    }
+  },
+  "default_language": "en",
+  "supported_languages": [
+    "de",
+    "en",
+    "fr",
+    "es"
+  ]
+}

@@ -15,6 +15,8 @@ This script reads the canonical backend config and writes JSON to
                         GET /api/content-types
   - plugin metadata  -> the standard visible plugins, matching the
                         GET /api/settings/plugins/discovered shape
+  - A+ ruleset       -> the normalized `Ruleset` dataclass (no endpoint
+                        exists; the seed is the browser's only route to it)
 
 Run via ``make generate-seed-data`` (backend poetry env, so ``app.*`` imports
 resolve). Re-run and commit the JSON whenever a backend i18n catalog or a
@@ -171,6 +173,38 @@ def generate_article_platforms() -> None:
     if not data:
         raise SystemExit("ERROR: load_platform_schemas() returned nothing")
     _write_json("seed-article-platforms.json", data)
+
+
+def generate_aplus_ruleset() -> None:
+    """Emit the A+ Content ruleset in its NORMALIZED shape (#890).
+
+    The ruleset has no API endpoint - it is read straight off disk by the
+    plugin's generator and validator - so the seed is the only route into
+    the browser for the TypeScript validator port. What goes in is what
+    ``load_ruleset`` returns rather than the raw YAML: the per-genre
+    fallbacks, the ``soft_words.default`` unwrapping and the image-style
+    defaults are resolved once here instead of being re-implemented on
+    the other side, which is the same reason the article-platform seed
+    passes through ``PlatformSchemaOut`` (#1015).
+
+    ``default_language`` and ``supported_languages`` are module constants
+    rather than dataclass fields, so they are added explicitly - without
+    the first, the port cannot reproduce ``for_language``'s fallback.
+    """
+    from dataclasses import asdict
+
+    from bibliogon_aplus.rules import (
+        DEFAULT_LANGUAGE,
+        SUPPORTED_LANGUAGES,
+        load_ruleset,
+    )
+
+    data = asdict(load_ruleset())
+    if not data.get("languages"):
+        raise SystemExit("ERROR: load_ruleset() returned no languages")
+    data["default_language"] = DEFAULT_LANGUAGE
+    data["supported_languages"] = list(SUPPORTED_LANGUAGES)
+    _write_json("seed-aplus-ruleset.json", data)
 
 
 def generate_plugin_metadata() -> None:
@@ -414,6 +448,7 @@ def main(argv: list[str] | None = None) -> None:
     generate_content_types()
     generate_story_entity_types()
     generate_article_platforms()
+    generate_aplus_ruleset()
     generate_plugin_metadata()
     generate_help()
     generate_help_docs()
