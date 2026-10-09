@@ -788,6 +788,45 @@ test.describe("Feature Screenshots", () => {
             await page.screenshot({path: `${OUT}/import-export/kdp-format-step.png`});
         });
 
+        test("kdp arc reviewers", async ({page}) => {
+            // #737: the ARC list persists through the storage seam, so this
+            // step is the same surface online and on the backendless build.
+            const book = await seedKdpReadyBook(page, "Die Souveränität des Musters");
+            await page.goto(`/book/${book.id}?view=metadata`);
+            await page.getByTestId("metadata-open-kdp-wizard").click().catch(() => {});
+            // metadata → cover → format → pricing → arc
+            await page.getByTestId("kdp-publishing-wizard-step-0-next").click().catch(() => {});
+            await page.getByTestId("kdp-publishing-wizard-step-1-next").click().catch(() => {});
+            await page.getByTestId("kdp-publishing-wizard-step-2-next").click().catch(() => {});
+            await page
+                .getByTestId("kdp-publishing-wizard-step-2-royalty-70")
+                .click()
+                .catch(() => {});
+            await page.getByTestId("kdp-publishing-wizard-step-3-next").click().catch(() => {});
+            await page
+                .getByTestId("kdp-publishing-wizard-step-3-arc")
+                .waitFor({state: "visible"})
+                .catch(() => {});
+            await page
+                .getByTestId("kdp-publishing-wizard-step-3-add-name")
+                .fill("Lena Hoffmann")
+                .catch(() => {});
+            await page
+                .getByTestId("kdp-publishing-wizard-step-3-add-email")
+                .fill("lena@example.com")
+                .catch(() => {});
+            await page
+                .getByTestId("kdp-publishing-wizard-step-3-add-submit")
+                .click()
+                .catch(() => {});
+            await page
+                .getByTestId("kdp-publishing-wizard-step-3-list")
+                .waitFor({state: "visible"})
+                .catch(() => {});
+            await page.waitForTimeout(400);
+            await page.screenshot({path: `${OUT}/import-export/kdp-arc-reviewers.png`});
+        });
+
         test("kdp guide step", async ({page}) => {
             const book = await seedKdpReadyBook(page, "Die Souveränität des Musters");
             await page.goto(`/book/${book.id}?view=metadata`);
