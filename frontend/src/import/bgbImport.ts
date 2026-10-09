@@ -26,7 +26,6 @@
  * create seam does not support today; tracked as a follow-up.
  */
 
-import { strFromU8, unzipSync } from "fflate";
 
 import type {
     ComicBubbleOut,
@@ -50,6 +49,12 @@ import {
 } from "../utils/ai/scrubSecrets";
 import type { BaseUrlConfirm } from "../export/backupImport";
 import { fromStoredRow, type AplusStoredRow } from "../lib/utils/aplus/aplusDocument";
+import {
+    childDirIds,
+    openBgbArchive,
+    readJsonEntry as readJson,
+    type ZipEntries,
+} from "./bgb/archive";
 import { getStorage } from "../storage";
 import { coverFilenameFromPath } from "../storage/asset-url";
 
@@ -78,8 +83,6 @@ export interface BgbImportResult {
 
 /** Thrown when the file is not a recognised, supported `.bgb` archive. */
 export class BgbImportError extends Error {}
-
-type ZipEntries = Record<string, Uint8Array>;
 
 const MIME_BY_EXT: Record<string, string> = {
     png: "image/png",
@@ -123,48 +126,10 @@ function bytesToBlob(bytes: Uint8Array, type: string): Blob {
     return new Blob([buffer], { type });
 }
 
-function readJson<T>(entries: ZipEntries, path: string): T | null {
-    const bytes = entries[path];
-    if (!bytes) return null;
-    try {
-        return JSON.parse(strFromU8(bytes)) as T;
-    } catch {
-        return null;
-    }
-}
-
-/**
- * Locate the archive-internal prefix that holds `manifest.json` / `books/`.
- * `shutil.make_archive` puts them at the root, but some ZIP tools wrap a
- * single top-level folder, so resolve both shapes (mirrors the backend's
- * `find_manifest` / `find_books_dir`).
- */
-function findPrefix(entries: ZipEntries): string {
-    const manifest = Object.keys(entries).find((p) => p.endsWith("manifest.json"));
-    if (manifest) return manifest.slice(0, manifest.length - "manifest.json".length);
-    const book = Object.keys(entries).find((p) =>
-        /(^|\/)books\/[^/]+\/book\.json$/.test(p),
-    );
-    if (book) return book.slice(0, book.indexOf("books/"));
-    return "";
-}
-
 /** Rewrite a chapter/cover's `/api/books/<old>/...` asset URLs onto the new
  *  book id so the cached bytes resolve after the book id was regenerated. */
 function rewriteBookUrls(text: string, oldId: string, newId: string): string {
     return text.split(`/api/books/${oldId}/`).join(`/api/books/${newId}/`);
-}
-
-/** The immediate child directory ids under `<prefix><segment>/`. */
-function childDirIds(entries: ZipEntries, segmentPrefix: string): string[] {
-    const ids = new Set<string>();
-    for (const path of Object.keys(entries)) {
-        if (!path.startsWith(segmentPrefix)) continue;
-        const rest = path.slice(segmentPrefix.length);
-        const slash = rest.indexOf("/");
-        if (slash > 0) ids.add(rest.slice(0, slash));
-    }
-    return [...ids];
 }
 
 /**
@@ -182,14 +147,13 @@ export async function importBgbFile(
     file: File,
     confirmBaseUrlChange?: BaseUrlConfirm,
 ): Promise<BgbImportResult> {
-    let entries: ZipEntries;
+    let archive: Awaited<ReturnType<typeof openBgbArchive>>;
     try {
-        entries = unzipSync(new Uint8Array(await file.arrayBuffer()));
+        archive = await openBgbArchive(file);
     } catch {
         throw new BgbImportError("Beschädigte .bgb-Datei");
     }
-
-    const prefix = findPrefix(entries);
+    const { entries, prefix } = archive;
     const manifest = readJson<{ format?: string }>(entries, `${prefix}manifest.json`);
     if (manifest && manifest.format !== "bibliogon-backup") {
         throw new BgbImportError("Keine gültige Bibliogon-Backup-Datei");
@@ -286,13 +250,13 @@ export async function importBgbSettings(
     file: File,
     confirmBaseUrlChange?: BaseUrlConfirm,
 ): Promise<boolean> {
-    let entries: ZipEntries;
+    let archive: Awaited<ReturnType<typeof openBgbArchive>>;
     try {
-        entries = unzipSync(new Uint8Array(await file.arrayBuffer()));
+        archive = await openBgbArchive(file);
     } catch {
         throw new BgbImportError("Beschädigte .bgb-Datei");
     }
-    const prefix = findPrefix(entries);
+    const { entries, prefix } = archive;
     const counts: BgbImportCounts = zeroCounts();
     await importSettings(entries, prefix, getStorage(), counts, confirmBaseUrlChange);
     return counts.settings === 1;

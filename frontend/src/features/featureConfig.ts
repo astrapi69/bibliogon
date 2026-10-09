@@ -156,6 +156,9 @@ const ALWAYS_ACTIVE: readonly string[] = [
     // both modes - the one thing it cannot do offline is hand back a
     // `.bgb` the browser no longer has, and it never offered that.
     FEATURES.BACKUP_HISTORY,
+    // The .bgb diff runs in the browser since #748: unzip both archives
+    // with fflate, reuse the #728 line diff. Nothing server-side left.
+    FEATURES.BACKUP_COMPARE,
     // Selective export gathers a chosen subset of the same JSON backup
     // bundle through the storage seam (no /api), so it works offline like
     // the full-backup export (#247).
@@ -247,10 +250,12 @@ const NEEDS_KEY_AND_NETWORK: readonly string[] = [FEATURES.AI_STORY_EXTRACTION];
  * mirror and no client-side source for it, so offline there is nothing to
  * read. It stays visible and explained rather than silently empty.
  *
- * `backup-history` LEFT this bucket in #748: the log is the browser's own
- * record of what it backed up, kept in its own IndexedDB database so it
- * outlives the Danger-Zone reset. `backup-compare` stays until the `.bgb`
- * diff runs client-side.
+ * `backup-history` and `backup-compare` BOTH left this bucket in #748. The
+ * log is the browser's own record of what it backed up, kept in its own
+ * IndexedDB database so it outlives the Danger-Zone reset. The compare
+ * reads two files the user picked and touches nothing else, so the old
+ * round trip uploaded both archives to learn what the browser can work out
+ * with `fflate` and the line diff the version history already uses.
  *
  * `learnset-export` (#763/#775) is a deliberate Maximal-Offline exception,
  * recorded in `.claude/rules/architecture.md`: the export assembles the alc
@@ -272,7 +277,6 @@ const DESKTOP_ONLY: readonly string[] = [
     FEATURES.PORTFOLIO_BOARD,
     FEATURES.TTS,
     FEATURES.LAN_MODE,
-    FEATURES.BACKUP_COMPARE,
     FEATURES.PANDOC_EXPORT,
     FEATURES.BULK_EXPORT,
     FEATURES.AI_TEMPLATE_FILE_IO,

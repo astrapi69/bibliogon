@@ -2,8 +2,8 @@
  * Tests for BackupCompareDialog.
  *
  * Covers: initial state (file pickers visible, compare button disabled),
- * compare triggers API call, result display, reset, error handling,
- * close behavior.
+ * compare runs the CLIENT engine (#748 - no API round trip), result
+ * display, reset, error handling, close behavior.
  */
 
 import React from "react"
@@ -21,10 +21,16 @@ vi.mock("../../hooks/useI18n", () => ({
 }))
 
 const mockCompare = vi.fn()
+// The dialog reads the two picked files in the browser since #748; the
+// api mock stays so a regression that reaches back to the endpoint shows
+// up as an unexpected call rather than a passing test.
+vi.mock("../../import/bgb/compare", () => ({
+  compareBackupFiles: (...args: unknown[]) => mockCompare(...args),
+}))
 vi.mock("../../api/client", () => ({
   api: {
     backup: {
-      compare: (...args: unknown[]) => mockCompare(...args),
+      compare: vi.fn(),
     },
   },
   ApiError: class extends Error {
@@ -72,7 +78,7 @@ describe("BackupCompareDialog", () => {
     expect(compareBtn).toBeDisabled()
   })
 
-  it("calls API compare when both files are selected and button clicked", async () => {
+  it("runs the client compare when both files are selected and button clicked", async () => {
     mockCompare.mockResolvedValue({
       summary: {books_in_both: 1, books_only_in_a: [], books_only_in_b: []},
       books: [],
