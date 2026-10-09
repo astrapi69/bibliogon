@@ -21,10 +21,11 @@
  *
  * Full 5-step navigation (metadata → cover → pricing → arc →
  * export) requires a valid cover image that passes
- * ``625×1000`` + aspect-ratio gates; deferred to a more
- * elaborate fixture that uploads a real PNG. Today's smoke
- * covers the cases reachable without cover upload + the
- * conflict banner round-trip.
+ * ``625×1000`` + aspect-ratio gates. That fixture now exists:
+ * ``e2e/static-smoke/kdp-cover-offline.spec.ts`` uploads a real
+ * 640×1024 PNG and walks past the cover step (#739). This spec
+ * keeps covering the cases reachable without a cover upload +
+ * the conflict banner round-trip.
  *
  * Bounding-box-dimension assertion per the
  * "Playwright-visible != User-visible" lessons-learned rule:
