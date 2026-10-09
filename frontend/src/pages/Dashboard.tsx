@@ -40,7 +40,6 @@ import {
     Search,
     FileText,
     LayoutGrid,
-    ChevronDown,
 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ImportWizardModal } from "../components/import-wizard";
@@ -390,69 +389,22 @@ export default function Dashboard() {
                                 {t("ui.dashboard.articles_nav", "Artikel")}
                             </button>
                             <div className={styles.headerSeparator} />
-                            {/* #971: Backup folded into an Import-group
-                             *  chevron, the shape #398 gave the Article
-                             *  Dashboard. The bar lives in a 1100px
-                             *  container (`.headerInner`, shared with
-                             *  `.main` so the header aligns with the cards),
-                             *  so it does NOT grow with the viewport and the
-                             *  `menu:` breakpoint cannot buy it room. #816's
-                             *  portfolio button pushed it past that width and
-                             *  the primary labels wrapped. Folding is what
-                             *  scales: the next tool goes in here too.
-                             *  ``backup-export-btn`` keeps its testid on the
-                             *  dropdown item. */}
-                            <div
-                                className="inline-flex items-stretch"
-                                data-testid="import-group"
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                data-testid="backup-export-btn"
+                                onClick={handleBackupExport}
+                                disabled={offline || books.length === 0}
+                                title={offline ? backupOfflineHint : undefined}
                             >
-                                <button
-                                    className="btn btn-secondary btn-sm rounded-r-none"
-                                    data-testid="import-wizard-btn"
-                                    onClick={() => setImportWizardOpen(true)}
-                                >
-                                    <Upload size={14} /> {t("ui.dashboard.import", "Importieren")}
-                                </button>
-                                <DropdownMenu.Root>
-                                    <DropdownMenu.Trigger asChild>
-                                        <button
-                                            type="button"
-                                            className="btn btn-secondary btn-sm rounded-l-none border-l border-[var(--border)] px-2"
-                                            data-testid="import-chevron"
-                                            title={t(
-                                                "ui.articles.import_more_tooltip",
-                                                "Import- und Backup-Optionen",
-                                            )}
-                                            aria-label={t(
-                                                "ui.articles.import_more_tooltip",
-                                                "Import- und Backup-Optionen",
-                                            )}
-                                        >
-                                            <ChevronDown size={14} />
-                                        </button>
-                                    </DropdownMenu.Trigger>
-                                    <DropdownMenu.Portal>
-                                        <DropdownMenu.Content
-                                            className="hamburger-menu-content"
-                                            align="end"
-                                            sideOffset={4}
-                                        >
-                                            <DropdownMenu.Item
-                                                className="hamburger-menu-item"
-                                                data-testid="backup-export-btn"
-                                                disabled={offline || books.length === 0}
-                                                title={offline ? backupOfflineHint : undefined}
-                                                onSelect={() => handleBackupExport()}
-                                            >
-                                                <Download size={14} />
-                                                <span style={{ marginLeft: 6 }}>
-                                                    {t("ui.dashboard.backup", "Backup")}
-                                                </span>
-                                            </DropdownMenu.Item>
-                                        </DropdownMenu.Content>
-                                    </DropdownMenu.Portal>
-                                </DropdownMenu.Root>
-                            </div>
+                                <Download size={14} /> {t("ui.dashboard.backup", "Backup")}
+                            </button>
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                data-testid="import-wizard-btn"
+                                onClick={() => setImportWizardOpen(true)}
+                            >
+                                <Upload size={14} /> {t("ui.dashboard.import", "Importieren")}
+                            </button>
                             <div className={styles.headerSeparator} />
                             <button
                                 className="btn-icon"
