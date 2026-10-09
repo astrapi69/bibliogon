@@ -2,11 +2,13 @@ import {
     type Article,
     type Author,
     type Book,
+    type BookPublishingStateApi,
     type Chapter,
     type ChapterLabel,
     type ComicBubbleOut,
     type ComicPanelOut,
     type Page,
+    type Publication,
     type StoryEntityLinkOut,
     type StoryEntityOut,
     type WritingSession,
@@ -30,6 +32,26 @@ export interface BackupPage {
     page: Page;
     panels: BackupPanel[];
 }
+
+/** One book's KDP publishing state, reviewers inline (#1008).
+ *
+ * The seam returns the reviewers inside the state row, so one read per
+ * book carries both. ``book_id`` is the id at EXPORT time; restore maps it
+ * to the newly created book.
+ */
+export interface BackupPublishingState {
+    book_id: string;
+    state: BookPublishingStateApi;
+}
+
+/** The member ids of one translation group (#1008).
+ *
+ * Stored as a flat id list rather than per-book siblings because the seam
+ * restores a group with a single ``link(ids)`` call. Ids are export-time
+ * and get mapped on restore; a group whose members did not all survive the
+ * restore is skipped rather than half-linked.
+ */
+export type BackupTranslationGroup = string[];
 
 /** A book plus its full chapter list (chapter rows carry their TipTap
  *  ``content`` string, so no separate per-chapter fetch is needed) and,
@@ -67,8 +89,17 @@ export interface BackupData {
      *  so bundles written before it existed still parse. */
     aplus_documents?: AplusDocumentRecord[];
     storyboard: unknown[];
-    publications: unknown[];
+    /** Per-article publications (#1008). Typed and populated since the
+     *  seam gained its write methods (#747); older bundles carry `[]`,
+     *  which still parses. */
+    publications: Publication[];
     article_platforms: unknown[];
+    /** KDP publishing state + ARC reviewers, one entry per book that has
+     *  any (#1008). Optional so bundles written before it still parse. */
+    kdp_publishing_state?: BackupPublishingState[];
+    /** Translation groups as member-id lists (#1008). Optional, same
+     *  reason. */
+    translation_groups?: BackupTranslationGroup[];
 }
 
 /** Versioned backup envelope written by {@link exportFullBackup}. */
@@ -104,6 +135,60 @@ async function listOrNone<T>(run: () => Promise<T[]>): Promise<T[]> {
         if (status === 400 || status === 404) return [];
         throw error;
     }
+}
+
+/**
+ * Translation groups, reconstructed from the per-book sibling lists.
+ *
+ * The seam has no list-groups method - ``translations.list(bookId)``
+ * returns the OTHER members of that book's group - so a group is
+ * `{book} union siblings`, and walking every book sees each group once per
+ * member. Deduped on the sorted member key so a three-book group is
+ * carried once, not three times.
+ */
+async function gatherTranslationGroups(
+    storage: ReturnType<typeof getStorage>,
+    bookIds: string[],
+): Promise<BackupTranslationGroup[]> {
+    const groups = new Map<string, BackupTranslationGroup>();
+    for (const bookId of bookIds) {
+        let siblings;
+        try {
+            siblings = (await storage.translations.list(bookId)).siblings;
+        } catch {
+            continue;
+        }
+        if (siblings.length === 0) continue;
+        const members = [bookId, ...siblings.map((sibling) => sibling.book_id)].sort();
+        groups.set(members.join("|"), members);
+    }
+    return [...groups.values()];
+}
+
+/**
+ * KDP publishing state per book, skipping the books that have none.
+ *
+ * ``getPublishingState`` returns a wrapper carrying a nullable row; a book
+ * the user never took into the wizard has `state: null` and contributes
+ * nothing to the bundle. A book whose state cannot be read is skipped for
+ * the same reason the translation walk skips one: the rest of the bundle
+ * is worth more than failing the whole export over one optional row.
+ */
+async function gatherPublishingStates(
+    storage: ReturnType<typeof getStorage>,
+    bookIds: string[],
+): Promise<BackupPublishingState[]> {
+    const out: BackupPublishingState[] = [];
+    for (const bookId of bookIds) {
+        let state: BookPublishingStateApi | null;
+        try {
+            state = (await storage.kdp.getPublishingState(bookId)).state;
+        } catch {
+            continue;
+        }
+        if (state) out.push({book_id: bookId, state});
+    }
+    return out;
 }
 
 /**
@@ -144,11 +229,22 @@ async function gatherPages(
  * Core entities (settings, author profile, authors, books + chapters
  * with content, articles with content, story-bible entities, chapter
  * labels, A+ documents, pages with their comic panels and bubbles, and
- * the story-bible entity links) are fully populated. Writing sessions cover the last 366 days
- * (the backend list cap) and are informational only — they have no seam
- * ``create`` and are not restored on import. Per-article publications and
- * the platform registry are still reserved (emitted empty) — see the
- * field docs. Chapter snapshots are NOT carried: restoring one needs a
+ * the story-bible entity links) are fully populated. Writing sessions
+ * cover the last 366 days (the backend list cap) and are informational
+ * only — they have no seam ``create`` and are not restored on import. Per-article publications, the
+ * KDP publishing state with its ARC reviewers, and translation-group
+ * membership are carried and restored since #1008 — each became
+ * seam-writable offline (#747 / #737 / #746), which is what made them
+ * losable in the first place. The platform registry stays reserved
+ * (emitted empty): it is reference data the seed supplies, not user data.
+ *
+ * Article COMMENTS are deliberately absent. The seam can read them but has
+ * no ``create``, and neither does the backend router — a comment enters the
+ * system only through the Medium importer. Carrying them would put rows in
+ * the archive that no restore could put back, which reads to the user as
+ * data loss at exactly the moment they are trusting the backup.
+ *
+ * Chapter snapshots are NOT carried: restoring one needs a
  * create-with-content path the seam does not have, and a snapshot's
  * identity today is the chapter's server-assigned `version`, which means
  * nothing in the database a backup is restored into. #996 is the shape
@@ -202,6 +298,16 @@ export async function buildBackupBundle(exportedAt: string): Promise<BackupBundl
         books.map((book) => storage.aplusDocuments.listForBook(book.id)),
     );
 
+    const bookIds = books.map((book) => book.id);
+    const [translationGroups, publishingStates] = await Promise.all([
+        gatherTranslationGroups(storage, bookIds),
+        gatherPublishingStates(storage, bookIds),
+    ]);
+
+    const publicationLists = await Promise.all(
+        articles.map((article) => listOrNone(() => storage.publications.list(article.id))),
+    );
+
     // #985: the bundle leaves the device - mailed to a maintainer, dropped
     // in a cloud folder, handed to a second machine - and a provider key is
     // the one thing in it worth money to a stranger. Everything else about
@@ -223,8 +329,10 @@ export async function buildBackupBundle(exportedAt: string): Promise<BackupBundl
             chapter_labels: chapterLabels,
             aplus_documents: aplusLists.flat(),
             storyboard: [],
-            publications: [],
+            publications: publicationLists.flat(),
             article_platforms: [],
+            kdp_publishing_state: publishingStates,
+            translation_groups: translationGroups,
         },
     };
 }

@@ -26,6 +26,26 @@ const createBubble = vi.fn(
 );
 const createLink = vi.fn(async (_d: Record<string, unknown>) => ({id: "nlink"}));
 
+// #1008: the three tables that became seam-writable offline and were
+// therefore newly losable through the client backup.
+const pubCreate = vi.fn(async (_articleId: string, _d: Record<string, unknown>) => ({
+    id: "new-pub1",
+}));
+const pubUpdate = vi.fn(
+    async (_articleId: string, _pubId: string, _d: Record<string, unknown>) => ({}),
+);
+const pubMarkPublished = vi.fn(
+    async (_articleId: string, _pubId: string, _d: Record<string, unknown>) => ({}),
+);
+const kdpUpsert = vi.fn(async (_bookId: string, _d: Record<string, unknown>) => ({}));
+const kdpAddReviewer = vi.fn(async (_bookId: string, _d: Record<string, unknown>) => ({
+    id: "new-rev1",
+}));
+const kdpUpdateReviewer = vi.fn(
+    async (_bookId: string, _revId: string, _d: Record<string, unknown>) => ({}),
+);
+const translationsLink = vi.fn(async (_ids: string[]) => ({}));
+
 // #985: the live settings the restore merges its secrets from. A bundle
 // taken since the export scrubber carries empty keys, and writing those
 // over this would clear the user's provider keys.
@@ -59,6 +79,13 @@ vi.mock("../storage", () => ({
         storyBible: {createEntity, createLink},
         chapterLabels: {create: labelsCreate},
         aplusDocuments: {save: aplusSave},
+        publications: {create: pubCreate, update: pubUpdate, markPublished: pubMarkPublished},
+        kdp: {
+            upsertPublishingState: kdpUpsert,
+            addReviewer: kdpAddReviewer,
+            updateReviewer: kdpUpdateReviewer,
+        },
+        translations: {link: translationsLink},
     }),
 }));
 
@@ -114,6 +141,13 @@ beforeEach(() => {
         createEntity,
         labelsCreate,
         aplusSave,
+        pubCreate,
+        pubUpdate,
+        pubMarkPublished,
+        kdpUpsert,
+        kdpAddReviewer,
+        kdpUpdateReviewer,
+        translationsLink,
     ].forEach((m) => m.mockClear());
     authorsList.mockResolvedValue([]);
     booksList.mockResolvedValue([]);
@@ -460,5 +494,166 @@ describe("importFullBackup base URLs (#985)", () => {
         } as Awaited<ReturnType<typeof getApp>>);
         await importFullBackup(fileOf(bundleWithBaseUrl()), confirm);
         expect(confirm).not.toHaveBeenCalled();
+    });
+});
+
+describe("importFullBackup — the seam-writable tables (#1008)", () => {
+    const pub = (overrides: Record<string, unknown> = {}) => ({
+        id: "p1",
+        article_id: "ar1",
+        platform: "medium",
+        is_promo: false,
+        status: "planned",
+        platform_metadata: {title: "T", tags: ["a"]},
+        content_snapshot_at_publish: null,
+        scheduled_at: null,
+        published_at: null,
+        last_verified_at: null,
+        notes: null,
+        created_at: "t",
+        updated_at: "t",
+        ...overrides,
+    });
+
+    it("restores a publication under the NEW article id", async () => {
+        await importFullBackup(fileOf(bundle({publications: [pub()]})));
+        expect(pubCreate).toHaveBeenCalledTimes(1);
+        const [articleId, payload] = pubCreate.mock.calls[0];
+        // "ar1" is the id in the bundle; "new-ar1" is what articles.create
+        // returned. Creating it under the old id would orphan the row.
+        expect(articleId).toBe("new-ar1");
+        expect(payload).toMatchObject({platform: "medium"});
+    });
+
+    it("re-runs mark-published so the snapshot survives", async () => {
+        await importFullBackup(
+            fileOf(
+                bundle({
+                    publications: [
+                        pub({
+                            status: "published",
+                            published_at: "2026-01-02T00:00:00Z",
+                            content_snapshot_at_publish: '{"type":"doc"}',
+                        }),
+                    ],
+                }),
+            ),
+        );
+        // A create always lands as "planned"; without this the restored row
+        // has a null snapshot and the panel reads it as out_of_sync.
+        expect(pubMarkPublished).toHaveBeenCalledWith("new-ar1", "new-pub1", {
+            published_at: "2026-01-02T00:00:00Z",
+        });
+    });
+
+    it("re-publishes an out_of_sync row too, rather than leaving it planned", async () => {
+        await importFullBackup(
+            fileOf(bundle({publications: [pub({status: "out_of_sync"})]})),
+        );
+        expect(pubMarkPublished).toHaveBeenCalledTimes(1);
+    });
+
+    it("skips a publication whose article did not restore", async () => {
+        const result = await importFullBackup(
+            fileOf(bundle({publications: [pub({article_id: "gone"})]})),
+        );
+        expect(pubCreate).not.toHaveBeenCalled();
+        expect(result.skipped.publications).toBe(1);
+    });
+
+    it("restores the KDP state and each reviewer's accumulated fields", async () => {
+        await importFullBackup(
+            fileOf(
+                bundle({
+                    kdp_publishing_state: [
+                        {
+                            book_id: "b1",
+                            state: {
+                                id: "s1",
+                                book_id: "b1",
+                                royalty_plan: "70",
+                                kdp_select_enrolled: true,
+                                kdp_select_enrollment_date: null,
+                                expanded_distribution: false,
+                                prices: {US: {currency: "USD", list_price: 4.99}},
+                                launch_checklist_state: {cover: "done"},
+                                publication_target_date: "2026-03-01",
+                                last_kdp_upload_at: null,
+                                created_at: "t",
+                                updated_at: "t",
+                                arc_reviewers: [
+                                    {
+                                        id: "r1",
+                                        publishing_state_id: "s1",
+                                        reviewer_name: "Lena",
+                                        reviewer_email: "lena@example.com",
+                                        review_status: "reviewed",
+                                        copy_version: "v2",
+                                        review_permalink: "https://example.com/r",
+                                        review_text_excerpt: "Stark.",
+                                        invited_at: "t",
+                                        reviewed_at: "2026-02-02T00:00:00Z",
+                                        created_at: "t",
+                                        updated_at: "t",
+                                    },
+                                ],
+                            },
+                        },
+                    ],
+                }),
+            ),
+        );
+        expect(kdpUpsert).toHaveBeenCalledWith(
+            "new-b1",
+            expect.objectContaining({royalty_plan: "70", prices: {US: {currency: "USD", list_price: 4.99}}}),
+        );
+        expect(kdpAddReviewer).toHaveBeenCalledWith("new-b1", {
+            reviewer_name: "Lena",
+            reviewer_email: "lena@example.com",
+        });
+        // addReviewer takes only name + email, so the review itself is lost
+        // without the follow-up update.
+        expect(kdpUpdateReviewer).toHaveBeenCalledWith(
+            "new-b1",
+            "new-rev1",
+            expect.objectContaining({review_status: "reviewed", copy_version: "v2"}),
+        );
+    });
+
+    it("links a translation group under the new book ids", async () => {
+        booksCreate
+            .mockResolvedValueOnce({id: "new-b1"})
+            .mockResolvedValueOnce({id: "new-b2"});
+        await importFullBackup(
+            fileOf(
+                bundle({
+                    books: [
+                        {book: {id: "b1", title: "Das Muster", language: "de"}, chapters: []},
+                        {book: {id: "b2", title: "The Pattern", language: "en"}, chapters: []},
+                    ],
+                    story_bible: {entities: [], relationships: [], links: []},
+                    chapter_labels: [],
+                    translation_groups: [["b1", "b2"]],
+                }),
+            ),
+        );
+        expect(translationsLink).toHaveBeenCalledWith(["new-b1", "new-b2"]);
+    });
+
+    it("skips a group whose members did not all restore", async () => {
+        const result = await importFullBackup(
+            fileOf(bundle({translation_groups: [["b1", "never-restored"]]})),
+        );
+        // Half a group would claim two books are translations of each other
+        // while a third is missing - worse than no group at all.
+        expect(translationsLink).not.toHaveBeenCalled();
+        expect(result.skipped.translation_groups).toBe(1);
+    });
+
+    it("parses a bundle written before any of these keys existed", async () => {
+        const result = await importFullBackup(fileOf(bundle()));
+        expect(result.imported.publications).toBe(0);
+        expect(result.imported.kdp_publishing_state).toBe(0);
+        expect(result.imported.translation_groups).toBe(0);
     });
 });

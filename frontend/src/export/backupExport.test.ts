@@ -51,6 +51,45 @@ const fakeStorage = {
         ]),
     },
     chapterLabels: {list: vi.fn(async () => [{id: "l1", name: "Draft"}])},
+    // #1008: the three seam-writable tables the bundle used to drop. Two
+    // books in one translation group, so the dedup has something to do.
+    publications: {
+        list: vi.fn(async (articleId: string) => [
+            {
+                id: "pub1",
+                article_id: articleId,
+                platform: "medium",
+                status: "published",
+                content_snapshot_at_publish: '{"doc":1}',
+            },
+        ]),
+    },
+    kdp: {
+        getPublishingState: vi.fn(async (bookId: string) =>
+            bookId === "b1"
+                ? {
+                      book_id: bookId,
+                      book_updated_at: "t",
+                      state: {
+                          id: "s1",
+                          book_id: bookId,
+                          royalty_plan: "70",
+                          arc_reviewers: [{id: "r1", reviewer_name: "Lena"}],
+                      },
+                  }
+                : {book_id: bookId, book_updated_at: "t", state: null},
+        ),
+    },
+    translations: {
+        list: vi.fn(async (bookId: string) => ({
+            book_id: bookId,
+            translation_group_id: "g1",
+            siblings:
+                bookId === "b1"
+                    ? [{book_id: "b2", title: "The Pattern", language: "en"}]
+                    : [{book_id: "b1", title: "Das Muster", language: "de"}],
+        })),
+    },
     aplusDocuments: {
         listForBook: vi.fn(async (bookId: string) => [
             {
@@ -155,5 +194,34 @@ describe("buildBackupBundle secrets (#985)", () => {
         await buildBackupBundle("2026-10-09T00:00:00Z");
         const live = await fakeStorage.settings.getApp();
         expect(live.ai.keys.google).toBe("AIza-canonical-secret");
+    });
+});
+
+describe("buildBackupBundle — the seam-writable tables (#1008)", () => {
+    it("carries per-article publications", async () => {
+        const bundle = await buildBackupBundle("2026-06-10T12:00:00Z");
+        // The field existed before #1008 but was emitted as a literal [].
+        expect(bundle.data.publications).toHaveLength(1);
+        expect(bundle.data.publications[0]).toMatchObject({
+            article_id: "ar1",
+            platform: "medium",
+            content_snapshot_at_publish: '{"doc":1}',
+        });
+    });
+
+    it("carries the KDP state only for books that have one", async () => {
+        const bundle = await buildBackupBundle("2026-06-10T12:00:00Z");
+        expect(bundle.data.kdp_publishing_state).toHaveLength(1);
+        expect(bundle.data.kdp_publishing_state?.[0]).toMatchObject({book_id: "b1"});
+        // Reviewers ride inside the state row, so one read carries both.
+        expect(bundle.data.kdp_publishing_state?.[0].state.arc_reviewers).toHaveLength(1);
+    });
+
+    it("carries each translation group once, not once per member", async () => {
+        const bundle = await buildBackupBundle("2026-06-10T12:00:00Z");
+        // Only b1 is in books.list here, so one group; the dedup key is the
+        // sorted member list, which is what keeps a three-book group from
+        // landing three times when every member reports the same set.
+        expect(bundle.data.translation_groups).toEqual([["b1", "b2"]]);
     });
 });
