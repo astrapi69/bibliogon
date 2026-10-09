@@ -22,25 +22,26 @@ import type {
     ArticleStorage,
     AssetStorage,
     AuthorStorage,
+    BackupHistoryStorage,
     BookStorage,
     BookTypesStorage,
     ChapterLabelStorage,
-    KdpStorage,
-    TranslationStorage,
     ChapterStorage,
     ChapterTemplateStorage,
-    CommentStorage,
     ComicsStorage,
+    CommentStorage,
     ContentTypesStorage,
     CoverStorage,
     EditorPluginStatusStorage,
     I18nStorage,
     IStorageService,
+    KdpStorage,
     PageStorage,
     PublicationStorage,
     SettingsStorage,
     StoryBibleStorage,
     TemplateStorage,
+    TranslationStorage,
     WritingSessionsStorage,
     WritingStatsStorage,
 } from "./types";
@@ -168,5 +169,25 @@ export const apiStorage: IStorageService = {
     },
     get chapterTemplates(): ChapterTemplateStorage {
         return api.chapterTemplates;
+    },
+    get backupHistory(): BackupHistoryStorage {
+        return {
+            list: api.backup.history,
+            // No-op on purpose, not an oversight: there is no endpoint to
+            // post a history event to. The backend logs the events its own
+            // /backup/export and /backup/import routes produce, so a
+            // client-side export (which reads through this seam and never
+            // touches those routes) does not appear in the online history.
+            // Recording it here would need an endpoint that does not exist;
+            // the gap is pre-existing and stated rather than hidden behind a
+            // throw that every caller would then have to catch.
+            record: async () => {},
+            delete: async (timestamp: string) => {
+                await api.backup.deleteHistoryEntry(timestamp);
+            },
+            clear: async () => {
+                await api.backup.clearHistory();
+            },
+        };
     },
 };

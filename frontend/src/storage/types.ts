@@ -412,6 +412,51 @@ export interface TranslationStorage {
     unlink: typeof api.translations.unlink;
 }
 
+/** One logged backup or restore. Shape-compatible with the backend's
+ *  `/backup/history` rows so the Settings list renders either source
+ *  without a branch. */
+export interface BackupHistoryEntry {
+    /** ISO-8601, and the primary key: one entry per instant. */
+    timestamp: string;
+    action: string;
+    book_count: number;
+    chapter_count: number;
+    file_size_bytes: number;
+    filename: string;
+    details: string;
+}
+
+/** What a caller knows at the moment it records an event. Everything but
+ *  the action is optional, because a restore knows its counts and an
+ *  export knows its size, and neither knows the other's. */
+export interface BackupHistoryEvent {
+    action: "backup" | "restore" | "import" | "selective-export";
+    timestamp?: string;
+    book_count?: number;
+    chapter_count?: number;
+    file_size_bytes?: number;
+    filename?: string;
+    details?: string;
+}
+
+/**
+ * The backup log (#748). Offline it is a Dexie store in its own IndexedDB
+ * database, so it survives the Danger-Zone reset - the moment a user most
+ * needs to know whether a backup exists is right after one.
+ *
+ * `record` is a documented NO-OP in `api` mode, because there is no
+ * endpoint to post an event to: the backend logs only the events its own
+ * `/backup/export` and `/backup/import` routes produce. A client-side
+ * export therefore does not appear in the online history, which is a
+ * pre-existing gap this seam makes visible rather than papers over.
+ */
+export interface BackupHistoryStorage {
+    list: (limit?: number) => Promise<BackupHistoryEntry[]>;
+    record: (event: BackupHistoryEvent) => Promise<void>;
+    delete: (timestamp: string) => Promise<void>;
+    clear: () => Promise<void>;
+}
+
 export interface IStorageService {
     /** The backend this instance is. Lets the UI show "Current mode: …". */
     readonly mode: StorageMode;
@@ -441,4 +486,5 @@ export interface IStorageService {
     comments: CommentStorage;
     templates: TemplateStorage;
     chapterTemplates: ChapterTemplateStorage;
+    backupHistory: BackupHistoryStorage;
 }

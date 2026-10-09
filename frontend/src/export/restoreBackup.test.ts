@@ -7,6 +7,7 @@ const importBgbSettings = vi.fn();
 const importFullBackup = vi.fn();
 const backupImport = vi.fn();
 const storageMode = vi.hoisted(() => ({ value: "dexie" as "api" | "dexie" }));
+const recordHistory = vi.fn();
 
 vi.mock("../import/bgbImport", () => ({
     importBgbFile: (f: File) => importBgbFile(f),
@@ -21,7 +22,10 @@ vi.mock("../api/client", () => ({
     },
 }));
 vi.mock("../storage", () => ({
-    getStorage: () => ({ mode: storageMode.value }),
+    getStorage: () => ({
+        mode: storageMode.value,
+        backupHistory: { record: (event: unknown) => recordHistory(event) },
+    }),
 }));
 
 /** A File whose first two bytes are the ZIP "PK" magic. */
@@ -33,6 +37,7 @@ beforeEach(() => {
     importBgbFile.mockReset();
     importBgbSettings.mockReset();
     importFullBackup.mockReset();
+    recordHistory.mockReset();
     backupImport.mockReset();
     storageMode.value = "dexie";
 });
@@ -102,5 +107,41 @@ describe("restoreBackupFile", () => {
         expect(importFullBackup).toHaveBeenCalled();
         expect(importBgbFile).not.toHaveBeenCalled();
         expect(counts).toEqual({ books: 1, chapters: 3, articles: 0, skippedBooks: 0 });
+    });
+
+    it("logs the restore to the backup history with the counts and the filename (#748)", async () => {
+        importFullBackup.mockResolvedValue({
+            imported: { books: 4, chapters: 31, articles: 2 },
+            skipped: { books: 1 },
+        });
+        await restoreBackupFile(
+            new File(['{"version":1,"data":{}}'], "mein-backup.json", {
+                type: "application/json",
+            }),
+        );
+        expect(recordHistory).toHaveBeenCalledTimes(1);
+        expect(recordHistory).toHaveBeenCalledWith(
+            expect.objectContaining({
+                action: "restore",
+                book_count: 4,
+                chapter_count: 31,
+                filename: "mein-backup.json",
+            }),
+        );
+    });
+
+    it("still restores when the history write fails (#748)", async () => {
+        // The data is already back by then. An unlogged restore is not a
+        // failed restore, and reporting it as one would make the user doubt
+        // a recovery that worked.
+        importFullBackup.mockResolvedValue({
+            imported: { books: 1, chapters: 1, articles: 0 },
+            skipped: { books: 0 },
+        });
+        recordHistory.mockRejectedValue(new Error("IndexedDB unavailable"));
+        const counts = await restoreBackupFile(
+            new File(['{"version":1,"data":{}}'], "backup.json"),
+        );
+        expect(counts.books).toBe(1);
     });
 });

@@ -15,6 +15,7 @@ import {
 } from "../api/client";
 import type {AplusDocumentRecord} from "../api/platform";
 import {getStorage} from "../storage";
+import type {BackupHistoryEvent} from "../storage/types";
 import {scrubSecrets} from "../utils/ai/scrubSecrets";
 
 /** Current backup-bundle schema version. */
@@ -346,8 +347,44 @@ export function backupFilename(isoTimestamp: string): string {
 /**
  * Build the full backup bundle and return it as a downloadable JSON
  * Blob. Works offline (Dexie) and online (API) — same code, same output.
+ *
+ * Logs the export to the backup history (#748) before returning. The log
+ * write is best-effort: a backup the user can download is worth more than
+ * a complete log, so a failing history store degrades to an unlogged
+ * backup rather than a failed one.
  */
 export async function exportFullBackup(exportedAt: string): Promise<Blob> {
     const bundle = await buildBackupBundle(exportedAt);
-    return new Blob([JSON.stringify(bundle, null, 2)], {type: "application/json"});
+    const blob = new Blob([JSON.stringify(bundle, null, 2)], {type: "application/json"});
+    await recordBackupEvent({
+        action: "backup",
+        timestamp: exportedAt,
+        book_count: bundle.data.books.length,
+        chapter_count: countChapters(bundle),
+        file_size_bytes: blob.size,
+        filename: backupFilename(exportedAt),
+    });
+    return blob;
+}
+
+/** Total chapters across a bundle's books, for the history row's counts. */
+export function countChapters(bundle: BackupBundleV1): number {
+    return bundle.data.books.reduce((total, book) => total + book.chapters.length, 0);
+}
+
+/**
+ * Log a backup or restore to the history, best-effort (#748).
+ *
+ * Never throws: a backup the user can download is worth more than a
+ * complete log, and a restore that already landed must not be reported as
+ * failed because its log entry was not written. Every export path and the
+ * restore dispatcher call this, so the log covers what the user actually
+ * did rather than whichever path happened to be instrumented.
+ */
+export async function recordBackupEvent(event: BackupHistoryEvent): Promise<void> {
+    try {
+        await getStorage().backupHistory.record(event);
+    } catch (error) {
+        console.warn("Backup history not updated", error);
+    }
 }

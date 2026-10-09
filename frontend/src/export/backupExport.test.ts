@@ -1,8 +1,16 @@
-import {describe, it, expect, vi} from "vitest";
+import {describe, it, expect, vi, beforeEach} from "vitest";
 
-import {BACKUP_BUNDLE_VERSION, backupFilename, buildBackupBundle} from "./backupExport";
+import {
+    BACKUP_BUNDLE_VERSION,
+    backupFilename,
+    buildBackupBundle,
+    exportFullBackup,
+} from "./backupExport";
+
+const recordHistory = vi.fn();
 
 const fakeStorage = {
+    backupHistory: { record: (event: unknown) => recordHistory(event) },
     settings: {
         getApp: vi.fn(async () => ({
             theme: "nord",
@@ -223,5 +231,32 @@ describe("buildBackupBundle — the seam-writable tables (#1008)", () => {
         // sorted member list, which is what keeps a three-book group from
         // landing three times when every member reports the same set.
         expect(bundle.data.translation_groups).toEqual([["b1", "b2"]]);
+    });
+});
+
+describe("exportFullBackup", () => {
+    beforeEach(() => {
+        recordHistory.mockReset();
+    });
+
+    it("logs the export with the counts, the size and the download name (#748)", async () => {
+        const blob = await exportFullBackup("2026-06-10T12:00:00Z");
+        expect(recordHistory).toHaveBeenCalledTimes(1);
+        const [event] = recordHistory.mock.calls[0];
+        expect(event).toMatchObject({
+            action: "backup",
+            timestamp: "2026-06-10T12:00:00Z",
+            filename: "bibliogon-backup-2026-06-10.json",
+        });
+        // The size is the blob's own, so the row cannot claim a size the
+        // downloaded file does not have.
+        expect(event.file_size_bytes).toBe(blob.size);
+        expect(event.book_count).toBe(1);
+    });
+
+    it("still returns the blob when the history write fails (#748)", async () => {
+        recordHistory.mockRejectedValue(new Error("IndexedDB unavailable"));
+        const blob = await exportFullBackup("2026-06-10T12:00:00Z");
+        expect(blob.size).toBeGreaterThan(0);
     });
 });

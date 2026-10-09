@@ -167,6 +167,16 @@ const GUARDED: readonly GuardedNamespace[] = [
         allowlist: IMPLEMENTATION_LAYER,
     },
     {
+        // The backup LOG, seam-backed since #748. Only the three history
+        // methods: `api.backup.export`/`import` stay direct, because the
+        // .bgb round-trip through the server is a different operation from
+        // the client-side bundle and is mode-guarded where it is used.
+        label: "api.backup history/deleteHistoryEntry/clearHistory",
+        pattern: /\bapi\.backup\s*\.\s*(history|deleteHistoryEntry|clearHistory)\b/,
+        remedy: "getStorage().backupHistory.<list|delete|clear> (see #748)",
+        allowlist: IMPLEMENTATION_LAYER,
+    },
+    {
         // The article-scoped comment read the editor panel uses. Guarded
         // on its own rather than all of api.articles: the remaining
         // api.articles surfaces are not ported yet (epic #727).

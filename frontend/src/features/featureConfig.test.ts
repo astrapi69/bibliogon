@@ -186,6 +186,12 @@ describe("featureRegistry", () => {
         expect(featureRegistry.getState(FEATURES.SELECTIVE_EXPORT, DEXIE_NO_KEY)).toBe("active");
         // .bgb import is client-side now (#99), so it is active offline too.
         expect(featureRegistry.getState(FEATURES.BGB_IMPORT, DEXIE_NO_KEY)).toBe("active");
+        // The backup log reads through the seam since #748: the backend's
+        // store online, the browser's own IndexedDB log offline. Compare
+        // stays desktop-only until its .bgb diff runs client-side.
+        expect(featureRegistry.getState(FEATURES.BACKUP_HISTORY, API)).toBe("active");
+        expect(featureRegistry.getState(FEATURES.BACKUP_HISTORY, DEXIE_NO_KEY)).toBe("active");
+        expect(featureRegistry.getState(FEATURES.BACKUP_COMPARE, DEXIE_NO_KEY)).toBe("disabled");
         // The Daten tab is purely client-side (#338): active in both modes.
         expect(featureRegistry.getState(FEATURES.DATA_MANAGEMENT, API)).toBe("active");
         expect(featureRegistry.getState(FEATURES.DATA_MANAGEMENT, DEXIE_NO_KEY)).toBe("active");

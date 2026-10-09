@@ -25,7 +25,6 @@
 
 import { type ChangeEvent, useEffect, useRef, useState } from "react";
 import { GitCompare, Trash2, Download, Upload } from "lucide-react";
-import { api } from "../../api/client";
 import { useI18n } from "../../hooks/useI18n";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../../features/featureConfig";
@@ -40,6 +39,7 @@ import { BgbImportError } from "../../import/bgbImport";
 import { restoreBackupFile } from "../../export/restoreBackup";
 import { makeBaseUrlConfirm } from "../../utils/ai/baseUrlConfirm";
 import { getStorage } from "../../storage";
+import type { BackupHistoryEntry } from "../../storage/types";
 import {
     DEFAULT_MAX_UPLOAD_MB,
     maxUploadBytes,
@@ -49,13 +49,6 @@ import BackupCompareDialog from "./BackupCompareDialog";
 import { SectionHeader } from "./SectionHeader";
 import { SelectiveExportSection } from "./SelectiveExportSection";
 import { BgbExportProgress } from "./BgbExportProgress";
-
-interface BackupHistoryEntry {
-    timestamp: string;
-    action: string;
-    book_count: number;
-    filename: string;
-}
 
 const sectionStyle: React.CSSProperties = {
     padding: 16,
@@ -68,7 +61,6 @@ export function BackupsSettings() {
     const { t } = useI18n();
     const compare = useFeature(FEATURES.BACKUP_COMPARE);
     const history = useFeature(FEATURES.BACKUP_HISTORY);
-    const offline = !history.isActive;
     const dialog = useDialog();
     const [backupHistory, setBackupHistory] = useState<BackupHistoryEntry[]>([]);
     const [showCompareDialog, setShowCompareDialog] = useState(false);
@@ -152,14 +144,20 @@ export function BackupsSettings() {
     };
 
     useEffect(() => {
-        // Backup history is backend-only (.bgb archives + the server-side
-        // history store); offline skip the fetch so dexie mode fires no /api.
-        if (offline) return;
-        api.backup
-            .history(20)
-            .then(setBackupHistory)
+        // Through the seam since #748: the backend's history store online,
+        // the browser's own log offline. No mode branch here - the two
+        // sources are the same shape by contract.
+        let cancelled = false;
+        getStorage()
+            .backupHistory.list(20)
+            .then((entries) => {
+                if (!cancelled) setBackupHistory(entries);
+            })
             .catch(() => {});
-    }, [offline]);
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     useEffect(() => {
         let cancelled = false;
@@ -179,7 +177,7 @@ export function BackupsSettings() {
         const previous = backupHistory;
         setBackupHistory((prev) => prev.filter((e) => e.timestamp !== entry.timestamp));
         try {
-            await api.backup.deleteHistoryEntry(entry.timestamp);
+            await getStorage().backupHistory.delete(entry.timestamp);
         } catch (err: unknown) {
             setBackupHistory(previous);
             notify.error(t("ui.backups.delete_entry_failed", "Could not delete entry"), err);
@@ -198,7 +196,7 @@ export function BackupsSettings() {
         const previous = backupHistory;
         setBackupHistory([]);
         try {
-            await api.backup.clearHistory();
+            await getStorage().backupHistory.clear();
         } catch (err: unknown) {
             setBackupHistory(previous);
             notify.error(t("ui.backups.clear_all_failed", "Could not clear version history"), err);

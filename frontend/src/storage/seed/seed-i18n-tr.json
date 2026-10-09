@@ -1151,7 +1151,7 @@
         "reset_dialog_warning_settings": "Tüm ayarlar ve tercihler",
         "reset_dialog_warning_ai_key": "Yapay zekâ API anahtarı",
         "reset_dialog_warning_drafts": "Tarayıcıdaki tüm kaydedilmemiş taslaklar",
-        "reset_dialog_warning_keeps": "Korunur: Uygulamanın kendisi ve başlatıcı kurulum durumu.",
+        "reset_dialog_warning_keeps": "Korunur: Uygulamanin kendisi, baslatici kurulum durumu ve yedek kaydi (sifirlamadan sonra hangi yedegin var oldugu gorulebilsin diye).",
         "reset_dialog_backup_offer": "Önce bir yedek oluşturmak ister misiniz?",
         "reset_dialog_backup_button": "Yedek oluştur",
         "reset_confirm_prompt": "Onaylamak için RESET yazın",

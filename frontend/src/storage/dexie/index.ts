@@ -20,6 +20,7 @@ import { articleAssets } from "./article-assets";
 import { articles } from "./articles";
 import { assets } from "./assets";
 import { authors } from "./authors";
+import { backupHistory } from "./backup/history";
 import { editorPluginStatus } from "./backend-only";
 import { publications } from "./publishing/publications";
 import { books, templates } from "./books";
@@ -54,6 +55,7 @@ export const dexieStorage: IStorageService = {
     articlePlatforms,
     editorPluginStatus,
     chapterLabels,
+    backupHistory,
     aplusDocuments,
     kdp,
     translations,

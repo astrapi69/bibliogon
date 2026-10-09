@@ -1086,7 +1086,7 @@ ui:
       reset_dialog_warning_settings: "Όλες οι ρυθμίσεις και οι προτιμήσεις"
       reset_dialog_warning_ai_key: "Το κλειδί API του AI"
       reset_dialog_warning_drafts: "Όλα τα μη αποθηκευμένα προσχέδια στο πρόγραμμα περιήγησης"
-      reset_dialog_warning_keeps: "Διατηρούνται: Η ίδια η εφαρμογή και η κατάσταση εγκατάστασης του launcher."
+      reset_dialog_warning_keeps: "Διατηρούνται: Η ίδια η εφαρμογή, η κατάσταση εγκατάστασης του launcher και το αρχείο καταγραφής αντιγράφων ασφαλείας (ώστε μετά την επαναφορά να φαίνεται ακόμη ποιο αντίγραφο υπάρχει)."
       reset_dialog_backup_offer: "Θέλετε να δημιουργήσετε πρώτα ένα αντίγραφο ασφαλείας;"
       reset_dialog_backup_button: "Δημιουργία αντιγράφου ασφαλείας"
       reset_confirm_prompt: "Πληκτρολογήστε RESET για επιβεβαίωση"
