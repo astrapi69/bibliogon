@@ -148,6 +148,15 @@ const GUARDED: readonly GuardedNamespace[] = [
         allowlist: IMPLEMENTATION_LAYER,
     },
     {
+        // Translation groups: the sibling list plus link/unlink, seam-backed
+        // since #746. `importMultiBranch` is NOT guarded - it clones a git
+        // repository server-side and has no browser path.
+        label: "api.translations list/link/unlink",
+        pattern: /\bapi\.translations\s*\.\s*(list|link|unlink)\b/,
+        remedy: "getStorage().translations.<same method> (see #746)",
+        allowlist: IMPLEMENTATION_LAYER,
+    },
+    {
         // The article-scoped comment read the editor panel uses. Guarded
         // on its own rather than all of api.articles: the remaining
         // api.articles surfaces are not ported yet (epic #727).

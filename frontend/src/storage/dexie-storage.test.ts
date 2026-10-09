@@ -975,6 +975,107 @@ describe("DexieStorage — KDP publishing state (#737)", () => {
     });
 });
 
+describe("DexieStorage — translation groups (#746)", () => {
+    async function book(title: string, language: string) {
+        return dexieStorage.books.create({ title, author: "Aster", language });
+    }
+
+    it("links two books, lists each as the other's sibling", async () => {
+        const de = await book("Das Muster", "de");
+        const en = await book("The Pattern", "en");
+
+        const before = await dexieStorage.translations.list(de.id);
+        expect(before.translation_group_id).toBeNull();
+        expect(before.siblings).toEqual([]);
+
+        const result = await dexieStorage.translations.link([de.id, en.id]);
+        expect(result.translation_group_id).toBeTruthy();
+        expect(result.linked_book_ids).toEqual([de.id, en.id]);
+
+        const fromDe = await dexieStorage.translations.list(de.id);
+        expect(fromDe.translation_group_id).toBe(result.translation_group_id);
+        expect(fromDe.siblings.map((s) => s.title)).toEqual(["The Pattern"]);
+        const fromEn = await dexieStorage.translations.list(en.id);
+        expect(fromEn.siblings.map((s) => s.title)).toEqual(["Das Muster"]);
+    });
+
+    it("orders siblings by language, then title", async () => {
+        const de = await book("Das Muster", "de");
+        const en = await book("The Pattern", "en");
+        const es = await book("El Patrón", "es");
+        const esToo = await book("Another Spanish Edition", "es");
+        await dexieStorage.translations.link([de.id, en.id, es.id, esToo.id]);
+
+        const siblings = await dexieStorage.translations.list(de.id);
+        expect(siblings.siblings.map((s) => `${s.language}:${s.title}`)).toEqual([
+            "en:The Pattern",
+            "es:Another Spanish Edition",
+            "es:El Patrón",
+        ]);
+    });
+
+    it("folds two existing groups into the smallest id, carrying every member", async () => {
+        const [a, b, c, d] = [
+            await book("A", "de"),
+            await book("B", "en"),
+            await book("C", "fr"),
+            await book("D", "es"),
+        ];
+        const first = await dexieStorage.translations.link([a.id, b.id]);
+        const second = await dexieStorage.translations.link([c.id, d.id]);
+        const expected = [first.translation_group_id, second.translation_group_id]
+            .filter((id): id is string => Boolean(id))
+            .sort()[0];
+
+        const merged = await dexieStorage.translations.link([a.id, c.id]);
+        expect(merged.translation_group_id).toBe(expected);
+        // The two members NOT named in the merge come along; otherwise half
+        // of each pair would be left behind in a group that no longer exists.
+        const fromA = await dexieStorage.translations.list(a.id);
+        expect(fromA.siblings.map((s) => s.title).sort()).toEqual(["B", "C", "D"]);
+    });
+
+    it("is a no-op below two books, and skips ids that do not exist", async () => {
+        const only = await book("Alone", "de");
+        expect(await dexieStorage.translations.link([only.id])).toEqual({
+            translation_group_id: null,
+            linked_book_ids: [],
+        });
+        expect(await dexieStorage.translations.link([only.id, "nope"])).toEqual({
+            translation_group_id: null,
+            linked_book_ids: [],
+        });
+        expect((await dexieStorage.translations.list(only.id)).translation_group_id).toBeNull();
+    });
+
+    it("unlinking the third member leaves a pair, unlinking again clears both", async () => {
+        const de = await book("Das Muster", "de");
+        const en = await book("The Pattern", "en");
+        const fr = await book("Le Motif", "fr");
+        await dexieStorage.translations.link([de.id, en.id, fr.id]);
+
+        await dexieStorage.translations.unlink(fr.id);
+        expect((await dexieStorage.translations.list(fr.id)).translation_group_id).toBeNull();
+        expect((await dexieStorage.translations.list(de.id)).siblings).toHaveLength(1);
+
+        // A group of one carries no information, so the survivor is cleared too.
+        await dexieStorage.translations.unlink(en.id);
+        expect((await dexieStorage.translations.list(de.id)).translation_group_id).toBeNull();
+        expect((await dexieStorage.translations.list(de.id)).siblings).toEqual([]);
+    });
+
+    it("hides a trashed sibling without touching the group", async () => {
+        const de = await book("Das Muster", "de");
+        const en = await book("The Pattern", "en");
+        await dexieStorage.translations.link([de.id, en.id]);
+
+        await dexieStorage.books.delete(en.id);
+        const fromDe = await dexieStorage.translations.list(de.id);
+        expect(fromDe.siblings).toEqual([]);
+        expect(fromDe.translation_group_id).toBeTruthy();
+    });
+});
+
 describe("DexieStorage — story bible", () => {
     it("entity CRUD + relationships + links + export round-trip", async () => {
         // Entity types come from the seeded registry.

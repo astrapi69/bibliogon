@@ -383,6 +383,21 @@ export interface KdpStorage {
     deleteReviewer: typeof api.kdp.deleteReviewer;
 }
 
+/**
+ * Translation groups (#746): the flat set of books that are translations
+ * of one another.
+ *
+ * Plain cross-book grouping - one shared id, no server computation - so
+ * it works offline like any other book metadata. `importMultiBranch`
+ * stays on `api.translations`: it clones a git repository and imports a
+ * book per branch, which no browser can do.
+ */
+export interface TranslationStorage {
+    list: typeof api.translations.list;
+    link: typeof api.translations.link;
+    unlink: typeof api.translations.unlink;
+}
+
 export interface IStorageService {
     /** The backend this instance is. Lets the UI show "Current mode: …". */
     readonly mode: StorageMode;
@@ -402,6 +417,7 @@ export interface IStorageService {
     chapterLabels: ChapterLabelStorage;
     aplusDocuments: AplusDocumentStorage;
     kdp: KdpStorage;
+    translations: TranslationStorage;
     storyBible: StoryBibleStorage;
     pages: PageStorage;
     comics: ComicsStorage;

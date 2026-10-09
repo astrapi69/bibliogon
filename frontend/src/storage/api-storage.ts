@@ -26,6 +26,7 @@ import type {
     BookTypesStorage,
     ChapterLabelStorage,
     KdpStorage,
+    TranslationStorage,
     ChapterStorage,
     ChapterTemplateStorage,
     CommentStorage,
@@ -107,6 +108,9 @@ export const apiStorage: IStorageService = {
     },
     get kdp(): KdpStorage {
         return api.kdp;
+    },
+    get translations(): TranslationStorage {
+        return api.translations;
     },
     get storyBible(): StoryBibleStorage {
         return api.storyBible;
