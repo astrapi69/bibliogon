@@ -9,10 +9,9 @@ import {
     DialogClose,
 } from "@/components/ui/dialog";
 import { Globe, Link2, Link2Off, Loader2, Plus, X } from "lucide-react";
-import { api, ApiError, Book, TranslationSiblingsResponse } from "../../api/client";
+import { ApiError, Book, TranslationSiblingsResponse } from "../../api/client";
+import { getStorage } from "../../storage";
 import { useI18n } from "../../hooks/useI18n";
-import { useFeature } from "@astrapi69/feature-strategy-react";
-import { FEATURES } from "../../features/featureConfig";
 import { notify } from "../../utils/platform/notify";
 
 /**
@@ -23,14 +22,14 @@ import { notify } from "../../utils/platform/notify";
  * navigates to that book's editor. Also exposes an Unlink action
  * for users that want to detach a book from the group.
  *
- * When the book is NOT part of a group, renders nothing - the
- * link UI lives in Settings (a Translations panel that lets the
- * user pick existing books and group them manually).
+ * Everything goes through the storage seam (#746): a translation
+ * group is one shared id across book rows, with nothing for a
+ * server to compute, so it works on the backendless build too.
+ * Before that the row short-circuited offline and the user saw
+ * "no translations linked" whether or not any were.
  */
 export default function TranslationLinks({ bookId }: { bookId: string }) {
     const { t } = useI18n();
-    const translation = useFeature(FEATURES.TRANSLATION_LINKS);
-    const offline = !translation.isActive;
     const navigate = useNavigate();
     const [data, setData] = useState<TranslationSiblingsResponse | null>(null);
     const [loading, setLoading] = useState(false);
@@ -38,18 +37,14 @@ export default function TranslationLinks({ bookId }: { bookId: string }) {
     const [showLinkPicker, setShowLinkPicker] = useState(false);
 
     useEffect(() => {
-        // Translations are a backend-only feature (cross-book grouping in the
-        // server DB); offline there are no siblings, so skip the fetch and render
-        // the unlinked state without firing an /api call.
-        if (offline) return;
         void load();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [bookId, offline]);
+    }, [bookId]);
 
     async function load(): Promise<void> {
         setLoading(true);
         try {
-            const next = await api.translations.list(bookId);
+            const next = await getStorage().translations.list(bookId);
             setData(next);
         } catch (err) {
             if (err instanceof ApiError && err.status !== 404) {
@@ -66,7 +61,7 @@ export default function TranslationLinks({ bookId }: { bookId: string }) {
     async function handleUnlink(): Promise<void> {
         setUnlinking(true);
         try {
-            await api.translations.unlink(bookId);
+            await getStorage().translations.unlink(bookId);
             notify.success(
                 t("ui.translations.unlink_success", "Buch aus der Übersetzungsgruppe entfernt."),
             );
@@ -237,8 +232,8 @@ function LinkPickerDialog({
         if (!open) return;
         setSelected(new Set());
         setLoading(true);
-        api.books
-            .list()
+        getStorage()
+            .books.list()
             .then((all) => setBooks(all.filter((b) => b.id !== bookId)))
             .catch((err) => {
                 if (err instanceof ApiError) {
@@ -265,7 +260,7 @@ function LinkPickerDialog({
         if (selected.size === 0) return;
         setLinking(true);
         try {
-            await api.translations.link([bookId, ...selected]);
+            await getStorage().translations.link([bookId, ...selected]);
             notify.success(
                 t("ui.translations.link_success", "Bücher als Übersetzungen verknüpft."),
             );

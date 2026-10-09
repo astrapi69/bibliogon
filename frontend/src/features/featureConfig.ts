@@ -59,6 +59,7 @@ export const FEATURES = {
     URL_IMPORT: "url-import",
     WRITING_HISTORY: "writing-history",
     WRITING_HISTORY_CSV: "writing-history-csv",
+    TRANSLATION_LINKS: "translation-links",
     DANGER_ZONE_RESET: "danger-zone-reset",
     BOOK_IMPORT_JSON: "book-import-json",
     AUTHORS_EXPORT: "authors-export",
@@ -94,7 +95,6 @@ export const FEATURES = {
     BGB_IMPORT: "bgb-import",
     PANDOC_EXPORT: "pandoc-export",
     VERSION_HISTORY: "version-history",
-    TRANSLATION_LINKS: "translation-links",
     KDP_CATEGORY_CATALOG: "kdp-category-catalog",
     BULK_EXPORT: "bulk-export",
     // Server-bound review/translation surfaces with no browser path: the
@@ -167,6 +167,10 @@ const ALWAYS_ACTIVE: readonly string[] = [
     // recorder consults the registry instead of mounting ungated, giving a
     // single kill-switch and an audit point.
     FEATURES.EVENT_RECORDING,
+    // A translation group is one shared id across book rows - no master,
+    // no hierarchy, nothing for a server to compute - so the sibling list,
+    // the link and the unlink all run against Dexie offline (#746).
+    FEATURES.TRANSLATION_LINKS,
     // The Writing-History CSV is serialised in the browser from the same
     // day-aggregated series the view already renders (the Dexie
     // `writingSessions` table since #668), then downloaded as a Blob. No
@@ -251,7 +255,6 @@ const DESKTOP_ONLY: readonly string[] = [
     FEATURES.BACKUP_COMPARE,
     FEATURES.BACKUP_HISTORY,
     FEATURES.PANDOC_EXPORT,
-    FEATURES.TRANSLATION_LINKS,
     FEATURES.KDP_CATEGORY_CATALOG,
     FEATURES.BULK_EXPORT,
     FEATURES.AI_TEMPLATE_FILE_IO,

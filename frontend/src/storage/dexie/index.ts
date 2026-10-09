@@ -31,6 +31,7 @@ import { covers } from "./covers";
 import { pages } from "./pages";
 import { bookTypes, contentTypes, i18n, settings } from "./reference";
 import { storyBible } from "./story-bible";
+import { translations } from "./translations/groups";
 import { writingSessions, writingStats } from "./writing";
 
 export const dexieStorage: IStorageService = {
@@ -54,6 +55,7 @@ export const dexieStorage: IStorageService = {
     chapterLabels,
     aplusDocuments,
     kdp,
+    translations,
     storyBible,
     pages,
     comics,
