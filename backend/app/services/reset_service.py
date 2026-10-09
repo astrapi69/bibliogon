@@ -21,6 +21,14 @@ Deleted:
 - ``<data_dir>/config/plugins/*.yaml`` (per-plugin user-overlays).
 - ``<data_dir>/plugins/installed/*`` (user-installed plugin ZIPs).
 - ``<config_dir>/secrets.yaml`` (drops the AI API key).
+- ``<config_dir>/git_credentials/*.enc`` (per-book git PATs).
+- ``<config_dir>/ssh/*`` (the Bibliogon-managed SSH keypair - the
+  public half stays registered at the remote and has to be removed
+  there by the user).
+- ``<config_dir>/plugins/audiobook/*.enc`` (ElevenLabs key, Google
+  service-account JSON).
+- ``<config_dir>/credentials.secret`` (the Fernet secret that
+  decrypts all of the above; regenerated on next use).
 
 Re-seeded after truncation:
 - ``book_templates`` + ``book_template_chapters`` (5 builtins).
@@ -47,7 +55,7 @@ from sqlalchemy.orm import Session
 
 from app.database import Base
 from app.job_store import job_store
-from app.paths import get_data_dir
+from app.paths import get_config_dir, get_data_dir
 
 logger = logging.getLogger(__name__)
 
@@ -57,31 +65,41 @@ def run_reset(
     *,
     data_dir: Path | None = None,
     secrets_path: Path | None = None,
+    config_dir: Path | None = None,
 ) -> dict[str, Any]:
     """Execute a full reset against the given session + paths.
 
-    The ``data_dir`` and ``secrets_path`` arguments are injection
-    seams for tests. In production callers pass ``None`` and the
-    helpers resolve via ``app.paths`` + ``app.main``'s secrets-
-    override path.
+    The ``data_dir``, ``secrets_path`` and ``config_dir`` arguments
+    are injection seams for tests. In production callers pass
+    ``None`` and the helpers resolve via ``app.paths`` +
+    ``app.main``'s secrets-override path.
+
+    ``config_dir`` is a different tree from ``data_dir``
+    (``~/.config/bibliogon`` vs ``~/.local/share/bibliogon``), which
+    is where the native install keeps its credentials and why the
+    config-overlay wipe never reached them (#990).
     """
     if data_dir is None:
         data_dir = get_data_dir()
     if secrets_path is None:
         secrets_path = _resolve_secrets_path()
+    if config_dir is None:
+        config_dir = get_config_dir()
 
     jobs_cancelled = job_store.shutdown_all()
     rows_deleted = _truncate_all_tables(db)
     _reseed_builtins(db)
     fs_summary = _wipe_filesystem(data_dir, secrets_path)
+    fs_summary["credentials_cleared"] = _wipe_credentials(config_dir)
 
     logger.info(
         "System reset complete: jobs_cancelled=%d, rows_deleted=%d, "
-        "uploads_cleared=%s, secrets_cleared=%s",
+        "uploads_cleared=%s, secrets_cleared=%s, credentials_cleared=%d",
         jobs_cancelled,
         rows_deleted,
         fs_summary["uploads_cleared"],
         fs_summary["secrets_cleared"],
+        fs_summary["credentials_cleared"],
     )
     return {
         "status": "reset",
@@ -149,6 +167,49 @@ def _wipe_filesystem(data_dir: Path, secrets_path: Path) -> dict[str, Any]:
     )
     summary["secrets_cleared"] = _unlink_if_exists(secrets_path)
     return summary
+
+
+#: Credential files a native install keeps under ``get_config_dir()``,
+#: as (relative directory, glob) pairs. The browser build has none of
+#: them, which is why #885 fixed the web reset and left this one open.
+#: ``credentials.secret`` is listed last on purpose: it is the Fernet
+#: secret that decrypts everything above it, so it goes after the files
+#: it protects rather than before them.
+_CREDENTIAL_PATTERNS: tuple[tuple[str, str], ...] = (
+    ("git_credentials", "*.enc"),
+    ("ssh", "*"),
+    ("plugins/audiobook", "*.enc"),
+    (".", "credentials.secret"),
+)
+
+
+def _wipe_credentials(config_dir: Path) -> int:
+    """Securely delete every stored credential under ``config_dir``.
+
+    Returns the number of files removed. Each file is overwritten
+    before it is unlinked, via :func:`app.credential_store.secure_delete`
+    - the same routine the per-credential delete endpoints use, so a
+    reset is not a weaker erase than removing one key by hand.
+
+    The launcher's own metadata (``install.json``, ``install.log``,
+    ``settings.json``) sits in the same directory and is deliberately
+    kept: it describes the installation, not the user.
+    """
+    from app import credential_store
+
+    if not config_dir.exists():
+        return 0
+    count = 0
+    for relative, pattern in _CREDENTIAL_PATTERNS:
+        directory = config_dir if relative == "." else config_dir / relative
+        if not directory.is_dir():
+            continue
+        for target in sorted(directory.glob(pattern)):
+            if not target.is_file():
+                continue
+            if credential_store.secure_delete(filename=target.name, credentials_dir=directory):
+                count += 1
+    return count
 
 
 def _wipe_and_recreate(path: Path) -> bool:

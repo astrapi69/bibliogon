@@ -149,6 +149,21 @@ describe("DangerZoneSettings", () => {
         await waitFor(() => expect(api.system.resetPrepare).toHaveBeenCalled());
     });
 
+    it("the dialog names the credentials it clears and the SSH key it cannot", async () => {
+        // #990: a reset that keeps something is fine as long as the user is
+        // told - and the public half of the SSH key is one the reset cannot
+        // reach, because it lives at the git provider.
+        renderWithRouter();
+        fireEvent.click(screen.getByTestId("danger-zone-reset-button"));
+        await screen.findByTestId("danger-zone-reset-input");
+        const warning = screen.getByTestId("danger-zone-warning").textContent ?? "";
+        expect(warning).toContain("Git-Token");
+        expect(warning).toContain("Sprachausgabe");
+        expect(screen.getByTestId("danger-zone-ssh-note").textContent).toContain(
+            "Git-Anbieter",
+        );
+    });
+
     it("final-delete is disabled with empty + lowercase input", async () => {
         const { api } = await import("../../api/client");
         renderWithRouter();

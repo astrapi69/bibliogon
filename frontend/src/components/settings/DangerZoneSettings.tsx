@@ -372,11 +372,23 @@ export function DangerZoneSettings() {
                                 </li>
                                 <li>
                                     {t(
+                                        "ui.settings.danger_zone.reset_dialog_warning_credentials",
+                                        "Alle gespeicherten Zugangsdaten: Git-Token, der SSH-Schlüssel und die Schlüssel für die Sprachausgabe",
+                                    )}
+                                </li>
+                                <li>
+                                    {t(
                                         "ui.settings.danger_zone.reset_dialog_warning_drafts",
                                         "Alle ungespeicherten Entwürfe im Browser",
                                     )}
                                 </li>
                             </ul>
+                            <p data-testid="danger-zone-ssh-note">
+                                {t(
+                                    "ui.settings.danger_zone.reset_dialog_warning_ssh_note",
+                                    "Der öffentliche Teil des SSH-Schlüssels bleibt bei deinem Git-Anbieter registriert und muss dort selbst entfernt werden.",
+                                )}
+                            </p>
                             <p>
                                 {t(
                                     "ui.settings.danger_zone.reset_dialog_warning_keeps",
