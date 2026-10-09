@@ -10,6 +10,7 @@ import {
 } from "../api/client";
 import type {AplusDocumentRecord} from "../api/platform";
 import {getStorage} from "../storage";
+import {preserveLocalSecrets} from "../utils/ai/scrubSecrets";
 import {planAuthorsImport} from "../components/settings/authorsImportExport";
 import {type BackupBundleV1} from "./backupExport";
 
@@ -128,6 +129,31 @@ export function articleCreateFrom(article: Article): ArticleCreate {
 }
 
 /**
+ * The settings blob to write during a restore, with the live secrets kept.
+ *
+ * When the live settings cannot be read, the AI section is dropped from the
+ * restore instead of being written blind: a scrubbed bundle's empty keys
+ * would otherwise clear the ones this machine holds, which is the single
+ * outcome #985 exists to prevent. Everything else in the bundle still
+ * restores, so a failure here costs the AI config of the restore, not the
+ * restore.
+ */
+async function mergeSettingsForRestore(
+    storage: ReturnType<typeof getStorage>,
+    restored: unknown,
+): Promise<Record<string, unknown>> {
+    try {
+        const live = await storage.settings.getApp();
+        return preserveLocalSecrets(live, restored) as Record<string, unknown>;
+    } catch (err) {
+        console.warn("Live settings unreadable; restoring without the AI section", err);
+        const withoutAi = {...(restored as Record<string, unknown>)};
+        delete withoutAi.ai;
+        return withoutAi;
+    }
+}
+
+/**
  * Import a full backup bundle through the storage seam (offline + online).
  *
  * Rules: settings are overwritten EXCEPT the author profile (never
@@ -147,7 +173,13 @@ export async function importFullBackup(file: File): Promise<ImportResult> {
     const skipped = zeroCounts();
 
     if (data.settings && typeof data.settings === "object") {
-        const settings = {...(data.settings as Record<string, unknown>)};
+        // A bundle taken since #985 carries no provider key, so writing its
+        // AI section straight over the live one would CLEAR the keys this
+        // machine has. A restore puts the user back where they were; it
+        // does not log them out of their AI provider. An older bundle still
+        // carries real keys and still restores them - the rule is "empty
+        // does not overwrite", not "never overwrite".
+        const settings = {...(await mergeSettingsForRestore(storage, data.settings))};
         delete settings.author;
         if (Object.keys(settings).length > 0) {
             await storage.settings.updateApp(settings);

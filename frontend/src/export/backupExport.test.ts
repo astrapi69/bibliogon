@@ -7,6 +7,16 @@ const fakeStorage = {
         getApp: vi.fn(async () => ({
             theme: "nord",
             author: {name: "Me", pen_names: ["M."]},
+            // #985: a real settings blob carries provider keys in three
+            // shapes. The bundle must carry none of them.
+            ai: {
+                active_provider: "google",
+                api_key: "AIza-mirror-secret",
+                keys: {google: "AIza-canonical-secret"},
+                provider_keys: {anthropic: {api_key: "sk-ant-side-secret", model: "claude"}},
+                model_overrides: {google: "gemini-2.0-flash"},
+                enabled: true,
+            },
         })),
     },
     authors: {list: vi.fn(async () => [{id: "a1", name: "King", slug: "king"}])},
@@ -120,5 +130,30 @@ describe("backupFilename", () => {
         await expect(buildBackupBundle("2026-09-30T12:00:00Z")).rejects.toThrow(
             "server exploded",
         );
+    });
+});
+
+describe("buildBackupBundle secrets (#985)", () => {
+    it("carries no provider key in any of the three shapes", async () => {
+        const serialised = JSON.stringify(await buildBackupBundle("2026-10-09T00:00:00Z"));
+        expect(serialised).not.toContain("AIza-mirror-secret");
+        expect(serialised).not.toContain("AIza-canonical-secret");
+        expect(serialised).not.toContain("sk-ant-side-secret");
+    });
+
+    it("keeps the rest of the AI config so a restore puts the user back", async () => {
+        const bundle = await buildBackupBundle("2026-10-09T00:00:00Z");
+        const ai = (bundle.data.settings as {ai: Record<string, unknown>}).ai;
+        expect(ai.active_provider).toBe("google");
+        expect(ai.model_overrides).toEqual({google: "gemini-2.0-flash"});
+        expect(ai.enabled).toBe(true);
+        expect(ai.keys).toEqual({});
+        expect(ai.api_key).toBe("");
+    });
+
+    it("leaves the live settings untouched", async () => {
+        await buildBackupBundle("2026-10-09T00:00:00Z");
+        const live = await fakeStorage.settings.getApp();
+        expect(live.ai.keys.google).toBe("AIza-canonical-secret");
     });
 });

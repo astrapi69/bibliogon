@@ -57,6 +57,10 @@ vi.mock("../storage", () => ({
                 recorded.settingsUpdates.push(data);
                 return data;
             }),
+            // #985: the live settings the restore merges its secrets from.
+            getApp: vi.fn(async () => ({
+                ai: {active_provider: "google", keys: {google: "AIza-live"}, api_key: "AIza-live"},
+            })),
         },
         articles: {
             list: vi.fn(async () => recorded.existingArticles),
@@ -285,6 +289,21 @@ describe("importBgbFile", () => {
         expect(recorded.settingsUpdates[0]).toMatchObject({ ui: { theme: "nord" } });
         // Author profile (own identity) is stripped before the seam write.
         expect(recorded.settingsUpdates[0].author).toBeUndefined();
+    });
+
+    it("does not clear a live provider key when the archive carries none (#985)", async () => {
+        const file = bgbFile({
+            "manifest.json": MANIFEST,
+            "globals/settings.json": JSON.stringify({
+                ui: { theme: "nord" },
+                ai: { active_provider: "google", keys: {}, api_key: "" },
+            }),
+        });
+        await importBgbFile(file);
+        const written = recorded.settingsUpdates[0] as { ai: Record<string, unknown> };
+        expect(written.ai.keys).toEqual({ google: "AIza-live" });
+        expect(written.ai.api_key).toBe("AIza-live");
+        expect(written.ai.active_provider).toBe("google");
     });
 
     it("re-points the book cover at the restored bytes", async () => {

@@ -1,4 +1,5 @@
 import { getStorage } from "../storage";
+import { scrubSecrets } from "../utils/ai/scrubSecrets";
 import { BACKUP_BUNDLE_VERSION, type BackupBundleV1, type BackupData } from "./backupExport";
 
 /**
@@ -93,7 +94,9 @@ export async function buildSelectiveBundle(
 
     if (selection.settings) {
         const settings = await storage.settings.getApp();
-        data.settings = settings;
+        // Same reason as the full backup (#985): the provider keys do not
+        // travel. The rest of the AI config does.
+        data.settings = scrubSecrets(settings).settings as typeof settings;
         data.author_profile = (settings as { author?: unknown }).author ?? null;
     }
 
