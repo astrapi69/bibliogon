@@ -43,13 +43,15 @@ jobs:
       - name: Install Poetry
         run: pip install poetry
 
-      # `poetry sync` rather than `poetry install`: the venv is restored from
-      # a prefix cache key, and `install` never REMOVES a package that left
-      # the lock. So the gate audits whatever has accumulated in the cache,
-      # and a dependency dropped months ago can fail it with nothing in the
-      # repo to change - which is exactly what pypdf 6.18.1 does to a
-      # long-lived venv today (#952). Sync makes the audited environment
-      # equal to the lockfile.
+      # `poetry sync` rather than `poetry install`: `install` never REMOVES a
+      # package that left the lock, so an environment that outlives one lock
+      # is audited for vulnerabilities it would not have if installed from
+      # the repo - which is what pypdf 6.18.1 does to a long-lived developer
+      # venv (#952). This job builds a fresh venv every run (no cache step),
+      # so sync changes nothing here today; it makes the audited environment
+      # equal to the lockfile BY CONSTRUCTION, so adding a cache later cannot
+      # quietly reintroduce the problem. The workflows that do cache a venv
+      # are covered in #980.
       - name: Install backend dependencies (synced to the lockfile)
         working-directory: backend
         run: poetry sync --no-interaction --no-ansi

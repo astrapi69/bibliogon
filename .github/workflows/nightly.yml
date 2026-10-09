@@ -131,7 +131,7 @@ jobs:
 
       - name: Install plugin dependencies
         working-directory: plugins/${{ matrix.plugin }}
-        run: poetry install --no-interaction --no-ansi
+        run: poetry sync --no-interaction --no-ansi
 
       - name: Run plugin tests
         working-directory: plugins/${{ matrix.plugin }}
@@ -152,7 +152,7 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: backend
-        run: poetry install --no-interaction --no-ansi
+        run: poetry sync --no-interaction --no-ansi
 
       - name: Run backend coverage
         working-directory: backend
@@ -224,7 +224,7 @@ jobs:
 
       - name: Install plugin dependencies
         working-directory: plugins/${{ matrix.plugin }}
-        run: poetry install --no-interaction --no-ansi
+        run: poetry sync --no-interaction --no-ansi
 
       - name: Run plugin coverage
         working-directory: plugins/${{ matrix.plugin }}

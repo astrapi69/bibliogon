@@ -62,7 +62,7 @@ jobs:
 
       - name: Install backend (uvicorn server for the E2E webServer)
         working-directory: backend
-        run: poetry install --no-interaction --no-ansi
+        run: poetry sync --no-interaction --no-ansi
 
       - uses: actions/setup-node@v5
         with:
