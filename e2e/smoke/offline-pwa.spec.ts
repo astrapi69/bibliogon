@@ -494,6 +494,10 @@ test.describe("Offline PWA (Dexie mode)", () => {
     test("publications work offline: add, mark published, drift, verify (#747)", async ({
         page,
     }) => {
+        // Create + two publishes + an autosave round-trip + a reload does not
+        // fit the 30s default; the first run of this spec died on that
+        // timeout mid-assertion rather than on the assertion itself.
+        test.setTimeout(90_000);
         await page.goto("/articles/new");
         await page.getByTestId("create-article-title").fill("Publiziert");
         await page.getByTestId("create-article-submit").click();
@@ -557,20 +561,27 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await page.keyboard.type("Ein Satz, der nach dem Publizieren dazukam.");
         // The editor's autosave debounce is 1s of inactivity; this waits out
         // that constant, not a race.
-        await page.waitForTimeout(1_500);
+        await page.waitForTimeout(2_000);
 
-        await expect
-            .poll(
-                async () => {
-                    await page.reload();
-                    await page
-                        .getByTestId("publications-panel")
-                        .waitFor({state: "visible", timeout: 15_000});
-                    return page.getByTestId(`publication-drift-warning-${id}`).count();
-                },
-                {timeout: 45_000, intervals: [1_000, 2_000, 3_000, 5_000]},
-            )
-            .toBeGreaterThan(0);
+        // One reload, then two assertions in the order that makes a failure
+        // name its own cause. Polling reloads was wrong: a reload discards
+        // whatever has not been written, so only the first one can ever
+        // succeed and the retries just re-read the same empty state.
+        await page.reload();
+        await expect(page.getByTestId("article-editor")).toBeVisible({timeout: 15_000});
+
+        // Did the content survive? This separates "the offline write never
+        // landed" from "it landed and the drift rule did not fire" - the two
+        // readings of the previous run, where drift stayed at 0.
+        await expect(page.locator(".ProseMirror").first()).toContainText(
+            "nach dem Publizieren",
+            {timeout: 10_000},
+        );
+
+        // Only now is drift meaningful.
+        await expect(page.getByTestId(`publication-drift-warning-${id}`)).toBeVisible({
+            timeout: 10_000,
+        });
 
         // And the user's "yes, I updated it there too" clears the warning.
         await page.getByTestId(`publication-verify-live-${id}`).click();
