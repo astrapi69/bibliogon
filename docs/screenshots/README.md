@@ -61,6 +61,7 @@ binary via the repo-level `.gitattributes` (`*.png binary`) — plain git, no LF
 | Writing goals | ![Writing Goals](book-editor/writing-goals.png) |
 | Storyboard | ![Storyboard](book-editor/storyboard.png) |
 | Story Bible | ![Story Bible](book-editor/story-bible.png) |
+| Translation siblings, grouped through the storage seam (#746) | ![Translation Links](book-editor/translation-links.png) |
 | Story-Bible auto-detect proposals (#732) | ![Story Bible Auto-Detect](book-editor/story-bible-auto-detect.png) |
 | Editor context menu | ![Context Menu](book-editor/context-menu.png) |
 | Read-aloud player (Web Speech API, offline #666) | ![Read-Aloud Player](book-editor/web-speech-tts.png) |

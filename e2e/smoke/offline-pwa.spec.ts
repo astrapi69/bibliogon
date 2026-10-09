@@ -451,6 +451,41 @@ test.describe("Offline PWA (Dexie mode)", () => {
         // this case pins is the persistence layer underneath them.
     });
 
+    test("translation links work offline: link two books, see the sibling (#746)", async ({
+        page,
+    }) => {
+        for (const title of ["Das Muster", "The Pattern"]) {
+            await page.goto("/books/new");
+            await page.getByTestId("create-book-title").fill(title);
+            await page.getByTestId("create-book-author").fill("Aster");
+            await page.getByTestId("create-book-submit").click();
+            await expect(page.getByText(title).first()).toBeVisible({timeout: 10000});
+        }
+
+        await page.getByText("Das Muster").first().click();
+        await page.waitForURL(/\/book\//);
+        const bookId = page.url().match(/\/book\/([^/?]+)/)?.[1];
+        await page.goto(`/book/${bookId}?view=metadata`);
+
+        // Before #746 this row short-circuited offline and always claimed
+        // "no translations linked", whether or not any were.
+        await expect(page.getByTestId("translation-links-row-unlinked")).toBeVisible();
+        await page.getByTestId("translation-link-btn").click();
+        await expect(page.getByTestId("translation-link-picker")).toBeVisible();
+        await page.getByTestId("translation-link-picker-list").waitFor({state: "visible"});
+        // The picker lists every OTHER book, so the only entry here is the
+        // sibling; its checkbox is the control, the title beside it is not.
+        await page.locator('[data-testid^="translation-link-pick-"]').first().check();
+        await page.getByTestId("translation-link-confirm").click();
+
+        // The sibling badge is the whole point of the feature; the hard gate
+        // in afterEach is what proves it came out of IndexedDB. The badge
+        // carries the sibling's language code, which both books take from the
+        // app default here, so the assertion is on the badge's presence.
+        await expect(page.getByTestId("translation-links-row")).toBeVisible();
+        await expect(page.locator('[data-testid^="translation-sibling-"]')).toHaveCount(1);
+    });
+
     test("story bible works offline: add an entity, it persists in Dexie", async ({
         page,
     }) => {

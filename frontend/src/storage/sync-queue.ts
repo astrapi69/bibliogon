@@ -218,6 +218,8 @@ export function makeQueueingStorage(base: IStorageService): IStorageService {
         // KDP wizard state + ARC reviewers (#737): local-only offline writes,
         // like chapter labels and A+ documents.
         kdp: base.kdp,
+        // Translation groups (#746): local-only offline writes, same shape.
+        translations: base.translations,
         // Story Bible: local-only offline writes (replay deferred); passthrough.
         storyBible: base.storyBible,
         // Picture-book pages + comic panels/bubbles: local-only offline writes

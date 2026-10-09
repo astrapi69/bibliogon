@@ -15,6 +15,32 @@ import unicodedata
 from bibliogon_aplus.rules import Ruleset
 from bibliogon_aplus.schema import AplusPackage, ValidationFinding
 
+#: Stable finding codes (#889). The validator's English ``message`` is a
+#: diagnostic and a fallback; a localized UI renders
+#: ``ui.aplus.finding.<code>`` with the finding's ``params``. The set is
+#: pinned by a test so a new rule cannot ship a code the catalogs have
+#: never heard of, which would silently fall back to English for every
+#: non-English reader.
+FINDING_CODES = frozenset(
+    {
+        "invalid_character",
+        "dash_not_allowed",
+        "emoji_not_allowed",
+        "hidden_character",
+        "over_max_length",
+        "marketing_imperative",
+        "leading_imperative",
+        "price_claim",
+        "brand_reference",
+        "genre_word_forbidden",
+        "genre_word_tone",
+        "alt_text_required",
+        "alt_text_over_max_length",
+        "bullet_count",
+        "image_count",
+    }
+)
+
 EM_DASH = "—"
 EN_DASH = "–"
 _DASH_RE = re.compile(f"[{EM_DASH}{EN_DASH}]")
@@ -166,7 +192,10 @@ def _check_text_field(
     if not _is_utf8_safe(text):
         findings.append(
             ValidationFinding(
-                field=field, severity="error", message="Text contains an invalid character."
+                field=field,
+                severity="error",
+                code="invalid_character",
+                message="Text contains an invalid character.",
             )
         )
 
@@ -175,13 +204,19 @@ def _check_text_field(
             ValidationFinding(
                 field=field,
                 severity="error",
+                code="dash_not_allowed",
                 message="Em dash or en dash found; use a plain hyphen or rewrite the sentence.",
             )
         )
 
     if _EMOJI_RE.search(text):
         findings.append(
-            ValidationFinding(field=field, severity="error", message="Emoji is not allowed.")
+            ValidationFinding(
+                field=field,
+                severity="error",
+                code="emoji_not_allowed",
+                message="Emoji is not allowed.",
+            )
         )
 
     hidden = _find_hidden_or_control_chars(text)
@@ -190,6 +225,7 @@ def _check_text_field(
             ValidationFinding(
                 field=field,
                 severity="error",
+                code="hidden_character",
                 message="Hidden or control character found (zero-width space, BOM, or similar).",
             )
         )
@@ -199,6 +235,8 @@ def _check_text_field(
             ValidationFinding(
                 field=field,
                 severity="error",
+                code="over_max_length",
+                params={"length": str(len(text)), "max": str(max_length)},
                 message=f"Text is {len(text)} characters, over the {max_length} limit.",
             )
         )
@@ -212,6 +250,8 @@ def _check_text_field(
                 ValidationFinding(
                     field=field,
                     severity="error",
+                    code="marketing_imperative",
+                    params={"term": imperative},
                     message=f"Marketing imperative '{imperative}' is not allowed in A+ text.",
                 )
             )
@@ -225,6 +265,8 @@ def _check_text_field(
                 ValidationFinding(
                     field=field,
                     severity="error",
+                    code="leading_imperative",
+                    params={"term": leading},
                     message=(
                         f"Text opens with an imperative verb form ('{leading}'); "
                         "A+ copy must not command the reader."
@@ -238,6 +280,8 @@ def _check_text_field(
                 ValidationFinding(
                     field=field,
                     severity="error",
+                    code="price_claim",
+                    params={"term": term},
                     message=f"Price, shipping or availability claim ('{term}') is not allowed.",
                 )
             )
@@ -249,6 +293,8 @@ def _check_text_field(
                 ValidationFinding(
                     field=field,
                     severity="error",
+                    code="brand_reference",
+                    params={"term": brand},
                     message=f"Third-party brand reference ('{brand}') is not allowed.",
                 )
             )
@@ -262,6 +308,8 @@ def _check_text_field(
                     ValidationFinding(
                         field=field,
                         severity="error",
+                        code="genre_word_forbidden",
+                        params={"term": word},
                         message=f"'{word}' is not appropriate for this genre.",
                     )
                 )
@@ -270,6 +318,8 @@ def _check_text_field(
                     ValidationFinding(
                         field=field,
                         severity="warning",
+                        code="genre_word_tone",
+                        params={"term": word},
                         message=f"'{word}' may not fit the intended tone; review before use.",
                     )
                 )
@@ -281,7 +331,10 @@ def _check_alt_text(field: str, alt_text: str, *, max_length: int) -> list[Valid
     if not alt_text or not alt_text.strip():
         return [
             ValidationFinding(
-                field=field, severity="error", message="Alt text is required and cannot be empty."
+                field=field,
+                severity="error",
+                code="alt_text_required",
+                message="Alt text is required and cannot be empty.",
             )
         ]
     if len(alt_text) > max_length:
@@ -289,6 +342,8 @@ def _check_alt_text(field: str, alt_text: str, *, max_length: int) -> list[Valid
             ValidationFinding(
                 field=field,
                 severity="error",
+                code="alt_text_over_max_length",
+                params={"length": str(len(alt_text)), "max": str(max_length)},
                 message=f"Alt text is {len(alt_text)} characters, over the {max_length} limit.",
             )
         ]
@@ -332,6 +387,8 @@ def validate_package(
             ValidationFinding(
                 field="bullets",
                 severity="error",
+                code="bullet_count",
+                params={"count": str(len(package.bullets))},
                 message=f"Exactly 3 bullets are required, got {len(package.bullets)}.",
             )
         )
@@ -372,6 +429,8 @@ def validate_package(
             ValidationFinding(
                 field="module_three_images",
                 severity="error",
+                code="image_count",
+                params={"count": str(len(package.module_three_images))},
                 message=(
                     f"Exactly 3 image entries are required, got {len(package.module_three_images)}."
                 ),

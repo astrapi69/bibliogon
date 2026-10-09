@@ -4691,6 +4691,49 @@ the current session's work. `git add -A` is fine there
 to avoid sensitive files" rule which is about
 security-class artefacts, not Multi-Tool-Coordination).
 
+### `git add <paths>` does not scope the commit (addendum 2026-10-09)
+
+Explicit-paths staging answers "what enters the index".
+It says nothing about "what leaves it", and a pathless
+`git commit` ships the WHOLE index - including anything
+staged earlier in the session and then forgotten.
+
+The shape, twice in one session on the same branch:
+
+```bash
+git checkout FETCH_HEAD -- docs/screenshots/*.png   # stages 5 files
+# ... minutes of other work ...
+git add e2e/feature-screenshots/capture-features.spec.ts
+git commit -m "test(e2e): ..."      # ships the spec AND the 5 PNGs
+```
+
+Both commits were honest about the spec change and
+silent about five binaries, which is worse than a messy
+commit: the message is now a false description of the
+diff, and a reviewer reading the subject has no reason
+to look.
+
+The mechanical safeguard is to name the paths on the
+COMMIT, not only on the add:
+
+```bash
+git commit -F - -- e2e/feature-screenshots/capture-features.spec.ts
+```
+
+`git commit <paths>` commits exactly those paths and
+leaves the rest of the index alone, so a stale staged
+file cannot ride along no matter how long ago it was
+added. `git checkout <tree> -- <paths>` and
+`git restore --source` both stage what they write, which
+is the most common way a file ends up staged and
+forgotten.
+
+The parent rule (plain `git status` before every commit)
+catches this too - and did not, both times, because the
+status check ran earlier in the chain rather than
+immediately before the commit. Run it as the line above
+the commit, not as the line above the work.
+
 ### Pairs with
 
 - "Multi-tool collaboration tracking: re-sync before

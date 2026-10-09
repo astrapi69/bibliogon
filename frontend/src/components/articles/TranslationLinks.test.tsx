@@ -7,10 +7,13 @@
  *   the Link button. Linked state: renders sibling badges +
  *   Unlink button.
  * - Sibling badge click invokes navigate("/book/{sibling-id}").
- * - Unlink invokes api.translations.unlink and re-loads.
+ * - Unlink invokes the seam's translations.unlink and re-loads.
  * - Link picker hides the current book, only allows confirm
  *   when at least one book is selected, and posts
- *   ``[bookId, ...selected]`` to api.translations.link.
+ *   ``[bookId, ...selected]`` to the seam's translations.link.
+ *
+ * Everything routes through ``getStorage()`` since #746, so the row works
+ * on the backendless build instead of rendering its offline placeholder.
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -42,8 +45,8 @@ const mockList = vi.fn();
 const mockUnlink = vi.fn();
 const mockLink = vi.fn();
 const mockBooksList = vi.fn();
-vi.mock("../../api/client", () => ({
-    api: {
+vi.mock("../../storage", () => ({
+    getStorage: () => ({
         translations: {
             list: (...args: unknown[]) => mockList(...args),
             unlink: (...args: unknown[]) => mockUnlink(...args),
@@ -52,7 +55,11 @@ vi.mock("../../api/client", () => ({
         books: {
             list: () => mockBooksList(),
         },
-    },
+    }),
+}));
+
+vi.mock("../../api/client", () => ({
+    api: {},
     ApiError: class extends Error {
         status: number;
         detail: string;

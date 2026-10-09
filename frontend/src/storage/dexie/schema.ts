@@ -17,6 +17,7 @@
 import Dexie, { type Table } from "dexie";
 
 import type { AplusDocumentRecord } from "../../api/platform";
+import type { TranslationGroupRow } from "./translations/groups";
 import type {
     Article,
     ArticleComment,
@@ -206,6 +207,12 @@ class BibliogonOfflineDB extends Dexie {
     chapterTemplates!: Table<ChapterTemplate, string>;
     /** Editable A+ documents (#891), one per book and language. */
     aplusDocuments!: Table<AplusDocumentRow, string>;
+    /** Translation-group membership (#746): one row per grouped book,
+     *  `book_id` as the key because a book belongs to at most one group.
+     *  Kept out of the book row on purpose - the API's `Book` shape has no
+     *  `translation_group_id`, and adding one on the Dexie side only would
+     *  make the two modes' book rows differ. */
+    translationGroups!: Table<TranslationGroupRow, string>;
     /** KDP Publishing-Wizard state (#737): one row per book, the shape
      *  `api.kdp.getPublishingState` returns, minus the `arc_reviewers`
      *  array — the reviewers are their own rows below, joined on read, so a
@@ -316,6 +323,11 @@ class BibliogonOfflineDB extends Dexie {
         this.version(15).stores({
             bookPublishingState: "id, book_id",
             kdpReviewers: "id, publishing_state_id",
+        });
+        // v16 (#746): translation-group membership. `book_id` is the primary
+        // key; `group_id` is indexed for the members-of-a-group lookup.
+        this.version(16).stores({
+            translationGroups: "book_id, group_id",
         });
     }
 }
