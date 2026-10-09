@@ -18,6 +18,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.exceptions import BibliogonError
+from app.middleware.security_headers import STATIC_SECURITY_HEADERS
 
 logger = logging.getLogger(__name__)
 
@@ -68,4 +69,9 @@ def register_exception_handlers(app: FastAPI, *, debug: bool) -> None:
             detail["stacktrace"] = traceback.format_exc()
             detail["endpoint"] = request.url.path
             detail["method"] = request.method
-        return JSONResponse(status_code=500, content=detail)
+        # Starlette installs the ``Exception`` handler on its OUTERMOST
+        # ServerErrorMiddleware, so this response never passes through
+        # SecurityHeadersMiddleware - it is the one response class that
+        # would ship without the headers. Set them here from the same dict
+        # the middleware uses rather than leave a 500 unprotected (#986).
+        return JSONResponse(status_code=500, content=detail, headers=dict(STATIC_SECURITY_HEADERS))

@@ -392,6 +392,7 @@ from app.middleware.body_size_limit import (
     BodySizeLimitMiddleware,
     _resolve_max_bytes_from_config,
 )
+from app.middleware.security_headers import SecurityHeadersMiddleware
 
 # Resolved once at startup. Editing app.max_upload_mb in app.yaml
 # requires a restart per the BodySizeLimitMiddleware docstring.
@@ -405,6 +406,11 @@ except Exception as _cfg_exc:
     _max_upload_bytes = 500 * 1024 * 1024
 
 app.add_middleware(BodySizeLimitMiddleware, max_bytes=_max_upload_bytes)
+
+# Security response headers (#986). Registered after the body-size limit
+# and before CORS, so it wraps the limit's own 413 (a rejected upload still
+# gets the headers) while CORS stays outermost and preflights are untouched.
+app.add_middleware(SecurityHeadersMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
