@@ -30,13 +30,14 @@
 
 import Dexie, { type Table } from "dexie";
 
+import { storageDbName } from "../../../lib/storageNamespace";
 import type {
     BackupHistoryEntry,
     BackupHistoryEvent,
     BackupHistoryStorage,
 } from "../../types";
 
-const DB_NAME = "bibliogon-backup-history";
+const DB_NAME = storageDbName("bibliogon-backup-history");
 
 /** Matches the backend's `_MAX_ENTRIES`: the newest 100, then the oldest go. */
 export const MAX_HISTORY_ENTRIES = 100;

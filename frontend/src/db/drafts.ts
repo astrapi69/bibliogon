@@ -9,6 +9,7 @@
  */
 
 import Dexie, {type Table} from "dexie"
+import {storageDbName} from "../lib/storageNamespace"
 
 export interface ChapterDraft {
   chapterId: string
@@ -22,7 +23,7 @@ class BibliogonDB extends Dexie {
   drafts!: Table<ChapterDraft, string>
 
   constructor() {
-    super("bibliogon")
+    super(storageDbName("bibliogon"))
     this.version(1).stores({
       drafts: "chapterId, bookId, savedAt",
     })
