@@ -160,6 +160,11 @@ html, body {
 
 .comic-panel {
     box-sizing: border-box;
+    /* The other half of the minmax(0, 1fr) fix in layout.py: a grid item's
+       automatic minimum size is its content, so without this an oversized
+       panel image can still push its track open. */
+    min-width: 0;
+    min-height: 0;
 }
 """
 
