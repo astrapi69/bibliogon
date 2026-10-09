@@ -2215,6 +2215,7 @@ ui:
     snapshot_name_placeholder: "スナップショット名（任意）"
     snapshot_taken: "スナップショットを作成しました。"
     snapshot_failed: "スナップショットを作成できませんでした。"
+    snapshot_local_only: "サーバーに接続していない状態で作成したスナップショットはこの端末に残ります。サーバー側のバックアップやデスクトップアプリには表示されません。"
     snapshot_badge: "スナップショット"
     delete: "スナップショットを削除"
     delete_confirm_title: "スナップショットを削除しますか？"

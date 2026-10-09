@@ -2224,6 +2224,7 @@ ui:
     snapshot_name_placeholder: "Snapshot-Name (optional)"
     snapshot_taken: "Snapshot erstellt."
     snapshot_failed: "Snapshot konnte nicht erstellt werden."
+    snapshot_local_only: "Snapshots, die ohne Serververbindung aufgenommen werden, bleiben auf diesem Gerät. Sie erscheinen nicht in serverseitigen Backups und nicht in der Desktop-App."
     snapshot_badge: "Snapshot"
     delete: "Snapshot löschen"
     delete_confirm_title: "Snapshot löschen?"

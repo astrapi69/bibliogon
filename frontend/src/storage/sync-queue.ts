@@ -150,13 +150,21 @@ export function makeQueueingStorage(base: IStorageService): IStorageService {
             reorder: base.chapters.reorder,
             // Version history (#728): the three reads pass through like
             // list/get. The three writes are local-only offline and are NOT
-            // queued — the queue only models book/chapter/article, and the
-            // automatic versions would double up anyway because replaying a
-            // chapter update makes the server write its own. Replaying a
-            // MANUAL snapshot needs its own model + conflict rule (the
-            // chapter may have moved on server-side by replay time), tracked
-            // separately; restore already replays through the chapter row it
-            // rewrites, which `update` above queues.
+            // queued, and that is now a decision rather than a deferral
+            // (#848). Automatic versions would double up, because replaying
+            // a chapter update makes the server write its own. Restore
+            // already replays through the chapter row it rewrites, which
+            // `update` above queues. A MANUAL snapshot is deliberately NOT
+            // replayed: the row carries the chapter's `version` at capture
+            // time, so replaying it would either claim a server version
+            // that no longer describes its content, or - if rewritten to
+            // the server's current version - let two devices hand the same
+            // number to different content. An offline snapshot is the
+            // offline user's own history; ChapterVersionsView says so under
+            // the take-row instead of leaving the limit to be discovered.
+            // An identity that does not borrow the server's counter
+            // (content hash + capture time + device) is the target state,
+            // described in #996 and not implemented here.
             listVersions: base.chapters.listVersions,
             getVersion: base.chapters.getVersion,
             diffVersion: base.chapters.diffVersion,

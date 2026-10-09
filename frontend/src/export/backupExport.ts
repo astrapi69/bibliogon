@@ -149,7 +149,10 @@ async function gatherPages(
  * ``create`` and are not restored on import. Per-article publications and
  * the platform registry are still reserved (emitted empty) — see the
  * field docs. Chapter snapshots are NOT carried: restoring one needs a
- * create-with-content path the seam does not have (#848).
+ * create-with-content path the seam does not have, and a snapshot's
+ * identity today is the chapter's server-assigned `version`, which means
+ * nothing in the database a backup is restored into. #996 is the shape
+ * that makes carrying them safe (identity by content hash).
  *
  * @param exportedAt - ISO-8601 timestamp stamped into the envelope.
  */

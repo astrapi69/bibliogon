@@ -13,6 +13,15 @@
  * offline against the Dexie `chapterVersions` table instead of being a
  * disabled page (#728).
  *
+ * A manual snapshot taken while writes go to Dexie stays on the device
+ * (#848). It is deliberately not queued for replay: the row carries the
+ * chapter's `version` at capture time, and by replay time the server
+ * chapter can be several versions ahead - so the snapshot would land
+ * either under a version that no longer describes its content, or under
+ * a number a second device could hand to different content. The note
+ * under the take-row says so, because the alternative is a limit the
+ * user only discovers by looking for the snapshot on another machine.
+ *
  * Chrome-free: the page (ChapterVersionsPage) supplies the PageLayout
  * shell + title + Back; this component self-fetches for the chapter. The
  * restore/delete confirms stay AppDialog confirmations.
@@ -31,6 +40,7 @@ import {
   type ChapterVersionDiff,
 } from "../../api/client";
 import { getStorage } from "../../storage";
+import { useStorageMode } from "../../storage/useStorageMode";
 import { useI18n } from "../../hooks/useI18n";
 import { useDialog } from "../shared/AppDialog";
 import { notify } from "../../utils/platform/notify";
@@ -52,6 +62,7 @@ export default function ChapterVersionsView({
 }: Props) {
   const { t } = useI18n();
   const dialog = useDialog();
+  const { mode } = useStorageMode();
   const [versions, setVersions] = useState<ChapterVersionSummary[] | null>(
     null,
   );
@@ -261,6 +272,18 @@ export default function ChapterVersionsView({
               {t("ui.versions.take_snapshot", "Snapshot erstellen")}
             </button>
           </div>
+
+          {mode === "dexie" ? (
+            <p
+              className="mt-2 mb-0 text-sm text-muted-foreground"
+              data-testid="chapter-snapshot-local-only"
+            >
+              {t(
+                "ui.versions.snapshot_local_only",
+                "Snapshots, die ohne Serververbindung aufgenommen werden, bleiben auf diesem Gerät. Sie erscheinen nicht in serverseitigen Backups und nicht in der Desktop-App.",
+              )}
+            </p>
+          ) : null}
 
           {loading ? (
             <LoadingIndicator

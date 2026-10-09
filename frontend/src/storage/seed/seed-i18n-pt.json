@@ -2287,6 +2287,7 @@
       "snapshot_name_placeholder": "Nome do instantaneo (opcional)",
       "snapshot_taken": "Instantaneo criado.",
       "snapshot_failed": "Nao foi possivel criar o instantaneo.",
+      "snapshot_local_only": "Um instantâneo criado sem ligação ao servidor permanece neste dispositivo. Não aparece nas cópias de segurança do servidor nem na aplicação de ambiente de trabalho.",
       "snapshot_badge": "Instantaneo",
       "delete": "Excluir instantaneo",
       "delete_confirm_title": "Excluir instantaneo?",

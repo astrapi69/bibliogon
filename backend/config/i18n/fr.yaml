@@ -2215,6 +2215,7 @@ ui:
     snapshot_name_placeholder: "Nom de l'instantane (facultatif)"
     snapshot_taken: "Instantane cree."
     snapshot_failed: "Impossible de creer l'instantane."
+    snapshot_local_only: "Un instantané pris sans connexion au serveur reste sur cet appareil. Il n'apparaît ni dans les sauvegardes côté serveur ni dans l'application de bureau."
     snapshot_badge: "Instantane"
     delete: "Supprimer l'instantane"
     delete_confirm_title: "Supprimer l'instantane ?"
