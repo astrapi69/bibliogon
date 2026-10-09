@@ -136,12 +136,108 @@ def sanitize_import_markdown(content: str, language: str) -> str:
     return content
 
 
+#: CSS properties the editor itself emits, derived from the extensions it
+#: mounts rather than from a guess about what looks harmless (#988):
+#: ``text-align`` from TextAlign on headings + paragraphs, ``color`` from
+#: @tiptap/extension-color, ``background-color`` from Highlight with
+#: multicolor, and ``width``/``min-width`` from resizable table columns.
+#: Anything else in an imported style attribute arrived from an importer.
+ALLOWED_STYLE_PROPERTIES: frozenset[str] = frozenset(
+    {
+        "text-align",
+        "color",
+        "background-color",
+        "width",
+        "min-width",
+    }
+)
+
+#: One ``style`` attribute in any of the three forms HTML allows. The
+#: quoted alternatives are quote-type-specific on purpose: one character
+#: class excluding BOTH quotes would fail to match a double-quoted value
+#: that contains an apostrophe, such as a font-family stack, and would
+#: leave that attribute - declarations and all - unfiltered.
+_STYLE_ATTR_RE = re.compile(
+    r"""(?P<prefix>\sstyle\s*=\s*)"""
+    r"""(?:"(?P<dq>[^"]*)"|'(?P<sq>[^']*)'|(?P<bare>[^\s>"']+))""",
+    re.IGNORECASE,
+)
+
+
+def filter_style_declarations(value: str) -> str:
+    """Return only the allowlisted declarations of one style attribute.
+
+    Declarations split on ``;`` and match on the property name, lower-cased
+    and stripped. A fragment without a colon is not a declaration and is
+    dropped.
+    """
+    kept: list[str] = []
+    for declaration in value.split(";"):
+        if ":" not in declaration:
+            continue
+        prop, _, rest = declaration.partition(":")
+        if prop.strip().lower() in ALLOWED_STYLE_PROPERTIES:
+            kept.append(f"{prop.strip().lower()}: {rest.strip()}")
+    return "; ".join(kept)
+
+
+def filter_import_styles(html: str) -> str:
+    """Rewrite every ``style`` attribute down to the allowlist (#988).
+
+    Imported HTML lands in ``Chapter.content`` as HTML and stays HTML
+    until someone opens and saves it in the editor (#787). Until then
+    nothing has filtered it, so a declaration the author never wrote
+    travels into the document that is rendered, exported and shipped to a
+    store. No script executes - the schema and DOMPurify keep the
+    dangerous attributes out - but ``position: fixed`` inside the editor,
+    a ``background-image: url(...)`` that fetches from a third party when
+    the chapter opens, and declarations that change a layout the author
+    approved in the EPUB or print PDF all reach further than they look.
+
+    Filtering happens on the IMPORT path so the stored document is the
+    clean one; filtering at render time would leave the declaration in the
+    database, where the next export would find it.
+
+    An attribute left with nothing is removed entirely rather than left as
+    ``style=""``. An unquoted value is re-emitted quoted, which is the
+    same attribute in valid markup. A regex over the attribute VALUE is
+    the right tool and not a violation of the "no regex for nested HTML"
+    rule: it rewrites the contents of one attribute, which cannot nest
+    and cannot contain the quote that delimits it. The document
+    structure is never parsed.
+    """
+    if not html or "style" not in html.lower():
+        return html
+
+    def replace(match: re.Match[str]) -> str:
+        raw = match.group("dq")
+        quote = '"'
+        if raw is None:
+            raw = match.group("sq")
+            quote = "'"
+        if raw is None:
+            raw = match.group("bare")
+            quote = '"'
+        filtered = filter_style_declarations(raw)
+        if not filtered:
+            return ""
+        return f"{match.group('prefix')}{quote}{filtered}{quote}"
+
+    return _STYLE_ATTR_RE.sub(replace, html)
+
+
 def md_to_html(text: str) -> str:
     """Convert markdown to HTML for the TipTap editor.
 
     TipTap stores content as JSON internally but parses HTML via setContent().
     Storing imported markdown as HTML ensures the editor renders it correctly
     instead of showing raw markdown symbols.
+
+    Raw HTML embedded in the markdown passes through the converter, so the
+    result goes through ``filter_import_styles`` before it is returned
+    (#988). This is where the markdown, markdown-folder, scrivener, office,
+    git-sync and write-book-template importers converge; the ``.html``
+    branch of the single-file handler filters its own markup.
     """
     if not text or not text.strip():
         return ""
@@ -175,7 +271,7 @@ def md_to_html(text: str) -> str:
         r"\1",
         html,
     )
-    return html
+    return filter_import_styles(html)
 
 
 def import_special_chapters(

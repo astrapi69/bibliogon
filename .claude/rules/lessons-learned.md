@@ -5965,3 +5965,64 @@ repository. #976 attributed exactly this to a cache that `security-scan.yml`
 does not have - that workflow builds a fresh venv every run. The sync there is
 still right, the reason was wrong, and the shape is worth remembering: the one
 workflow that audits an environment was the one that never cached it.
+
+## A security property that only holds while an optional plugin is enabled is not held
+
+Filed 2026-10-09 (#988), found while writing the regression pin rather than the fix.
+
+Imported HTML lands in `Chapter.content` as HTML and stays HTML until someone
+opens and saves the chapter in the editor (#787). The first four end-to-end
+tests for the style filter went GREEN before the filter existed - the stored
+chapter carried no `style` attribute at all. The reason is three layers away
+from the import path: ms-tools' `content_pre_import` hook calls its sanitizer,
+whose `_strip_style_attributes` removes EVERY style attribute as part of a
+Word-cruft cleanup. The attribute was gone before `md_to_html` ever saw it.
+
+That stripping is real and it is load-bearing in practice, but it holds only
+while:
+
+- the ms-tools plugin is in `plugins.enabled`,
+- its `auto_sanitize_on_import` setting is true (it defaults to true, and the
+  Settings UI can turn it off), and
+- the hook does not raise (`sanitize_import_markdown` logs and returns the
+  original content on any exception).
+
+Each of those is a legitimate user configuration. With the plugin off, the
+imported `position: fixed` and `background-image: url(https://…)` were in the
+stored chapter on every one of the four paths - which is what the reds showed
+once the test stubbed the hook to the identity.
+
+### The rule
+
+When a test for a security property passes before the fix, do not conclude the
+property holds. Find WHAT makes it pass, and ask whether that thing is part of
+the contract or a side effect. A side effect in an optional, user-disablable,
+fail-open component is not a control: it is a coincidence that currently has
+the same shape as one. The control belongs in the core path, where no setting
+can switch it off; the side effect may stay as the broader cleanup it was
+written to be.
+
+Concretely, the test must be written against the configuration the finding is
+about. Stubbing the optional layer out is not weakening the test - it is the
+only way the test observes the layer it claims to cover. State the reason at
+the stub, or the next reader removes it as noise.
+
+### Corollary for a filter written as a regex over an attribute value
+
+Both bypasses below were in the first draft of the same filter and neither was
+caught by the four end-to-end tests, because python-markdown passes raw HTML
+through verbatim and the attribute simply did not match:
+
+- `(?P<quote>["'])(?P<value>[^"']*)(?P=quote)` excludes BOTH quotes from the
+  value, so `style="font-family: 'Arial'; position: fixed"` does not match at
+  all - and an attribute that does not match is an attribute that ships
+  unfiltered. Make the value class quote-type-specific: `"([^"]*)"` or
+  `'([^']*)'`.
+- HTML allows an unquoted value. `style=position:fixed` is valid markup and
+  needs its own alternative (`[^\s>"']+`), re-emitted quoted.
+
+A filter that fails open on an input it does not recognise inverts the usual
+"diagnostic features must fail open" rule. For a security filter the default
+is the opposite: if the shape is unfamiliar, it must still be handled, and the
+test set needs one case per accepted shape - not one case per shape you
+happened to write first.
