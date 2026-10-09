@@ -124,7 +124,7 @@ def _write_book_state(book: Book, db: Any, repo_dir: Path) -> None:
     ]
 
     manuscript = repo_dir / "manuscript"
-    _clear_chapter_json(manuscript)
+    _clear_owned_chapter_files(manuscript)
     for files in rendered:
         section_dir = manuscript / files.section
         (section_dir / f"{files.stem}.json").write_text(files.json_text, encoding="utf-8")
@@ -138,19 +138,28 @@ def _write_book_state(book: Book, db: Any, repo_dir: Path) -> None:
     )
 
 
-def _clear_chapter_json(manuscript: Path) -> None:
-    """Remove previous chapter JSON so removed chapters drop from git.
+def _clear_owned_chapter_files(manuscript: Path) -> None:
+    """Remove the previous chapter files so removed chapters drop from git.
 
-    Only ``*.json`` is cleared - a removed chapter's ``.md`` currently
-    survives. Cleaning ``*.md`` here would be unsafe: in a repo whose
-    working tree holds author-written Markdown (an adopted upstream
-    history), a blanket glob would delete the author's manuscript. See
-    #844 for the owned-file-only cleanup.
+    Each chapter is written as a pair: canonical ``NN-slug.json`` plus the
+    advisory ``NN-slug.md``. Clearing only the JSON left the Markdown behind
+    forever, and since stems are position-based, removing an early chapter
+    renumbers the rest and the stale files linger under names that belong to
+    nothing - or collide with another chapter's new stem (#844).
+
+    A blanket ``*.md`` glob is not the fix. In a repo whose working tree
+    holds author-written Markdown (an adopted upstream history, #841) it
+    would delete the author's manuscript. The sibling JSON is what proves
+    the Markdown is ours, so the pair is removed together and a ``.md``
+    without one - ``about-the-author.md`` and friends - is never touched.
     """
     for sub in ("front-matter", "chapters", "back-matter"):
         section_dir = manuscript / sub
         if section_dir.exists():
             for file in section_dir.glob("*.json"):
+                sidecar = file.with_suffix(".md")
+                if sidecar.is_file():
+                    sidecar.unlink()
                 file.unlink()
         section_dir.mkdir(parents=True, exist_ok=True)
 
