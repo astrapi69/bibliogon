@@ -219,4 +219,3 @@ nobody here can start.
 a strategic shift, or quarterly. The previous backlog audit was 2026-05-20,
 which is why this one was overdue. Next due **2026-01-09** at the latest, or
 when the publishing or Maximal-Offline arc starts in earnest.
-
