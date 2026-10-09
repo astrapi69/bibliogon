@@ -451,6 +451,7 @@ bandit-backend: ## bandit Python SAST (medium severity + confidence; baseline: d
 # `make security-backend` remain the push/PR gate mirrored from ci.yml.
 
 check-security: ## Dependency + SAST scan (blocks on Critical/High; mirrors security-scan.yml Phase 2)
+	@cd backend && poetry run python -m pip install --quiet --upgrade pip
 	cd backend && poetry run pip-audit --skip-editable \
 	  $$(poetry run python ../scripts/security_ignore_args.py)
 	cd backend && poetry run bandit -c pyproject.toml -r app ../plugins ../scripts \
