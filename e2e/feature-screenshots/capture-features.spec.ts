@@ -246,11 +246,49 @@ test.describe("Feature Screenshots", () => {
         });
 
         test("web speech read-aloud player", async ({page}) => {
+            // Headless Chromium ships speechSynthesis with no voices, so a
+            // real click left the FAB idle and the catalog shot showed the
+            // button rather than the player it is named after. Same stub the
+            // smoke spec uses (#711/#712), for the same reason.
+            await page.addInitScript(() => {
+                class FakeUtterance {
+                    text: string;
+                    rate = 1;
+                    lang = "";
+                    voice: unknown = null;
+                    onend: (() => void) | null = null;
+                    onerror: (() => void) | null = null;
+                    onboundary: (() => void) | null = null;
+                    constructor(text: string) {
+                        this.text = text;
+                    }
+                }
+                Object.defineProperty(window, "SpeechSynthesisUtterance", {
+                    value: FakeUtterance,
+                    configurable: true,
+                });
+                Object.defineProperty(window, "speechSynthesis", {
+                    configurable: true,
+                    value: {
+                        speak: () => {},
+                        cancel: () => {},
+                        pause: () => {},
+                        resume: () => {},
+                        getVoices: () => [],
+                        addEventListener: () => {},
+                        removeEventListener: () => {},
+                    },
+                });
+            });
             const book = await seedProseBook("Schreiben am Meer");
             await page.goto(`/book/${book.id}`);
             // Start playback so the mini-player (play/pause + stop + speed)
             // is in frame rather than the idle floating button.
             await page.getByTestId("web-speech-tts-button").click().catch(() => {});
+            await page
+                .getByTestId("web-speech-tts-player")
+                .waitFor({state: "visible"})
+                .catch(() => {});
             await page.waitForTimeout(400);
             await page.screenshot({path: `${OUT}/book-editor/web-speech-tts.png`});
         });
@@ -1000,9 +1038,32 @@ test.describe("Feature Screenshots", () => {
         });
 
         test("writing-statistics dashboard", async ({page}) => {
-            // The dashboard surfaces today/weekly/project/heatmap widgets;
-            // writing sessions are not API-seedable, so a fresh DB renders
-            // the empty state — still a valid catalog shot of the route.
+            // Sessions have no endpoint of their own, but record_progress
+            // fires on a chapter content PATCH - the same trick the writing-
+            // goals block uses. Without it the shot was the empty state,
+            // which documents the route and nothing of the feature.
+            const book = await seedProseBook("Schreiben am Meer");
+            const chapters = await page.request
+                .get(`${API}/books/${book.id}/chapters`)
+                .then((r) => r.json())
+                .catch(() => [] as Array<{id: string; version: number}>);
+            if (chapters[0]) {
+                // The recorded progress is the word-count DELTA, floored at
+                // zero, so patching with a sentence would log a day of "0
+                // words" and the ring would read 0/500 on a dashboard whose
+                // whole subject is how much was written. A long lead makes
+                // the delta positive, which is what the widgets are for.
+                const lead = Array.from(
+                    {length: 12},
+                    (_, i) =>
+                        `Am ${i + 1}. Morgen kamen die Sätze leicht: eine Szene zwischen Sonnenaufgang und dem ersten Kaffee, eine Figur, die endlich sagt, was sie die ganze Zeit gemeint hat, und ein Absatz, der am Abend noch steht.`,
+                ).join(" ");
+                await page.request
+                    .patch(`${API}/books/${book.id}/chapters/${chapters[0].id}`, {
+                        data: {content: PROSE(lead), version: chapters[0].version},
+                    })
+                    .catch(() => {});
+            }
             await page.goto("/statistics");
             await page
                 .getByTestId("statistics-dashboard-page")

@@ -39,7 +39,7 @@ binary via the repo-level `.gitattributes` (`*.png binary`) — plain git, no LF
 | Article dashboard | ![Article Dashboard](dashboard/article-dashboard.png) |
 | Recent documents | ![Recent Documents](dashboard/recent-documents.png) |
 | Trash view | ![Trash View](dashboard/trash-view.png) |
-| Writing statistics (#668) | _pending capture_ — `dashboard/writing-statistics.png` |
+| Writing statistics (#668) | ![Writing Statistics](dashboard/writing-statistics.png) |
 | Writing history — CSV export, client-side in both modes (#744) | ![Writing History CSV](dashboard/writing-history-csv.png) |
 
 ## Book Creation
@@ -62,10 +62,10 @@ binary via the repo-level `.gitattributes` (`*.png binary`) — plain git, no LF
 | Storyboard | ![Storyboard](book-editor/storyboard.png) |
 | Story Bible | ![Story Bible](book-editor/story-bible.png) |
 | Translation siblings, grouped through the storage seam (#746) | ![Translation Links](book-editor/translation-links.png) |
-| Story-Bible auto-detect proposals (#732) | _pending capture_ — `book-editor/story-bible-auto-detect.png` |
+| Story-Bible auto-detect proposals (#732) | ![Story Bible Auto-Detect](book-editor/story-bible-auto-detect.png) |
 | Editor context menu | ![Context Menu](book-editor/context-menu.png) |
-| Read-aloud player (Web Speech API, offline #666) | _pending capture_ — `book-editor/web-speech-tts.png` |
-| AI grammar + translation tools (offline, key-required #661/#669) | _pending capture_ — `book-editor/ai-text-tools-offline.png` |
+| Read-aloud player (Web Speech API, offline #666) | ![Read-Aloud Player](book-editor/web-speech-tts.png) |
+| AI grammar + translation tools (offline, key-required #661/#669) | ![AI Text Tools](book-editor/ai-text-tools-offline.png) |
 
 ## Article Editor
 
@@ -106,7 +106,7 @@ binary via the repo-level `.gitattributes` (`*.png binary`) — plain git, no LF
 
 | Feature | Screenshot |
 | --- | --- |
-| Shortcuts overview dialog (Ctrl+/ or ?, #662) | _pending capture_ — `shortcuts/overview-dialog.png` |
+| Shortcuts overview dialog (Ctrl+/ or ?, #662) | ![Shortcuts Overview](shortcuts/overview-dialog.png) |
 
 ## Quality Report
 
