@@ -7,6 +7,7 @@
  */
 
 import {
+    SEED_ARTICLE_PLATFORMS,
     SEED_BOOK_TYPES,
     SEED_CHAPTER_TEMPLATES,
     SEED_CONTENT_TYPES,
@@ -47,6 +48,12 @@ async function doSeed(): Promise<void> {
         await offlineDb.contentTypesRef.put({
             key: REF_KEY,
             data: SEED_CONTENT_TYPES,
+        });
+    }
+    if (!(await offlineDb.articlePlatformsRef.get(REF_KEY))) {
+        await offlineDb.articlePlatformsRef.put({
+            key: REF_KEY,
+            data: SEED_ARTICLE_PLATFORMS,
         });
     }
     if (!(await offlineDb.storyEntityTypesRef.get(REF_KEY))) {

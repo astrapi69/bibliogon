@@ -209,9 +209,10 @@ export interface PublicationStorage {
     list: typeof api.publications.list;
 }
 
-/** Publishing platform schemas (reference data for the publish UI).
- *  Seam-routed read so the editor's offline load returns an empty map
- *  instead of erroring; publishing itself remains backend-only. */
+/** Publishing platform schemas: reference data for the publish UI, seeded
+ *  offline like the type registries (#1015) so the per-platform form has
+ *  fields to render on the backendless build. Publishing itself is still
+ *  backend-only (#747). */
 export interface ArticlePlatformStorage {
     list: typeof api.articlePlatforms.list;
 }

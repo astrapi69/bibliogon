@@ -151,6 +151,28 @@ def generate_story_entity_types() -> None:
     _write_json("seed-story-entity-types.json", data)
 
 
+def generate_article_platforms() -> None:
+    """Emit the article-platform schemas in the API's response shape.
+
+    Reference data, not server state: the YAML changes when someone
+    edits it, never per user and never per request, so the offline
+    build can carry it like the book- and content-type registries
+    (#1015). Passing each entry through ``PlatformSchemaOut`` fills the
+    optional fields the way ``GET /api/article-platforms`` does, so a
+    seeded row and an API row are the same object.
+    """
+    from app.schemas import PlatformSchemaOut
+    from app.services.platform_schema import load_platform_schemas
+
+    data = {
+        platform: PlatformSchemaOut(**schema).model_dump(mode="json")
+        for platform, schema in load_platform_schemas().items()
+    }
+    if not data:
+        raise SystemExit("ERROR: load_platform_schemas() returned nothing")
+    _write_json("seed-article-platforms.json", data)
+
+
 def generate_plugin_metadata() -> None:
     plugins = []
     for name in VISIBLE_PLUGINS:
@@ -391,6 +413,7 @@ def main(argv: list[str] | None = None) -> None:
     generate_book_types()
     generate_content_types()
     generate_story_entity_types()
+    generate_article_platforms()
     generate_plugin_metadata()
     generate_help()
     generate_help_docs()

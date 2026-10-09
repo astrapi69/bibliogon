@@ -14,6 +14,7 @@ import {
     ensureSeeded,
     offlineDb,
 } from "./dexie-storage";
+import { REF_KEY } from "./dexie/schema";
 
 beforeEach(async () => {
     await Promise.all(offlineDb.tables.map((t) => t.clear()));
@@ -1310,13 +1311,50 @@ describe("DexieStorage — comic panels + bubbles", () => {
 });
 
 describe("DexieStorage — publishing surfaces (offline defaults)", () => {
-    it("returns empty publications/platforms + an empty plugin-status map", async () => {
+    it("returns empty publications + an empty plugin-status map", async () => {
         // These backend-only reads must resolve to empty offline so opening
         // the article/chapter editor in Dexie mode fires no /api request and
-        // never errors. Publishing + plugins stay desktop-only.
+        // never errors. The publish MUTATIONS stay desktop-only (#747).
         expect(await dexieStorage.publications.list("any-article")).toEqual([]);
-        expect(await dexieStorage.articlePlatforms.list()).toEqual({});
         expect(await dexieStorage.editorPluginStatus.get()).toEqual({});
+    });
+});
+
+describe("DexieStorage — article-platform schemas (#1015)", () => {
+    it("serves the seeded schemas instead of an empty map", async () => {
+        const schemas = await dexieStorage.articlePlatforms.list();
+        // An empty map is what this used to return, and it left the publish
+        // form with no fields to render - so the shape matters as much as
+        // the count.
+        expect(Object.keys(schemas).length).toBeGreaterThan(0);
+        expect(schemas.medium?.display_name).toBe("Medium");
+        expect(schemas.medium?.required_metadata).toContain("tags");
+    });
+
+    it("carries the limits the metadata validator reads", async () => {
+        const schemas = await dexieStorage.articlePlatforms.list();
+        // max_tags on Medium and max_chars_per_post on X are what make an
+        // offline validation verdict agree with the backend's.
+        expect(typeof schemas.medium?.max_tags).toBe("number");
+        expect(typeof schemas.x?.max_chars_per_post).toBe("number");
+    });
+
+    it("seeds on first init, so a fresh database is not empty", async () => {
+        // The tables were cleared and the seed memo reset in beforeEach, so
+        // this call is the first-init path rather than a cached read.
+        await Promise.all(offlineDb.tables.map((t) => t.clear()));
+        __resetSeedForTests();
+        expect(Object.keys(await dexieStorage.articlePlatforms.list())).toContain("medium");
+    });
+
+    it("prefers a stored row over the compiled-in seed", async () => {
+        await ensureSeeded();
+        await offlineDb.articlePlatformsRef.put({
+            key: REF_KEY,
+            data: { onlyone: { display_name: "Only One", required_metadata: [] } },
+        } as never);
+        const schemas = await dexieStorage.articlePlatforms.list();
+        expect(Object.keys(schemas)).toEqual(["onlyone"]);
     });
 });
 
