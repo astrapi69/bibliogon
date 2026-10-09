@@ -11,12 +11,17 @@ Tests redirect via the ``GIT_CRED_DIR`` module attribute.
 
 from __future__ import annotations
 
-import urllib.parse
+import contextlib
+from collections.abc import Iterator
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from app import credential_store
 from app.paths import get_config_dir
 from app.services import ssh_keys
+
+if TYPE_CHECKING:  # pragma: no cover - import for typing only
+    import git
 
 # Per-book PAT directory override. ``None`` means "resolve fresh under the
 # data dir" (see ``_cred_dir``); tests monkeypatch this to a tmp_path. Access
@@ -88,31 +93,6 @@ def is_ssh_url(url: str) -> bool:
     return False
 
 
-def inject_pat_into_url(url: str, book_id: str) -> str:
-    """Return ``url`` with the per-book PAT embedded for HTTPS auth.
-
-    Returns the input unchanged when:
-    - URL is not http/https (SSH, file://, ...).
-    - No PAT is stored for ``book_id``.
-
-    Stripping any pre-existing ``user:pw@`` prevents double credentials
-    when a user pasted a token-bearing URL.
-    """
-    scheme = url.split("://", 1)[0] if "://" in url else ""
-    if scheme not in ("http", "https"):
-        return url
-
-    pat = load_pat(book_id)
-    if not pat:
-        return url
-
-    encoded_pat = urllib.parse.quote(pat, safe="")
-    prefix, rest = url.split("://", 1)
-    if "@" in rest:
-        rest = rest.split("@", 1)[1]
-    return f"{prefix}://x-access-token:{encoded_pat}@{rest}"
-
-
 def ssh_env(url: str) -> dict[str, str] | None:
     """Return a ``GIT_SSH_COMMAND`` env mapping for SSH URLs when a
     Bibliogon-managed key exists. None otherwise.
@@ -128,3 +108,98 @@ def ssh_env(url: str) -> dict[str, str] | None:
     key_path = ssh_keys.private_key_path().resolve()
     cmd = f'ssh -i "{key_path}" -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new'
     return {"GIT_SSH_COMMAND": cmd}
+
+
+#: The username git is told to use alongside a PAT. GitHub ignores the
+#: value for a token; GitLab and Bitbucket accept it. It only has to be
+#: non-empty.
+PAT_USERNAME = "x-access-token"
+
+#: The environment variable the credential helper reads the token from.
+#: The environment rather than a file or the command line (#989):
+#: ``/proc/<pid>/environ`` is readable by the process owner alone, while
+#: ``.git/config`` is readable by anything that can read the working copy
+#: - a backup job, a sync client, a crash dump - and argv is readable by
+#: every process of the same user.
+PAT_ENV_VAR = "BIBLIOGON_GIT_PAT"
+
+#: A one-shot git credential helper, as the shell function form git
+#: accepts after ``!``. It answers only the ``get`` action - ``store``
+#: and ``erase`` are no-ops, so git cannot persist the token anywhere -
+#: and it reads the password from the environment, so the token appears
+#: neither in the config file nor in the process arguments.
+_CREDENTIAL_HELPER = (
+    '!f() { test "$1" = get && printf "username='
+    + PAT_USERNAME
+    + '\\npassword=%s\\n" "$'
+    + PAT_ENV_VAR
+    + '"; }; f'
+)
+
+
+def pat_git_config(url: str, book_id: str) -> tuple[list[str], dict[str, str]] | None:
+    """Return the ``git -c`` values and environment that authenticate ``url``.
+
+    ``None`` when the URL is not http/https or no PAT is stored for the
+    book, in which case the caller leaves the invocation untouched and
+    git falls back to the user's ambient credentials.
+
+    The first ``credential.helper`` value is empty on purpose: git treats
+    an empty value as "reset the helper list", so an ambient helper
+    configured globally cannot see this request and cannot cache the
+    token. ``GIT_TERMINAL_PROMPT=0`` makes a rejected or missing token
+    fail instead of blocking on a prompt no one can answer.
+
+    Example::
+
+        auth = pat_git_config(url, book_id)
+        if auth is not None:
+            options, env = auth
+    """
+    scheme = url.split("://", 1)[0] if "://" in url else ""
+    if scheme not in ("http", "https"):
+        return None
+    pat = load_pat(book_id)
+    if not pat:
+        return None
+    options = ["credential.helper=", f"credential.helper={_CREDENTIAL_HELPER}"]
+    env = {PAT_ENV_VAR: pat, "GIT_TERMINAL_PROMPT": "0"}
+    return options, env
+
+
+@contextlib.contextmanager
+def authenticated_git(repo: git.Repo, *, url: str, book_id: str) -> Iterator[None]:
+    """Make the per-book credential available to ``repo``'s git calls.
+
+    Replaces the older pattern of embedding the PAT in the remote URL and
+    calling ``Remote.set_url``, which is ``git remote set-url`` and writes
+    the token into ``.git/config`` (#989). Nothing is written to disk
+    here: the credential helper is passed as a command-line config value
+    and the token itself lives in the subprocess environment, for the
+    duration of the ``with`` block and no longer.
+
+    Covers SSH remotes too, so a call site needs one context manager
+    rather than two parallel branches. Both are no-ops when the book has
+    no stored credential for that URL shape.
+
+    Example::
+
+        with authenticated_git(repo, url=origin_url, book_id=book_id):
+            repo.remotes.origin.push(refspec=f"{branch}:{branch}")
+    """
+    auth = pat_git_config(url, book_id)
+    env: dict[str, str] = {}
+    if auth is not None:
+        options, env = auth
+        repo.git.set_persistent_git_options(c=options)
+    ssh = ssh_env(url)
+    if ssh:
+        env = {**env, **ssh}
+    previous_env = repo.git.update_environment(**env) if env else {}
+    try:
+        yield
+    finally:
+        if auth is not None:
+            repo.git.set_persistent_git_options()
+        if previous_env:
+            repo.git.update_environment(**previous_env)

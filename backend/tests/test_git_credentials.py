@@ -61,42 +61,55 @@ def test_pat_isolation_per_book() -> None:
     assert git_credentials.load_pat("book-2") == "pat-two"
 
 
-# --- inject_pat_into_url ---
+# --- pat_git_config ---
 
 
-def test_inject_pat_into_https_url() -> None:
+def test_pat_git_config_passes_the_token_through_the_environment() -> None:
+    """#989: the token goes in the environment, never in a config value."""
     git_credentials.save_pat("book-1", "ghp_secret")
-    url = git_credentials.inject_pat_into_url("https://github.com/foo/bar.git", "book-1")
-    assert url == "https://x-access-token:ghp_secret@github.com/foo/bar.git"
+    result = git_credentials.pat_git_config("https://github.com/foo/bar.git", "book-1")
+    assert result is not None
+    options, env = result
+    assert env[git_credentials.PAT_ENV_VAR] == "ghp_secret"
+    assert "ghp_secret" not in " ".join(options)
 
 
-def test_inject_pat_url_encodes_special_chars() -> None:
-    git_credentials.save_pat("book-1", "p@ss/word")
-    url = git_credentials.inject_pat_into_url("https://gitlab.com/x.git", "book-1")
-    assert "x-access-token:p%40ss%2Fword@gitlab.com/x.git" in url
+def test_pat_git_config_resets_any_ambient_credential_helper() -> None:
+    """An empty first value clears the list, so a global helper cannot cache."""
+    git_credentials.save_pat("book-1", "ghp_secret")
+    result = git_credentials.pat_git_config("https://github.com/foo/bar.git", "book-1")
+    assert result is not None
+    options, _ = result
+    assert options[0] == "credential.helper="
+    assert options[1].startswith("credential.helper=!")
 
 
-def test_inject_strips_existing_credentials_in_url() -> None:
-    git_credentials.save_pat("book-1", "new")
-    url = git_credentials.inject_pat_into_url("https://old:old@github.com/foo.git", "book-1")
-    assert url == "https://x-access-token:new@github.com/foo.git"
+def test_pat_git_config_disables_the_terminal_prompt() -> None:
+    """A rejected token must fail, not block on a prompt nobody can answer."""
+    git_credentials.save_pat("book-1", "ghp_secret")
+    result = git_credentials.pat_git_config("https://github.com/foo/bar.git", "book-1")
+    assert result is not None
+    _, env = result
+    assert env["GIT_TERMINAL_PROMPT"] == "0"
 
 
-def test_inject_returns_url_unchanged_when_no_pat() -> None:
-    original = "https://github.com/foo/bar.git"
-    assert git_credentials.inject_pat_into_url(original, "no-pat") == original
+def test_pat_git_config_helper_answers_only_the_get_action() -> None:
+    """``store``/``erase`` are no-ops, so git cannot persist the token."""
+    assert 'test "$1" = get' in git_credentials._CREDENTIAL_HELPER
 
 
-def test_inject_skips_ssh_urls() -> None:
+def test_pat_git_config_none_without_a_pat() -> None:
+    assert git_credentials.pat_git_config("https://github.com/foo/bar.git", "no-pat") is None
+
+
+def test_pat_git_config_none_for_ssh_urls() -> None:
     git_credentials.save_pat("book-1", "ghp_x")
-    ssh = "git@github.com:foo/bar.git"
-    assert git_credentials.inject_pat_into_url(ssh, "book-1") == ssh
+    assert git_credentials.pat_git_config("git@github.com:foo/bar.git", "book-1") is None
 
 
-def test_inject_skips_file_urls() -> None:
+def test_pat_git_config_none_for_file_urls() -> None:
     git_credentials.save_pat("book-1", "ghp_x")
-    file_url = "/tmp/bare.git"
-    assert git_credentials.inject_pat_into_url(file_url, "book-1") == file_url
+    assert git_credentials.pat_git_config("/tmp/bare.git", "book-1") is None
 
 
 # --- is_ssh_url ---

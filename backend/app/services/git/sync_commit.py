@@ -264,9 +264,9 @@ def _push(clone_path: Path, *, branch: str, book_id: str) -> None:
     stable ``.reason`` slug so the router can map it to a useful HTTP
     status without parsing git stderr in the UI.
 
-    PAT injection uses a one-shot pushurl pattern: set the embedded
-    URL, push, restore the original URL in a finally block. The
-    embedded PAT never lands in ``.git/config``.
+    The credential is passed through a one-shot credential helper with
+    the token in the subprocess environment, so it is never written to
+    ``.git/config`` and never appears in the process arguments (#989).
     """
     from git import GitCommandError, PushInfo, Repo
 
@@ -275,23 +275,14 @@ def _push(clone_path: Path, *, branch: str, book_id: str) -> None:
         raise PushFailedError("no_remote", "Repository has no 'origin' remote configured.")
 
     original_url = next(repo.remotes.origin.urls)
-    auth_url = git_credentials.inject_pat_into_url(original_url, book_id)
-    ssh_env = git_credentials.ssh_env(original_url)
 
-    try:
-        if auth_url != original_url:
-            repo.remotes.origin.set_url(auth_url)
-        if ssh_env:
-            repo.git.update_environment(**ssh_env)
+    with git_credentials.authenticated_git(repo, url=original_url, book_id=book_id):
         try:
             info_list = repo.remotes.origin.push(refspec=f"{branch}:{branch}")
         except GitCommandError as exc:
             stderr = (exc.stderr or "").strip() or str(exc)
             reason = _classify_push_stderr(stderr)
             raise PushFailedError(reason, stderr) from exc
-    finally:
-        if auth_url != original_url:
-            repo.remotes.origin.set_url(original_url)
 
     if not info_list:
         raise PushFailedError("network", "Push returned no information from the remote.")
