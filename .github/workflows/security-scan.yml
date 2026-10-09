@@ -43,9 +43,26 @@ jobs:
       - name: Install Poetry
         run: pip install poetry
 
-      - name: Install backend dependencies
+      # `poetry sync` rather than `poetry install`: the venv is restored from
+      # a prefix cache key, and `install` never REMOVES a package that left
+      # the lock. So the gate audits whatever has accumulated in the cache,
+      # and a dependency dropped months ago can fail it with nothing in the
+      # repo to change - which is exactly what pypdf 6.18.1 does to a
+      # long-lived venv today (#952). Sync makes the audited environment
+      # equal to the lockfile.
+      - name: Install backend dependencies (synced to the lockfile)
         working-directory: backend
-        run: poetry install --no-interaction --no-ansi
+        run: poetry sync --no-interaction --no-ansi
+
+      # pip is the virtualenv's own installer, not a dependency of
+      # Bibliogon - no pyproject pins it and no lock carries it - but
+      # pip-audit scans the installed environment, so an outdated seeded pip
+      # fails the gate with nothing in the repo to change. The venv is
+      # restored from cache across runs, so the seed never ages out by
+      # itself. Upgrade the tool instead (#952).
+      - name: Upgrade the venv's own pip before auditing it
+        working-directory: backend
+        run: poetry run python -m pip install --quiet --upgrade pip
 
       - name: pip-audit (Phase 2 - blocks on non-ignored advisories)
         working-directory: backend
