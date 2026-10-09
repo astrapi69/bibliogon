@@ -5810,6 +5810,111 @@ every content-reading test is the #787 shape recurring.
 - Library-First (`.claude/rules/library-first.md`) - the fix for four of the
   five gaps was "call the existing converter", not "write a fourth parser".
 
+## A retry that destroys the state it is retrying can only ever pass on its first attempt
+
+Filed 2026-10-09 (#747/#1020), sibling to "A layout assertion whose bound comes
+from the box under test cannot see the bug" - same family: an assertion whose
+own machinery defeats it, producing a result that reads as evidence and is not.
+
+The shape. An offline E2E needed to prove a published row flips to
+`out_of_sync` once the article moves. Typing fires a 1s autosave, so the
+obvious guard against a slow write was to poll:
+
+```ts
+await expect.poll(async () => {
+    await page.reload();                      // <- destroys unsaved content
+    await panel.waitFor({state: "visible"});
+    return driftWarning.count();
+}, {timeout: 45_000, intervals: [1_000, 2_000, 3_000, 5_000]}).toBeGreaterThan(0);
+```
+
+A reload discards whatever has not been persisted. So if the first attempt
+races the debounce, the typed text is gone for good and every later attempt
+re-reads the same empty state. The poll cannot converge: it has exactly one
+chance, and the retries only make the failure take longer to arrive.
+
+Worse than useless - actively misleading. The failure reads
+`expect(received).toBeGreaterThan(expected) / Received: 0` after 45 s of
+apparent patience, which invites "the feature is broken" rather than "the test
+cannot observe the feature". It got that reading from me: I reported the
+offline write as not landing. It lands. Widening one wait from 1.5 s to 2 s and
+dropping the poll turned the same spec green.
+
+The second defect compounded it: the 45 s poll sat inside Playwright's 30 s
+default test timeout, so it was cut off mid-flight and could never have spent
+its budget anyway. `test.setTimeout()` is required whenever a single step's
+budget approaches the per-test one.
+
+### The rule
+
+Before wrapping anything in `expect.poll` or a retry loop, ask: **does the
+retry re-observe the same state, or re-create it?** A retry is only valid when
+the state it reads is independent of the reading.
+
+- Safe to retry: reading a DOM node, an API response, a file on disk, a job
+  status - repeated reads of a thing that exists either way.
+- NOT safe to retry: anything whose attempt mutates or discards what it is
+  waiting for. A reload of a page holding unsaved state. A navigation away and
+  back. A click that consumes a one-shot token. A read of a queue that pops.
+
+When the state is destructible, do not retry - make the one attempt
+deterministic and assert the outcome. Here: wait out the debounce (a constant,
+not a race), reload once, then assert in the order that names the cause - did
+the content survive, and only then did the status flip.
+
+### Make a failure name its own cause
+
+Two assertions where the first can only fail for one reason beats one
+assertion that two different bugs can produce. The passing version asserts the
+typed sentence survived the reload BEFORE asserting drift, so a red run says
+either "the write never landed" or "it landed and the rule did not fire" -
+never "0, work out why". Both messages also carry the console collected for
+the test, because `performSave` logs the real error there before deciding
+whether to toast.
+
+### Pairs with
+
+- "A layout assertion whose bound comes from the box under test cannot see the
+  bug" - that one is a comparison that moves with the bug; this one is a retry
+  that erases it. Both produce confident, wrong green or red.
+- `coding-standards.md` "A red-pin claim needs the red run linked" - the
+  discipline that catches both, since neither survives actually reading the run
+  it claims.
+
+## Two state machines for one save: the one that reports success is not the one on screen
+
+Filed 2026-10-09 (#1021), found while diagnosing the above.
+
+`useArticlePersistence.persistContent` catches its own failures and does not
+rethrow. `useEditorAutosave.performSave` awaits it:
+
+```ts
+setSaveStatus("saving");          // the EDITOR's status
+try {
+    await onSave(json);           // persistContent - catches, never throws
+} catch (err) { ... }             // unreachable for a persistence failure
+lastSaved.current = json;         // "this content is safely stored"
+setSaveStatus("saved");
+```
+
+So a dropped write leaves the editor hook convinced the save succeeded: it
+advances `lastSaved`, deletes the recovery draft, and reports `saved`. Mean-
+while the persistence hook - whose status the header actually renders - never
+left `saving`, because its catch only handled `ApiError` (#1021). One component
+believes the content is on disk; the other shows a spinner; the content is
+nowhere.
+
+The rule: when a callback owns its own error reporting, its caller cannot also
+own the success decision. Either the callback rethrows after reporting, so the
+caller's catch is reachable, or the caller must not treat a resolved promise as
+proof of success. A boundary where both sides have a status field and only one
+is rendered is a boundary where the user is told the wrong thing by
+construction.
+
+Detection: a `catch` with no `throw` inside a function passed as a callback to
+something that awaits it and then records success. Grep for callbacks named
+`onSave`/`onSubmit`/`onApply` and check whether the implementation swallows.
+
 ## `poetry install` plus a prefix cache key is a growing environment, not a reproducible one
 
 Filed 2026-10-09 (#980), generalised from #952.

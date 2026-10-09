@@ -143,7 +143,7 @@ test.describe("Feature Screenshots", () => {
             await createBook("Schreiben am Meer", "Asterios Raptis");
             await createBook("Werkstatt der Ideen", "Asterios Raptis");
             await page.goto("/");
-            await page.getByTestId("new-book-btn").waitFor({state: "visible"}).catch(() => {});
+            await page.getByTestId("new-book-btn").waitFor({state: "visible"});
             await page.getByTestId("view-toggle-grid").click().catch(() => {});
             await page.waitForTimeout(400);
             await page.screenshot({path: `${OUT}/dashboard/book-dashboard-grid.png`});
@@ -153,7 +153,7 @@ test.describe("Feature Screenshots", () => {
             await createBook("Die Souveränität des Musters", "Asterios Raptis");
             await createBook("Schreiben am Meer", "Asterios Raptis");
             await page.goto("/");
-            await page.getByTestId("new-book-btn").waitFor({state: "visible"}).catch(() => {});
+            await page.getByTestId("new-book-btn").waitFor({state: "visible"});
             await page.route(/^https?:\/\/[^/]+\/api\//, (route) =>
                 route.abort("connectionrefused"),
             );
@@ -172,7 +172,7 @@ test.describe("Feature Screenshots", () => {
             await createBook("Schreiben am Meer", "Asterios Raptis");
             await createBook("Werkstatt der Ideen", "Asterios Raptis");
             await page.goto("/");
-            await page.getByTestId("new-book-btn").waitFor({state: "visible"}).catch(() => {});
+            await page.getByTestId("new-book-btn").waitFor({state: "visible"});
             await page.getByTestId("view-toggle-list").click().catch(() => {});
             await page.waitForTimeout(400);
             await page.screenshot({path: `${OUT}/dashboard/book-dashboard-list.png`});
@@ -185,7 +185,7 @@ test.describe("Feature Screenshots", () => {
             await createArticle("Vom Notizbuch zum Manuskript");
             await createArticle("Warum Offline-First für Autoren zählt");
             await page.goto("/articles");
-            await page.getByTestId("article-list-page").waitFor({state: "visible"}).catch(() => {});
+            await page.getByTestId("article-list-page").waitFor({state: "visible"});
             await page.getByTestId("view-toggle-grid").click().catch(() => {});
             await page.waitForTimeout(400);
             await page.screenshot({path: `${OUT}/dashboard/article-dashboard.png`});
@@ -196,7 +196,7 @@ test.describe("Feature Screenshots", () => {
             await createArticle("Wie ich angefangen habe zu schreiben");
             await page.goto("/");
             const region = page.getByTestId("recent-documents");
-            await region.waitFor({state: "visible"}).catch(() => {});
+            await region.waitFor({state: "visible"});
             await region.scrollIntoViewIfNeeded().catch(() => {});
             await page.waitForTimeout(300);
             await page.screenshot({path: `${OUT}/dashboard/recent-documents.png`});
@@ -207,7 +207,7 @@ test.describe("Feature Screenshots", () => {
             await deleteBook(trashed.id);
             await page.goto("/");
             await page.getByTestId("trash-toggle").click().catch(() => {});
-            await page.getByTestId("trash-view").waitFor({state: "visible"}).catch(() => {});
+            await page.getByTestId("trash-view").waitFor({state: "visible"});
             await page.waitForTimeout(300);
             await page.screenshot({path: `${OUT}/dashboard/trash-view.png`});
         });
@@ -220,8 +220,7 @@ test.describe("Feature Screenshots", () => {
             await page.goto(`/book/${book.id}`);
             await page
                 .getByTestId("editor-display-settings-toggle")
-                .waitFor({state: "visible"})
-                .catch(() => {});
+                .waitFor({state: "visible"});
             await page.waitForTimeout(500);
             await page.screenshot({path: `${OUT}/book-editor/chapter-sidebar.png`});
         });
@@ -230,7 +229,7 @@ test.describe("Feature Screenshots", () => {
             const book = await seedProseBook("Schreiben am Meer");
             await page.goto(`/book/${book.id}`);
             const toolbar = page.getByTestId("collapsible-toolbar");
-            await toolbar.waitFor({state: "visible"}).catch(() => {});
+            await toolbar.waitFor({state: "visible"});
             await page.waitForTimeout(400);
             await (toolbar.screenshot({path: `${OUT}/book-editor/editor-with-toolbar.png`}).catch(
                 () => page.screenshot({path: `${OUT}/book-editor/editor-with-toolbar.png`}),
@@ -287,8 +286,7 @@ test.describe("Feature Screenshots", () => {
             await page.getByTestId("web-speech-tts-button").click().catch(() => {});
             await page
                 .getByTestId("web-speech-tts-player")
-                .waitFor({state: "visible"})
-                .catch(() => {});
+                .waitFor({state: "visible"});
             await page.waitForTimeout(400);
             await page.screenshot({path: `${OUT}/book-editor/web-speech-tts.png`});
         });
@@ -296,7 +294,7 @@ test.describe("Feature Screenshots", () => {
         test("chapter status labels", async ({page}) => {
             const book = await seedProseBook("Schreiben am Meer");
             await page.goto(`/book/${book.id}?view=storyboard`);
-            await page.getByTestId("prose-storyboard").waitFor({state: "visible"}).catch(() => {});
+            await page.getByTestId("prose-storyboard").waitFor({state: "visible"});
             await page.getByTestId("prose-storyboard-manage-labels").click().catch(() => {});
             await page.waitForTimeout(400);
             await page.screenshot({path: `${OUT}/book-editor/chapter-status-labels.png`});
@@ -330,7 +328,7 @@ test.describe("Feature Screenshots", () => {
                     .catch(() => {});
             }
             await page.goto(`/book/${book.id}?view=outline`);
-            await page.getByTestId("outliner").waitFor({state: "visible"}).catch(() => {});
+            await page.getByTestId("outliner").waitFor({state: "visible"});
             await page.waitForTimeout(400);
             await page.screenshot({path: `${OUT}/book-editor/chapter-outliner.png`});
         });
@@ -355,7 +353,7 @@ test.describe("Feature Screenshots", () => {
                 })
                 .catch(() => {});
             await page.goto(`/book/${book.id}?view=outline`);
-            await page.getByTestId("outliner").waitFor({state: "visible"}).catch(() => {});
+            await page.getByTestId("outliner").waitFor({state: "visible"});
             await page
                 .selectOption('[data-testid="outliner-collection-select"]', "kampf")
                 .catch(() => {});
@@ -393,7 +391,7 @@ test.describe("Feature Screenshots", () => {
             }
             await page.goto("/");
             const widget = page.getByTestId("writing-goal-widget");
-            await widget.waitFor({state: "visible"}).catch(() => {});
+            await widget.waitFor({state: "visible"});
             await widget.scrollIntoViewIfNeeded().catch(() => {});
             await page.waitForTimeout(300);
             await (widget.screenshot({path: `${OUT}/book-editor/writing-goals.png`}).catch(() =>
@@ -404,7 +402,7 @@ test.describe("Feature Screenshots", () => {
         test("storyboard", async ({page}) => {
             const book = await seedProseBook("Schreiben am Meer");
             await page.goto(`/book/${book.id}?view=storyboard`);
-            await page.getByTestId("prose-storyboard").waitFor({state: "visible"}).catch(() => {});
+            await page.getByTestId("prose-storyboard").waitFor({state: "visible"});
             await page.waitForTimeout(500);
             await page.screenshot({path: `${OUT}/book-editor/storyboard.png`});
         });
@@ -413,7 +411,7 @@ test.describe("Feature Screenshots", () => {
             const book = await seedProseBook("Schreiben am Meer");
             await page.goto(`/book/${book.id}`);
             await page.getByTestId("story-bible-toggle").click().catch(() => {});
-            await page.getByTestId("story-bible-sidebar").waitFor({state: "visible"}).catch(() => {});
+            await page.getByTestId("story-bible-sidebar").waitFor({state: "visible"});
             await page.waitForTimeout(400);
             await page.screenshot({path: `${OUT}/book-editor/story-bible.png`});
         });
@@ -445,8 +443,7 @@ test.describe("Feature Screenshots", () => {
             await page.getByTestId("story-bible-autodetect").click().catch(() => {});
             await page
                 .getByTestId("story-bible-autodetect-panel")
-                .waitFor({state: "visible"})
-                .catch(() => {});
+                .waitFor({state: "visible"});
             await page.waitForTimeout(400);
             await page.screenshot({path: `${OUT}/book-editor/story-bible-auto-detect.png`});
         });
@@ -458,7 +455,7 @@ test.describe("Feature Screenshots", () => {
                 () => {},
             );
             await page.locator(".ProseMirror").first().click({button: "right"}).catch(() => {});
-            await page.getByTestId("editor-context-menu").waitFor({state: "visible"}).catch(() => {});
+            await page.getByTestId("editor-context-menu").waitFor({state: "visible"});
             await page.waitForTimeout(300);
             await page.screenshot({path: `${OUT}/book-editor/context-menu.png`});
         });
@@ -469,7 +466,7 @@ test.describe("Feature Screenshots", () => {
         test("article editor", async ({page}) => {
             const article = await createArticle("Wie ich angefangen habe zu schreiben", "de");
             await page.goto(`/articles/${article.id}`);
-            await page.getByTestId("article-editor").waitFor({state: "visible"}).catch(() => {});
+            await page.getByTestId("article-editor").waitFor({state: "visible"});
             await page.waitForTimeout(500);
             await page.screenshot({path: `${OUT}/article-editor/article-editor.png`});
         });
@@ -477,7 +474,7 @@ test.describe("Feature Screenshots", () => {
         test("article metadata", async ({page}) => {
             const article = await createArticle("Wie ich angefangen habe zu schreiben", "de");
             await page.goto(`/articles/${article.id}`);
-            await page.getByTestId("article-editor").waitFor({state: "visible"}).catch(() => {});
+            await page.getByTestId("article-editor").waitFor({state: "visible"});
             await page.waitForTimeout(500);
             // fullPage so the tags / excerpt / SEO metadata fields below the
             // editor fold are visible — the distinction from article-editor.png.
@@ -558,7 +555,7 @@ test.describe("Feature Screenshots", () => {
             await page.getByTestId("comic-book-editor-root").waitFor({state: "visible"}).catch(
                 () => {},
             );
-            await page.getByTestId("comic-page-grid").waitFor({state: "visible"}).catch(() => {});
+            await page.getByTestId("comic-page-grid").waitFor({state: "visible"});
             await page.waitForTimeout(500);
             await page.screenshot({path: `${OUT}/comic-editor/comic-page-with-panels.png`});
         });
@@ -582,7 +579,7 @@ test.describe("Feature Screenshots", () => {
             const book = await createPictureBook("Der Leuchtturm und das Meer", "Asterios Raptis");
             await createPage(book.id, "image_top_text_bottom");
             await page.goto(`/book/${book.id}`);
-            await page.getByTestId("page-editor-root").waitFor({state: "visible"}).catch(() => {});
+            await page.getByTestId("page-editor-root").waitFor({state: "visible"});
             await page.waitForTimeout(500);
             await page.screenshot({path: `${OUT}/picture-book-editor/page-editor.png`});
         });
@@ -592,7 +589,7 @@ test.describe("Feature Screenshots", () => {
             await createPage(book.id, "image_top_text_bottom");
             await page.goto(`/book/${book.id}`);
             const canvas = page.getByTestId("page-editor-canvas");
-            await canvas.waitFor({state: "visible"}).catch(() => {});
+            await canvas.waitFor({state: "visible"});
             await page.waitForTimeout(500);
             await (canvas.screenshot({path: `${OUT}/picture-book-editor/page-canvas.png`}).catch(() =>
                 page.screenshot({path: `${OUT}/picture-book-editor/page-canvas.png`}),
@@ -604,7 +601,7 @@ test.describe("Feature Screenshots", () => {
     test.describe("Settings", () => {
         test("general settings", async ({page}) => {
             await page.goto("/settings");
-            await page.getByTestId("settings-sidebar").waitFor({state: "visible"}).catch(() => {});
+            await page.getByTestId("settings-sidebar").waitFor({state: "visible"});
             await page.waitForTimeout(400);
             await page.screenshot({path: `${OUT}/settings/general-settings.png`});
         });
@@ -621,7 +618,7 @@ test.describe("Feature Screenshots", () => {
         test("update checker", async ({page}) => {
             await page.goto("/settings?tab=verhalten");
             const section = page.getByTestId("settings-updates-section");
-            await section.waitFor({state: "visible"}).catch(() => {});
+            await section.waitFor({state: "visible"});
             await section.scrollIntoViewIfNeeded().catch(() => {});
             await page.waitForTimeout(300);
             await (section.screenshot({path: `${OUT}/settings/update-checker.png`}).catch(() =>
@@ -662,7 +659,7 @@ test.describe("Feature Screenshots", () => {
         test("about version", async ({page}) => {
             await page.goto("/settings?tab=about");
             const section = page.getByTestId("about-version-section");
-            await section.waitFor({state: "visible"}).catch(() => {});
+            await section.waitFor({state: "visible"});
             await section.scrollIntoViewIfNeeded().catch(() => {});
             await page.waitForTimeout(300);
             await (section.screenshot({path: `${OUT}/settings/about-version.png`}).catch(() =>
@@ -677,7 +674,7 @@ test.describe("Feature Screenshots", () => {
             // build-info rows.
             await page.goto("/settings?tab=about");
             const section = page.getByTestId("about-version-section");
-            await section.waitFor({state: "visible"}).catch(() => {});
+            await section.waitFor({state: "visible"});
             await section.scrollIntoViewIfNeeded().catch(() => {});
             await page.waitForTimeout(300);
             await (section
@@ -692,7 +689,7 @@ test.describe("Feature Screenshots", () => {
             // QR/link/copy targets. Expand both QR codes before the shot.
             await page.goto("/settings?tab=about");
             const section = page.getByTestId("about-share-section");
-            await section.waitFor({state: "visible"}).catch(() => {});
+            await section.waitFor({state: "visible"});
             await section.scrollIntoViewIfNeeded().catch(() => {});
             await page.getByTestId("share-production-qr-toggle").click().catch(() => {});
             await page.getByTestId("share-preview-qr-toggle").click().catch(() => {});
@@ -706,7 +703,7 @@ test.describe("Feature Screenshots", () => {
             // Settings auto-save on change (#473): no manual "Speichern"
             // button — the Behaviour tab is a representative auto-saving form.
             await page.goto("/settings?tab=verhalten");
-            await page.getByTestId("verhalten-settings").waitFor({state: "visible"}).catch(() => {});
+            await page.getByTestId("verhalten-settings").waitFor({state: "visible"});
             await page.waitForTimeout(300);
             await page.screenshot({path: `${OUT}/settings/auto-save.png`});
         });
@@ -722,7 +719,7 @@ test.describe("Feature Screenshots", () => {
             await page.goto(`/book/${book.id}`);
             await page.waitForTimeout(400);
             await page.keyboard.press("Control+Slash");
-            await page.getByTestId("shortcuts-dialog").waitFor({state: "visible"}).catch(() => {});
+            await page.getByTestId("shortcuts-dialog").waitFor({state: "visible"});
             await page.waitForTimeout(300);
             await page.screenshot({path: `${OUT}/shortcuts/overview-dialog.png`});
         });
@@ -767,7 +764,7 @@ test.describe("Feature Screenshots", () => {
             await createBook("Schreiben am Meer", "Asterios Raptis");
             await page.goto("/");
             await page.getByTestId("import-wizard-btn").click().catch(() => {});
-            await page.getByTestId("import-wizard-modal").waitFor({state: "visible"}).catch(() => {});
+            await page.getByTestId("import-wizard-modal").waitFor({state: "visible"});
             await page.waitForTimeout(400);
             await page.screenshot({path: `${OUT}/import-export/import-wizard.png`});
         });
@@ -779,7 +776,7 @@ test.describe("Feature Screenshots", () => {
             await page.goto("/");
             await page.getByTestId("import-wizard-btn").click().catch(() => {});
             await page.getByTestId("import-wizard-modal").waitFor({state: "visible"}).catch(() => {});
-            await page.getByTestId("upload-step").waitFor({state: "visible"}).catch(() => {});
+            await page.getByTestId("upload-step").waitFor({state: "visible"});
             await page.waitForTimeout(400);
             await page.screenshot({path: `${OUT}/import-export/scrivener-import.png`});
         });
@@ -787,7 +784,7 @@ test.describe("Feature Screenshots", () => {
         test("export preview", async ({page}) => {
             const book = await seedProseBook("Schreiben am Meer");
             await page.goto(`/books/${book.id}/export`);
-            await page.getByTestId("export-page-client").waitFor({state: "visible"}).catch(() => {});
+            await page.getByTestId("export-page-client").waitFor({state: "visible"});
             await page.waitForTimeout(500);
             await page.screenshot({path: `${OUT}/import-export/export-preview.png`});
         });
@@ -795,7 +792,7 @@ test.describe("Feature Screenshots", () => {
         test("bgb backup", async ({page}) => {
             await page.goto("/settings?tab=backups");
             const section = page.getByTestId("backups-fulldata-section");
-            await section.waitFor({state: "visible"}).catch(() => {});
+            await section.waitFor({state: "visible"});
             await section.scrollIntoViewIfNeeded().catch(() => {});
             await page.waitForTimeout(300);
             await (section.screenshot({path: `${OUT}/import-export/bgb-backup.png`}).catch(() =>
@@ -898,8 +895,7 @@ test.describe("Feature Screenshots", () => {
             await page.goto(`/book/${de.id}?view=metadata`);
             await page
                 .getByTestId("translation-links-row")
-                .waitFor({state: "visible"})
-                .catch(() => {});
+                .waitFor({state: "visible"});
             await page.waitForTimeout(400);
             await page.screenshot({path: `${OUT}/book-editor/translation-links.png`});
         });
@@ -1032,8 +1028,7 @@ test.describe("Feature Screenshots", () => {
             await page.getByTestId("aplus-ai-fill").click().catch(() => {});
             await page
                 .getByTestId("aplus-findings")
-                .waitFor({state: "visible"})
-                .catch(() => {});
+                .waitFor({state: "visible"});
             await page.getByTestId("aplus-module-0-title").fill("Die Souveränität des Musters").catch(() => {});
             await page.waitForTimeout(400);
             await page.screenshot({path: `${OUT}/import-export/aplus-content.png`});
@@ -1092,8 +1087,7 @@ test.describe("Feature Screenshots", () => {
                 .catch(() => {});
             await page
                 .getByTestId("writing-history-export-csv")
-                .waitFor({state: "visible"})
-                .catch(() => {});
+                .waitFor({state: "visible"});
             await page.waitForTimeout(400);
             await page.screenshot({path: `${OUT}/dashboard/writing-history-csv.png`});
         });
@@ -1128,8 +1122,7 @@ test.describe("Feature Screenshots", () => {
             await page.goto("/statistics");
             await page
                 .getByTestId("statistics-dashboard-page")
-                .waitFor({state: "visible"})
-                .catch(() => {});
+                .waitFor({state: "visible"});
             await page.waitForTimeout(400);
             await page.screenshot({path: `${OUT}/dashboard/writing-statistics.png`});
         });
@@ -1180,8 +1173,7 @@ test.describe("Offline AI text tools", () => {
             .catch(() => {});
         await page
             .getByTestId("editor-ai-tools")
-            .waitFor({state: "visible"})
-            .catch(() => {});
+            .waitFor({state: "visible"});
         await page.getByTestId("editor-ai-grammar").click().catch(() => {});
         await page.waitForTimeout(400);
         await page.screenshot({path: `${OUT}/book-editor/ai-text-tools-offline.png`});
