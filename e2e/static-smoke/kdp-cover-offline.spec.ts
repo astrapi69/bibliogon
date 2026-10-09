@@ -16,6 +16,7 @@ import path from "node:path";
 const FIXTURES = path.resolve(__dirname, "../fixtures");
 const TOO_SMALL = path.join(FIXTURES, "kdp-cover-too-small.png");
 const PASSING = path.join(FIXTURES, "kdp-cover-pass.png");
+const DESCRIPTION = "Ein Kater beobachtet die Stadt und beschliesst zu bleiben.";
 
 test.beforeEach(async ({context}) => {
     await context.route(/\/(registerSW\.js|sw\.js)(\?|$)/, (route) => route.abort());
@@ -45,12 +46,19 @@ test("the cover step reaches both verdicts offline, without any /api call", asyn
     await page.waitForURL(/\/book\/[^/?]+/, {timeout: 20_000});
     const bookPath = new URL(page.url()).pathname;
 
-    // The metadata check gates step 0 on a description, so set one.
+    // The metadata check gates step 0 on a description, so set one. The
+    // save is confirmed by reading it back rather than by the button
+    // re-enabling: the button is already enabled when clicked, so
+    // waiting on that races the write and the next goto drops it.
     await page.goto(`${bookPath}?view=metadata`);
     const description = page.getByLabel(/Beschreibung|Description/).first();
     await expect(description).toBeVisible({timeout: 15_000});
-    await description.fill("Ein Kater beobachtet die Stadt und beschliesst zu bleiben.");
-    await saveMetadata(page);
+    await description.fill(DESCRIPTION);
+    await page.getByTestId("metadata-save").click();
+    await page.goto(`${bookPath}?view=metadata`);
+    await expect(page.getByLabel(/Beschreibung|Description/).first()).toHaveValue(DESCRIPTION, {
+        timeout: 15_000,
+    });
 
     await uploadCover(page, bookPath, TOO_SMALL);
     await openCoverStep(page);
@@ -81,13 +89,11 @@ test("the cover step reaches both verdicts offline, without any /api call", asyn
     expect(apiCalls).toEqual([]);
 });
 
-/** Saving is awaited rather than fired: navigating on the bare click
- *  destroys the context mid-write and the row never gets the change. */
-async function saveMetadata(page: import("@playwright/test").Page) {
-    await page.getByTestId("metadata-save").click();
-    await expect(page.getByTestId("metadata-save")).toBeEnabled();
-}
-
+/** Uploads the cover and does not return until the book row carries it.
+ *
+ *  Reading it back is the only reliable wait: `metadata-save` is already
+ *  enabled when clicked, so waiting on the button races the write, and
+ *  the next navigation would destroy the context mid-write. */
 async function uploadCover(
     page: import("@playwright/test").Page,
     bookPath: string,
@@ -99,15 +105,31 @@ async function uploadCover(
     const preview = page.getByTestId("cover-preview-img");
     await expect(preview).toBeVisible({timeout: 15_000});
     await expect(preview).toHaveAttribute("src", /^blob:/);
-    await saveMetadata(page);
+    await page.getByTestId("metadata-save").click();
+
+    await page.goto(`${bookPath}?view=metadata`);
+    await page.getByTestId("metadata-tab-design").click();
+    await expect(page.getByTestId("cover-preview-img")).toHaveAttribute("src", /^blob:/, {
+        timeout: 15_000,
+    });
 }
 
 async function openCoverStep(page: import("@playwright/test").Page) {
     await page.getByTestId("metadata-open-kdp-wizard").click();
     await expect(page.getByTestId("kdp-publishing-wizard-dialog")).toBeVisible();
-    await expect(page.getByTestId("kdp-publishing-wizard-step-0-summary-ok")).toBeVisible({
-        timeout: 15_000,
-    });
+    // Wait for the check to settle either way before asserting WHICH
+    // way, and name the blocking field: a bare wait on summary-ok
+    // reports an absent testid, which says nothing about why.
+    const summary = page.locator(
+        '[data-testid="kdp-publishing-wizard-step-0-summary-ok"],' +
+            '[data-testid="kdp-publishing-wizard-step-0-summary-fail"]',
+    );
+    await expect(summary).toBeVisible({timeout: 15_000});
+    const errorList = page.getByTestId("kdp-publishing-wizard-step-0-error-list");
+    if (await errorList.count()) {
+        throw new Error(`step 0 is still blocked by: ${await errorList.innerText()}`);
+    }
+    await expect(page.getByTestId("kdp-publishing-wizard-step-0-summary-ok")).toBeVisible();
     await page.getByTestId("kdp-publishing-wizard-step-0-next").click();
     await expect(page.getByTestId("kdp-publishing-wizard-step-1-cover")).toBeVisible();
 }
