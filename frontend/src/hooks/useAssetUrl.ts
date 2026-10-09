@@ -86,3 +86,49 @@ export function useCoverUrl(
 ): string | null {
   return useAssetUrl(bookId, coverFilenameFromPath(coverImage));
 }
+
+/**
+ * The stored byte length of a book asset, or null when it is not local.
+ *
+ * Offline the asset's bytes are in IndexedDB, so `Blob.size` is free and
+ * the KDP cover check can use it (#739). Online the asset sits behind a
+ * URL and only the backend knows its length, so this returns null and
+ * callers abstain rather than fetching the whole file to weigh it - the
+ * desktop package build validates the staged cover anyway.
+ */
+export function useAssetByteSize(
+  bookId: string | null | undefined,
+  filename: string | null | undefined,
+): number | null {
+  const mode = getStorage().mode;
+  const [size, setSize] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (mode !== "dexie" || !bookId || !filename) {
+      setSize(null);
+      return;
+    }
+    let cancelled = false;
+    void getStorage()
+      .assets.getBlob(bookId, filename)
+      .then((blob) => {
+        if (!cancelled) setSize(blob ? blob.size : null);
+      })
+      .catch(() => {
+        if (!cancelled) setSize(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, bookId, filename]);
+
+  return size;
+}
+
+/** `useAssetByteSize` for a book's stored `cover_image` path. */
+export function useCoverByteSize(
+  bookId: string | null | undefined,
+  coverImage: string | null | undefined,
+): number | null {
+  return useAssetByteSize(bookId, coverFilenameFromPath(coverImage));
+}

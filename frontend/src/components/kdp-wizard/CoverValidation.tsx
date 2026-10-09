@@ -1,26 +1,28 @@
 /**
- * KDP Publishing Wizard — Step 2: Cover Validation.
+ * KDP Publishing Wizard - Step 2: Cover Validation.
  *
- * Validates the book's current cover image against KDP's basic
- * requirements:
+ * Validates the book's current cover against the KDP requirements that
+ * are readable in the browser, using the shared `lib/kdp` mirror of
+ * `bibliogon_kdp.cover_validator`:
  *
  *   - cover exists (``book.cover_image`` non-empty)
- *   - dimensions: min 625x1000, max 10000x10000
- *   - aspect ratio: 1.5–1.8 (height / width)
- *   - format: jpg / jpeg / png / tiff (from filename extension)
+ *   - format from the filename extension
+ *   - dimensions from the rendered image's ``naturalWidth`` /
+ *     ``naturalHeight``
+ *   - aspect ratio between them
+ *   - byte length, offline only, where the asset's bytes are in
+ *     IndexedDB (online the step abstains; see `useCoverByteSize`)
  *
- * MVP scope: validation runs CLIENT-SIDE from the rendered image's
- * ``naturalWidth`` / ``naturalHeight``. The backend's
- * ``POST /api/kdp/validate-cover`` endpoint also checks DPI + ICC
- * profile + file size, but it requires the file content uploaded
- * fresh; using it here would force a roundtrip. Phase 1 ships the
- * preflight; deep validation is filed as a follow-up if real
- * mismatches surface.
+ * This runs with zero ``/api`` calls in either mode - the preview itself
+ * resolves through the storage seam. DPI, the PIL colour mode and the
+ * embedded ICC profile are not readable from an ``<img>``, so they stay
+ * on the desktop, where ``package.py`` validates the staged cover before
+ * building the KDP package.
  *
- * Source of truth for the requirements:
- * ``plugins/bibliogon-plugin-kdp/bibliogon_kdp/routes.py``
- * ``KDP_COVER_REQUIREMENTS`` constant (Amazon-dictated; not
- * user-editable on either end).
+ * The rules and their thresholds live in
+ * ``frontend/src/lib/kdp/coverRequirements.ts``, pinned against verdicts
+ * recorded from the Python validator (#739). Only the wording of a
+ * finding is this component's business.
  */
 
 import {useEffect, useState} from "react"
@@ -28,7 +30,15 @@ import {CheckCircle, AlertCircle, ImageOff} from "lucide-react"
 
 import {BookDetail} from "../../api/client"
 import {useI18n} from "../../hooks/useI18n"
-import {useCoverUrl} from "../../hooks/useAssetUrl"
+import {useCoverByteSize, useCoverUrl} from "../../hooks/useAssetUrl"
+import {
+    type CoverFinding,
+    KDP_COVER_REQUIREMENTS,
+    coverFormatFromFilename,
+    coverPasses,
+    validateCoverProbe,
+} from "../../lib/kdp/coverRequirements"
+import type {ImageDimensions} from "./machines/types"
 
 interface Props {
     book: BookDetail
@@ -38,82 +48,27 @@ interface Props {
      *  and load-error paths (the machine's guard sees a null
      *  ``coverDimensions`` and correctly blocks ADVANCE). Optional
      *  so per-step tests pass without driving the machine. */
-    onValidated?: (
-        dim: ImageDimensions,
-        issues: ValidationIssue[],
-    ) => void
+    onValidated?: (dim: ImageDimensions, issues: CoverFinding[]) => void
 }
 
-// Mirrors backend KDP_COVER_REQUIREMENTS exactly. If KDP changes
-// the spec, update both here AND in routes.py.
-const KDP_REQ = {
-    minWidth: 625,
-    minHeight: 1000,
-    maxWidth: 10000,
-    maxHeight: 10000,
-    aspectMin: 1.5,
-    aspectMax: 1.8,
-    allowedFormats: ["jpg", "jpeg", "png", "tiff"] as const,
-}
-
-interface ImageDimensions {
-    width: number
-    height: number
-}
-
-interface ValidationIssue {
-    field: string
-    severity: "error" | "warning"
-    message: string
-}
-
-function extOf(filename: string | null): string {
-    if (!filename) return ""
-    const idx = filename.lastIndexOf(".")
-    if (idx < 0) return ""
-    return filename.slice(idx + 1).toLowerCase()
-}
-
-function validateDimensions(
-    dim: ImageDimensions,
-    format: string,
-): ValidationIssue[] {
-    const issues: ValidationIssue[] = []
-
-    if (!KDP_REQ.allowedFormats.includes(format as typeof KDP_REQ.allowedFormats[number])) {
-        issues.push({
-            field: "format",
-            severity: "error",
-            message: `Unsupported format '${format}'. KDP requires JPG, JPEG, PNG, or TIFF.`,
-        })
+/** The wording of a finding. The rule behind it lives in `lib/kdp`.
+ *
+ *  Still English-only, as it was before the rules moved out; localising
+ *  these the way #889 localised the A+ findings is tracked separately. */
+function messageFor(finding: CoverFinding): string {
+    const {params} = finding
+    switch (finding.code) {
+        case "format_unsupported":
+            return `Unsupported format '${params.format}'. KDP requires JPG, JPEG, PNG, or TIFF.`
+        case "file_size_exceeded":
+            return `File size ${params.fileSizeMb} MB exceeds the maximum ${KDP_COVER_REQUIREMENTS.maxFileSizeMb} MB.`
+        case "dimensions_too_small":
+            return `Image ${params.width}x${params.height} is too small. Minimum: ${KDP_COVER_REQUIREMENTS.minWidth}x${KDP_COVER_REQUIREMENTS.minHeight}.`
+        case "dimensions_too_large":
+            return `Image ${params.width}x${params.height} is too large. Maximum: ${KDP_COVER_REQUIREMENTS.maxWidth}x${KDP_COVER_REQUIREMENTS.maxHeight}.`
+        case "aspect_ratio_outside_range":
+            return `Aspect ratio ${params.ratio} is outside the recommended range (${KDP_COVER_REQUIREMENTS.aspectRatioMin}\u2013${KDP_COVER_REQUIREMENTS.aspectRatioMax}).`
     }
-
-    if (dim.width < KDP_REQ.minWidth || dim.height < KDP_REQ.minHeight) {
-        issues.push({
-            field: "dimensions",
-            severity: "error",
-            message: `Image ${dim.width}x${dim.height} is too small. Minimum: ${KDP_REQ.minWidth}x${KDP_REQ.minHeight}.`,
-        })
-    } else if (dim.width > KDP_REQ.maxWidth || dim.height > KDP_REQ.maxHeight) {
-        issues.push({
-            field: "dimensions",
-            severity: "error",
-            message: `Image ${dim.width}x${dim.height} is too large. Maximum: ${KDP_REQ.maxWidth}x${KDP_REQ.maxHeight}.`,
-        })
-    }
-
-    if (dim.width > 0) {
-        const ratio = dim.height / dim.width
-        if (ratio < KDP_REQ.aspectMin || ratio > KDP_REQ.aspectMax) {
-            issues.push({
-                field: "aspect_ratio",
-                severity: "warning",
-                message: `Aspect ratio ${ratio.toFixed(2)} is outside the recommended range (${KDP_REQ.aspectMin}–${KDP_REQ.aspectMax}).`,
-            })
-        }
-    }
-
-    return issues
 }
 
 export default function CoverValidation({
@@ -130,10 +85,11 @@ export default function CoverValidation({
     // URL from IndexedDB so the preview does not 404 against an absent
     // backend (the same resolver the dashboard cover sites use).
     const coverUrl = useCoverUrl(book.id, book.cover_image)
+    const fileSizeBytes = useCoverByteSize(book.id, book.cover_image)
     const filename = book.cover_image
         ? book.cover_image.split("/").pop() || ""
         : ""
-    const format = extOf(filename)
+    const format = coverFormatFromFilename(filename)
 
     // No cover → fail immediately. No image fetch needed.
     useEffect(() => {
@@ -146,10 +102,17 @@ export default function CoverValidation({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [book.id])
 
-    const issues = dim ? validateDimensions(dim, format) : []
+    const issues = dim
+        ? validateCoverProbe({
+              width: dim.width,
+              height: dim.height,
+              format,
+              ...(fileSizeBytes === null ? {} : {fileSizeBytes}),
+          })
+        : []
     const errors = issues.filter((i) => i.severity === "error")
     const warnings = issues.filter((i) => i.severity === "warning")
-    const passed = !!dim && errors.length === 0 && !loadError
+    const passed = !!dim && coverPasses(issues) && !loadError
 
     // Report gate state whenever the validation status changes.
     useEffect(() => {
@@ -166,7 +129,7 @@ export default function CoverValidation({
             onValidated?.(dim, issues)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [dim, loadError, passed])
+    }, [dim, loadError, passed, fileSizeBytes])
 
     // No-cover state.
     if (!coverUrl) {
@@ -309,15 +272,16 @@ export default function CoverValidation({
                     style={styles.issueList}
                     data-testid="kdp-publishing-wizard-step-1-error-list"
                 >
-                    {errors.map((issue, i) => (
+                    {errors.map((issue) => (
                         <li
-                            key={`err-${issue.field}-${i}`}
+                            key={`err-${issue.code}`}
                             style={styles.errorRow}
-                            data-testid={`kdp-publishing-wizard-step-1-error-${issue.field}`}
+                            data-field={issue.field}
+                            data-testid={`kdp-publishing-wizard-step-1-error-${issue.code}`}
                         >
                             <AlertCircle size={14} />
                             <span style={styles.issueMessage}>
-                                {issue.message}
+                                {messageFor(issue)}
                             </span>
                         </li>
                     ))}
@@ -329,15 +293,16 @@ export default function CoverValidation({
                     style={styles.issueList}
                     data-testid="kdp-publishing-wizard-step-1-warning-list"
                 >
-                    {warnings.map((issue, i) => (
+                    {warnings.map((issue) => (
                         <li
-                            key={`warn-${issue.field}-${i}`}
+                            key={`warn-${issue.code}`}
                             style={styles.warningRow}
-                            data-testid={`kdp-publishing-wizard-step-1-warning-${issue.field}`}
+                            data-field={issue.field}
+                            data-testid={`kdp-publishing-wizard-step-1-warning-${issue.code}`}
                         >
                             <AlertCircle size={14} />
                             <span style={styles.issueMessage}>
-                                {issue.message}
+                                {messageFor(issue)}
                             </span>
                         </li>
                     ))}

@@ -65,7 +65,8 @@ function failingCoverIssues(): ValidationIssue[] {
         {
             field: "dimensions",
             severity: "error",
-            message: "Cover too small",
+            code: "dimensions_too_small",
+            params: { width: 400, height: 640 },
         },
     ];
 }
