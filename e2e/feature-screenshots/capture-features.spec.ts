@@ -1031,14 +1031,19 @@ test.describe("Feature Screenshots", () => {
                 .then((r) => r.json())
                 .catch(() => [] as Array<{id: string; version: number}>);
             if (chapters[0]) {
+                // The recorded progress is the word-count DELTA, floored at
+                // zero, so patching with a sentence would log a day of "0
+                // words" and the ring would read 0/500 on a dashboard whose
+                // whole subject is how much was written. A long lead makes
+                // the delta positive, which is what the widgets are for.
+                const lead = Array.from(
+                    {length: 12},
+                    (_, i) =>
+                        `Am ${i + 1}. Morgen kamen die Sätze leicht: eine Szene zwischen Sonnenaufgang und dem ersten Kaffee, eine Figur, die endlich sagt, was sie die ganze Zeit gemeint hat, und ein Absatz, der am Abend noch steht.`,
+                ).join(" ");
                 await page.request
                     .patch(`${API}/books/${book.id}/chapters/${chapters[0].id}`, {
-                        data: {
-                            content: PROSE(
-                                "Heute kamen die Sätze leicht — eine ganze Szene entstand zwischen Sonnenaufgang und dem ersten Kaffee.",
-                            ),
-                            version: chapters[0].version,
-                        },
+                        data: {content: PROSE(lead), version: chapters[0].version},
                     })
                     .catch(() => {});
             }
