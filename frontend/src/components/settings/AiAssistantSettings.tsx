@@ -40,6 +40,42 @@ import { SectionHeader } from "./SectionHeader";
 import { Toggle } from "./Toggle";
 import { useSettingsAutoSave } from "./useSettingsAutoSave";
 
+/**
+ * Per-provider advice for narrowing a key, shown under the key field.
+ *
+ * The generic notice says the key is stored unencrypted; this says what
+ * to do about it. Only the four providers that take a third-party key
+ * appear - LM Studio and a custom endpoint send the key nowhere but the
+ * base URL the user typed, so there is nothing to scope.
+ *
+ * The wording stays at the level of what each provider offers (a
+ * separate workspace, a project, an API restriction, a usage limit) and
+ * deliberately does not describe console paths, which change without
+ * notice and would be wrong in the catalogs long before anyone noticed.
+ */
+const KEY_SCOPE_HINTS: Record<string, { key: string; fallback: string }> = {
+    anthropic: {
+        key: "ui.settings.ai_key_scope_anthropic",
+        fallback:
+            "Lege den Schlüssel in einem eigenen Workspace an und gib dem Workspace ein Ausgabenlimit.",
+    },
+    openai: {
+        key: "ui.settings.ai_key_scope_openai",
+        fallback:
+            "Verwende einen Projekt-Schlüssel für ein eigenes Projekt und setze dort ein Nutzungslimit.",
+    },
+    google: {
+        key: "ui.settings.ai_key_scope_google",
+        fallback:
+            "Beschränke den Schlüssel auf die Gemini API und, wo möglich, auf deine Anwendung.",
+    },
+    mistral: {
+        key: "ui.settings.ai_key_scope_mistral",
+        fallback:
+            "Lege einen eigenen Schlüssel für diese App an und setze ein Nutzungslimit im Workspace.",
+    },
+};
+
 export function AiAssistantSettings({
     config,
     onSave,
@@ -473,12 +509,20 @@ export function AiAssistantSettings({
                                     showLabel={t("ui.common.show", "Anzeigen")}
                                     hideLabel={t("ui.common.hide", "Ausblenden")}
                                 />
-                                <HelpText>
+                                <HelpText testId="ai-key-storage-note">
                                     {t(
                                         "ui.settings.ai_key_hint",
-                                        "Der API-Schlüssel wird nur lokal gespeichert und nur an den in 'Base URL' angegebenen Dienst übertragen.",
+                                        "Der Schlüssel wird unverschlüsselt auf diesem Gerät gespeichert und nur an den unter 'Base URL' angegebenen Dienst übertragen. Verwende einen eigenen, eng begrenzten Schlüssel und tausche ihn regelmässig aus.",
                                     )}
                                 </HelpText>
+                                {KEY_SCOPE_HINTS[aiProvider] ? (
+                                    <HelpText testId="ai-key-scope-note">
+                                        {t(
+                                            KEY_SCOPE_HINTS[aiProvider].key,
+                                            KEY_SCOPE_HINTS[aiProvider].fallback,
+                                        )}
+                                    </HelpText>
+                                ) : null}
                             </div>
                         )}
                         {aiProvider === "lmstudio" && (
