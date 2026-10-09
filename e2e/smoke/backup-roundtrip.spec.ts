@@ -164,11 +164,18 @@ test.describe('Backup roundtrip', () => {
     expect(titles).toEqual(['Backed Up Book', 'Existing Book'])
   })
 
-  test('export button is visible on dashboard when books exist', async ({page}) => {
+  test('export action is reachable on dashboard when books exist', async ({page}) => {
     await createBook('Visible Book')
     await page.goto('/')
+    // #971 folded Backup into the Import-group chevron to keep the header on
+    // one line; the group itself is what stays inline.
+    await expect(page.getByTestId('import-group')).toBeVisible()
+    await page.getByTestId('import-chevron').click()
     await expect(page.getByTestId('backup-export-btn')).toBeVisible()
-    await expect(page.getByTestId('backup-export-btn')).toBeEnabled()
+    await expect(page.getByTestId('backup-export-btn')).not.toHaveAttribute(
+      'data-disabled',
+      '',
+    )
   })
 
   test('import button is visible on dashboard', async ({page}) => {
