@@ -176,10 +176,11 @@ export interface WritingSessionsStorage {
  * Writing-history stats (Finding 6). Computed server-side in `api` mode;
  * aggregated client-side from the `writingSessions` Dexie table offline
  * (summary + streaks, per-book and per-chapter breakdowns) so the
- * Writing-History view works without the desktop backend. `exportCsvUrl`
- * stays on `api.writingStats` directly (backend-only) — the offline view
- * hides the CSV button rather than mirroring it. The `typeof api.*`
- * typing keeps these from drifting from the real client.
+ * Writing-History view works without the desktop backend. The CSV export
+ * needs no seam method at all: it is serialised in the browser from the
+ * `summary` series the view already holds (#744), so the backend
+ * `/writing-stats/export.csv` route is no longer a UI dependency. The
+ * `typeof api.*` typing keeps these from drifting from the real client.
  */
 export interface WritingStatsStorage {
     summary: typeof api.writingStats.summary;

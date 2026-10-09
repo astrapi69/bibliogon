@@ -58,6 +58,7 @@ export const FEATURES = {
     GITHUB_IMPORT: "github-import",
     URL_IMPORT: "url-import",
     WRITING_HISTORY: "writing-history",
+    WRITING_HISTORY_CSV: "writing-history-csv",
     DANGER_ZONE_RESET: "danger-zone-reset",
     BOOK_IMPORT_JSON: "book-import-json",
     AUTHORS_EXPORT: "authors-export",
@@ -96,7 +97,6 @@ export const FEATURES = {
     TRANSLATION_LINKS: "translation-links",
     KDP_CATEGORY_CATALOG: "kdp-category-catalog",
     BULK_EXPORT: "bulk-export",
-    WRITING_HISTORY_CSV: "writing-history-csv",
     // Server-bound review/translation surfaces with no browser path: the
     // grammar spellcheck proxies LanguageTool through the backend, and the
     // article translation executes DeepL/LMStudio via the backend plugin.
@@ -167,6 +167,11 @@ const ALWAYS_ACTIVE: readonly string[] = [
     // recorder consults the registry instead of mounting ungated, giving a
     // single kill-switch and an audit point.
     FEATURES.EVENT_RECORDING,
+    // The Writing-History CSV is serialised in the browser from the same
+    // day-aggregated series the view already renders (the Dexie
+    // `writingSessions` table since #668), then downloaded as a Blob. No
+    // backend round-trip, so one implementation serves both modes (#744).
+    FEATURES.WRITING_HISTORY_CSV,
     // Chapter version history + manual snapshots run through the storage
     // seam: automatic versions are written on every chapter save and named
     // snapshots on demand, both into the Dexie `chapterVersions` table, and
@@ -249,7 +254,6 @@ const DESKTOP_ONLY: readonly string[] = [
     FEATURES.TRANSLATION_LINKS,
     FEATURES.KDP_CATEGORY_CATALOG,
     FEATURES.BULK_EXPORT,
-    FEATURES.WRITING_HISTORY_CSV,
     FEATURES.AI_TEMPLATE_FILE_IO,
     FEATURES.GRAMMAR,
     FEATURES.TRANSLATION,

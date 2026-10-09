@@ -29,8 +29,9 @@ export const writingSessions: IStorageService["writingSessions"] = {
 };
 
 // Writing-history stats (Finding 6): aggregated from the writingSessions
-// Dexie table so the view works offline. exportCsvUrl stays backend-only
-// (the offline view hides the CSV button).
+// Dexie table so the view works offline. The CSV export reuses the
+// `summary` series and is serialised in the browser (#744), so it needs no
+// namespace of its own here.
 export const writingStats: IStorageService["writingStats"] = {
     summary: async (days = 90) => computeWritingSummary(days),
     byBook: async (days = 90) => computeWritingByBook(days),

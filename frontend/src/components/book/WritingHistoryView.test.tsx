@@ -3,7 +3,7 @@
  * from WritingHistoryModal in the Dialog->Pages migration C5):
  * - Summary cards render the fetched stats.
  * - The window buttons refetch for the chosen day-range.
- * - The CSV export link points at the export endpoint.
+ * - The CSV export serialises the client-side daily series (#744).
  * - Expanding a book row fetches + renders its per-chapter breakdown.
  *
  * recharts is mocked to plain divs (its SVG/ResponsiveContainer does
@@ -42,11 +42,12 @@ const byBook = vi.fn();
 const byChapter = vi.fn();
 vi.mock("../../api/client", () => ({
     BASE: "http://test/api",
-    api: {
-        writingStats: {
-            exportCsvUrl: (days: number) => `http://test/api/writing-stats/export.csv?days=${days}`,
-        },
-    },
+    api: {},
+}));
+
+const downloadBlob = vi.fn();
+vi.mock("../../shared/utils/downloadBlob", () => ({
+    downloadBlob: (...a: unknown[]) => downloadBlob(...a),
 }));
 
 vi.mock("../../storage", () => ({
@@ -113,11 +114,59 @@ describe("WritingHistoryView", () => {
         expect(byBook).toHaveBeenCalledWith(30);
     });
 
-    it("exposes a CSV export link for the window", async () => {
+    async function exportedCsv(): Promise<string> {
+        await waitFor(() => expect(downloadBlob).toHaveBeenCalled());
+        const [blob] = downloadBlob.mock.calls[0] as [Blob, string];
+        return blob.text();
+    }
+
+    it("serialises the client-side daily series on export", async () => {
         renderModal();
         await screen.findByTestId("writing-history-summary");
-        const link = screen.getByTestId("writing-history-export-csv");
-        expect(link.getAttribute("href")).toContain("/writing-stats/export.csv?days=90");
+        fireEvent.click(screen.getByTestId("writing-history-export-csv"));
+
+        expect(await exportedCsv()).toBe(
+            "day,words_written\r\n2026-05-31,100\r\n2026-06-01,500\r\n",
+        );
+        const [blob, filename] = downloadBlob.mock.calls[0] as [Blob, string];
+        expect(blob.type).toContain("text/csv");
+        expect(filename).toBe("writing-history-90d.csv");
+    });
+
+    it("exports the header alone when the window holds no sessions", async () => {
+        summary.mockResolvedValue({ ...SUMMARY, daily: [] });
+        renderModal();
+        await screen.findByTestId("writing-history-empty");
+        fireEvent.click(screen.getByTestId("writing-history-export-csv"));
+
+        expect(await exportedCsv()).toBe("day,words_written\r\n");
+    });
+
+    it("exports the window the user selected, not the default one", async () => {
+        renderModal();
+        await screen.findByTestId("writing-history-summary");
+        fireEvent.click(screen.getByTestId("writing-history-window-365"));
+        await waitFor(() => expect(summary).toHaveBeenCalledWith(365));
+        fireEvent.click(screen.getByTestId("writing-history-export-csv"));
+
+        await waitFor(() => expect(downloadBlob).toHaveBeenCalled());
+        const [, filename] = downloadBlob.mock.calls[0] as [Blob, string];
+        expect(filename).toBe("writing-history-365d.csv");
+    });
+
+    it("uses the same client path on the desktop build, with no /api link", async () => {
+        render(
+            <FeatureTestProvider mode="dexie" hasAiKey={false}>
+                <WritingHistoryView />
+            </FeatureTestProvider>,
+        );
+        await screen.findByTestId("writing-history-summary");
+        const button = screen.getByTestId("writing-history-export-csv");
+        expect(button).not.toBeDisabled();
+        expect(button.getAttribute("href")).toBeNull();
+        fireEvent.click(button);
+
+        expect(await exportedCsv()).toContain("2026-06-01,500");
     });
 
     it("expands a book row into its per-chapter breakdown", async () => {
