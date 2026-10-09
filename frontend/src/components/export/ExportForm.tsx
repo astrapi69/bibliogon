@@ -440,7 +440,7 @@ export default function ExportForm({bookId, bookTitle, hasManualToc, onDone}: Pr
                         if (bookType !== "ebook") params.set("book_type", bookType);
                         if (hasManualToc) params.set("use_manual_toc", String(useManualToc));
                         const query = params.toString();
-                        window.open(`/api/books/${bookId}/export/batch${query ? `?${query}` : ""}`, "_blank");
+                        window.open(`/api/books/${bookId}/export/batch${query ? `?${query}` : ""}`, "_blank", "noopener,noreferrer");
                         setTimeout(() => { setExporting(false); onDone(); }, 1500);
                     }}
                     disabled={exporting}
