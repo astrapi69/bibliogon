@@ -24,6 +24,7 @@ import { articlePlatforms, editorPluginStatus, publications } from "./backend-on
 import { books, templates } from "./books";
 import { chapterLabels } from "./chapter-labels";
 import { chapters, chapterTemplates } from "./chapters";
+import { kdp } from "./kdp/publishing-state";
 import { comics } from "./comics";
 import { comments } from "./comments";
 import { covers } from "./covers";
@@ -52,6 +53,7 @@ export const dexieStorage: IStorageService = {
     editorPluginStatus,
     chapterLabels,
     aplusDocuments,
+    kdp,
     storyBible,
     pages,
     comics,

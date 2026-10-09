@@ -359,6 +359,30 @@ export interface CommentStorage {
     create(comment: ArticleComment): Promise<ArticleComment>;
 }
 
+/**
+ * KDP Publishing-Wizard persistence (#737): the per-book commercial
+ * state row plus its ARC reviewer list.
+ *
+ * Plain per-book data with no server computation, so the wizard reads
+ * and writes it through the seam and keeps the user's pricing, launch
+ * checklist and reviewers across reloads on the backendless build. The
+ * wizard's auto-save is deliberately fail-open, which offline made the
+ * worst of both worlds: every PATCH was rejected by the offline guard
+ * and swallowed, so choices silently never persisted.
+ *
+ * The package build (`api.kdp.buildPackage`), the metadata check and
+ * the bundled category catalog stay on `api.kdp`: they are server-side
+ * rendering and server-held reference data, gated as desktop-only.
+ */
+export interface KdpStorage {
+    getPublishingState: typeof api.kdp.getPublishingState;
+    upsertPublishingState: typeof api.kdp.upsertPublishingState;
+    listReviewers: typeof api.kdp.listReviewers;
+    addReviewer: typeof api.kdp.addReviewer;
+    updateReviewer: typeof api.kdp.updateReviewer;
+    deleteReviewer: typeof api.kdp.deleteReviewer;
+}
+
 export interface IStorageService {
     /** The backend this instance is. Lets the UI show "Current mode: …". */
     readonly mode: StorageMode;
@@ -377,6 +401,7 @@ export interface IStorageService {
     editorPluginStatus: EditorPluginStatusStorage;
     chapterLabels: ChapterLabelStorage;
     aplusDocuments: AplusDocumentStorage;
+    kdp: KdpStorage;
     storyBible: StoryBibleStorage;
     pages: PageStorage;
     comics: ComicsStorage;

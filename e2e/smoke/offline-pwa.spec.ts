@@ -425,6 +425,32 @@ test.describe("Offline PWA (Dexie mode)", () => {
         expect(download.suggestedFilename()).toMatch(/\.md$/);
     });
 
+    test("the KDP wizard hydrates its state from Dexie, firing no /api (#737)", async ({
+        page,
+    }) => {
+        await page.goto("/books/new");
+        await page.getByTestId("create-book-title").fill("KDP Offline");
+        await page.getByTestId("create-book-author").fill("Aster");
+        await page.getByTestId("create-book-submit").click();
+        await expect(page.getByText("KDP Offline").first()).toBeVisible({timeout: 10000});
+        await page.getByText("KDP Offline").first().click();
+        await page.waitForURL(/\/book\//);
+        const bookId = page.url().match(/\/book\/([^/?]+)/)?.[1];
+        expect(bookId).toBeTruthy();
+
+        // Opening the wizard runs its mount-time publishing-state read. Before
+        // #737 that read went straight to /api and was swallowed by the
+        // fail-open catch; now it resolves against IndexedDB, and the hard
+        // gate in afterEach is what proves no request was attempted.
+        await page.goto(`/book/${bookId}?view=metadata`);
+        await page.getByTestId("metadata-open-kdp-wizard").click();
+        await expect(page.getByTestId("kdp-publishing-wizard-dialog")).toBeVisible();
+
+        // The later steps stay out of reach offline until the metadata check
+        // is ported (#738) - step 1 gates every transition after it. What
+        // this case pins is the persistence layer underneath them.
+    });
+
     test("story bible works offline: add an entity, it persists in Dexie", async ({
         page,
     }) => {

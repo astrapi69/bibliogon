@@ -6,11 +6,13 @@
  * status machine: invited → sent → received → reviewed |
  * declined.
  *
- * Server-driven: this component owns its loading state but the
- * source of truth is the C6 ARC reviewer endpoints
- * (``/api/kdp/publishing-state/{book_id}/reviewers``). Each
- * action (add / status-change / delete) round-trips through the
- * server + refreshes the local list.
+ * This component owns its loading state; the reviewer list itself
+ * comes from the storage seam (#737), so each action (add /
+ * status-change / delete) persists against the backend online and
+ * against IndexedDB on the backendless build, then refreshes the
+ * local list. It used to call the C6 endpoints
+ * (``/api/kdp/publishing-state/{book_id}/reviewers``) directly, which
+ * offline meant every action failed on the request guard.
  *
  * Email integration is OUT-OF-SCOPE for v1 (per A16). The
  * mailto: button is the only email surface; the user composes
@@ -30,9 +32,9 @@ import {
     ArcReviewerApi,
     BookDetail,
     ReviewStatus,
-    api,
 } from "../../api/client"
 import {useI18n} from "../../hooks/useI18n"
+import {getStorage} from "../../storage"
 import {RadixSelect} from "../shared/RadixSelect"
 
 interface Props {
@@ -65,7 +67,7 @@ export default function ArcStep({book, onReviewerCountChange}: Props) {
 
     const refresh = async () => {
         try {
-            const rows = await api.kdp.listReviewers(book.id)
+            const rows = await getStorage().kdp.listReviewers(book.id)
             setReviewers(rows)
             onReviewerCountChange?.(rows.length)
             setError(null)
@@ -102,7 +104,7 @@ export default function ArcStep({book, onReviewerCountChange}: Props) {
         if (!name) return
         setAdding(true)
         try {
-            await api.kdp.addReviewer(book.id, {
+            await getStorage().kdp.addReviewer(book.id, {
                 reviewer_name: name,
                 reviewer_email: addEmail.trim() || null,
             })
@@ -123,7 +125,7 @@ export default function ArcStep({book, onReviewerCountChange}: Props) {
         status: ReviewStatus,
     ) => {
         try {
-            await api.kdp.updateReviewer(book.id, reviewerId, {
+            await getStorage().kdp.updateReviewer(book.id, reviewerId, {
                 review_status: status,
             })
             await refresh()
@@ -136,7 +138,7 @@ export default function ArcStep({book, onReviewerCountChange}: Props) {
 
     const handleDelete = async (reviewerId: string) => {
         try {
-            await api.kdp.deleteReviewer(book.id, reviewerId)
+            await getStorage().kdp.deleteReviewer(book.id, reviewerId)
             await refresh()
         } catch (e) {
             const message =

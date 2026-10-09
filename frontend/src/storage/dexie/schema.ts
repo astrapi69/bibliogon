@@ -206,6 +206,15 @@ class BibliogonOfflineDB extends Dexie {
     chapterTemplates!: Table<ChapterTemplate, string>;
     /** Editable A+ documents (#891), one per book and language. */
     aplusDocuments!: Table<AplusDocumentRow, string>;
+    /** KDP Publishing-Wizard state (#737): one row per book, the shape
+     *  `api.kdp.getPublishingState` returns, minus the `arc_reviewers`
+     *  array — the reviewers are their own rows below, joined on read, so a
+     *  reviewer write does not rewrite the whole state row. */
+    bookPublishingState!: Table<GraphRow, string>;
+    /** ARC reviewers (#737), children of a `bookPublishingState` row. Keyed
+     *  by `publishing_state_id` rather than `book_id` for the same reason
+     *  the backend table is: the state row is the parent that owns them. */
+    kdpReviewers!: Table<GraphRow, string>;
 
     constructor() {
         // Separate DB from the crash-recovery drafts store ("bibliogon").
@@ -301,6 +310,12 @@ class BibliogonOfflineDB extends Dexie {
         // one-document-per-(book, language) lookup.
         this.version(14).stores({
             aplusDocuments: "id, book_id, [book_id+language]",
+        });
+        // v15 (#737): KDP wizard persistence. `book_id` backs the 1:1
+        // state lookup, `publishing_state_id` the reviewer list.
+        this.version(15).stores({
+            bookPublishingState: "id, book_id",
+            kdpReviewers: "id, publishing_state_id",
         });
     }
 }
