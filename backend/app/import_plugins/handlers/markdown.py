@@ -25,6 +25,7 @@ from app.import_plugins.protocol import DetectedChapter, DetectedProject
 from app.models import Book, Chapter, ChapterType
 from app.services.backup.markdown_utils import (
     extract_title,
+    filter_import_styles,
     md_to_html,
     sanitize_import_markdown,
 )
@@ -199,8 +200,11 @@ class MarkdownImportHandler:
             sanitized = sanitize_import_markdown(content, book.language)
             # HTML input is already markup the editor parses via setContent;
             # markdown/text must be converted first. Both end up as HTML in
-            # Chapter.content.
-            chapter_html = sanitized if _is_html(path) else md_to_html(sanitized)
+            # Chapter.content. The HTML branch bypasses md_to_html, so it
+            # filters the imported style attributes itself (#988).
+            chapter_html = (
+                filter_import_styles(sanitized) if _is_html(path) else md_to_html(sanitized)
+            )
             session.add(
                 Chapter(
                     book_id=book.id,
