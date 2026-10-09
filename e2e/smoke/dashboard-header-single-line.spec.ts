@@ -21,9 +21,47 @@
  * asserting visibility. The hamburger trigger is always in the DOM (CSS-
  * hidden above the breakpoint), so visibility is asserted with
  * toBeVisible()/toBeHidden(), not toHaveCount.
+ *
+ * The wrap is PALETTE-dependent, which is the second reason #971 escaped.
+ * Label widths follow the palette's font, and the committed theme
+ * baselines show the pre-fix header one control row tall under
+ * warm-literary and classic and two rows tall under cool-modern, nord,
+ * studio and notebook. The rest of this suite runs in the default theme,
+ * warm-literary, where the bar fitted - so no assertion written here
+ * could have seen it. The absolute test below therefore sets the palette
+ * itself and checks every one, the way the visual suite does.
  */
 
 import {test, expect} from "../fixtures/base";
+
+/**
+ * Every palette, because the bar's width depends on the font the palette
+ * picks. Same ids and same localStorage keys `useTheme` reads as the
+ * visual suite's `applyTheme`, set through addInitScript so the app boots
+ * in the target palette with no repaint from the default.
+ */
+const PALETTES = [
+    "warm-literary",
+    "cool-modern",
+    "nord",
+    "classic",
+    "studio",
+    "notebook",
+] as const;
+
+async function bootInPalette(
+    page: import("@playwright/test").Page,
+    palette: string,
+): Promise<void> {
+    await page.addInitScript((id) => {
+        try {
+            localStorage.setItem("bibliogon-app-theme", id);
+        } catch {
+            // localStorage unavailable (privacy mode); the default palette
+            // is still a valid case to measure.
+        }
+    }, palette);
+}
 
 const API = "http://localhost:8000/api";
 
@@ -87,7 +125,10 @@ test.describe("MENU-SINGLE-LINE Book Dashboard", () => {
         await page.keyboard.press("Escape");
     });
 
-    test("is one control row tall at the reference width", async ({page}) => {
+    for (const palette of PALETTES) {
+    test(`is one control row tall at the reference width (${palette})`, async ({
+        page,
+    }) => {
         // #971: the loop below grades every width against REFERENCE_WIDTH, so
         // once 1440 itself wraps the reference IS the wrap and every
         // comparison passes - the one width the file calls "single-line
@@ -95,6 +136,12 @@ test.describe("MENU-SINGLE-LINE Book Dashboard", () => {
         // absolutely: the header is its tallest control plus its own padding,
         // both read from the DOM so a theme or font change does not need a
         // new magic number.
+        //
+        // Once per palette, because the pre-fix header fitted in
+        // warm-literary (this suite's default) and wrapped in four of the
+        // other five. A single-palette version of this test is green on the
+        // bug it is meant to pin.
+        await bootInPalette(page, palette);
         await page.goto("/");
         await ready(page, REFERENCE_WIDTH);
         const measured = await page.evaluate(() => {
@@ -117,13 +164,15 @@ test.describe("MENU-SINGLE-LINE Book Dashboard", () => {
         });
         expect(
             measured.header,
-            `header is ${measured.header}px at ${REFERENCE_WIDTH}px; one row of ` +
-                `${measured.tallest}px controls plus ${measured.padding}px padding ` +
-                `is ${measured.tallest + measured.padding}px. A taller header means a ` +
+            `header is ${measured.header}px at ${REFERENCE_WIDTH}px under ` +
+                `${palette}; one row of ${measured.tallest}px controls plus ` +
+                `${measured.padding}px padding is ` +
+                `${measured.tallest + measured.padding}px. A taller header means a ` +
                 `control wrapped its label. Fold one into the Import chevron ` +
                 `(#971) - the breakpoint cannot help, the container is capped at 1100px.`,
         ).toBeLessThanOrEqual(measured.tallest + measured.padding + WRAP_TOLERANCE);
     });
+    }
 
     test("never wraps to two lines at any narrower width", async ({page}) => {
         await page.goto("/");
