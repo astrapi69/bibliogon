@@ -60,6 +60,7 @@ export const FEATURES = {
     WRITING_HISTORY: "writing-history",
     WRITING_HISTORY_CSV: "writing-history-csv",
     TRANSLATION_LINKS: "translation-links",
+    KDP_CATEGORY_CATALOG: "kdp-category-catalog",
     DANGER_ZONE_RESET: "danger-zone-reset",
     BOOK_IMPORT_JSON: "book-import-json",
     AUTHORS_EXPORT: "authors-export",
@@ -95,7 +96,6 @@ export const FEATURES = {
     BGB_IMPORT: "bgb-import",
     PANDOC_EXPORT: "pandoc-export",
     VERSION_HISTORY: "version-history",
-    KDP_CATEGORY_CATALOG: "kdp-category-catalog",
     BULK_EXPORT: "bulk-export",
     // Server-bound review/translation surfaces with no browser path: the
     // grammar spellcheck proxies LanguageTool through the backend, and the
@@ -171,6 +171,10 @@ const ALWAYS_ACTIVE: readonly string[] = [
     // no hierarchy, nothing for a server to compute - so the sibling list,
     // the link and the unlink all run against Dexie offline (#746).
     FEATURES.TRANSLATION_LINKS,
+    // Amazon's browse categories are reference data, not a server
+    // computation, so the suggestions come from a client catalog offline
+    // and the field behaves the same in both modes (#738).
+    FEATURES.KDP_CATEGORY_CATALOG,
     // The Writing-History CSV is serialised in the browser from the same
     // day-aggregated series the view already renders (the Dexie
     // `writingSessions` table since #668), then downloaded as a Blob. No
@@ -255,7 +259,6 @@ const DESKTOP_ONLY: readonly string[] = [
     FEATURES.BACKUP_COMPARE,
     FEATURES.BACKUP_HISTORY,
     FEATURES.PANDOC_EXPORT,
-    FEATURES.KDP_CATEGORY_CATALOG,
     FEATURES.BULK_EXPORT,
     FEATURES.AI_TEMPLATE_FILE_IO,
     FEATURES.GRAMMAR,

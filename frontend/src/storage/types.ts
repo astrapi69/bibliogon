@@ -370,11 +370,17 @@ export interface CommentStorage {
  * worst of both worlds: every PATCH was rejected by the offline guard
  * and swallowed, so choices silently never persisted.
  *
- * The package build (`api.kdp.buildPackage`), the metadata check and
- * the bundled category catalog stay on `api.kdp`: they are server-side
- * rendering and server-held reference data, gated as desktop-only.
+ * The package build (`api.kdp.buildPackage`) stays on `api.kdp`: it
+ * renders the print PDF server-side and has no browser path (#741).
  */
 export interface KdpStorage {
+    /** Deterministic field inspection, mirrored client-side (#738), so the
+     *  wizard's first step - which gates every step after it - answers
+     *  offline instead of failing and blocking the whole flow. */
+    checkMetadata: typeof api.kdp.checkMetadata;
+    /** Amazon's browse categories: reference data, served from a client
+     *  catalog offline (#738). */
+    listCategories: typeof api.kdp.listCategories;
     getPublishingState: typeof api.kdp.getPublishingState;
     upsertPublishingState: typeof api.kdp.upsertPublishingState;
     listReviewers: typeof api.kdp.listReviewers;

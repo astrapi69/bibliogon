@@ -111,18 +111,11 @@ const {mockCheckMetadata} = vi.hoisted(() => ({
     mockCheckMetadata: vi.fn(),
 }))
 
-vi.mock("../../api/client", async () => {
-    const actual = await vi.importActual<typeof import("../../api/client")>(
-        "../../api/client",
-    )
+vi.mock("../../storage", async (importActual) => {
+    const actual = await importActual<typeof import("../../storage")>()
     return {
         ...actual,
-        api: {
-            ...actual.api,
-            kdp: {
-                checkMetadata: mockCheckMetadata,
-            },
-        },
+        getStorage: () => ({kdp: {checkMetadata: mockCheckMetadata}}),
     }
 })
 

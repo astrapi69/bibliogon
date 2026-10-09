@@ -1,8 +1,10 @@
 /**
  * KDP Publishing Wizard — Step 1: Metadata Checklist.
  *
- * Reads ``book`` and posts to ``/api/kdp/check-metadata``. Renders
- * the issue list as a pass/fail checklist; calls back with whether
+ * Reads ``book`` and runs the completeness check through the storage
+ * seam - the backend's checker online, its TypeScript mirror offline
+ * (#738), so this step no longer gates the whole wizard on a backend.
+ * Renders the issue list as a pass/fail checklist; calls back with whether
  * the metadata passes ("no errors") so the wizard can gate Next.
  *
  * Book-type variation (per KDP Pre-Inspection Track 4): the backend
@@ -25,9 +27,9 @@ import {
     BookDetail,
     KdpMetadataCheckResult,
     KdpMetadataIssue,
-    api,
 } from "../../api/client"
 import {useI18n} from "../../hooks/useI18n"
+import {getStorage} from "../../storage"
 import {useBookTypes} from "../../hooks/book/useBookTypes"
 
 interface Props {
@@ -117,8 +119,8 @@ export default function MetadataChecklist({
         let cancelled = false
         setLoading(true)
         setError(null)
-        api.kdp
-            .checkMetadata(buildCheckPayload(book))
+        getStorage()
+            .kdp.checkMetadata(buildCheckPayload(book))
             .then((r) => {
                 if (cancelled) return
                 setResult(r)

@@ -446,9 +446,14 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await page.getByTestId("metadata-open-kdp-wizard").click();
         await expect(page.getByTestId("kdp-publishing-wizard-dialog")).toBeVisible();
 
-        // The later steps stay out of reach offline until the metadata check
-        // is ported (#738) - step 1 gates every transition after it. What
-        // this case pins is the persistence layer underneath them.
+        // Step 1 runs the completeness check through the seam since #738, so
+        // it renders its verdict offline instead of an error - which is what
+        // makes every step after it reachable. The book is deliberately
+        // incomplete here, so the checklist reports errors; what this pins is
+        // that it ANSWERS, without an /api call.
+        await expect(
+            page.getByTestId("kdp-publishing-wizard-step-0-metadata"),
+        ).toBeVisible();
     });
 
     test("translation links work offline: link two books, see the sibling (#746)", async ({

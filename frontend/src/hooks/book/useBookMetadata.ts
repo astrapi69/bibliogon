@@ -128,19 +128,19 @@ export function useBookMetadata({
         );
     }, [book]);
 
-    // KDP-CATEGORIES-WIRE-TO-CATEGORYINPUT-01: one-shot fetch of the
+    // KDP-CATEGORIES-WIRE-TO-CATEGORYINPUT-01: one-shot load of the
     // KDP-category catalog on mount. Cached for the editor's
     // lifetime — Amazon-side catalog is stable across the surface,
     // no need to re-fetch on every book change. Failure stays at
     // empty list; CategoryInput remains free-text-capable.
     useEffect(() => {
-        // KDP category catalog is a backend-only convenience; when the
-        // feature is inactive (dexie) the field stays free-text. Skip the
-        // fetch so dexie mode fires no /api call.
+        // Reference data, served from the client catalog offline (#738),
+        // so the suggestions are the same in both modes. The guard stays
+        // as the registry's kill-switch rather than a mode check.
         if (!kdpCatalogActive) return;
         let cancelled = false;
-        api.kdp
-            .listCategories()
+        getStorage()
+            .kdp.listCategories()
             .then((catalog) => {
                 if (!cancelled) setKdpCategoriesCatalog(catalog);
             })

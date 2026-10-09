@@ -137,14 +137,14 @@ const GUARDED: readonly GuardedNamespace[] = [
         allowlist: IMPLEMENTATION_LAYER,
     },
     {
-        // KDP wizard persistence: the publishing-state row + ARC reviewers,
-        // seam-backed since #737. Guarded per-method rather than all of
-        // api.kdp: buildPackage renders the ZIP server-side and the category
-        // catalog + metadata check are backend-only, all desktop-gated.
-        label: "api.kdp state + reviewer methods",
+        // KDP wizard persistence (#737) plus the metadata check and the
+        // category catalog (#738). Guarded per-method rather than all of
+        // api.kdp: buildPackage renders the ZIP server-side and has no
+        // browser path, so it stays a direct call.
+        label: "api.kdp state, reviewer + check methods",
         pattern:
-            /\bapi\.kdp\s*\.\s*(getPublishingState|upsertPublishingState|listReviewers|addReviewer|updateReviewer|deleteReviewer)\b/,
-        remedy: "getStorage().kdp.<same method> (see #737)",
+            /\bapi\.kdp\s*\.\s*(getPublishingState|upsertPublishingState|listReviewers|addReviewer|updateReviewer|deleteReviewer|checkMetadata|listCategories)\b/,
+        remedy: "getStorage().kdp.<same method> (see #737, #738)",
         allowlist: IMPLEMENTATION_LAYER,
     },
     {
