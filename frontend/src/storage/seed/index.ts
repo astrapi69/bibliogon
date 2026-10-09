@@ -14,6 +14,7 @@ import type {
     ChapterTemplate,
     ContentTypeDef,
     DiscoveredPlugin,
+    PlatformSchema,
     StoryEntityTypeDef,
 } from "../../api/client";
 
@@ -21,6 +22,7 @@ import seedSettings from "./seed-settings.json";
 import seedBookTypes from "./seed-book-types.json";
 import seedContentTypes from "./seed-content-types.json";
 import seedStoryEntityTypes from "./seed-story-entity-types.json";
+import seedArticlePlatforms from "./seed-article-platforms.json";
 import seedPluginMetadata from "./seed-plugin-metadata.json";
 import seedChapterTemplates from "./seed-chapter-templates.json";
 import i18nDe from "./seed-i18n-de.json";
@@ -51,6 +53,14 @@ export const SEED_CONTENT_TYPES = seedContentTypes as unknown as Record<
 export const SEED_STORY_ENTITY_TYPES = seedStoryEntityTypes as unknown as Record<
     string,
     StoryEntityTypeDef
+>;
+
+/** {platform: PlatformSchema} (mirrors GET /api/article-platforms).
+ *  Reference data: the publish form renders its per-platform fields from
+ *  this, and the metadata validator reads its limits from it (#1015). */
+export const SEED_ARTICLE_PLATFORMS = seedArticlePlatforms as unknown as Record<
+    string,
+    PlatformSchema
 >;
 
 /** Standard visible plugins (mirrors GET /api/settings/plugins/discovered). */

@@ -10,6 +10,7 @@ import { isPlainObject } from "./helpers";
 import { offlineDb, REF_KEY, SETTINGS_KEY } from "./schema";
 import { ensureSeeded } from "./seed";
 import {
+    SEED_ARTICLE_PLATFORMS,
     SEED_BOOK_TYPES,
     SEED_CONTENT_TYPES,
     SEED_PLUGIN_METADATA,
@@ -73,6 +74,19 @@ export const bookTypes: IStorageService["bookTypes"] = {
         await ensureSeeded();
         const row = await offlineDb.bookTypesRef.get(REF_KEY);
         return row?.data ?? SEED_BOOK_TYPES;
+    },
+};
+
+/**
+ * The article-platform schemas (#1015). Reference data like the type
+ * registries: the publish form renders its per-platform fields from this,
+ * so an empty map offline meant a platform picker with nothing behind it.
+ */
+export const articlePlatforms: IStorageService["articlePlatforms"] = {
+    list: async () => {
+        await ensureSeeded();
+        const row = await offlineDb.articlePlatformsRef.get(REF_KEY);
+        return row?.data ?? SEED_ARTICLE_PLATFORMS;
     },
 };
 

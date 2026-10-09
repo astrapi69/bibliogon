@@ -29,6 +29,7 @@ import type {
     ChapterVersionRead,
     ContentTypeDef,
     DiscoveredPlugin,
+    PlatformSchema,
     StoryEntityTypeDef,
     Book,
 } from "../../api/client";
@@ -187,6 +188,7 @@ class BibliogonOfflineDB extends Dexie {
     bookTypesRef!: Table<KeyedBlob<Record<string, BookTypeDef>>, string>;
     contentTypesRef!: Table<KeyedBlob<Record<string, ContentTypeDef>>, string>;
     storyEntityTypesRef!: Table<KeyedBlob<Record<string, StoryEntityTypeDef>>, string>;
+    articlePlatformsRef!: Table<KeyedBlob<Record<string, PlatformSchema>>, string>;
     pluginMetaRef!: Table<KeyedBlob<DiscoveredPlugin[]>, string>;
     authors!: Table<Author, string>;
     assets!: Table<AssetRow, string>;
@@ -328,6 +330,11 @@ class BibliogonOfflineDB extends Dexie {
         // key; `group_id` is indexed for the members-of-a-group lookup.
         this.version(16).stores({
             translationGroups: "book_id, group_id",
+        });
+        // v17 (#1015): the article-platform schemas, one keyed blob like the
+        // other reference registries.
+        this.version(17).stores({
+            articlePlatformsRef: "key",
         });
     }
 }

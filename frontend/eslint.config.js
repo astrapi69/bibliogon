@@ -18,7 +18,9 @@ export default tseslint.config(
       "dev-dist/**",
       "coverage/**",
       "node_modules/**",
-      "src/storage/seed/**",
+      // The generated catalogs only: `index.ts` and the parity tests beside
+      // them are hand-written and get linted like any other source.
+      "src/storage/seed/*.json",
     ],
   },
   js.configs.recommended,
