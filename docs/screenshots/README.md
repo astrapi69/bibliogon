@@ -16,12 +16,22 @@ make capture-screenshots          # or: cd e2e && npx playwright test --project=
 - **Format:** PNG (lossless), `fullPage:false` unless noted, reduced motion
 - **Data:** realistic German titles + prose, seeded fresh per shot
 
-The capture spec is `e2e/feature-screenshots/capture-features.spec.ts`. It takes
-no assertions — success is "all screenshots generated without crash". Re-run it
+The capture spec is `e2e/feature-screenshots/capture-features.spec.ts`. Re-run it
 whenever a screenshotted surface changes; the committed PNGs render this catalog
 without re-running Playwright (the chromium binary is not downloadable in every
 environment, so the PNGs are committed alongside the spec). They are tracked as
 binary via the repo-level `.gitattributes` (`*.png binary`) — plain git, no LFS.
+
+**The images are the evidence, not the run status.** Each block waits for the
+surface it photographs and that wait throws (#1020): if the subject never
+appears, the run fails instead of writing a picture of whatever happened to be
+on screen. Steps that are genuinely optional — dismissing a banner that may not
+be there, seeding data whose absence only makes a shot emptier — keep their
+`.catch(() => {})`, as do the two deep-gated KDP blocks below. So a green run
+means every subject was present, not that every image is right: a block can
+still frame its subject badly. Open the PNGs you touched. Three shots in one day
+were committed-or-nearly-committed showing the wrong part of the page before the
+subject waits were made to throw.
 
 > First-time / CI-less environments: if `make capture-screenshots` reports a
 > missing browser, run `cd e2e && npx playwright install chromium` once (needs
