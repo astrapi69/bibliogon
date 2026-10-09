@@ -24,6 +24,9 @@ Clicking **Delete permanently** irreversibly removes:
 - All templates and Authors-Database entries (the bundled built-in templates get re-seeded)
 - All settings and preferences (app language, theme, plugin configs)
 - The AI API key
+- Every stored credential: the per-book git tokens, the SSH key Bibliogon
+  manages, and the text-to-speech keys (ElevenLabs, Google). The secret that
+  encrypted them goes too, so nothing left behind can be read.
 - Backup history
 - User-installed plugins (ZIP installs)
 - All unsaved editor drafts in the browser
@@ -35,6 +38,9 @@ Clicking **Delete permanently** irreversibly removes:
 - The launcher install state (version, install path)
 - The bundled built-in templates (re-seeded automatically after the reset)
 - The data directory itself (only its contents are wiped)
+- The public half of the SSH key at your git provider. Bibliogon deletes the
+  private half on your machine; the registered public one has to be removed
+  at GitHub, GitLab or Bitbucket by you.
 
 ## Steps
 

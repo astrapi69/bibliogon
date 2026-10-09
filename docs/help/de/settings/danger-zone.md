@@ -24,6 +24,10 @@ Beim Klick auf **Endgültig löschen** werden unwiderruflich gelöscht:
 - Alle Vorlagen und Autoren-Datenbank-Einträge (die mitgelieferten Standard-Vorlagen werden neu eingespielt)
 - Alle Einstellungen und Voreinstellungen (App-Sprache, Theme, Plugin-Konfigurationen)
 - Der KI-API-Schlüssel
+- Alle gespeicherten Zugangsdaten: die Git-Token pro Buch, der von Bibliogon
+  verwaltete SSH-Schlüssel und die Schlüssel für die Sprachausgabe
+  (ElevenLabs, Google). Mit ihnen das Geheimnis, mit dem sie verschlüsselt
+  waren - danach ist keine zurückgebliebene Datei mehr lesbar.
 - Backup-Historie
 - Selbst installierte Plugins (ZIP-Installationen)
 - Alle ungespeicherten Editor-Entwürfe im Browser
@@ -35,6 +39,9 @@ Beim Klick auf **Endgültig löschen** werden unwiderruflich gelöscht:
 - Der Launcher-Installationsstatus (Version, Installationspfad)
 - Die mitgelieferten Standard-Vorlagen (werden nach dem Reset wieder neu eingespielt)
 - Das Datenverzeichnis als solches (nur dessen Inhalt wird gelöscht)
+- Der öffentliche Teil des SSH-Schlüssels bei deinem Git-Anbieter. Bibliogon
+  löscht den privaten Teil auf deinem Rechner; der registrierte öffentliche
+  muss bei GitHub, GitLab oder Bitbucket selbst entfernt werden.
 
 ## Ablauf
 

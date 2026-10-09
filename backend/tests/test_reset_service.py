@@ -227,6 +227,82 @@ def test_reset_wipes_filesystem(populated_db, tmp_path):
     assert not secrets_path.exists()
 
 
+def _seed_credentials(config_dir: Path) -> None:
+    """Populate the native-install config dir with every credential shape.
+
+    These live under ``get_config_dir()`` (``~/.config/bibliogon``), a
+    different tree from the data dir, which is why the reset's
+    config-overlay wipe never reached them.
+    """
+    (config_dir / "git_credentials").mkdir(parents=True, exist_ok=True)
+    (config_dir / "git_credentials" / "book-1.enc").write_bytes(b"encrypted-pat-1")
+    (config_dir / "git_credentials" / "book-2.enc").write_bytes(b"encrypted-pat-2")
+    (config_dir / "ssh").mkdir(parents=True, exist_ok=True)
+    (config_dir / "ssh" / "id_ed25519").write_text("PRIVATE KEY\n")
+    (config_dir / "ssh" / "id_ed25519.pub").write_text("ssh-ed25519 AAAA\n")
+    (config_dir / "plugins" / "audiobook").mkdir(parents=True, exist_ok=True)
+    (config_dir / "plugins" / "audiobook" / "elevenlabs.enc").write_bytes(b"encrypted-key")
+    (config_dir / "plugins" / "audiobook" / "google-credentials.enc").write_bytes(b"encrypted")
+    (config_dir / "credentials.secret").write_text("fernet-secret\n")
+    # Launcher-owned metadata: the reset preserves these by design.
+    (config_dir / "install.json").write_text("{}\n")
+    (config_dir / "install.log").write_text("installed\n")
+    (config_dir / "settings.json").write_text("{}\n")
+
+
+def test_reset_clears_native_credentials(populated_db, tmp_path):
+    """#990: a reset must leave no credential behind in a native install.
+
+    A reset is what a user runs before handing the machine on or
+    attaching their data directory to a bug report. Every encrypted
+    credential - and the Fernet secret that opens all of them - has to
+    be gone afterwards; the launcher's own metadata stays.
+    """
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    secrets_path = tmp_path / "secrets.yaml"
+    config_dir = tmp_path / "config"
+    _seed_filesystem(data_dir, secrets_path)
+    _seed_credentials(config_dir)
+
+    summary = reset_service.run_reset(
+        populated_db,
+        data_dir=data_dir,
+        secrets_path=secrets_path,
+        config_dir=config_dir,
+    )
+
+    assert summary["credentials_cleared"] == 7
+    assert not (config_dir / "git_credentials" / "book-1.enc").exists()
+    assert not (config_dir / "git_credentials" / "book-2.enc").exists()
+    assert not (config_dir / "ssh" / "id_ed25519").exists()
+    assert not (config_dir / "ssh" / "id_ed25519.pub").exists()
+    assert not (config_dir / "plugins" / "audiobook" / "elevenlabs.enc").exists()
+    assert not (config_dir / "plugins" / "audiobook" / "google-credentials.enc").exists()
+    assert not (config_dir / "credentials.secret").exists()
+
+    # Launcher-owned metadata survives, and nothing else is left behind.
+    remaining = sorted(p.name for p in config_dir.rglob("*") if p.is_file())
+    assert remaining == ["install.json", "install.log", "settings.json"]
+
+
+def test_reset_handles_a_config_dir_without_credentials(populated_db, tmp_path):
+    """A browser-only or fresh install has none of these - not an error."""
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    secrets_path = tmp_path / "secrets.yaml"
+    _seed_filesystem(data_dir, secrets_path)
+
+    summary = reset_service.run_reset(
+        populated_db,
+        data_dir=data_dir,
+        secrets_path=secrets_path,
+        config_dir=tmp_path / "absent-config",
+    )
+
+    assert summary["credentials_cleared"] == 0
+
+
 def test_reset_preserves_production_marker(populated_db, tmp_path):
     """``.bibliogon-production`` is the test-isolation tripwire - never delete."""
     data_dir = tmp_path / "data"
