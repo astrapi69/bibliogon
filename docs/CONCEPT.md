@@ -347,7 +347,10 @@ migrations = ["alembic"]
 
 ### 4.1 Data model
 
-**Current (v0.10.0):**
+**Current shape** (the authoritative definition is
+`backend/app/models/__init__.py`, summarised in CLAUDE.md's data-model
+section; this block is an illustration and names no version on purpose -
+it carried "v0.10.0" for fifty releases, #982):
 
 ```
 Book
