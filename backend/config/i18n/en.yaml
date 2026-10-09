@@ -1236,6 +1236,7 @@ ui:
     ai_max_tokens: "Max Tokens"
     ai_api_key: "API Key"
     ai_key_not_required: "Not required"
+    shared_origin_note: "This web version runs on a host that shares its storage with the other sites of the same account. Anyone who can publish a site there can read that storage. For a credential you keep, the desktop app is the safer place."
     ai_key_hint: "The key is stored unencrypted on this device and only sent to the service given under 'Base URL'. Use a separate, narrowly scoped key and rotate it regularly."
     ai_key_scope_anthropic: "Create the key in a workspace of its own and give that workspace a spend limit."
     ai_key_scope_openai: "Use a project key scoped to a project of its own and set a usage limit there."

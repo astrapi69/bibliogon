@@ -1237,6 +1237,7 @@ ui:
     ai_max_tokens: "Max Tokens"
     ai_api_key: "API Key"
     ai_key_not_required: "Nicht erforderlich"
+    shared_origin_note: "Diese Web-Version läuft auf einem Host, der sich den Speicher mit anderen Seiten desselben Kontos teilt. Wer dort eine Seite veröffentlichen kann, kann diesen Speicher lesen. Für dauerhafte Zugangsdaten ist die Desktop-App die sicherere Wahl."
     ai_key_hint: "Der Schlüssel wird unverschlüsselt auf diesem Gerät gespeichert und nur an den unter 'Base URL' angegebenen Dienst übertragen. Verwende einen eigenen, eng begrenzten Schlüssel und tausche ihn regelmässig aus."
     ai_key_scope_anthropic: "Lege den Schlüssel in einem eigenen Workspace an und gib dem Workspace ein Ausgabenlimit."
     ai_key_scope_openai: "Verwende einen Projekt-Schlüssel für ein eigenes Projekt und setze dort ein Nutzungslimit."

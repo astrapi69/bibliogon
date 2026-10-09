@@ -1282,6 +1282,7 @@
       "ai_max_tokens": "Máx. de tokens",
       "ai_api_key": "Clave de API",
       "ai_key_not_required": "No requerida",
+      "shared_origin_note": "Esta versión web se ejecuta en un host que comparte su almacenamiento con los demás sitios de la misma cuenta. Cualquiera que pueda publicar un sitio ahí puede leer ese almacenamiento. Para una credencial permanente, la aplicación de escritorio es el lugar más seguro.",
       "ai_key_hint": "La clave se guarda sin cifrar en este dispositivo y solo se envía al servicio indicado en 'Base URL'. Usa una clave propia con permisos limitados y cámbiala con regularidad.",
       "ai_key_scope_anthropic": "Crea la clave en un espacio de trabajo propio y asígnale un límite de gasto.",
       "ai_key_scope_openai": "Usa una clave de proyecto limitada a un proyecto propio y define allí un límite de uso.",
