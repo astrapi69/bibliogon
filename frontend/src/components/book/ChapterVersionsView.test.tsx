@@ -13,6 +13,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 import ChapterVersionsView from "./ChapterVersionsView";
 import type { ChapterVersionSummary } from "../../api/client";
+import type { StorageModeState } from "../../storage/useStorageMode";
 
 vi.mock("../../hooks/useI18n", () => ({
   useI18n: () => ({
@@ -29,6 +30,18 @@ vi.mock("../shared/AppDialog", () => ({
 
 vi.mock("../../utils/platform/notify", () => ({
   notify: { success: vi.fn(), error: vi.fn() },
+}));
+
+// #848: the note under the take-row depends on the EFFECTIVE storage
+// mode, not on the seam mock above - a snapshot written to Dexie is the
+// one that stays on the device.
+const storageMode = vi.fn((): StorageModeState => ({
+  mode: "api",
+  online: true,
+  offlineEnabled: false,
+}));
+vi.mock("../../storage/useStorageMode", () => ({
+  useStorageMode: () => storageMode(),
 }));
 
 const listVersions = vi.fn();
@@ -191,5 +204,71 @@ describe("ChapterVersionsView", () => {
     fireEvent.click(screen.getByTestId("chapter-version-diff-back"));
     await screen.findByTestId("chapter-versions-list");
     expect(screen.queryByTestId("chapter-version-diff")).toBeNull();
+  });
+});
+
+describe("ChapterVersionsView local-only note (#848)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    listVersions.mockResolvedValue([MANUAL, AUTO]);
+    createSnapshot.mockResolvedValue({ ...MANUAL, id: "man2" });
+    storageMode.mockReturnValue({
+      mode: "api",
+      online: true,
+      offlineEnabled: false,
+    });
+  });
+
+  it("says nothing while the snapshot reaches the server", async () => {
+    renderModal();
+    await screen.findByTestId("chapter-versions-list");
+    expect(screen.queryByTestId("chapter-snapshot-local-only")).toBeNull();
+  });
+
+  it("names the limit while writes go to Dexie", async () => {
+    storageMode.mockReturnValue({
+      mode: "dexie",
+      online: false,
+      offlineEnabled: true,
+    });
+    renderModal();
+    await screen.findByTestId("chapter-versions-list");
+    const note = await screen.findByTestId("chapter-snapshot-local-only");
+    expect(note.textContent).toMatch(/device|Ger/);
+  });
+
+  it("names the limit in the backendless build, where there is no server to reach", async () => {
+    // Offline capability is not "enabled" there - the build has no API
+    // at all - so the note cannot key off offlineEnabled or online.
+    storageMode.mockReturnValue({
+      mode: "dexie",
+      online: true,
+      offlineEnabled: false,
+    });
+    renderModal();
+    await screen.findByTestId("chapter-versions-list");
+    expect(screen.getByTestId("chapter-snapshot-local-only")).toBeTruthy();
+  });
+
+  it("still takes the snapshot - the note is a warning, not a gate", async () => {
+    storageMode.mockReturnValue({
+      mode: "dexie",
+      online: false,
+      offlineEnabled: true,
+    });
+    renderModal();
+    await screen.findByTestId("chapter-versions-list");
+    fireEvent.change(screen.getByTestId("chapter-snapshot-name"), {
+      target: { value: "Fassung vor dem Umbau" },
+    });
+    fireEvent.click(screen.getByTestId("chapter-snapshot-create"));
+    await waitFor(() =>
+      expect(createSnapshot).toHaveBeenCalledWith(
+        "b1",
+        "ch1",
+        "Fassung vor dem Umbau",
+      ),
+    );
+    expect(screen.getByTestId("chapter-snapshot-create")).toBeTruthy();
   });
 });

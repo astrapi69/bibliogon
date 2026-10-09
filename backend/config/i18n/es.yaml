@@ -2215,6 +2215,7 @@ ui:
     snapshot_name_placeholder: "Nombre de la instantanea (opcional)"
     snapshot_taken: "Instantanea creada."
     snapshot_failed: "No se pudo crear la instantanea."
+    snapshot_local_only: "Una instantánea tomada sin conexión al servidor permanece en este dispositivo. No aparece en las copias de seguridad del servidor ni en la aplicación de escritorio."
     snapshot_badge: "Instantanea"
     delete: "Eliminar instantanea"
     delete_confirm_title: "¿Eliminar instantanea?"

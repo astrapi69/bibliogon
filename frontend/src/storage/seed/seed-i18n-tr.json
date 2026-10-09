@@ -2287,6 +2287,7 @@
       "snapshot_name_placeholder": "Anlik goruntu adi (istege bagli)",
       "snapshot_taken": "Anlik goruntu olusturuldu.",
       "snapshot_failed": "Anlik goruntu olusturulamadi.",
+      "snapshot_local_only": "Sunucu bağlantısı olmadan alınan bir anlık görüntü bu cihazda kalır. Sunucu tarafındaki yedeklerde ve masaüstü uygulamasında görünmez.",
       "snapshot_badge": "Anlik goruntu",
       "delete": "Anlik goruntuyu sil",
       "delete_confirm_title": "Anlik goruntu silinsin mi?",
