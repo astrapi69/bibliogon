@@ -19,6 +19,7 @@ import {
     Clock,
     ExternalLink,
     Plus,
+    Send,
     Trash2,
 } from "lucide-react";
 
@@ -36,6 +37,8 @@ import {RadixSelect} from "../shared/RadixSelect";
 import {Toggle} from "../settings/Toggle";
 import {Badge, type BadgeVariant} from "../../lib/components/Badge";
 import { notify } from "../../utils/platform/notify";
+import { useFeature } from "@astrapi69/feature-strategy-react";
+import { FEATURES } from "../../features/featureConfig";
 
 const STATUS_VARIANT: Record<PublicationStatus, BadgeVariant> = {
     planned: "muted",
@@ -168,8 +171,17 @@ function PublicationRow({
 }) {
     const { t } = useI18n();
     const { confirm } = useDialog();
+    const publishViaApi = useFeature(FEATURES.PUBLISH_VIA_API);
 
     const platformLabel = schema?.display_name ?? publication.platform;
+    // The one consumer of the declared publishing_method (#918). Until a
+    // platform's schema says "api", nothing in this row changes - which is
+    // what keeps the diff behaviour-neutral against the shipped list, where
+    // every entry is still "manual".
+    const canPublishViaApi =
+        schema?.publishing_method === "api" &&
+        publication.status !== "published" &&
+        publication.status !== "out_of_sync";
     const publishedUrl = (publication.platform_metadata?.published_url as string | undefined) ?? null;
 
     async function handleMarkPublished(): Promise<void> {
@@ -301,6 +313,26 @@ function PublicationRow({
                 </a>
             )}
             <div style={panelStyles.rowActions}>
+                {canPublishViaApi && (
+                    <button
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        disabled={!publishViaApi.isActive}
+                        title={
+                            publishViaApi.isActive
+                                ? undefined
+                                : t(
+                                      publishViaApi.reason ??
+                                          "ui.feature.not_yet_available",
+                                      "Noch nicht verfügbar",
+                                  )
+                        }
+                        data-testid={`publication-publish-now-${publication.id}`}
+                    >
+                        <Send size={12} style={{ marginRight: 6 }} />
+                        {t("ui.publications.publish_now", "Jetzt veröffentlichen")}
+                    </button>
+                )}
                 {publication.status !== "published" &&
                     publication.status !== "out_of_sync" && (
                         <button

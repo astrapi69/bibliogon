@@ -1600,6 +1600,7 @@ ui:
     status_out_of_sync: "Εκτός συγχρονισμού"
     status_archived: "Αρχειοθετημένο"
     drift_warning: "Η ζωντανή έκδοση μπορεί να μην συγχρονίζεται με το τρέχον προσχέδιο."
+    publish_now: "Δημοσίευση τώρα"
     mark_published: "Σήμανση ως δημοσιευμένη"
     mark_published_success: "Σημάνθηκε ως δημοσιευμένη."
     mark_published_error: "Η σήμανση απέτυχε."

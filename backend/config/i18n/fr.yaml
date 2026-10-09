@@ -1640,6 +1640,7 @@ ui:
     status_out_of_sync: "Desynchronise"
     status_archived: "Archive"
     drift_warning: "La version en ligne peut etre desynchronisee avec le brouillon actuel."
+    publish_now: "Publier maintenant"
     mark_published: "Marquer comme publiee"
     mark_published_success: "Marque comme publie."
     mark_published_error: "Echec du marquage."

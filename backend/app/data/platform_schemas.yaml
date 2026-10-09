@@ -16,8 +16,12 @@
 #     publishing_method: "manual" or "api"
 #     notes: free-form note shown in the help panel
 #
-# Note: per AR-02 scope the publishing_method is always "manual" for
-# Phase 2. Real API integration is out of scope.
+# publishing_method is validated against the literal set on load (#918):
+# a typo here raises PlatformSchemaError instead of quietly degrading the
+# platform to manual. Every entry is still "manual" - "api" means an
+# adapter exists that can post for the user, and the first one lands with
+# #917. Flipping an entry to "api" before its adapter ships would offer
+# the user a button that cannot work.
 
 medium:
   display_name: "Medium"

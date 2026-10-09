@@ -1602,6 +1602,7 @@ ui:
     status_out_of_sync: "Out of sync"
     status_archived: "Archived"
     drift_warning: "Live version may be out of sync with current draft."
+    publish_now: "Publish now"
     mark_published: "Mark as published"
     mark_published_success: "Marked as published."
     mark_published_error: "Could not mark as published."

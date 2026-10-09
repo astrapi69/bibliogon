@@ -1366,6 +1366,14 @@ class PublicationOut(BaseModel):
         return {}
 
 
+#: How an Article reaches a platform. ``manual`` means the user copies it
+#: across and marks the publication published; ``api`` means an adapter
+#: can post it for them. A ``Literal`` rather than ``str`` since #918:
+#: the value decides whether the UI offers to publish at all, so a typo
+#: must fail rather than degrade the platform to manual unnoticed.
+PublishingMethod = Literal["manual", "api"]
+
+
 class PlatformSchemaOut(BaseModel):
     """Per-platform schema as exposed via the API. Mirrors the YAML
     shape so the frontend can render forms directly."""
@@ -1375,7 +1383,7 @@ class PlatformSchemaOut(BaseModel):
     optional_metadata: list[str] = []
     max_tags: int | None = None
     max_chars_per_post: int | None = None
-    publishing_method: str = "manual"
+    publishing_method: PublishingMethod = "manual"
     notes: str | None = None
 
 

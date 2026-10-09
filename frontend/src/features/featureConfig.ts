@@ -106,6 +106,12 @@ export const FEATURES = {
     // key-dependent AI_GRAMMAR / AI_TRANSLATE gates above (#661).
     GRAMMAR: "grammar",
     TRANSLATION: "translation",
+
+    // Publish an Article to a platform through its API instead of the
+    // user copying it across (#918). The affordance exists; no adapter
+    // does yet, so it is disabled everywhere with the not-yet reason -
+    // see NOT_YET_IMPLEMENTED below.
+    PUBLISH_VIA_API: "publish-via-api",
 } as const;
 
 /**
@@ -265,6 +271,22 @@ const DESKTOP_ONLY: readonly string[] = [
     FEATURES.TRANSLATION,
 ];
 
+/**
+ * Features whose UI has shipped ahead of their implementation, so they are
+ * `disabled` in BOTH modes with the not-yet-available reason.
+ *
+ * `publish-via-api` (#918) is the bucket's first and only member. The
+ * Publications panel offers the action for a platform whose schema declares
+ * `publishing_method: "api"`, which makes the declared field finally
+ * load-bearing - but no adapter exists in any deployment, so enabling it on
+ * desktop would be a button that fails on click. "Requires the desktop app"
+ * would be the wrong reason for the same source: today the desktop app
+ * cannot do it either. It becomes desktop-only (CORS blocks browser-direct
+ * posts to WordPress / Ghost / Forem) when the first adapter lands with
+ * #917, and the gate moves to DESKTOP_ONLY in that change.
+ */
+const NOT_YET_IMPLEMENTED: readonly string[] = [FEATURES.PUBLISH_VIA_API];
+
 function descriptor(id: string): FeatureDescriptor {
     return { id, defaultState: "active" satisfies FeatureState };
 }
@@ -275,6 +297,7 @@ const DESCRIPTORS: readonly FeatureDescriptor[] = [
     ...NEEDS_NETWORK,
     ...NEEDS_KEY_AND_NETWORK,
     ...DESKTOP_ONLY,
+    ...NOT_YET_IMPLEMENTED,
 ].map(descriptor);
 
 function keyDependentCondition(): FeatureCondition<FeatureContext> {
@@ -296,6 +319,13 @@ function desktopOnlyCondition(): FeatureCondition<FeatureContext> {
     return {
         evaluate: (ctx) => (ctx?.mode === "dexie" ? "disabled" : undefined),
         reason: FEATURE_REASON.REQUIRES_DESKTOP_APP,
+    };
+}
+
+function notYetImplementedCondition(): FeatureCondition<FeatureContext> {
+    return {
+        evaluate: () => "disabled",
+        reason: FEATURE_REASON.NOT_YET_AVAILABLE,
     };
 }
 
@@ -330,6 +360,7 @@ function buildRules(): Record<string, FeatureCondition<FeatureContext>> {
     for (const id of NEEDS_NETWORK) rules[id] = networkDependentCondition();
     for (const id of NEEDS_KEY_AND_NETWORK) rules[id] = keyAndNetworkCondition();
     for (const id of DESKTOP_ONLY) rules[id] = desktopOnlyCondition();
+    for (const id of NOT_YET_IMPLEMENTED) rules[id] = notYetImplementedCondition();
     return rules;
 }
 

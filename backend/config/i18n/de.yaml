@@ -1603,6 +1603,7 @@ ui:
     status_out_of_sync: "Nicht synchron"
     status_archived: "Archiviert"
     drift_warning: "Live-Version könnte nicht mit dem aktuellen Entwurf übereinstimmen."
+    publish_now: "Jetzt veröffentlichen"
     mark_published: "Als veröffentlicht"
     mark_published_success: "Als veröffentlicht markiert."
     mark_published_error: "Konnte nicht markiert werden."
