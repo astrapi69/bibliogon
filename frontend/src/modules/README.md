@@ -18,6 +18,7 @@ a home.
 |--------|--------|---------|
 | `module-ai` | (core AI routes) | Partial (browser-direct for CORS-capable providers; SSE review + template file-I/O desktop-only) |
 | `module-ms-tools` | ms-tools | Partial (metrics yes; style checks no) |
+| `module-aplus` | aplus | Partial (deterministic validation yes; AI generation no) |
 | `module-pdf-export` | export (PDF) | Yes (`pdfmake`) |
 | `module-epub-export` | export (EPUB) | Yes (`epub-gen-memory`) |
 | `module-docx-export` | export (DOCX) | Yes (`docx`) |
