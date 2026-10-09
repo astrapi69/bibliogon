@@ -2,13 +2,12 @@ import {useState} from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import {GitCompare, Upload, Loader2, AlertCircle, Info} from "lucide-react";
 import {
-    ApiError,
     BackupChapterDiff,
     BackupCompareResult,
     BackupDiffLine,
     BackupMetadataChange,
-    api,
 } from "../../api/client";
+import {compareBackupFiles} from "../../import/bgb/compare";
 import {useI18n} from "../../hooks/useI18n";
 import {notify} from "../../utils/platform/notify";
 
@@ -35,10 +34,17 @@ export default function BackupCompareDialog({open, onClose}: Props) {
         if (!fileA || !fileB) return;
         setLoading(true);
         try {
-            const data = await api.backup.compare(fileA, fileB);
+            // Client-side since #748. A compare reads two files the user
+            // picked and touches nothing else, so the old round trip
+            // uploaded both archives to learn what the browser can work
+            // out itself - and the feature stopped being desktop-only.
+            const data = await compareBackupFiles(fileA, fileB);
             setResult(data);
         } catch (err) {
-            const msg = err instanceof ApiError ? err.detail : t("ui.backup.compare.error_generic", "Vergleich fehlgeschlagen");
+            const msg =
+                err instanceof Error && err.message
+                    ? err.message
+                    : t("ui.backup.compare.error_generic", "Vergleich fehlgeschlagen");
             notify.error(msg, err);
             setResult(null);
         } finally {
@@ -73,11 +79,13 @@ export default function BackupCompareDialog({open, onClose}: Props) {
                         <div style={{display: "flex", flexDirection: "column", gap: "1rem"}}>
                             <FilePickerRow
                                 label={t("ui.backup.compare.file_a_label", "Backup A (älterer Stand)")}
+                                side="a"
                                 file={fileA}
                                 onChange={setFileA}
                             />
                             <FilePickerRow
                                 label={t("ui.backup.compare.file_b_label", "Backup B (neuerer Stand)")}
+                                side="b"
                                 file={fileB}
                                 onChange={setFileB}
                             />
@@ -90,6 +98,7 @@ export default function BackupCompareDialog({open, onClose}: Props) {
                                     onClick={handleCompare}
                                     disabled={!fileA || !fileB || loading}
                                     className="btn-primary"
+                                    data-testid="backup-compare-run"
                                 >
                                     {loading ? <Loader2 size={16} className="spin" /> : <GitCompare size={16} />}
                                     {t("ui.backup.compare.compare_button", "Vergleichen")}
@@ -135,7 +144,20 @@ export default function BackupCompareDialog({open, onClose}: Props) {
 }
 
 
-function FilePickerRow({label, file, onChange}: {label: string; file: File | null; onChange: (f: File | null) => void}) {
+/** Testid namespace: `backup-compare-file-{side}` on the input,
+ *  `backup-compare-size-{side}` on the size readout. Both sides of the
+ *  picker are addressable so the E2E can drive the whole compare. */
+function FilePickerRow({
+    label,
+    side,
+    file,
+    onChange,
+}: {
+    label: string;
+    side: "a" | "b";
+    file: File | null;
+    onChange: (f: File | null) => void;
+}) {
     return (
         <label style={{display: "flex", flexDirection: "column", gap: "0.25rem"}}>
             <span style={{fontWeight: 500}}>{label}</span>
@@ -144,10 +166,18 @@ function FilePickerRow({label, file, onChange}: {label: string; file: File | nul
                 <input
                     type="file"
                     accept=".bgb"
+                    data-testid={`backup-compare-file-${side}`}
                     onChange={(e) => onChange(e.target.files?.[0] ?? null)}
                     style={{flex: 1}}
                 />
-                {file && <span style={{fontSize: "0.85em", color: "var(--text-muted)"}}>{formatBytes(file.size)}</span>}
+                {file && (
+                    <span
+                        data-testid={`backup-compare-size-${side}`}
+                        style={{fontSize: "0.85em", color: "var(--text-muted)"}}
+                    >
+                        {formatBytes(file.size)}
+                    </span>
+                )}
             </div>
         </label>
     );
@@ -161,7 +191,10 @@ function CompareResultView({result}: {result: BackupCompareResult}) {
     return (
         <div style={{display: "flex", flexDirection: "column", gap: "1rem"}}>
             <div style={{padding: "0.75rem", background: "var(--surface-2)", borderRadius: "6px"}}>
-                <div style={{fontWeight: 500, marginBottom: "0.25rem"}}>
+                <div
+                    data-testid="backup-compare-summary"
+                    style={{fontWeight: 500, marginBottom: "0.25rem"}}
+                >
                     {t("ui.backup.compare.summary_title", "Übersicht")}
                 </div>
                 <div style={{fontSize: "0.9em", color: "var(--text-muted)"}}>
