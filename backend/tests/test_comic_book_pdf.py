@@ -29,16 +29,15 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-
 from bibliogon_comics.comic_book_pdf import (
-    COMIC_GRID_TEMPLATES,
-    DEFAULT_COMIC_GRID_TEMPLATE,
     _BUBBLE_TYPE_CSS,
     _GRID_TEMPLATE_CSS,
+    COMIC_GRID_TEMPLATES,
+    DEFAULT_COMIC_GRID_TEMPLATE,
+    _bubble_type_style,
     _build_assets_map,
     _build_bubble_path,
     _build_comic_html,
-    _bubble_type_style,
     _render_bubble_tail_svg,
     _render_comic_bubble,
     _render_comic_page,
@@ -46,7 +45,6 @@ from bibliogon_comics.comic_book_pdf import (
     _resolve_comic_grid_template,
     generate_comic_book_pdf,
 )
-
 
 # --- Grid-template resolution ---
 
@@ -97,32 +95,58 @@ def test_comic_grid_templates_includes_all_7_standards() -> None:
     assert set(_GRID_TEMPLATE_CSS.keys()) == set(COMIC_GRID_TEMPLATES)
 
 
-def test_grid_1x2_emits_2_columns_single_row() -> None:
-    """grid_1x2 = side-by-side (1 row × 2 cols)."""
-    css = _GRID_TEMPLATE_CSS["grid_1x2"]
-    assert "grid-template-columns: repeat(2, 1fr)" in css
-    assert "grid-template-rows: 1fr" in css
+def _track_counts(css: str) -> tuple[int, int]:
+    """(columns, rows) declared by a template's CSS.
+
+    Reads the structure rather than the spelling: #793 changed every track
+    from ``1fr`` to ``minmax(0, 1fr)``, and a substring assertion on the old
+    spelling tested the string while claiming to test the shape.
+    """
+
+    def count(axis: str) -> int:
+        match = re.search(rf"grid-template-{axis}:\s*([^;\n]+)", css)
+        assert match, f"no grid-template-{axis} in {css!r}"
+        value = match.group(1).strip()
+        repeat = re.match(r"repeat\(\s*(\d+)\s*,", value)
+        return int(repeat.group(1)) if repeat else 1
+
+    return count("columns"), count("rows")
 
 
-def test_grid_2x1_emits_single_column_2_rows() -> None:
-    """grid_2x1 = stacked (2 rows × 1 col)."""
-    css = _GRID_TEMPLATE_CSS["grid_2x1"]
-    assert "grid-template-columns: 1fr" in css
-    assert "grid-template-rows: repeat(2, 1fr)" in css
+@pytest.mark.parametrize(
+    ("template", "columns", "rows"),
+    [
+        ("single_panel", 1, 1),
+        ("grid_1x2", 2, 1),
+        ("grid_2x1", 1, 2),
+        ("grid_2x2", 2, 2),
+        ("grid_2x3", 3, 2),
+        ("grid_3x2", 2, 3),
+        ("grid_3x3", 3, 3),
+    ],
+)
+def test_grid_template_declares_the_named_track_counts(
+    template: str, columns: int, rows: int
+) -> None:
+    """The id names the shape: grid_<rows>x<columns>."""
+    assert _track_counts(_GRID_TEMPLATE_CSS[template]) == (columns, rows)
 
 
-def test_grid_2x3_emits_3_columns_2_rows() -> None:
-    """grid_2x3 = two-tier (2 rows × 3 cols)."""
-    css = _GRID_TEMPLATE_CSS["grid_2x3"]
-    assert "grid-template-columns: repeat(3, 1fr)" in css
-    assert "grid-template-rows: repeat(2, 1fr)" in css
-
-
-def test_grid_3x2_emits_2_columns_3_rows() -> None:
-    """grid_3x2 = three-tier (3 rows × 2 cols)."""
-    css = _GRID_TEMPLATE_CSS["grid_3x2"]
-    assert "grid-template-columns: repeat(2, 1fr)" in css
-    assert "grid-template-rows: repeat(3, 1fr)" in css
+@pytest.mark.parametrize("template", COMIC_GRID_TEMPLATES)
+def test_every_track_has_a_zero_minimum(template: str) -> None:
+    """#793: a bare ``1fr`` track is ``minmax(auto, 1fr)``, so a panel image
+    taller than its share of the page raises the row and the comic page
+    breaks onto a second sheet. Every track must carry an explicit zero
+    minimum; the rendered-output pin lives in
+    ``plugins/bibliogon-plugin-comics/tests/test_comic_book_pdf_sheets.py``."""
+    css = _GRID_TEMPLATE_CSS[template]
+    tracks = re.findall(r"grid-template-(?:columns|rows):\s*([^;\n]+)", css)
+    assert len(tracks) == 2
+    for track in tracks:
+        assert "minmax(0, 1fr)" in track, f"{template}: bare 1fr track {track!r}"
+        assert not re.search(r"(?<!minmax\(0, )\b1fr\b", track.replace("minmax(0, 1fr)", "")), (
+            f"{template}: leftover bare 1fr in {track!r}"
+        )
 
 
 # --- Bubble-type CSS variants ---
@@ -208,7 +232,10 @@ def test_tail_svg_bubble_background_color_threads_into_mask_fill() -> None:
     bubble's interior color, NOT a hardcoded white. Narration's
     parchment ``#f5f5dc`` is the canonical non-white case."""
     parchment = _render_bubble_tail_svg(
-        "S", 50, 16, bubble_background_color="#f5f5dc",
+        "S",
+        50,
+        16,
+        bubble_background_color="#f5f5dc",
     )
     assert 'fill="#f5f5dc"' in parchment
     # The stroke lines are unaffected — they remain black.
@@ -504,7 +531,8 @@ def test_walker_bubble_position_parity_no_centre_translate_at_zero_zero() -> Non
     )
     # No translate transform on the bubble container.
     container_match = re.search(
-        r'<div class="comic-bubble"[^>]*style="([^"]+)"', html,
+        r'<div class="comic-bubble"[^>]*style="([^"]+)"',
+        html,
     )
     assert container_match is not None
     container_style = container_match.group(1)
@@ -530,7 +558,8 @@ def test_walker_bubble_container_style_explicit_all_four_dimensions() -> None:
         )
     )
     container_match = re.search(
-        r'<div class="comic-bubble"[^>]*style="([^"]+)"', html,
+        r'<div class="comic-bubble"[^>]*style="([^"]+)"',
+        html,
     )
     assert container_match is not None
     container_style = container_match.group(1)
@@ -554,9 +583,7 @@ def test_render_comic_bubble_no_tail_for_direction_none() -> None:
 def test_render_comic_bubble_applies_bubble_config_background_color() -> None:
     """Approach A: background_color flows into the SVG path's fill
     attribute, not into a CSS background-color rule."""
-    html = _render_comic_bubble(
-        _make_bubble(bubble_config={"background_color": "#ff0000"})
-    )
+    html = _render_comic_bubble(_make_bubble(bubble_config={"background_color": "#ff0000"}))
     assert 'fill="#ff0000"' in html
 
 
@@ -673,7 +700,7 @@ def test_render_comic_page_uses_grid_template_from_layout_config() -> None:
     page = _make_page(layout_config={"comic_grid_template": "grid_2x2"})
     html = _render_comic_page(page, [], {}, {})
     assert 'data-grid-template="grid_2x2"' in html
-    assert "grid-template-columns: repeat(2, 1fr)" in html
+    assert _GRID_TEMPLATE_CSS["grid_2x2"] in html
 
 
 def test_render_comic_page_falls_back_to_single_panel_without_config() -> None:
@@ -749,9 +776,7 @@ def test_build_comic_html_generator_meta_basic() -> None:
 
 def test_build_comic_html_generator_meta_bleed_suffix() -> None:
     book_data = {"id": "b1", "title": "X"}
-    html = _build_comic_html(
-        book_data, [], [], [], {}, picture_book_bleed_marks=True
-    )
+    html = _build_comic_html(book_data, [], [], [], {}, picture_book_bleed_marks=True)
     assert 'content="Bibliogon comic-book PDF (bleed)"' in html
 
 
@@ -805,9 +830,7 @@ def test_build_comic_html_carries_format_css() -> None:
 
 def test_build_comic_html_bleed_marks_added_when_enabled() -> None:
     book_data = {"id": "b1", "title": "X"}
-    html = _build_comic_html(
-        book_data, [], [], [], {}, picture_book_bleed_marks=True
-    )
+    html = _build_comic_html(book_data, [], [], [], {}, picture_book_bleed_marks=True)
     # _format_css emits marks: crop + bleed when enabled.
     assert "marks: crop" in html
     assert "bleed:" in html
@@ -879,7 +902,6 @@ def test_generate_comic_book_pdf_writes_pdf_file(tmp_path: Path) -> None:
     assert output.exists()
     # PDFs start with the magic bytes %PDF.
     assert output.read_bytes()[:4] == b"%PDF"
-
 
 
 # --- Single-SVG-path bubble generator (mirror of bubblePath.ts) ---
@@ -1026,9 +1048,7 @@ class TestShoutSpikeExtension:
         for tok in no_tail.split():
             stripped = tok.lstrip("-").replace(".", "")
             if stripped.isdigit() and "." not in tok and 100 < int(tok) < 200:
-                raise AssertionError(
-                    f"vertex coord {tok} outside bbox unexpectedly: {no_tail}"
-                )
+                raise AssertionError(f"vertex coord {tok} outside bbox unexpectedly: {no_tail}")
 
     def test_s_direction_extends_bottom_most_spike(self) -> None:
         with_tail = _build_bubble_path(
@@ -1252,9 +1272,7 @@ def test_generate_comic_book_pdf_renders_all_6_bubble_types(tmp_path: Path) -> N
         capture_output=True,
         check=False,
     )
-    assert result.returncode == 0, (
-        f"pdftoppm failed: {result.stderr.decode(errors='replace')}"
-    )
+    assert result.returncode == 0, f"pdftoppm failed: {result.stderr.decode(errors='replace')}"
     png_file = tmp_path / "page-1.png"
     assert png_file.exists(), f"pdftoppm did not write {png_file}"
     assert png_file.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
@@ -1263,9 +1281,7 @@ def test_generate_comic_book_pdf_renders_all_6_bubble_types(tmp_path: Path) -> N
 
     img = Image.open(png_file).convert("RGB")
     raw = img.tobytes()
-    non_white = sum(
-        1 for i in range(0, len(raw), 3) if raw[i : i + 3] != b"\xff\xff\xff"
-    )
+    non_white = sum(1 for i in range(0, len(raw), 3) if raw[i : i + 3] != b"\xff\xff\xff")
     # An empty-canvas PNG at 150 DPI / A4 has 0 non-white pixels.
     # Six rendered bubbles (outlines + tails + text labels) on
     # the same canvas produce in the tens of thousands. The

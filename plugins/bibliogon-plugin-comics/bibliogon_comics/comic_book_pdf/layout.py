@@ -35,14 +35,40 @@ DEFAULT_COMIC_GRID_TEMPLATE = "single_panel"
 # grid_3x3 = 9. The walker doesn't enforce panel-count match —
 # it renders whatever ``comic_panels`` rows exist, sorted by
 # position, into the grid cells in order.
+# ``minmax(0, 1fr)`` rather than ``1fr``, which is shorthand for
+# ``minmax(auto, 1fr)``: the auto minimum is the track's content, so a
+# panel image taller than its share of the page RAISES the row instead of
+# being clipped by it, the page box outgrows ``--content-h`` and WeasyPrint
+# breaks onto a second sheet. The wider the cell, the taller a full-width
+# image is, which is why #793 hit exactly the two templates with the widest
+# cells for their row count (grid_2x1: 1 column over 2 rows; grid_3x2: 2
+# columns over 3 rows) while their 2- and 3-column siblings were fine.
 _GRID_TEMPLATE_CSS: dict[str, str] = {
-    "single_panel": ("grid-template-columns: 1fr;\n    grid-template-rows: 1fr;"),
-    "grid_1x2": ("grid-template-columns: repeat(2, 1fr);\n    grid-template-rows: 1fr;"),
-    "grid_2x1": ("grid-template-columns: 1fr;\n    grid-template-rows: repeat(2, 1fr);"),
-    "grid_2x2": ("grid-template-columns: repeat(2, 1fr);\n    grid-template-rows: repeat(2, 1fr);"),
-    "grid_2x3": ("grid-template-columns: repeat(3, 1fr);\n    grid-template-rows: repeat(2, 1fr);"),
-    "grid_3x2": ("grid-template-columns: repeat(2, 1fr);\n    grid-template-rows: repeat(3, 1fr);"),
-    "grid_3x3": ("grid-template-columns: repeat(3, 1fr);\n    grid-template-rows: repeat(3, 1fr);"),
+    "single_panel": (
+        "grid-template-columns: minmax(0, 1fr);\n    grid-template-rows: minmax(0, 1fr);"
+    ),
+    "grid_1x2": (
+        "grid-template-columns: repeat(2, minmax(0, 1fr));\n    grid-template-rows: minmax(0, 1fr);"
+    ),
+    "grid_2x1": (
+        "grid-template-columns: minmax(0, 1fr);\n    grid-template-rows: repeat(2, minmax(0, 1fr));"
+    ),
+    "grid_2x2": (
+        "grid-template-columns: repeat(2, minmax(0, 1fr));\n"
+        "    grid-template-rows: repeat(2, minmax(0, 1fr));"
+    ),
+    "grid_2x3": (
+        "grid-template-columns: repeat(3, minmax(0, 1fr));\n"
+        "    grid-template-rows: repeat(2, minmax(0, 1fr));"
+    ),
+    "grid_3x2": (
+        "grid-template-columns: repeat(2, minmax(0, 1fr));\n"
+        "    grid-template-rows: repeat(3, minmax(0, 1fr));"
+    ),
+    "grid_3x3": (
+        "grid-template-columns: repeat(3, minmax(0, 1fr));\n"
+        "    grid-template-rows: repeat(3, minmax(0, 1fr));"
+    ),
 }
 
 
