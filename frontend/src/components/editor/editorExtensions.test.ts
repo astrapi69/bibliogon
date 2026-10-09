@@ -47,7 +47,11 @@ function buildEditor(content?: unknown): Editor {
   return new Editor({
     extensions: [
       StarterKit.configure({ link: false, underline: false }),
-      Link,
+      // Exactly what buildEditorExtensions passes. That module cannot be
+      // imported here (the Figure CJS interop crash documented above), so
+      // the options are repeated rather than shared - and the point of the
+      // test below is that this literal is the app's.
+      Link.configure({ openOnClick: false, HTMLAttributes: { class: "tiptap-link" } }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       Underline,
       Subscript,
@@ -122,6 +126,43 @@ describe("editor extension set (TipTap v3)", () => {
     expect(editor.schema.nodes.inlineMath).toBeTruthy();
     expect(editor.schema.nodes.blockMath).toBeTruthy();
     expect(editor.schema.marks.textStyle).toBeTruthy();
+    editor.destroy();
+  });
+
+  /**
+   * #987 looked like a finding and was not: passing `HTMLAttributes` to
+   * `Link.configure` appeared to replace the extension's defaults
+   * wholesale, which would have emitted a link with no `rel`. Measured,
+   * `configure` merges that key, so the app's class-only call renders
+   * `rel="noopener noreferrer nofollow"` and always did.
+   *
+   * The pin is kept because the premise was easy to believe and the
+   * failure would be silent: every surface that renders chapter HTML -
+   * the preview, the HTML export, the EPUB - would hand the opened
+   * document a handle on the opener, and nothing in the app would look
+   * different. A TipTap release that stops merging the key, or a future
+   * edit that spells the attributes out and forgets one, turns this red.
+   */
+  it("renders content links with an opener-safe rel (#987)", () => {
+    const editor = buildEditor({
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            {
+              type: "text",
+              marks: [{ type: "link", attrs: { href: "https://example.test/a" } }],
+              text: "Quelle",
+            },
+          ],
+        },
+      ],
+    });
+    const html = editor.getHTML();
+    expect(html).toContain('href="https://example.test/a"');
+    expect(html).toContain('class="tiptap-link"');
+    expect(html).toMatch(/rel="[^"]*noopener[^"]*"/);
     editor.destroy();
   });
 

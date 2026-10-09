@@ -145,7 +145,7 @@ export default function ErrorReportDialog({
       body += "\n\n*(Bericht gekürzt wegen URL-Längenbegrenzung)*";
     }
     const url = `${ISSUES_URL}?title=${encodedTitle}&body=${encodeURIComponent(body)}&labels=bug`;
-    window.open(url, "_blank");
+    window.open(url, "_blank", "noopener,noreferrer");
     onClose();
   };
 
