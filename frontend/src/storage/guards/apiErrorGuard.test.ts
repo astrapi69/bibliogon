@@ -21,12 +21,17 @@
  * - ``if (err instanceof ApiError) { ... } else { ... }`` - both branches
  *   handled, which is what ``ArticleCommentsPanel`` does,
  * - a listed exception below.
+ *
+ * Lives beside the seam rather than beside the hooks it first caught,
+ * because the seam is what makes the shape a bug: in API mode the guard is
+ * complete. ``storage/settingsSeamGuard.test.ts`` is the sibling scan this
+ * one is modelled on and a candidate to move into this folder.
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { describe, expect, it } from "vitest";
 
-const SRC_ROOT = path.resolve(__dirname, "..");
+const SRC_ROOT = path.resolve(__dirname, "..", "..");
 
 /**
  * Audited call sites where the else-less guard is deliberate.
