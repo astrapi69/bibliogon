@@ -16,6 +16,7 @@ const fakeStorage = {
         getApp: vi.fn(async () => ({
             theme: "nord",
             author: { name: "Me", pen_names: ["M."] },
+            ai: { active_provider: "google", keys: { google: "AIza-secret" }, api_key: "AIza-secret" },
         })),
     },
     authors: { list: vi.fn(async () => [{ id: "a1", name: "King", slug: "king" }]) },
@@ -148,5 +149,18 @@ describe("selectiveExportFilename", () => {
         expect(selectiveExportFilename("2026-06-10T12:34:56Z")).toBe(
             "bibliogon-export-2026-06-10.json",
         );
+    });
+});
+
+describe("selective export secrets (#985)", () => {
+    it("carries no provider key when settings are selected", async () => {
+        const bundle = await buildSelectiveBundle(
+            selectionWith({ settings: true }),
+            "2026-10-09T00:00:00Z",
+        );
+        expect(JSON.stringify(bundle)).not.toContain("AIza-secret");
+        const ai = (bundle.data.settings as { ai: Record<string, unknown> }).ai;
+        expect(ai.active_provider).toBe("google");
+        expect(ai.keys).toEqual({});
     });
 });

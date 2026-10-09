@@ -26,6 +26,14 @@ const createBubble = vi.fn(
 );
 const createLink = vi.fn(async (_d: Record<string, unknown>) => ({id: "nlink"}));
 
+// #985: the live settings the restore merges its secrets from. A bundle
+// taken since the export scrubber carries empty keys, and writing those
+// over this would clear the user's provider keys.
+const getApp = vi.fn(async () => ({
+    theme: "classic",
+    ai: {active_provider: "google", keys: {google: "AIza-live"}, api_key: "AIza-live"},
+}));
+
 const aplusSave = vi.fn(async (bookId: string, language: string, doc: Record<string, unknown>) => ({
     ...doc,
     book_id: bookId,
@@ -35,7 +43,7 @@ const aplusSave = vi.fn(async (bookId: string, language: string, doc: Record<str
 
 vi.mock("../storage", () => ({
     getStorage: () => ({
-        settings: {updateApp},
+        settings: {updateApp, getApp},
         authors: {list: authorsList, create: authorsCreate},
         books: {list: booksList, create: booksCreate},
         chapters: {create: chaptersCreate},
@@ -333,5 +341,42 @@ describe("importFullBackup", () => {
         expect(result.imported.books).toBe(1);
         expect(result.imported.pages).toBe(0);
         expect(createLink).not.toHaveBeenCalled();
+    });
+});
+
+describe("importFullBackup secrets (#985)", () => {
+    it("does not clear a live provider key when the bundle carries none", async () => {
+        const scrubbed = bundle();
+        (scrubbed.data as Record<string, unknown>).settings = {
+            theme: "nord",
+            ai: {active_provider: "google", keys: {}, api_key: ""},
+        };
+        await importFullBackup(fileOf(scrubbed));
+        const payload = updateApp.mock.calls[0][0] as {ai: Record<string, unknown>};
+        expect(payload.ai.keys).toEqual({google: "AIza-live"});
+        expect(payload.ai.api_key).toBe("AIza-live");
+    });
+
+    it("still restores a real key from a bundle taken before the scrubber", async () => {
+        const old = bundle();
+        (old.data as Record<string, unknown>).settings = {
+            ai: {keys: {google: "AIza-from-backup"}},
+        };
+        await importFullBackup(fileOf(old));
+        const payload = updateApp.mock.calls[0][0] as {ai: {keys: Record<string, string>}};
+        expect(payload.ai.keys.google).toBe("AIza-from-backup");
+    });
+
+    it("restores everything but the AI section when the live settings cannot be read", async () => {
+        getApp.mockRejectedValueOnce(new Error("storage unavailable"));
+        const scrubbed = bundle();
+        (scrubbed.data as Record<string, unknown>).settings = {
+            theme: "nord",
+            ai: {keys: {}, api_key: ""},
+        };
+        await importFullBackup(fileOf(scrubbed));
+        const payload = updateApp.mock.calls[0][0] as Record<string, unknown>;
+        expect(payload.theme).toBe("nord");
+        expect(payload).not.toHaveProperty("ai");
     });
 });

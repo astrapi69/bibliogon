@@ -13,6 +13,7 @@ import {
 } from "../api/client";
 import type {AplusDocumentRecord} from "../api/platform";
 import {getStorage} from "../storage";
+import {scrubSecrets} from "../utils/ai/scrubSecrets";
 
 /** Current backup-bundle schema version. */
 export const BACKUP_BUNDLE_VERSION = 2;
@@ -198,12 +199,18 @@ export async function buildBackupBundle(exportedAt: string): Promise<BackupBundl
         books.map((book) => storage.aplusDocuments.listForBook(book.id)),
     );
 
+    // #985: the bundle leaves the device - mailed to a maintainer, dropped
+    // in a cloud folder, handed to a second machine - and a provider key is
+    // the one thing in it worth money to a stranger. Everything else about
+    // the AI config stays, so a restore puts the user back minus the keys.
+    const {settings: scrubbedSettings} = scrubSecrets(settings);
+
     return {
         version: BACKUP_BUNDLE_VERSION,
         app_version: __APP_VERSION__,
         exported_at: exportedAt,
         data: {
-            settings,
+            settings: scrubbedSettings as typeof settings,
             author_profile: (settings as {author?: unknown}).author ?? null,
             authors,
             books: backupBooks,

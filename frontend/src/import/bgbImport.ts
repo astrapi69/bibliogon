@@ -43,6 +43,7 @@ import type {
 } from "../api/client";
 import { articleCreateFrom, bookCreateFrom } from "../export/backupImport";
 import { planAuthorsImport } from "../components/settings/authorsImportExport";
+import { preserveLocalSecrets } from "../utils/ai/scrubSecrets";
 import { fromStoredRow, type AplusStoredRow } from "../lib/utils/aplus/aplusDocument";
 import { getStorage } from "../storage";
 import { coverFilenameFromPath } from "../storage/asset-url";
@@ -221,6 +222,12 @@ type Storage = ReturnType<typeof getStorage>;
  * (`globals/settings.json`). The author PROFILE is never overwritten (own
  * identity), mirroring the JSON-backup importer. Backend-produced archives
  * carry no settings file, so this is a no-op for them.
+ *
+ * The AI provider keys are merged rather than overwritten, for the same
+ * reason as the JSON importer (#985): an archive taken since the export
+ * scrubber carries empty keys, and writing those over the live settings
+ * would clear the ones this machine holds. When the live settings cannot
+ * be read the AI section is dropped instead of written blind.
  */
 async function importSettings(
     entries: ZipEntries,
@@ -230,7 +237,14 @@ async function importSettings(
 ): Promise<void> {
     const settings = readJson<Record<string, unknown>>(entries, `${prefix}globals/settings.json`);
     if (!settings || typeof settings !== "object") return;
-    const next = { ...settings };
+    let next: Record<string, unknown>;
+    try {
+        next = { ...(preserveLocalSecrets(await storage.settings.getApp(), settings) as Record<string, unknown>) };
+    } catch (err) {
+        console.warn("Live settings unreadable; restoring without the AI section", err);
+        next = { ...settings };
+        delete next.ai;
+    }
     delete next.author;
     if (Object.keys(next).length === 0) return;
     await storage.settings.updateApp(next);
