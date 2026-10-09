@@ -390,3 +390,38 @@ describe("AiAssistantSettings — connection test (online)", () => {
         await waitFor(() => expect(notify.success).toHaveBeenCalledWith("Verbindung erfolgreich"));
     });
 });
+
+describe("AiAssistantSettings - key field notice (#985)", () => {
+    it("says the key is stored unencrypted, not just locally", () => {
+        // The i18n mock returns each call's fallback, which is the German
+        // source string - hence the alternation rather than one language.
+        renderSettings();
+        const note = screen.getByTestId("ai-key-storage-note");
+        expect(note.textContent).toMatch(/unverschl|unencrypted/i);
+    });
+
+    it("gives scope advice for the provider currently in the form", () => {
+        renderSettings({
+            keys: { google: "AIzaSyABCD1234efgh", anthropic: "sk-ant-abcd1234" },
+        });
+        expect(screen.getByTestId("ai-key-scope-note").textContent).toMatch(
+            /Gemini API/i,
+        );
+        fireEvent.click(screen.getByTestId("ai-provider-edit-anthropic"));
+        expect(screen.getByTestId("ai-key-scope-note").textContent).toMatch(
+            /Workspace/i,
+        );
+    });
+
+    it("offers no scope advice for a provider that takes no third-party key", () => {
+        renderSettings({ active_provider: "lmstudio", keys: {} });
+        expect(screen.queryByTestId("ai-key-scope-note")).toBeNull();
+    });
+
+    it("keeps saying where the key is sent - that is the other half of the answer", () => {
+        renderSettings();
+        expect(screen.getByTestId("ai-key-storage-note").textContent).toMatch(
+            /Base URL/,
+        );
+    });
+});
