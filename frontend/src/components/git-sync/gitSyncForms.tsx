@@ -39,12 +39,10 @@ export function CredentialsSection({
             notify.success(t("ui.git_sync.credential_saved", "Repo-Token gespeichert"));
             onChanged();
         } catch (err) {
-            if (err instanceof ApiError) {
-                notify.error(
-                    t("ui.git_sync.credential_save_error", "Konnte Repo-Token nicht speichern."),
-                    err,
-                );
-            }
+            notify.error(
+                t("ui.git_sync.credential_save_error", "Konnte Repo-Token nicht speichern."),
+                err,
+            );
         } finally {
             setBusy(false);
         }
@@ -57,12 +55,10 @@ export function CredentialsSection({
             notify.success(t("ui.git_sync.credential_removed", "Repo-Token entfernt"));
             onChanged();
         } catch (err) {
-            if (err instanceof ApiError) {
-                notify.error(
-                    t("ui.git_sync.credential_delete_error", "Konnte Repo-Token nicht entfernen."),
-                    err,
-                );
-            }
+            notify.error(
+                t("ui.git_sync.credential_delete_error", "Konnte Repo-Token nicht entfernen."),
+                err,
+            );
         } finally {
             setBusy(false);
         }

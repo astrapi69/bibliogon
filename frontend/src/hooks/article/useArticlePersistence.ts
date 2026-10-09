@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 
-import { ApiError, Article, ArticleStatus, ContentType } from "../../api/client";
+import { Article, ArticleStatus, ContentType } from "../../api/client";
 import { getStorage } from "../../storage";
 import { notify } from "../../utils/platform/notify";
 import type { SaveStatus } from "../../components/articles/ArticleEditorFields";
@@ -21,6 +21,15 @@ export interface UseArticlePersistence {
  * save-status indicator state, content persistence (the Editor's onSave
  * sink), and the debounced metadata PATCH (``persistMeta``) with its
  * change-dedup key. The load effect re-runs on ``id`` change.
+ *
+ * All three catches are unconditional (#1021). They used to run only
+ * ``if (err instanceof ApiError)``, which is every failure in API mode and
+ * none of the ones the storage seam raises offline - Dexie throws plain
+ * ``Error``s. The content path made that visible: it sets ``saving`` before
+ * the write and only left that state inside the ``if``, so a dropped failure
+ * left the indicator spinning with no toast, which reads as "still saving".
+ * ``notify.error`` narrows its second argument itself, so handing it an
+ * unknown ``err`` keeps the rich ApiError toast where there is one.
  *
  * @param id - article id from the route params.
  * @param t - i18n translate function (for error toasts).
@@ -59,9 +68,7 @@ export function useArticlePersistence(id: string | undefined, t: Translate): Use
                 });
             })
             .catch((err) => {
-                if (err instanceof ApiError) {
-                    notify.error(t("ui.articles.load_error", "Konnte Artikel nicht laden."), err);
-                }
+                notify.error(t("ui.articles.load_error", "Konnte Artikel nicht laden."), err);
             })
             .finally(() => {
                 if (!cancelled) setLoading(false);
@@ -82,10 +89,8 @@ export function useArticlePersistence(id: string | undefined, t: Translate): Use
                 setSaveStatus("saved");
                 setTimeout(() => setSaveStatus("idle"), 2000);
             } catch (err) {
-                if (err instanceof ApiError) {
-                    setSaveStatus("error");
-                    notify.error(t("ui.articles.save_failed", "Speichern fehlgeschlagen."), err);
-                }
+                setSaveStatus("error");
+                notify.error(t("ui.articles.save_failed", "Speichern fehlgeschlagen."), err);
             }
         },
         [id, t],
@@ -144,9 +149,7 @@ export function useArticlePersistence(id: string | undefined, t: Translate): Use
                 setArticle(saved);
                 lastSavedMeta.current = meta;
             } catch (err) {
-                if (err instanceof ApiError) {
-                    notify.error(t("ui.articles.save_failed", "Speichern fehlgeschlagen."), err);
-                }
+                notify.error(t("ui.articles.save_failed", "Speichern fehlgeschlagen."), err);
             }
         },
         [id, article, t],

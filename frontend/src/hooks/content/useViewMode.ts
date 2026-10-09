@@ -18,7 +18,6 @@
  * i.e. "clicking Liste does nothing" on the GitHub-Pages PWA.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ApiError } from "../../api/client";
 import { getStorage } from "../../storage";
 import type { ViewMode } from "../../components/dashboard/ViewToggle";
 
@@ -105,13 +104,14 @@ export function useViewMode(scope: DashboardScope): {
                         },
                     });
                 })
-                .catch((err) => {
-                    if (err instanceof ApiError) {
-                        // Preference did not persist; rollback so the
-                        // user's next reload reflects the old state
-                        // rather than a fake-saved one.
-                        setLocalMode((prev) => (prev === next ? "grid" : prev));
-                    }
+                .catch(() => {
+                    // Preference did not persist; rollback so the
+                    // user's next reload reflects the old state
+                    // rather than a fake-saved one. Unconditional since
+                    // #1021: offline the seam throws a plain Error, and
+                    // skipping the rollback for it left a fake-saved
+                    // state on screen.
+                    setLocalMode((prev) => (prev === next ? "grid" : prev));
                 });
         },
         [scope],
