@@ -44,13 +44,6 @@ const SRC_ROOT = path.resolve(__dirname, "..", "..");
  */
 const ALLOWLIST: ReadonlyMap<string, string> = new Map([
     [
-        "components/articles/PublicationsPanel.tsx",
-        "Being rewritten on the #747 branch (PR #1017), which removes four " +
-            "of its five guards; editing the same file here would conflict. " +
-            "Remove this entry once #1017 merges and the fifth (the refresh " +
-            "catch) is unwrapped.",
-    ],
-    [
         "components/import/GitSyncDiffDialog.tsx",
         "Status-code classifier: the chain reads err.status / err.detailBody, " +
             "so it needs the narrowing plus an OUTER else - not an unwrap, " +

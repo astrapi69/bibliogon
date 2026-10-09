@@ -66,15 +66,10 @@ export function PublicationsPanel({
             setPublications(pubs);
             setSchemas(sch);
         } catch (err) {
-            if (err instanceof ApiError) {
-                notify.error(
-                    t(
-                        "ui.publications.load_error",
-                        "Konnte Publikationen nicht laden.",
-                    ),
-                    err,
-                );
-            }
+            notify.error(
+                t("ui.publications.load_error", "Konnte Publikationen nicht laden."),
+                err,
+            );
         } finally {
             setLoading(false);
         }
