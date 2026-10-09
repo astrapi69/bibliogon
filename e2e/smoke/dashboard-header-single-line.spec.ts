@@ -144,6 +144,12 @@ test.describe("MENU-SINGLE-LINE Book Dashboard", () => {
         await bootInPalette(page, palette);
         await page.goto("/");
         await ready(page, REFERENCE_WIDTH);
+        // The palette picks the font, the font decides the label widths,
+        // and the web fonts land asynchronously. Measuring before they do
+        // measures fallback metrics - a layout no user ever sees, and the
+        // reason an assertion here can be green while the theme baselines
+        // show the bar wrapped.
+        await page.evaluate(() => document.fonts.ready);
         const measured = await page.evaluate(() => {
             const header = document.querySelector(
                 '[data-testid="dashboard-header"]',
