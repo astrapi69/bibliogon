@@ -20,6 +20,15 @@ export default defineConfig({
     // attempt + single retry) turned the run red; the second retry absorbs
     // that without hiding a real failure (which fails all three).
     retries: 2,
+    // On CI, also emit GitHub Actions error annotations (#1018). A failed
+    // run's logs and its `e2e-test-results` artifact are both served from
+    // blob storage, which an agent session cannot reach, so without this
+    // the only machine-readable record of a failure is the runner's own
+    // "Process completed with exit code 1" - no spec, no line, no
+    // assertion. Annotations come back through
+    // `check-runs/<id>/annotations`, which does work. `list` stays first so
+    // the human-facing output is unchanged.
+    reporter: process.env.CI ? [["list"], ["github"]] : [["list"]],
     timeout: 30_000,
     // Visual-regression tolerance for the `visual` project's
     // toHaveScreenshot() assertions. A 1% per-pixel-ratio budget

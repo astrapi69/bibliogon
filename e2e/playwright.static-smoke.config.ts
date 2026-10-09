@@ -37,7 +37,9 @@ export default defineConfig({
     retries: 1,
     timeout: 30_000,
     expect: {timeout: 10_000},
-    reporter: [["list"]],
+    // Same as the main config: annotations are the one failure channel an
+    // agent session can read (#1018).
+    reporter: process.env.CI ? [["list"], ["github"]] : [["list"]],
     use: {
         baseURL: "http://localhost:4173",
         actionTimeout: 10_000,
