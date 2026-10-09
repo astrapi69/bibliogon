@@ -1,0 +1,505 @@
+{
+  "ruleset_version": "4",
+  "cases": [
+    {
+      "name": "clean-en",
+      "language": "en",
+      "genre_key": null,
+      "package": {},
+      "findings": []
+    },
+    {
+      "name": "imperative-de",
+      "language": "de",
+      "genre_key": null,
+      "package": {
+        "short_description": "Entdecken Sie das Buch."
+      },
+      "findings": [
+        {
+          "field": "short_description",
+          "severity": "error",
+          "code": "marketing_imperative",
+          "params": {
+            "term": "Entdecken Sie"
+          }
+        }
+      ]
+    },
+    {
+      "name": "imperative-en",
+      "language": "en",
+      "genre_key": null,
+      "package": {
+        "short_description": "Learn how to make better decisions every single day."
+      },
+      "findings": [
+        {
+          "field": "short_description",
+          "severity": "error",
+          "code": "marketing_imperative",
+          "params": {
+            "term": "Learn"
+          }
+        }
+      ]
+    },
+    {
+      "name": "imperative-fr",
+      "language": "fr",
+      "genre_key": null,
+      "package": {
+        "short_description": "Apprenez a prendre de meilleures decisions."
+      },
+      "findings": [
+        {
+          "field": "short_description",
+          "severity": "error",
+          "code": "marketing_imperative",
+          "params": {
+            "term": "Apprenez"
+          }
+        }
+      ]
+    },
+    {
+      "name": "imperative-es",
+      "language": "es",
+      "genre_key": null,
+      "package": {
+        "short_description": "Aprenda a tomar mejores decisiones cada dia."
+      },
+      "findings": [
+        {
+          "field": "short_description",
+          "severity": "error",
+          "code": "marketing_imperative",
+          "params": {
+            "term": "Aprenda"
+          }
+        }
+      ]
+    },
+    {
+      "name": "leading-imperative-de-unlisted",
+      "language": "de",
+      "genre_key": null,
+      "package": {
+        "short_description": "Erobern Sie neue Wissensgebiete."
+      },
+      "findings": [
+        {
+          "field": "short_description",
+          "severity": "error",
+          "code": "leading_imperative",
+          "params": {
+            "term": "Erobern Sie"
+          }
+        }
+      ]
+    },
+    {
+      "name": "leading-imperative-fr-unlisted",
+      "language": "fr",
+      "genre_key": null,
+      "package": {
+        "short_description": "Gagnez en clarte des le premier chapitre."
+      },
+      "findings": [
+        {
+          "field": "short_description",
+          "severity": "error",
+          "code": "leading_imperative",
+          "params": {
+            "term": "Gagnez"
+          }
+        }
+      ]
+    },
+    {
+      "name": "leading-only-en-opening",
+      "language": "en",
+      "genre_key": null,
+      "package": {
+        "short_description": "Build a new habit, one chapter at a time."
+      },
+      "findings": [
+        {
+          "field": "short_description",
+          "severity": "error",
+          "code": "leading_imperative",
+          "params": {
+            "term": "Build"
+          }
+        }
+      ]
+    },
+    {
+      "name": "leading-only-en-mid-sentence",
+      "language": "en",
+      "genre_key": null,
+      "package": {
+        "short_description": "Every chapter helps readers build confidence."
+      },
+      "findings": []
+    },
+    {
+      "name": "fr-non-verb-ez",
+      "language": "fr",
+      "genre_key": null,
+      "package": {
+        "short_description": "Assez de theorie, place a la pratique."
+      },
+      "findings": []
+    },
+    {
+      "name": "price-claim-de",
+      "language": "de",
+      "genre_key": null,
+      "package": {
+        "short_description": "Jetzt kostenlos lesen und sparen."
+      },
+      "findings": [
+        {
+          "field": "short_description",
+          "severity": "error",
+          "code": "price_claim",
+          "params": {
+            "term": "kostenlos"
+          }
+        }
+      ]
+    },
+    {
+      "name": "soft-word-warning",
+      "language": "en",
+      "genre_key": "scifi",
+      "package": {
+        "short_description": "A gripping tale of theft and betrayal."
+      },
+      "findings": [
+        {
+          "field": "short_description",
+          "severity": "warning",
+          "code": "genre_word_tone",
+          "params": {
+            "term": "theft"
+          }
+        }
+      ]
+    },
+    {
+      "name": "soft-word-escalated",
+      "language": "en",
+      "genre_key": "kinderbuch",
+      "package": {
+        "short_description": "A gripping tale of theft and betrayal."
+      },
+      "findings": [
+        {
+          "field": "short_description",
+          "severity": "error",
+          "code": "genre_word_forbidden",
+          "params": {
+            "term": "theft"
+          }
+        }
+      ]
+    },
+    {
+      "name": "unknown-genre-key",
+      "language": "en",
+      "genre_key": "totally-unknown",
+      "package": {
+        "short_description": "A gripping tale of theft in the colonies."
+      },
+      "findings": [
+        {
+          "field": "short_description",
+          "severity": "warning",
+          "code": "genre_word_tone",
+          "params": {
+            "term": "theft"
+          }
+        }
+      ]
+    },
+    {
+      "name": "dash-and-emoji-and-imperative",
+      "language": "de",
+      "genre_key": null,
+      "package": {
+        "short_description": "Entdecken Sie 😀 — jetzt nur 9,99 EUR bei Kindle."
+      },
+      "findings": [
+        {
+          "field": "short_description",
+          "severity": "error",
+          "code": "dash_not_allowed",
+          "params": {}
+        },
+        {
+          "field": "short_description",
+          "severity": "error",
+          "code": "emoji_not_allowed",
+          "params": {}
+        },
+        {
+          "field": "short_description",
+          "severity": "error",
+          "code": "marketing_imperative",
+          "params": {
+            "term": "Entdecken Sie"
+          }
+        }
+      ]
+    },
+    {
+      "name": "zero-width-space",
+      "language": "en",
+      "genre_key": null,
+      "package": {
+        "short_description": "A book​about habits."
+      },
+      "findings": [
+        {
+          "field": "short_description",
+          "severity": "error",
+          "code": "hidden_character",
+          "params": {}
+        }
+      ]
+    },
+    {
+      "name": "control-character",
+      "language": "en",
+      "genre_key": null,
+      "package": {
+        "short_description": "A book\u0007about habits."
+      },
+      "findings": [
+        {
+          "field": "short_description",
+          "severity": "error",
+          "code": "hidden_character",
+          "params": {}
+        }
+      ]
+    },
+    {
+      "name": "over-max-length",
+      "language": "en",
+      "genre_key": null,
+      "package": {
+        "short_description": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      },
+      "findings": [
+        {
+          "field": "short_description",
+          "severity": "error",
+          "code": "over_max_length",
+          "params": {
+            "length": "5000",
+            "max": "300"
+          }
+        }
+      ]
+    },
+    {
+      "name": "astral-at-the-limit",
+      "language": "en",
+      "genre_key": null,
+      "package": {
+        "short_description": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+      },
+      "findings": [
+        {
+          "field": "short_description",
+          "severity": "error",
+          "code": "emoji_not_allowed",
+          "params": {}
+        }
+      ]
+    },
+    {
+      "name": "soft-word-before-a-diacritic",
+      "language": "de",
+      "genre_key": null,
+      "package": {
+        "short_description": "Ein Mordüberfall im Hafen."
+      },
+      "findings": []
+    },
+    {
+      "name": "brand-reference",
+      "language": "en",
+      "genre_key": null,
+      "package": {
+        "short_description": "Also available on Audible this autumn."
+      },
+      "findings": [
+        {
+          "field": "short_description",
+          "severity": "error",
+          "code": "brand_reference",
+          "params": {
+            "term": "Audible"
+          }
+        }
+      ]
+    },
+    {
+      "name": "lone-surrogate",
+      "language": "en",
+      "genre_key": null,
+      "package": {
+        "short_description_code_units": [
+          65,
+          32,
+          98,
+          111,
+          111,
+          107,
+          32,
+          55296,
+          32,
+          97,
+          98,
+          111,
+          117,
+          116,
+          32,
+          104,
+          97,
+          98,
+          105,
+          116,
+          115,
+          46
+        ]
+      },
+      "findings": [
+        {
+          "field": "short_description",
+          "severity": "error",
+          "code": "invalid_character",
+          "params": {}
+        },
+        {
+          "field": "short_description",
+          "severity": "error",
+          "code": "hidden_character",
+          "params": {}
+        }
+      ]
+    },
+    {
+      "name": "missing-alt-text",
+      "language": "en",
+      "genre_key": null,
+      "package": {
+        "header_alt": "   "
+      },
+      "findings": [
+        {
+          "field": "module_header.alt_text",
+          "severity": "error",
+          "code": "alt_text_required",
+          "params": {}
+        }
+      ]
+    },
+    {
+      "name": "alt-text-one-over",
+      "language": "en",
+      "genre_key": null,
+      "package": {
+        "header_alt": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "findings": [
+        {
+          "field": "module_header.alt_text",
+          "severity": "error",
+          "code": "alt_text_over_max_length",
+          "params": {
+            "length": "101",
+            "max": "100"
+          }
+        }
+      ]
+    },
+    {
+      "name": "structural-counts",
+      "language": "en",
+      "genre_key": null,
+      "package": {
+        "bullets": [
+          {
+            "heading": "Clear structure",
+            "body": "Chapters build on each other."
+          }
+        ],
+        "three_images": [
+          {
+            "text": "A supporting idea from the book.",
+            "alt_text": "Icon representing concept one"
+          }
+        ]
+      },
+      "findings": [
+        {
+          "field": "bullets",
+          "severity": "error",
+          "code": "bullet_count",
+          "params": {
+            "count": "1"
+          }
+        },
+        {
+          "field": "module_three_images",
+          "severity": "error",
+          "code": "image_count",
+          "params": {
+            "count": "1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "empty-package",
+      "language": "en",
+      "genre_key": null,
+      "package": {
+        "short_description": "",
+        "bullets": [],
+        "header_text": "",
+        "header_alt": "",
+        "three_images": []
+      },
+      "findings": [
+        {
+          "field": "bullets",
+          "severity": "error",
+          "code": "bullet_count",
+          "params": {
+            "count": "0"
+          }
+        },
+        {
+          "field": "module_header.alt_text",
+          "severity": "error",
+          "code": "alt_text_required",
+          "params": {}
+        },
+        {
+          "field": "module_three_images",
+          "severity": "error",
+          "code": "image_count",
+          "params": {
+            "count": "0"
+          }
+        }
+      ]
+    }
+  ]
+}
