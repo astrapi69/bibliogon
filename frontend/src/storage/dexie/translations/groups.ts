@@ -22,10 +22,10 @@
  * make the two modes' book rows differ.
  */
 
-import type { Book, TranslationLinkResult, TranslationSiblingsResponse } from "../../../api/client";
+import type { TranslationLinkResult, TranslationSiblingsResponse } from "../../../api/client";
 import type { IStorageService } from "../../types";
 import { newId } from "../helpers";
-import { offlineDb } from "../schema";
+import { offlineDb, type OfflineBookRow } from "../schema";
 
 /** One book's membership row. `book_id` is the key: a book is in at most one group. */
 export interface TranslationGroupRow {
@@ -54,7 +54,7 @@ export const translations: IStorageService["translations"] = {
         if (!groupId) return empty;
         const siblingIds = (await membersOf(groupId)).filter((id) => id !== bookId);
         const books = (await offlineDb.books.bulkGet(siblingIds)).filter(
-            (book): book is Book => Boolean(book) && !(book as Book).deleted_at,
+            (book): book is OfflineBookRow => Boolean(book) && !book?.deleted_at,
         );
         const siblings = books
             .map((book) => ({
@@ -75,7 +75,7 @@ export const translations: IStorageService["translations"] = {
     link: async (bookIds) => {
         const none: TranslationLinkResult = { translation_group_id: null, linked_book_ids: [] };
         const existing = (await offlineDb.books.bulkGet(bookIds)).filter(
-            (book): book is Book => Boolean(book),
+            (book): book is OfflineBookRow => Boolean(book),
         );
         if (existing.length < 2) return none;
 
