@@ -494,13 +494,7 @@ def fetch_remote_updates(db: Session, *, book_id: str) -> bool:
     branch = mapping.branch
     origin = repo.remotes.origin
     original_url = next(iter(origin.urls), "")
-    auth_url = git_credentials.inject_pat_into_url(original_url, book_id)
-    ssh = git_credentials.ssh_env(original_url)
-    try:
-        if auth_url != original_url:
-            origin.set_url(auth_url)
-        if ssh:
-            repo.git.update_environment(**ssh)
+    with git_credentials.authenticated_git(repo, url=original_url, book_id=book_id):
         try:
             origin.fetch(branch)
         except git.GitCommandError as exc:
@@ -510,9 +504,6 @@ def fetch_remote_updates(db: Session, *, book_id: str) -> bool:
                 # remote). Nothing to pull, but not a fetch failure.
                 return False
             raise RemoteUnreachableError(_classify_fetch_stderr(stderr), stderr) from exc
-    finally:
-        if auth_url != original_url:
-            origin.set_url(original_url)
 
     before = str(repo.git.rev_parse(branch))
     try:

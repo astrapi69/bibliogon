@@ -336,23 +336,14 @@ def push(book_id: str, db: Session, force: bool = False) -> dict[str, Any]:
     only safe when the author has explicitly confirmed it.
     """
     repo = _require_repo_with_remote(book_id, db)
-    remote_url = _authenticated_url(book_id, repo)
     branch = repo.active_branch.name
-    ssh_env = _ssh_env(next(repo.remotes.origin.urls))
+    original_url = next(repo.remotes.origin.urls)
     try:
-        # Use a one-shot pushurl so the embedded PAT never lands in
-        # .git/config. Reset after push in a finally block.
-        original_url = next(repo.remotes.origin.urls)
-        repo.remotes.origin.set_url(remote_url)
-        if ssh_env:
-            repo.git.update_environment(**ssh_env)
-        try:
+        with git_credentials.authenticated_git(repo, url=original_url, book_id=book_id):
             info_list = repo.remotes.origin.push(
                 refspec=f"{branch}:{branch}",
                 force=force,
             )
-        finally:
-            repo.remotes.origin.set_url(original_url)
     except git.GitCommandError as exc:
         raise _classify_git_error(exc) from exc
 
@@ -374,19 +365,12 @@ def push(book_id: str, db: Session, force: bool = False) -> dict[str, Any]:
 def pull(book_id: str, db: Session) -> dict[str, Any]:
     """Fetch + fast-forward merge. Diverged histories raise DivergedError."""
     repo = _require_repo_with_remote(book_id, db)
-    remote_url = _authenticated_url(book_id, repo)
     branch = repo.active_branch.name
-    ssh_env = _ssh_env(next(repo.remotes.origin.urls))
+    original_url = next(repo.remotes.origin.urls)
 
     try:
-        original_url = next(repo.remotes.origin.urls)
-        repo.remotes.origin.set_url(remote_url)
-        if ssh_env:
-            repo.git.update_environment(**ssh_env)
-        try:
+        with git_credentials.authenticated_git(repo, url=original_url, book_id=book_id):
             repo.remotes.origin.fetch(refspec=branch)
-        finally:
-            repo.remotes.origin.set_url(original_url)
     except git.GitCommandError as exc:
         raise _classify_git_error(exc) from exc
 
@@ -688,21 +672,6 @@ def _require_repo_with_remote(book_id: str, db: Session) -> git.Repo:
             "No remote configured for this book. Set one before push/pull."
         )
     return git.Repo(repo_path(book_id))
-
-
-def _authenticated_url(book_id: str, repo: git.Repo) -> str:
-    """Build a one-shot HTTPS URL with the per-book PAT embedded.
-
-    SSH URLs and file paths come back unchanged; SSH auth is handled
-    via :func:`_ssh_env` / ``GIT_SSH_COMMAND`` instead.
-    """
-    original = next(repo.remotes.origin.urls)
-    return git_credentials.inject_pat_into_url(original, book_id)
-
-
-def _ssh_env(url: str) -> dict[str, str] | None:
-    """Return a ``GIT_SSH_COMMAND`` env mapping for SSH URLs."""
-    return git_credentials.ssh_env(url)
 
 
 def _classify_git_error(exc: git.GitCommandError) -> GitBackupError:
