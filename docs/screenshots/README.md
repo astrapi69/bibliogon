@@ -73,7 +73,7 @@ binary via the repo-level `.gitattributes` (`*.png binary`) — plain git, no LF
 | --- | --- |
 | Article editor | ![Article Editor](article-editor/article-editor.png) |
 | Article metadata (tags / excerpt / SEO) | ![Article Metadata](article-editor/article-metadata.png) |
-| Publications panel — add / mark published / drift, all through the seam (#747) | _pending capture_ |
+| Publications panel — add / mark published / drift, all through the seam (#747) | ![Publications Panel](article-editor/publications-panel.png) |
 
 ## Comic Editor
 
