@@ -788,6 +788,23 @@ test.describe("Feature Screenshots", () => {
             await page.screenshot({path: `${OUT}/import-export/kdp-format-step.png`});
         });
 
+        test("translation links", async ({page}) => {
+            // #746: the sibling row, which works the same offline since the
+            // grouping moved onto the storage seam.
+            const de = await seedProseBook("Das Muster");
+            const en = await seedProseBook("The Pattern");
+            await page.request
+                .post(`${API}/translations/link`, {data: {book_ids: [de.id, en.id]}})
+                .catch(() => {});
+            await page.goto(`/book/${de.id}?view=metadata`);
+            await page
+                .getByTestId("translation-links-row")
+                .waitFor({state: "visible"})
+                .catch(() => {});
+            await page.waitForTimeout(400);
+            await page.screenshot({path: `${OUT}/book-editor/translation-links.png`});
+        });
+
         test("kdp arc reviewers", async ({page}) => {
             // #737: the ARC list persists through the storage seam, so this
             // step is the same surface online and on the backendless build.
