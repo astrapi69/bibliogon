@@ -31,7 +31,13 @@ const createLink = vi.fn(async (_d: Record<string, unknown>) => ({id: "nlink"}))
 // over this would clear the user's provider keys.
 const getApp = vi.fn(async () => ({
     theme: "classic",
-    ai: {active_provider: "google", keys: {google: "AIza-live"}, api_key: "AIza-live"},
+    ai: {
+        active_provider: "google",
+        keys: {google: "AIza-live"},
+        api_key: "AIza-live",
+        base_url: "https://generativelanguage.googleapis.com/v1beta",
+        base_url_overrides: {custom: "http://localhost:1234/v1"},
+    },
 }));
 
 const aplusSave = vi.fn(async (bookId: string, language: string, doc: Record<string, unknown>) => ({
@@ -378,5 +384,81 @@ describe("importFullBackup secrets (#985)", () => {
         const payload = updateApp.mock.calls[0][0] as Record<string, unknown>;
         expect(payload.theme).toBe("nord");
         expect(payload).not.toHaveProperty("ai");
+    });
+});
+
+describe("importFullBackup base URLs (#985)", () => {
+    function bundleWithBaseUrl() {
+        const b = bundle();
+        (b.data as Record<string, unknown>).settings = {
+            theme: "nord",
+            ai: {
+                keys: {},
+                api_key: "",
+                base_url: "https://proxy.example.test/v1",
+            },
+        };
+        return b;
+    }
+
+    it("declines on the user's behalf when nobody was asked", async () => {
+        await importFullBackup(fileOf(bundleWithBaseUrl()));
+        const payload = updateApp.mock.calls[0][0] as {ai: Record<string, unknown>};
+        expect(payload.ai.base_url).toBe(
+            "https://generativelanguage.googleapis.com/v1beta",
+        );
+        // Everything that is not an endpoint still restores.
+        expect((payload as Record<string, unknown>).theme).toBe("nord");
+    });
+
+    it("keeps this device's endpoint when the user declines", async () => {
+        const confirm = vi.fn(async () => false);
+        await importFullBackup(fileOf(bundleWithBaseUrl()), confirm);
+        expect(confirm).toHaveBeenCalledWith([
+            {
+                provider: "",
+                from: "https://generativelanguage.googleapis.com/v1beta",
+                to: "https://proxy.example.test/v1",
+            },
+        ]);
+        const payload = updateApp.mock.calls[0][0] as {ai: Record<string, unknown>};
+        expect(payload.ai.base_url).toBe(
+            "https://generativelanguage.googleapis.com/v1beta",
+        );
+        expect(payload.ai.keys).toEqual({google: "AIza-live"});
+    });
+
+    it("applies the bundle's endpoint when the user accepts", async () => {
+        await importFullBackup(fileOf(bundleWithBaseUrl()), async () => true);
+        const payload = updateApp.mock.calls[0][0] as {ai: Record<string, unknown>};
+        expect(payload.ai.base_url).toBe("https://proxy.example.test/v1");
+        // The key still does not come from the bundle.
+        expect(payload.ai.keys).toEqual({google: "AIza-live"});
+    });
+
+    it("does not ask when the bundle names no endpoint", async () => {
+        const confirm = vi.fn(async () => true);
+        const plain = bundle();
+        (plain.data as Record<string, unknown>).settings = {
+            theme: "nord",
+            ai: {keys: {}, api_key: ""},
+        };
+        await importFullBackup(fileOf(plain), confirm);
+        expect(confirm).not.toHaveBeenCalled();
+    });
+
+    it("does not ask for a provider this device holds no key for", async () => {
+        const confirm = vi.fn(async () => true);
+        getApp.mockResolvedValueOnce({
+            theme: "classic",
+            ai: {
+                active_provider: "google",
+                keys: {},
+                api_key: "",
+                base_url: "https://generativelanguage.googleapis.com/v1beta",
+            },
+        } as Awaited<ReturnType<typeof getApp>>);
+        await importFullBackup(fileOf(bundleWithBaseUrl()), confirm);
+        expect(confirm).not.toHaveBeenCalled();
     });
 });

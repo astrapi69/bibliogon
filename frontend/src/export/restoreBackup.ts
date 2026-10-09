@@ -16,7 +16,7 @@
 import { api } from "../api/client";
 import { importBgbFile, importBgbSettings } from "../import/bgbImport";
 import { getStorage } from "../storage";
-import { importFullBackup } from "./backupImport";
+import { importFullBackup, type BaseUrlConfirm } from "./backupImport";
 
 /** The subset of restore counts every backup surface reports. */
 export interface RestoreCounts {
@@ -35,6 +35,11 @@ async function isZipArchive(file: File): Promise<boolean> {
 /**
  * Restore a backup file, auto-detecting `.bgb` (ZIP) vs `.json`.
  *
+ * `confirmBaseUrlChange` is asked before the restore moves the endpoint a
+ * configured AI key talks to (#985). Omitting it declines, which is the
+ * safe default: the bundle's other settings still restore, the endpoints
+ * the keys talk to do not move.
+ *
  * A ZIP archive carries image bytes and routes through {@link importBgbFile}
  * in Dexie mode; API mode uses the backend `/api/backup/import` so the full
  * server-side graph (assets, pages, comments, etc.) is restored. Everything
@@ -42,7 +47,10 @@ async function isZipArchive(file: File): Promise<boolean> {
  * (which throws `BackupImportError` on a bad shape, so the existing invalid-
  * format toast still fires).
  */
-export async function restoreBackupFile(file: File): Promise<RestoreCounts> {
+export async function restoreBackupFile(
+    file: File,
+    confirmBaseUrlChange?: BaseUrlConfirm,
+): Promise<RestoreCounts> {
     if (await isZipArchive(file)) {
         const storage = getStorage();
         if (storage.mode === "api") {
@@ -54,7 +62,7 @@ export async function restoreBackupFile(file: File): Promise<RestoreCounts> {
             // archive would restore a user's theme and defaults offline and
             // silently drop them online.
             try {
-                await importBgbSettings(file);
+                await importBgbSettings(file, confirmBaseUrlChange);
             } catch (err) {
                 // The graph is already restored at this point; a failed
                 // settings extension must not turn that into an error toast.
@@ -67,7 +75,7 @@ export async function restoreBackupFile(file: File): Promise<RestoreCounts> {
                 skippedBooks: result.skipped_books ?? 0,
             };
         }
-        const result = await importBgbFile(file);
+        const result = await importBgbFile(file, confirmBaseUrlChange);
         return {
             books: result.imported.books,
             chapters: result.imported.chapters,
@@ -75,7 +83,7 @@ export async function restoreBackupFile(file: File): Promise<RestoreCounts> {
             skippedBooks: result.skipped.books,
         };
     }
-    const result = await importFullBackup(file);
+    const result = await importFullBackup(file, confirmBaseUrlChange);
     return {
         books: result.imported.books,
         chapters: result.imported.chapters,

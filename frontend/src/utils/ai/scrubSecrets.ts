@@ -184,3 +184,120 @@ function mergeProviderKeys(live: unknown, restored: unknown): Record<string, unk
     }
     return out;
 }
+
+/** One base URL a restore would change while a key for it is configured. */
+export interface BaseUrlChange {
+    /** Provider id, or `""` for the derived top-level `ai.base_url`. */
+    provider: string;
+    /** What this device points that provider at today. */
+    from: string;
+    /** What the bundle would point it at. */
+    to: string;
+}
+
+/**
+ * Base URLs a restore would change for a provider whose key is already
+ * configured on this device.
+ *
+ * A base URL is not a secret, so {@link scrubSecrets} leaves it in the
+ * bundle, and a restore is meant to overwrite settings. The combination
+ * is the problem: `preserveLocalSecrets` keeps the live key, and the
+ * bundle supplies the endpoint - so a restore can quietly point an
+ * existing key at a host the user did not choose, which is the one way
+ * a key can leave the device without anybody typing it anywhere.
+ *
+ * Only providers that HOLD a live key are reported. Changing the base
+ * URL of a provider with no key configured costs nothing: the next call
+ * fails for want of a key, which is visible.
+ *
+ * An absent or empty value in the bundle is "no opinion" rather than a
+ * change, so it is not reported either.
+ *
+ * @returns One entry per affected provider, provider-sorted with the
+ *   top-level mirror last, or `[]` when nothing needs asking.
+ *
+ * @example
+ * baseUrlChangesBesideKeys(
+ *   {ai: {keys: {custom: "k"}, base_url_overrides: {custom: "http://localhost:1234/v1"}}},
+ *   {ai: {base_url_overrides: {custom: "https://elsewhere.test/v1"}}},
+ * )
+ * // -> [{provider: "custom", from: "http://localhost:1234/v1", to: "https://elsewhere.test/v1"}]
+ */
+export function baseUrlChangesBesideKeys(
+    live: unknown,
+    restored: unknown,
+): BaseUrlChange[] {
+    if (!isRecord(live) || !isRecord(live.ai)) return [];
+    if (!isRecord(restored) || !isRecord(restored.ai)) return [];
+    const liveAi = live.ai;
+    const restoredAi = restored.ai;
+
+    const keyed = new Set<string>();
+    if (isRecord(liveAi.keys)) {
+        for (const [id, value] of Object.entries(liveAi.keys)) {
+            if (isNonEmptyString(value)) keyed.add(id);
+        }
+    }
+    if (isRecord(liveAi.provider_keys)) {
+        for (const [id, entry] of Object.entries(liveAi.provider_keys)) {
+            if (isRecord(entry) && isNonEmptyString(entry.api_key)) keyed.add(id);
+        }
+    }
+    if (keyed.size === 0) return [];
+
+    const changes: BaseUrlChange[] = [];
+    const liveOverrides = isRecord(liveAi.base_url_overrides)
+        ? liveAi.base_url_overrides
+        : {};
+    const restoredOverrides = isRecord(restoredAi.base_url_overrides)
+        ? restoredAi.base_url_overrides
+        : {};
+
+    for (const provider of [...keyed].sort()) {
+        const to = restoredOverrides[provider];
+        if (!isNonEmptyString(to)) continue;
+        const from = isNonEmptyString(liveOverrides[provider])
+            ? liveOverrides[provider]
+            : "";
+        if (from !== to) changes.push({provider, from, to});
+    }
+
+    // The derived top-level mirror points at whichever provider is
+    // active. It only matters when THAT provider holds a key.
+    const active = isNonEmptyString(liveAi.active_provider)
+        ? liveAi.active_provider
+        : "";
+    if (active && keyed.has(active) && isNonEmptyString(restoredAi.base_url)) {
+        const from = isNonEmptyString(liveAi.base_url) ? liveAi.base_url : "";
+        if (from !== restoredAi.base_url) {
+            changes.push({provider: "", from, to: restoredAi.base_url});
+        }
+    }
+
+    return changes;
+}
+
+/**
+ * {@link preserveLocalSecrets}, with the live base URLs kept as well.
+ *
+ * What the importer applies when the user declines the change that
+ * {@link baseUrlChangesBesideKeys} reported: every other setting in the
+ * bundle still restores, the endpoints the keys talk to do not move.
+ */
+export function preserveLocalBaseUrls(live: unknown, restored: unknown): unknown {
+    const merged = preserveLocalSecrets(live, restored);
+    if (!isRecord(merged) || !isRecord(merged.ai)) return merged;
+    const liveAi = isRecord(live) && isRecord(live.ai) ? live.ai : {};
+    const ai = {...merged.ai};
+
+    if (isRecord(liveAi.base_url_overrides) || isRecord(ai.base_url_overrides)) {
+        ai.base_url_overrides = {
+            ...(isRecord(ai.base_url_overrides) ? ai.base_url_overrides : {}),
+            ...(isRecord(liveAi.base_url_overrides) ? liveAi.base_url_overrides : {}),
+        };
+    }
+    if (isNonEmptyString(liveAi.base_url)) {
+        ai.base_url = liveAi.base_url;
+    }
+    return {...merged, ai};
+}

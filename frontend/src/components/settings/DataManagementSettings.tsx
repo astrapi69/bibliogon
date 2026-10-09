@@ -46,6 +46,7 @@ import { bgbBackupFilename, exportBgbBackup, type BgbProgress } from "../../expo
 import { BackupImportError } from "../../export/backupImport";
 import { BgbImportError } from "../../import/bgbImport";
 import { restoreBackupFile } from "../../export/restoreBackup";
+import { makeBaseUrlConfirm } from "../../utils/ai/baseUrlConfirm";
 import {
     DEFAULT_MAX_UPLOAD_MB,
     maxUploadBytes,
@@ -193,7 +194,10 @@ export function DataManagementSettings() {
                     );
                     return;
                 }
-                const counts = await restoreBackupFile(file);
+                const counts = await restoreBackupFile(
+                    file,
+                    makeBaseUrlConfirm(dialog.confirm, t),
+                );
                 notify.success(
                     t(
                         "ui.backups.import_result",
