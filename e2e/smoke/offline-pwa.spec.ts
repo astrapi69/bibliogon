@@ -772,10 +772,17 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await expect(page.getByTestId("writing-history-view")).toBeVisible();
         await expect(page.getByTestId("writing-history-offline")).toHaveCount(0);
         await expect(page.getByTestId("writing-history-empty")).toBeVisible();
-        // CSV export is backend-only: visible + disabled offline (policy #78),
-        // not hidden.
-        await expect(page.getByTestId("writing-history-export-csv")).toBeVisible();
-        await expect(page.getByTestId("writing-history-export-csv")).toBeDisabled();
+        // CSV export is serialised in the browser from the same series
+        // (#744): active offline, and the click yields a real download
+        // without an /api round-trip (the hard gate above proves the
+        // latter).
+        const csv = page.getByTestId("writing-history-export-csv");
+        await expect(csv).toBeVisible();
+        await expect(csv).toBeEnabled();
+        const downloadPromise = page.waitForEvent("download");
+        await csv.click();
+        const download = await downloadPromise;
+        expect(download.suggestedFilename()).toBe("writing-history-90d.csv");
     });
 
     test("settings default-type dropdowns are populated from the seeded registries", async ({

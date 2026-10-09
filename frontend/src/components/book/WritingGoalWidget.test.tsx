@@ -37,7 +37,6 @@ vi.mock("../../api/client", async () => {
                 summary: vi.fn(),
                 byBook: vi.fn(),
                 byChapter: vi.fn(),
-                exportCsvUrl: () => "http://localhost/csv",
             },
         },
     }

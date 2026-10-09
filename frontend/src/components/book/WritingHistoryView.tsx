@@ -4,7 +4,9 @@
  *
  * Global (not per-book) writing history: summary stats, a per-day bar
  * chart (recharts), a per-book breakdown that drills into per-chapter
- * totals, and a CSV export. Data from /api/writing-stats/* . Chrome-free:
+ * totals, and a CSV export. Data from the storage seam, so the whole
+ * surface works offline; the CSV is serialised from the same client-side
+ * daily series (#744) instead of round-tripping the backend. Chrome-free:
  * the page (WritingHistoryPage) supplies the PageLayout shell + title +
  * Back; this component owns the window/stats state and self-fetches on
  * mount.
@@ -12,17 +14,18 @@
 import { useCallback, useEffect, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Download, ChevronRight, ChevronDown } from "lucide-react";
-import {
-    api,
-    type WritingStatsSummary,
-    type WritingBookStats,
-    type WritingChapterStats,
+import type {
+    WritingStatsSummary,
+    WritingBookStats,
+    WritingChapterStats,
 } from "../../api/client";
 import { getStorage } from "../../storage";
 import { useI18n } from "../../hooks/useI18n";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../../features/featureConfig";
 import { notify } from "../../utils/platform/notify";
+import { downloadBlob } from "../../shared/utils/downloadBlob";
+import { toCsv } from "../../shared/utils/csv";
 import { LoadingIndicator } from "../shared/LoadingIndicator";
 import styles from "../WritingHistoryView.module.css";
 
@@ -83,6 +86,21 @@ export default function WritingHistoryView() {
         }
     };
 
+    /**
+     * Serialise the loaded daily series as CSV and hand it to the browser.
+     * Same implementation in both storage modes (#744): the series is
+     * already client-side, so there is nothing a backend round-trip could
+     * add. An empty window still downloads — a header-only file is the
+     * honest answer to "export this period".
+     */
+    const exportCsv = () => {
+        const rows = (summary?.daily ?? []).map((d) => [d.day, d.words_written] as const);
+        const blob = new Blob([toCsv(["day", "words_written"], rows)], {
+            type: "text/csv;charset=utf-8",
+        });
+        downloadBlob(blob, `writing-history-${days}d.csv`);
+    };
+
     const maxBookWords = books?.reduce((m, b) => Math.max(m, b.total_words), 0) || 1;
 
     return (
@@ -103,30 +121,24 @@ export default function WritingHistoryView() {
                         </button>
                     ))}
                 </div>
-                {csv.isActive ? (
-                    <a
-                        className="btn btn-secondary btn-sm"
-                        href={api.writingStats.exportCsvUrl(days)}
-                        data-testid="writing-history-export-csv"
-                    >
-                        <Download size={14} aria-hidden />
-                        {t("ui.writing_stats.export_csv", "CSV exportieren")}
-                    </a>
-                ) : (
-                    <button
-                        type="button"
-                        className="btn btn-secondary btn-sm"
-                        disabled
-                        data-testid="writing-history-export-csv"
-                        title={t(
-                            csv.reason ?? "ui.feature.requires_desktop_app",
-                            "This feature requires the Bibliogon desktop app",
-                        )}
-                    >
-                        <Download size={14} aria-hidden />
-                        {t("ui.writing_stats.export_csv", "CSV exportieren")}
-                    </button>
-                )}
+                <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    onClick={exportCsv}
+                    disabled={!csv.isActive}
+                    data-testid="writing-history-export-csv"
+                    title={
+                        csv.isActive
+                            ? undefined
+                            : t(
+                                  csv.reason ?? "ui.feature.not_yet_available",
+                                  "This feature is not available",
+                              )
+                    }
+                >
+                    <Download size={14} aria-hidden />
+                    {t("ui.writing_stats.export_csv", "CSV exportieren")}
+                </button>
             </div>
 
             {loading ? (
