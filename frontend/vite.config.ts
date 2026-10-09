@@ -7,6 +7,8 @@ import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 import { buildVersion } from "@astrapi69/vite-plugin-build-version";
 
+import { securityHeaders } from "./security/securityHeaders";
+
 import pkg from "./package.json" with { type: "json" };
 
 // Build provenance baked into the bundle so Settings > About can show
@@ -90,6 +92,11 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    // Security response headers from security/csp.txt (#986). The CSP
+    // rides the PREVIEW server, which serves the real built bundle the
+    // static-smoke gate measures; the dev server gets the static headers
+    // only (see the plugin docstring for why).
+    securityHeaders(),
     // Emit `dist/version.json` ({version, buildHash, buildDate}) as a
     // deploy-independent, self-hostable update signal (LAN / Docker can check
     // for updates without the GitHub Releases API; it is also the manifest the

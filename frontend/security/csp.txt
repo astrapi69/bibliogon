@@ -1,0 +1,81 @@
+# Canonical Content-Security-Policy for every Bibliogon deployment (#986).
+#
+# ONE file, three consumers, no copies:
+#   - frontend/vite-plugins/securityHeaders.ts sends it from the Vite dev
+#     and preview servers, which is what the E2E gate measures.
+#   - backend/app/security_headers.py sends it for the HTML it serves in
+#     desktop / LAN single-port mode.
+#   - scripts/generate_security_headers.py renders it into
+#     frontend/security/nginx-security-headers.conf for the Docker image;
+#     `--check` fails CI when the rendered file drifts.
+#
+# It ships as Content-Security-Policy-REPORT-ONLY. The policy is a
+# prediction about a bundle nobody has run under it, and the first wrong
+# directive in enforcing mode is a white page in production. Enforcing is
+# its own change, once the gate has been green across the smoke suite.
+#
+# There is no report-uri: a collector would mean an endpoint Bibliogon
+# does not have and a round-trip from a local-first app to somewhere
+# else. The collector here is e2e/smoke/csp-report-only.spec.ts, which
+# reads the violations Chromium logs to the console and fails on any.
+#
+# Syntax: one directive per line, `#` comments and blank lines ignored.
+
+# Everything not named below falls back to same-origin.
+default-src 'self'
+
+# The one directive that is a real barrier. An injected <script> is what
+# turns a stored credential into a stolen one (#880), and nothing in the
+# build needs an inline or remote script: the SW registration is emitted
+# as a separate registerSW.js file (vite-plugin-pwa injectRegister
+# "script", not "inline"), and the JSON-LD block in index.html is a data
+# block the HTML parser never executes.
+script-src 'self'
+
+# 'unsafe-inline' is not optional and not a lapse: React writes dynamic
+# geometry through style={{}} (drag transforms, collage regions, comic
+# bubble anchors, progress widths), KaTeX positions every glyph with a
+# style attribute, and a style attribute cannot carry a nonce. The
+# Tailwind-first rule keeps the static look in stylesheets; what is left
+# inline is computed values, which is what the rule allows.
+style-src 'self' 'unsafe-inline'
+
+# data: for inlined icons and generated PDFs/previews, blob: for images
+# resolved out of IndexedDB offline (useAssetUrl), https: for the image
+# URLs a Medium import keeps pointing at the Medium CDN when the user
+# imports without downloading the files.
+img-src 'self' data: blob: https:
+
+# Fonts are bundled under public/fonts - there is no CDN to allow. data:
+# is for the ones Vite inlines at build time: KaTeX ships woff files small
+# enough to fall under assetsInlineLimit, so the built vendor-katex CSS
+# carries `src:url(data:font/woff...)`. The gate found this on its first
+# run, on every page, which is what a report-only phase is for.
+font-src 'self' data:
+
+# The audiobook player and every export preview read from a blob: URL.
+media-src 'self' blob:
+
+# Deliberately wide, and it would be dishonest to pretend otherwise:
+# all six AI providers run browser-direct (#468) against a base URL the
+# user types, which includes a self-hosted LM Studio or Ollama on plain
+# http, and the URL import fetches a page address the user supplies. A
+# policy cannot both allow that and fence off exfiltration, so this
+# directive is not the barrier - script-src is.
+connect-src 'self' https: http:
+
+# The service worker plus the asset-intercept script it importScripts.
+worker-src 'self' blob:
+manifest-src 'self'
+
+# The export preview is a sandboxed srcdoc iframe; PDF previews are
+# blob: documents.
+frame-src 'self' blob:
+
+object-src 'none'
+base-uri 'self'
+form-action 'self'
+
+# Header-only: a <meta>-delivered policy ignores frame-ancestors, which
+# is why the deployments that can send a header send one at all.
+frame-ancestors 'none'

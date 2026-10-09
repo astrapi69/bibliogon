@@ -15,7 +15,7 @@
        generate-trial-key \
        docs-install docs-build docs-serve \
        sync-mkdocs-nav verify-mkdocs-nav check-mkdocs-orphans verify-docs-discipline verify-external-hosts \
-       lock-all-plugins verify-plugin-locks verify-venv-lock verify-theme verify-components verify-seed-i18n verify-seed-drift verify-i18n-quotes check-cohesion check-complexity \
+       lock-all-plugins verify-plugin-locks verify-venv-lock verify-theme verify-components verify-seed-i18n verify-seed-drift verify-i18n-quotes sync-security-headers verify-security-headers check-cohesion check-complexity \
        bump-version update-doc-headers finalize-changelog release-prepare release-finish \
        clean prod prod-down prod-logs help
 
@@ -851,6 +851,12 @@ verify-seed-i18n: ## Guard: the offline i18n seed mirror matches the YAML catalo
 
 verify-seed-drift: ## Guard: every GENERATED offline-seed file matches a fresh generation (#853)
 	@cd backend && poetry run python ../scripts/check_seed_drift.py --enforce
+
+sync-security-headers: ## Render frontend/security/csp.txt into the nginx include (#986)
+	@python3 scripts/generate_security_headers.py
+
+verify-security-headers: ## Guard: the nginx include matches the canonical CSP (#986)
+	@python3 scripts/generate_security_headers.py --check
 
 verify-i18n-quotes: ## Guard: no typographic quote closed by an ASCII one in the catalogs (#924)
 	@python3 scripts/check_i18n_quote_pairs.py
