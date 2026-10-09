@@ -164,6 +164,19 @@ describe("featureRegistry", () => {
         );
     });
 
+    it("disables publish-via-api in BOTH modes while no adapter exists (#918)", () => {
+        // Not desktop-only: the desktop app cannot post to DEV / WordPress /
+        // Ghost either until an adapter ships, so "requires the desktop app"
+        // would be a false promise. The gate moves to DESKTOP_ONLY with the
+        // first adapter (#917), when CORS becomes the actual reason.
+        expect(featureRegistry.getState(FEATURES.PUBLISH_VIA_API, API)).toBe("disabled");
+        expect(featureRegistry.getState(FEATURES.PUBLISH_VIA_API, DEXIE_NO_KEY)).toBe("disabled");
+        expect(featureRegistry.getState(FEATURES.PUBLISH_VIA_API, DEXIE_WITH_KEY)).toBe("disabled");
+        expect(featureRegistry.getReason(FEATURES.PUBLISH_VIA_API, API)).toBe(
+            FEATURE_REASON.NOT_YET_AVAILABLE,
+        );
+    });
+
     it("keeps always-active features active in both modes", () => {
         expect(featureRegistry.getState("export", API)).toBe("active");
         expect(featureRegistry.getState("export", DEXIE_NO_KEY)).toBe("active");

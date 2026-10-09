@@ -255,3 +255,86 @@ def test_validate_max_chars_ignored_when_body_not_string(
     )
     is_valid, errors = validate_platform_metadata("twitter", {"body": 42})
     assert is_valid is True
+
+
+# --- publishing_method (#918) ---
+
+
+def test_load_rejects_an_unknown_publishing_method(fake_schema_path: Path) -> None:
+    """A typo must fail the load, not degrade the platform to manual.
+
+    This is the whole point of making the field load-bearing: before
+    #918 ``"apii"`` parsed fine, reached the frontend as a bare string,
+    and silently meant "no publish action" - indistinguishable from a
+    deliberate ``"manual"``.
+    """
+    fake_schema_path.write_text(
+        'devto:\n  display_name: "DEV"\n  publishing_method: "apii"\n',
+        encoding="utf-8",
+    )
+    with pytest.raises(platform_schema.PlatformSchemaError) as excinfo:
+        load_platform_schemas()
+    message = str(excinfo.value)
+    assert "devto" in message
+    assert "apii" in message
+    assert "manual" in message and "api" in message
+
+
+def test_load_accepts_both_literal_values(fake_schema_path: Path) -> None:
+    fake_schema_path.write_text(
+        'a:\n  publishing_method: "manual"\nb:\n  publishing_method: "api"\n',
+        encoding="utf-8",
+    )
+    result = load_platform_schemas()
+    assert result["a"]["publishing_method"] == "manual"
+    assert result["b"]["publishing_method"] == "api"
+
+
+def test_load_accepts_an_entry_without_a_publishing_method(fake_schema_path: Path) -> None:
+    """Omitting the key is legal and means manual - the YAML's own default."""
+    fake_schema_path.write_text('a:\n  display_name: "A"\n', encoding="utf-8")
+    assert load_platform_schemas()["a"] == {"display_name": "A"}
+
+
+def test_load_ignores_a_non_mapping_entry(fake_schema_path: Path) -> None:
+    """A scalar under a platform key is someone else's problem.
+
+    The validator must not crash on it with an AttributeError before the
+    rest of the file is read; the existing permissive behaviour stands.
+    """
+    fake_schema_path.write_text('a: "oops"\nb:\n  publishing_method: "api"\n', encoding="utf-8")
+    assert load_platform_schemas()["b"]["publishing_method"] == "api"
+
+
+def test_publishing_method_of_resolves_the_declared_value(fake_schema_path: Path) -> None:
+    fake_schema_path.write_text('devto:\n  publishing_method: "api"\n', encoding="utf-8")
+    assert platform_schema.publishing_method_of("devto") == "api"
+
+
+def test_publishing_method_of_defaults_to_manual_for_a_missing_key(
+    fake_schema_path: Path,
+) -> None:
+    fake_schema_path.write_text('medium:\n  display_name: "Medium"\n', encoding="utf-8")
+    assert platform_schema.publishing_method_of("medium") == "manual"
+
+
+def test_publishing_method_of_defaults_to_manual_for_an_unknown_platform(
+    fake_schema_path: Path,
+) -> None:
+    """The boundary that matters: never offer to publish on the user's
+    behalf to a platform nothing knows how to reach."""
+    fake_schema_path.write_text('medium:\n  publishing_method: "api"\n', encoding="utf-8")
+    assert platform_schema.publishing_method_of("mastodon") == "manual"
+
+
+def test_every_shipped_platform_declares_a_valid_publishing_method() -> None:
+    """The real YAML, not a fixture. Loading it at all would raise on a
+    bad value; this also pins that the shipped list is still entirely
+    manual, so the UI affordance #918 adds is provably dormant until an
+    adapter ships."""
+    schemas = load_platform_schemas()
+    assert schemas, "the shipped platform list should not be empty"
+    methods = {
+        name: platform_schema.publishing_method_of(name) for name in schemas
+    }
+    assert set(methods.values()) == {"manual"}, methods

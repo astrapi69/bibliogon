@@ -1600,6 +1600,7 @@ ui:
     status_out_of_sync: "Fora de sincronia"
     status_archived: "Arquivado"
     drift_warning: "A versao online pode estar fora de sincronia com o rascunho atual."
+    publish_now: "Publicar agora"
     mark_published: "Marcar como publicado"
     mark_published_success: "Marcado como publicado."
     mark_published_error: "Nao foi possivel marcar."

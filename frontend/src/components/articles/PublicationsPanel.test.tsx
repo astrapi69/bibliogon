@@ -9,6 +9,8 @@
  * - AddPublicationModal forwards platform + metadata to create
  * - every mutation goes through the storage seam, so the panel works
  *   offline, and an offline refusal surfaces as richly as a 400 (#747)
+ * - the declared `publishing_method` decides whether a Publish-now action
+ *   exists at all, in both directions (#918)
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -17,6 +19,34 @@ import { render, screen, fireEvent, waitFor, act } from "@testing-library/react"
 import { PublicationsPanel } from "./PublicationsPanel";
 import type { PlatformSchema, Publication } from "../../api/client";
 import { PlatformMetadataError } from "../../lib/utils/publishing/platformMetadata";
+
+/** The feature verdict the panel sees, settable per test.
+ *
+ * `vi.hoisted` because `vi.mock` factories are hoisted above the module
+ * body: a plain `let` declared below would still be undefined when the
+ * factory runs. The box lets a test flip the gate and assert the SAME
+ * control in both states, which is what proves the gate is wired rather
+ * than that a constant was read.
+ */
+const feature = vi.hoisted(() => ({
+    current: {
+        state: "disabled",
+        isActive: false,
+        isDisabled: true,
+        isHidden: false,
+        reason: "ui.feature.not_yet_available",
+    } as {
+        state: string;
+        isActive: boolean;
+        isDisabled: boolean;
+        isHidden: boolean;
+        reason?: string;
+    },
+}));
+
+vi.mock("@astrapi69/feature-strategy-react", () => ({
+    useFeature: () => feature.current,
+}));
 
 vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
@@ -100,6 +130,15 @@ const SCHEMAS: Record<string, PlatformSchema> = {
         max_chars_per_post: 280,
         publishing_method: "manual",
     },
+    // The only api-method platform in the fixture. None of the SHIPPED
+    // platforms declares "api" (pinned backend-side), so a fixture is the
+    // only way to exercise the branch at all.
+    devto: {
+        display_name: "DEV Community",
+        required_metadata: ["title", "body"],
+        optional_metadata: ["tags"],
+        publishing_method: "api",
+    },
 };
 
 function makePub(overrides: Partial<Publication> = {}): Publication {
@@ -139,6 +178,13 @@ describe("PublicationsPanel", () => {
         mockDeletePub.mockReset();
         mockListPlatforms.mockReset();
         confirmMock.mockReset();
+        feature.current = {
+            state: "disabled",
+            isActive: false,
+            isDisabled: true,
+            isHidden: false,
+            reason: "ui.feature.not_yet_available",
+        };
     });
 
     it("renders empty state when no publications", async () => {
@@ -266,6 +312,74 @@ describe("PublicationsPanel", () => {
 
         fireEvent.click(screen.getByTestId("publication-mark-published-p-raw"));
         await waitFor(() => expect(notify.error).toHaveBeenCalled());
+    });
+
+    it("renders no Publish-now action for a manual platform (#918)", async () => {
+        // The behaviour-neutrality pin. Every shipped platform is "manual",
+        // so this is what the panel looks like today and must keep looking
+        // like until an adapter ships.
+        await renderPanel([makePub({ id: "p-manual", platform: "medium" })]);
+        await waitFor(() =>
+            expect(screen.getByTestId("publication-row-p-manual")).toBeInTheDocument(),
+        );
+        expect(
+            screen.queryByTestId("publication-publish-now-p-manual"),
+        ).not.toBeInTheDocument();
+        // and the manual flow is untouched
+        expect(
+            screen.getByTestId("publication-mark-published-p-manual"),
+        ).toBeInTheDocument();
+    });
+
+    it("renders the Publish-now action for an api platform (#918)", async () => {
+        await renderPanel([makePub({ id: "p-api", platform: "devto" })]);
+        await waitFor(() =>
+            expect(screen.getByTestId("publication-publish-now-p-api")).toBeInTheDocument(),
+        );
+        // The manual flow stays available: an api platform can still be
+        // published by hand, and the user may already have done so.
+        expect(screen.getByTestId("publication-mark-published-p-api")).toBeInTheDocument();
+    });
+
+    it("keeps the Publish-now action disabled while the gate says not-yet (#918)", async () => {
+        await renderPanel([makePub({ id: "p-api", platform: "devto" })]);
+        const button = await screen.findByTestId("publication-publish-now-p-api");
+        expect(button).toBeDisabled();
+        // The reason reaches the user rather than a dead grey button
+        // (policy #78). The i18n mock returns the fallback, so the title is
+        // the fallback text.
+        expect(button.getAttribute("title")).toBe("Noch nicht verfügbar");
+    });
+
+    it("enables the Publish-now action when the gate turns active (#918)", async () => {
+        // The other direction of the same control: without this, a gate
+        // hard-wired to "disabled" would pass the test above forever.
+        feature.current = {
+            state: "active",
+            isActive: true,
+            isDisabled: false,
+            isHidden: false,
+            reason: undefined,
+        };
+        await renderPanel([makePub({ id: "p-api", platform: "devto" })]);
+        const button = await screen.findByTestId("publication-publish-now-p-api");
+        expect(button).toBeEnabled();
+        expect(button.getAttribute("title")).toBeNull();
+    });
+
+    it("offers no Publish-now on an already-published api row (#918)", async () => {
+        // Boundary: publishing is not a repeatable action. A published or
+        // drifted row offers Verify-live instead, exactly as a manual one
+        // does.
+        await renderPanel([
+            makePub({ id: "p-done", platform: "devto", status: "published" }),
+        ]);
+        await waitFor(() =>
+            expect(screen.getByTestId("publication-verify-live-p-done")).toBeInTheDocument(),
+        );
+        expect(
+            screen.queryByTestId("publication-publish-now-p-done"),
+        ).not.toBeInTheDocument();
     });
 
     it("Add modal surfaces 400 errors from backend", async () => {

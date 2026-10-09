@@ -1600,6 +1600,7 @@ ui:
     status_out_of_sync: "未同期"
     status_archived: "アーカイブ済み"
     drift_warning: "ライブ版が現在の下書きと同期していない可能性があります。"
+    publish_now: "今すぐ公開"
     mark_published: "公開済みにする"
     mark_published_success: "公開済みにしました。"
     mark_published_error: "マークできませんでした。"

@@ -967,6 +967,13 @@ export interface BulkAiFillJobStatus {
     error: string | null;
 }
 
+/** How an Article reaches a platform. ``manual`` means the user copies
+ *  it across and marks the publication published; ``api`` means an
+ *  adapter can post it for them (#918). Mirrors the backend's
+ *  ``PublishingMethod`` literal; the loader rejects anything else, so a
+ *  widening here would be a lie about what the API can send. */
+export type PublishingMethod = "manual" | "api";
+
 /** Per-platform metadata schema (loaded from
  *  backend/app/data/platform_schemas.yaml). The frontend renders
  *  add-publication forms from this data. */
@@ -976,7 +983,7 @@ export interface PlatformSchema {
     optional_metadata: string[];
     max_tags?: number | null;
     max_chars_per_post?: number | null;
-    publishing_method: string;
+    publishing_method: PublishingMethod;
     notes?: string | null;
 }
 

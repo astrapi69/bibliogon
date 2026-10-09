@@ -1695,6 +1695,7 @@
       "status_out_of_sync": "Fuera de sincronia",
       "status_archived": "Archivado",
       "drift_warning": "La version en vivo puede no coincidir con el borrador actual.",
+      "publish_now": "Publicar ahora",
       "mark_published": "Marcar como publicada",
       "mark_published_success": "Marcada como publicada.",
       "mark_published_error": "No se pudo marcar.",
