@@ -527,22 +527,23 @@ test.describe("Feature Screenshots", () => {
             }
 
             await page.goto(`/articles/${article.id}`);
-            await page.getByTestId("article-editor").waitFor({state: "visible"}).catch(() => {});
-            await page
-                .getByTestId("publications-panel")
-                .waitFor({state: "visible"})
-                .catch(() => {});
-            // The sidebar is its own scroll container, and the panel sits well
-            // below its fold. `scrollIntoViewIfNeeded` left it off-frame (the
-            // first capture of this block showed the Metadaten fields and no
-            // panel at all), so scroll the panel to the middle of its
-            // scrollable ancestor explicitly.
-            await page
-                .getByTestId("publications-panel")
-                .evaluate((el) => el.scrollIntoView({block: "center", behavior: "instant"}))
-                .catch(() => {});
-            await page.waitForTimeout(500);
-            await page.screenshot({
+            await page.getByTestId("article-editor").waitFor({state: "visible"});
+
+            // An ELEMENT screenshot, not a page one, and no `.catch` on these
+            // steps. The panel lives at the bottom of a 300px sidebar that is
+            // its own `overflow-y: auto` container inside a document that does
+            // not scroll (`html, body { overflow: hidden }`), so a page shot
+            // renders the Metadaten fields and no panel - which is what the
+            // first two captures of this block produced, with
+            // `scrollIntoViewIfNeeded` and then `scrollIntoView({block:
+            // "center"})` both failing silently behind a swallowed catch.
+            // `locator.screenshot` scrolls the element into view itself and
+            // captures its own box, and a throw here fails the run instead of
+            // writing another picture of the wrong thing.
+            const panel = page.getByTestId("publications-panel");
+            await panel.waitFor({state: "visible"});
+            await page.waitForTimeout(400);
+            await panel.screenshot({
                 path: `${OUT}/article-editor/publications-panel.png`,
             });
         });
