@@ -784,7 +784,12 @@ test.describe("Feature Screenshots", () => {
         test("export preview", async ({page}) => {
             const book = await seedProseBook("Schreiben am Meer");
             await page.goto(`/books/${book.id}/export`);
-            await page.getByTestId("export-page-client").waitFor({state: "visible"});
+            // The page root, not `export-page-client`: this project runs
+            // against a real backend, so the page renders the backend engine
+            // and that client-only testid never appears. The wait was
+            // swallowed, so the block shot the right page for the wrong
+            // reason and would have kept doing so through any regression.
+            await page.getByTestId("export-page").waitFor({state: "visible"});
             await page.waitForTimeout(500);
             await page.screenshot({path: `${OUT}/import-export/export-preview.png`});
         });
@@ -1166,14 +1171,19 @@ test.describe("Offline AI text tools", () => {
             })
             .catch(() => {});
         await page.getByTestId("offline-import-confirm").click().catch(() => {});
+
+        // Open the book from its CARD. `getByText(...).first()` matched the
+        // "Zuletzt bearbeitet" entry instead and never navigated, so this
+        // block has been committing a screenshot of the dashboard under the
+        // catalog's AI-text-tools row. The `:not(-menu-)` filter is the
+        // documented guard against the card prefix also matching its own
+        // kebab-menu testids.
         await page
-            .getByText("Die Reise nach Norden")
+            .locator('[data-testid^="book-card-"]:not([data-testid*="-menu-"])')
             .first()
-            .click()
-            .catch(() => {});
-        await page
-            .getByTestId("editor-ai-tools")
-            .waitFor({state: "visible"});
+            .click();
+        await page.waitForURL(/\/book\//);
+        await page.getByTestId("editor-ai-tools").waitFor({state: "visible"});
         await page.getByTestId("editor-ai-grammar").click().catch(() => {});
         await page.waitForTimeout(400);
         await page.screenshot({path: `${OUT}/book-editor/ai-text-tools-offline.png`});
