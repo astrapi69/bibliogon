@@ -27,9 +27,18 @@
  * baselines show the pre-fix header one control row tall under
  * warm-literary and classic and two rows tall under cool-modern, nord,
  * studio and notebook. The rest of this suite runs in the default theme,
- * warm-literary, where the bar fitted - so no assertion written here
- * could have seen it. The absolute test below therefore sets the palette
- * itself and checks every one, the way the visual suite does.
+ * warm-literary, where the bar fitted - so the tests below set the
+ * palette themselves and check every one, the way the visual suite does.
+ *
+ * What the wrap test must NOT do is grade the header against something
+ * inside the header (#995). A first attempt compared the header's height
+ * against its tallest visible control plus the header's padding; when a
+ * control wraps its label it becomes two lines tall, so the bound grew by
+ * exactly what it was supposed to catch and the assertion was green on
+ * the bug in all six palettes. That is the same fault as the original
+ * sweep, one level down. The bound used now comes only from each
+ * control's own computed line-height, padding and border - nothing on
+ * the right-hand side can move when a label wraps.
  */
 
 import {test, expect} from "../fixtures/base";
@@ -126,57 +135,78 @@ test.describe("MENU-SINGLE-LINE Book Dashboard", () => {
     });
 
     for (const palette of PALETTES) {
-    test(`is one control row tall at the reference width (${palette})`, async ({
+    test(`no header control wraps its label at the reference width (${palette})`, async ({
         page,
     }) => {
-        // #971: the loop below grades every width against REFERENCE_WIDTH, so
-        // once 1440 itself wraps the reference IS the wrap and every
-        // comparison passes - the one width the file calls "single-line
-        // guaranteed" was the only one never checked. This asserts it
-        // absolutely: the header is its tallest control plus its own padding,
-        // both read from the DOM so a theme or font change does not need a
-        // new magic number.
+        // #971 found the header two rows tall at 1440px, the one width
+        // this file calls "single-line guaranteed" and the only one the
+        // sweep below never checked - it grades every other width against
+        // 1440, so once 1440 wraps the reference IS the wrap.
         //
-        // Once per palette, because the pre-fix header fitted in
-        // warm-literary (this suite's default) and wrapped in four of the
-        // other five. A single-palette version of this test is green on the
-        // bug it is meant to pin.
+        // #995: the bound must not come from inside the header. A control
+        // that wraps its label becomes two lines tall, so the first attempt
+        // here - "header <= tallest visible control + the header's padding"
+        // - grew by exactly what it was meant to catch and was green on the
+        // bug in all six palettes. Each control is measured against its OWN
+        // line-height instead: a content box over ~1.6 lines means the text
+        // broke across lines. One line with an icon sits at 1.0-1.3 lines,
+        // two lines at 2.0, so the threshold separates them without a magic
+        // pixel count, and nothing on the right-hand side can move when the
+        // bug appears.
+        //
+        // Once per palette, because the palette picks the font and the font
+        // decides the label widths: the pre-fix bar fitted under
+        // warm-literary and classic and wrapped under the other four.
         await bootInPalette(page, palette);
         await page.goto("/");
         await ready(page, REFERENCE_WIDTH);
-        // The palette picks the font, the font decides the label widths,
-        // and the web fonts land asynchronously. Measuring before they do
-        // measures fallback metrics - a layout no user ever sees, and the
-        // reason an assertion here can be green while the theme baselines
-        // show the bar wrapped.
+        // Web fonts land asynchronously; measuring before they do measures
+        // fallback metrics, a layout no user ever sees.
         await page.evaluate(() => document.fonts.ready);
-        const measured = await page.evaluate(() => {
+        const wrapped = await page.evaluate(() => {
             const header = document.querySelector(
                 '[data-testid="dashboard-header"]',
             ) as HTMLElement;
-            const inner = header.firstElementChild as HTMLElement;
-            const padding =
-                parseFloat(getComputedStyle(inner).paddingTop) +
-                parseFloat(getComputedStyle(inner).paddingBottom);
             const controls = [
-                ...header.querySelectorAll("button, a, input, select"),
+                ...header.querySelectorAll("button, a"),
             ] as HTMLElement[];
-            const tallest = Math.max(
-                ...controls
-                    .filter((el) => el.offsetParent !== null)
-                    .map((el) => el.getBoundingClientRect().height),
-            );
-            return {header: header.getBoundingClientRect().height, tallest, padding};
+            return controls
+                .filter((el) => el.offsetParent !== null)
+                .map((el) => {
+                    const cs = getComputedStyle(el);
+                    const lineHeight =
+                        parseFloat(cs.lineHeight) ||
+                        parseFloat(cs.fontSize) * 1.5;
+                    const frame =
+                        parseFloat(cs.paddingTop) +
+                        parseFloat(cs.paddingBottom) +
+                        parseFloat(cs.borderTopWidth) +
+                        parseFloat(cs.borderBottomWidth);
+                    const content = el.getBoundingClientRect().height - frame;
+                    return {
+                        label:
+                            (
+                                el.textContent ||
+                                el.getAttribute("aria-label") ||
+                                el.getAttribute("data-testid") ||
+                                "?"
+                            )
+                                .trim()
+                                .slice(0, 40) || "?",
+                        lines: Math.round((content / lineHeight) * 100) / 100,
+                    };
+                })
+                .filter((c) => c.lines > 1.6);
         });
         expect(
-            measured.header,
-            `header is ${measured.header}px at ${REFERENCE_WIDTH}px under ` +
-                `${palette}; one row of ${measured.tallest}px controls plus ` +
-                `${measured.padding}px padding is ` +
-                `${measured.tallest + measured.padding}px. A taller header means a ` +
-                `control wrapped its label. Fold one into the Import chevron ` +
-                `(#971) - the breakpoint cannot help, the container is capped at 1100px.`,
-        ).toBeLessThanOrEqual(measured.tallest + measured.padding + WRAP_TOLERANCE);
+            wrapped,
+            `under ${palette} at ${REFERENCE_WIDTH}px these header controls ` +
+                `broke their label across lines: ${JSON.stringify(wrapped)}. ` +
+                `The bar has outgrown its container - fold a control into the ` +
+                `Import chevron the way #398 did, do not move the breakpoint: ` +
+                `it measures the viewport, while .headerInner is capped at ` +
+                `1100px.`,
+        ).toEqual([]);
     });
     }
 
