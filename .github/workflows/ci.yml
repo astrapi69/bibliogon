@@ -49,9 +49,15 @@ jobs:
       - name: Install Poetry
         run: pip install poetry
 
+      # `sync`, not `install`: the cache above restores by key PREFIX, so a
+      # run whose exact key misses gets the newest venv built from an OLDER
+      # lock - and `install` removes nothing, so the environment grows into a
+      # superset of the lockfile and the suite tests against packages the
+      # lock no longer declares (#980). Sync prunes; on a cold venv the two
+      # are identical.
       - name: Install backend dependencies
         working-directory: backend
-        run: poetry install --no-interaction --no-ansi
+        run: poetry sync --no-interaction --no-ansi
 
       # The backendless PWA seeds its i18n from generated JSON mirrors, and
       # regenerating them is a manual step - a key added to the YAML but never
@@ -118,6 +124,17 @@ jobs:
           fi
           echo "testmon errored (exit $code); running FULL suite (authoritative)."
           poetry run pytest tests/ -q
+
+      # #980: `sync` above makes the environment equal the lock at install
+      # time; this catches what sync cannot - anything installed into the venv
+      # AFTER it, which is why it runs last rather than beside the install.
+      # pytest-testmon is the one deliberate case and is named rather than
+      # tolerated, so the next ad-hoc install turns the job red instead of
+      # riding along in the cache for every later run to inherit.
+      - name: Installed environment still matches the lockfile
+        if: always()
+        working-directory: backend
+        run: poetry run python ../scripts/check_venv_matches_lock.py --allow pytest-testmon
 
   # Plugin test matrix moved to nightly.yml (#289): plugins almost never break
   # on a frontend/backend-core PR, and 10 parallel matrix jobs dominated PR
@@ -283,7 +300,7 @@ jobs:
         run: pip install poetry
       - name: Install backend dependencies
         working-directory: backend
-        run: poetry install --no-interaction --no-ansi
+        run: poetry sync --no-interaction --no-ansi
       - name: ruff check
         working-directory: backend
         run: poetry run ruff check app/

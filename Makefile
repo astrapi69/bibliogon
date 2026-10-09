@@ -15,7 +15,7 @@
        generate-trial-key \
        docs-install docs-build docs-serve \
        sync-mkdocs-nav verify-mkdocs-nav check-mkdocs-orphans verify-docs-discipline verify-external-hosts \
-       lock-all-plugins verify-plugin-locks verify-theme verify-components verify-seed-i18n verify-seed-drift verify-i18n-quotes check-cohesion check-complexity \
+       lock-all-plugins verify-plugin-locks verify-venv-lock verify-theme verify-components verify-seed-i18n verify-seed-drift verify-i18n-quotes check-cohesion check-complexity \
        bump-version update-doc-headers finalize-changelog release-prepare release-finish \
        clean prod prod-down prod-logs help
 
@@ -802,6 +802,9 @@ lock-all-plugins: ## Re-lock every plugin's poetry.lock (after a shared-dep pin 
 	done
 	@echo ""
 	@echo "Re-locked $$(ls -d plugins/bibliogon-plugin-*/ | wc -l) plugin(s)."
+
+verify-venv-lock: ## Detect drift between the installed Python environment and the lockfile (#980)
+	@cd backend && poetry run python ../scripts/check_venv_matches_lock.py --project backend
 
 verify-plugin-locks: ## Detect drift between each plugin's pyproject.toml and its poetry.lock
 	@drift=0; \

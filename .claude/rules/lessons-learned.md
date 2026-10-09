@@ -5692,3 +5692,54 @@ every content-reading test is the #787 shape recurring.
   real-world behavior.
 - Library-First (`.claude/rules/library-first.md`) - the fix for four of the
   five gaps was "call the existing converter", not "write a fourth parser".
+
+## `poetry install` plus a prefix cache key is a growing environment, not a reproducible one
+
+Filed 2026-10-09 (#980), generalised from #952.
+
+Two facts that are each harmless and together are not:
+
+- **`poetry install` never removes** a package that has left the lock. It
+  installs what is missing and leaves everything else alone. `poetry sync`
+  (Poetry 2.x; `install --sync` before that) is the one that prunes.
+- **Every Poetry venv cache here restores by key PREFIX.** The exact key
+  hashes the lock, so it misses whenever the lock changes - and then
+  `restore-keys` hands the job the newest venv built from an OLDER lock.
+
+So the environment a cached job works in is "everything any previous run ever
+installed", of which the lockfile describes a subset. A test can pass because
+the restored venv still carries a package the lock no longer declares, and a
+user installing from that lock would not have it. For the E2E workflows it is
+the app itself booting in that environment, not just the tests.
+
+Seven cache blocks across six workflows had this shape. Two of them -
+`ci.yml`'s test job and its lint job - share the same key, so an ad-hoc
+`pytest-testmon` installed by one is present in the other.
+
+**The fix is `poetry sync`, not a different cache key.** The key already
+hashes the lock; dropping the prefix would trade a correctness problem for a
+cold install on every lock change. Sync gives both: on a cold venv it is
+identical to install, on a restored one it prunes.
+
+**Where it actually bites is local.** CI venvs are at least rebuilt when the
+lock changes; a developer's venv is not. The container that found #952 still
+carried `pypdf` 6.18.1 with three advisories from a lock that had stopped
+naming pypdf more than four months earlier - and `pip-audit` reported it as a
+project vulnerability, which it was not. `make verify-venv-lock` answers that
+question in a second.
+
+**The guard reads Poetry's own answer.** `poetry sync --dry-run` reports
+exactly the operations needed to make the environment equal the lock; no
+operation means no drift. Parsing that beats reconstructing the package set
+from the lock by hand, which would need its own markers, extras and
+path-dependency handling. Two things must be exempt: the virtualenv seeds
+(`pip`, `setuptools`, `wheel` - the weekly security scan upgrades pip on
+purpose), and anything installed ad-hoc on purpose, which has to be NAMED
+(`--allow pytest-testmon`) rather than silently tolerated.
+
+**Corollary for diagnosis.** When a dependency scanner reports a package no
+pyproject pins and no lock carries, suspect the environment before the
+repository. #976 attributed exactly this to a cache that `security-scan.yml`
+does not have - that workflow builds a fresh venv every run. The sync there is
+still right, the reason was wrong, and the shape is worth remembering: the one
+workflow that audits an environment was the one that never cached it.
