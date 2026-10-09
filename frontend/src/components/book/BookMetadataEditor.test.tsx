@@ -1102,13 +1102,14 @@ describe("BookMetadataEditor — Bug 9 Categories + BISAC", () => {
     // despite the 26-entry backend catalog). This pin prevents the
     // wiring from regressing to the empty default and verifies the
     // datalist is populated for the autocomplete to fire.
-    it("on mount, calls api.kdp.listCategories and the datalist exposes its options", async () => {
+    it("on mount, loads the catalog through the seam and the datalist exposes its options", async () => {
         const { api } = await import("../../api/client");
         const listCategoriesMock = vi.mocked(api.kdp.listCategories);
         listCategoriesMock.mockClear();
         listCategoriesMock.mockResolvedValueOnce(["Fiction", "Mystery", "Science Fiction"]);
         renderBookMeta();
-        // Endpoint fired exactly once on mount.
+        // Loaded exactly once on mount - api mode delegates the seam call
+        // straight to api.kdp, so the same mock answers either path.
         await waitFor(() => expect(listCategoriesMock).toHaveBeenCalledTimes(1));
         // The category-input's datalist must carry the fetched
         // options (CategoryInput renders a sibling <datalist> whose
@@ -1123,7 +1124,7 @@ describe("BookMetadataEditor — Bug 9 Categories + BISAC", () => {
         });
     });
 
-    it("when api.kdp.listCategories fails, CategoryInput degrades to no suggestions (no crash)", async () => {
+    it("when the catalog load fails, CategoryInput degrades to no suggestions (no crash)", async () => {
         const { api } = await import("../../api/client");
         const listCategoriesMock = vi.mocked(api.kdp.listCategories);
         listCategoriesMock.mockClear();

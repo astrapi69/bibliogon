@@ -25,6 +25,8 @@ import type {
     BookPublishingStateGetResponse,
 } from "../../../api/client";
 import type { IStorageService } from "../../types";
+import { KDP_CATEGORIES } from "../../../data/kdpCategories";
+import { checkMetadataCompleteness } from "../../../lib/utils/kdp/metadataCheck";
 import { newId, notFound } from "../helpers";
 import { type GraphRow, offlineDb } from "../schema";
 import { serializedUpdate } from "../serialized-update";
@@ -77,6 +79,18 @@ async function reviewersOf(stateId: string): Promise<ArcReviewerApi[]> {
 }
 
 export const kdp: IStorageService["kdp"] = {
+    /**
+     * The same rules `metadata_checker.py` applies, run in the browser
+     * (#738). Pure field inspection, so there is nothing a round-trip
+     * could add - and without it the wizard's first step fails offline
+     * and gates every step after it.
+     */
+    checkMetadata: async (payload) =>
+        checkMetadataCompleteness(payload as unknown as Record<string, unknown>),
+
+    /** Amazon's browse categories from the client catalog. */
+    listCategories: async () => [...KDP_CATEGORIES],
+
     /**
      * The state row plus the related book's `updated_at`, which the
      * wizard compares against its own snapshot to detect a conflicting
