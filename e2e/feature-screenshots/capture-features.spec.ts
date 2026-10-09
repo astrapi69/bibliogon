@@ -486,6 +486,58 @@ test.describe("Feature Screenshots", () => {
                 fullPage: true,
             });
         });
+
+        test("publications panel", async ({page}) => {
+            // #747: the panel's reads AND mutations run through the storage
+            // seam, so this is the same surface online and on the backendless
+            // build. Two rows, one of them drifted, because the drift warning
+            // is the part of the panel worth looking at.
+            const article = await createArticle("Warum Offline-First für Autoren zählt", "de");
+            const mk = async (platform: string, metadata: Record<string, unknown>) =>
+                page.request
+                    .post(`${API}/articles/${article.id}/publications`, {
+                        data: {platform, platform_metadata: metadata},
+                    })
+                    .then((r) => r.json())
+                    .catch(() => null);
+
+            const medium = await mk("medium", {
+                title: "Warum Offline-First für Autoren zählt",
+                tags: ["schreiben", "offline"],
+            });
+            await mk("substack", {title: "Offline-First", section: "Werkstatt"});
+            if (medium?.id) {
+                await page.request
+                    .post(
+                        `${API}/articles/${article.id}/publications/${medium.id}/mark-published`,
+                        {data: {published_url: "https://medium.com/@aster/offline-first"}},
+                    )
+                    .catch(() => {});
+                // Move the article after publication, which is exactly what
+                // flips the row to out_of_sync on the next read.
+                await page.request
+                    .patch(`${API}/articles/${article.id}`, {
+                        data: {
+                            content_json: PROSE(
+                                "Ein Absatz, der nach dem Publizieren dazukam.",
+                            ),
+                        },
+                    })
+                    .catch(() => {});
+            }
+
+            await page.goto(`/articles/${article.id}`);
+            await page.getByTestId("article-editor").waitFor({state: "visible"}).catch(() => {});
+            await page
+                .getByTestId("publications-panel")
+                .waitFor({state: "visible"})
+                .catch(() => {});
+            await page.getByTestId("publications-panel").scrollIntoViewIfNeeded().catch(() => {});
+            await page.waitForTimeout(500);
+            await page.screenshot({
+                path: `${OUT}/article-editor/publications-panel.png`,
+            });
+        });
     });
 
     // ===================== Comic Editor =====================

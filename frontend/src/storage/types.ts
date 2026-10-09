@@ -199,14 +199,21 @@ export interface AuthorStorage {
 }
 
 /**
- * Article publications (which platforms a piece was published to). The
- * READ is seam-routed so opening the article editor offline returns an
- * empty list from Dexie instead of firing a doomed `/api` request; the
- * publish MUTATIONS stay on `api.publications.*` (they push to external
- * platforms via the backend and are genuinely desktop-only for now).
+ * Article publications: which platforms a piece was published to, and
+ * whether the article has moved since. All of it is per-article record-
+ * keeping with no external call - `verifyLive` is the user asserting the
+ * live version matches, not a fetch of it - so the mutations are
+ * seam-routed too since #747, and the drift comparison runs on read in
+ * both modes.
  */
 export interface PublicationStorage {
     list: typeof api.publications.list;
+    get: typeof api.publications.get;
+    create: typeof api.publications.create;
+    update: typeof api.publications.update;
+    delete: typeof api.publications.delete;
+    markPublished: typeof api.publications.markPublished;
+    verifyLive: typeof api.publications.verifyLive;
 }
 
 /** Publishing platform schemas: reference data for the publish UI, seeded

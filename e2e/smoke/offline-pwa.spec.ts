@@ -491,6 +491,79 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await expect(page.locator('[data-testid^="translation-sibling-"]')).toHaveCount(1);
     });
 
+    test("publications work offline: add, mark published, drift, verify (#747)", async ({
+        page,
+    }) => {
+        await page.goto("/articles/new");
+        await page.getByTestId("create-article-title").fill("Publiziert");
+        await page.getByTestId("create-article-submit").click();
+        await page.waitForURL(
+            (url) =>
+                /\/articles\/[^/]+$/.test(url.pathname) &&
+                !url.pathname.endsWith("/new"),
+        );
+        await expect(page.getByTestId("article-editor")).toBeVisible({timeout: 15_000});
+        await expect(page.getByTestId("publications-panel")).toBeVisible({
+            timeout: 15_000,
+        });
+        await expect(page.getByTestId("publications-empty")).toBeVisible();
+
+        // The add form validates against the SEEDED platform schema (#1015),
+        // so a refusal offline names the missing field instead of the
+        // generic line it used to - medium requires title + tags.
+        await page.getByTestId("publications-add-btn").click();
+        await expect(page.getByTestId("publications-add-modal")).toBeVisible();
+        await page.getByTestId("publications-add-submit").click();
+        await expect(page.getByTestId("publications-add-errors")).toContainText("title");
+
+        await page.getByTestId("publications-add-field-title").fill("Publiziert");
+        await page.getByTestId("publications-add-field-tags").fill("offline, dexie");
+        await page.getByTestId("publications-add-submit").click();
+
+        // Before #747 the create went straight to /api and the row never
+        // appeared offline; the hard gate in afterEach proves it does not now.
+        await expect(
+            page.locator('[data-testid^="publication-row-"]').first(),
+        ).toBeVisible({timeout: 10_000});
+        // The row id is the Dexie-minted publication id, so read it off the
+        // button rather than guessing it.
+        const pubId = await page
+            .locator('[data-testid^="publication-mark-published-"]')
+            .first()
+            .getAttribute("data-testid");
+        const id = (pubId ?? "").replace("publication-mark-published-", "");
+        expect(id).toBeTruthy();
+        await expect(page.getByTestId(`publication-row-status-${id}`)).toContainText(
+            /planned|geplant/i,
+        );
+
+        await page.getByTestId(`publication-mark-published-${id}`).click();
+        await expect(page.getByTestId(`publication-row-status-${id}`)).toContainText(
+            /published|veröffentlicht/i,
+        );
+
+        // Drift: the article moves after publication, so the next READ of the
+        // panel has to notice. Typing fires the 1s autosave; the save
+        // indicator appearing and clearing is the signal that the Dexie write
+        // committed before the reload.
+        await page.locator(".ProseMirror").first().click();
+        await page.keyboard.type("Ein Satz, der nach dem Publizieren dazukam.");
+        const saving = page.getByTestId("article-editor-save-status");
+        await expect(saving).toBeVisible({timeout: 10_000});
+        await expect(saving).toHaveCount(0, {timeout: 15_000});
+
+        await page.reload();
+        await expect(page.getByTestId(`publication-drift-warning-${id}`)).toBeVisible({
+            timeout: 15_000,
+        });
+
+        // And the user's "yes, I updated it there too" clears the warning.
+        await page.getByTestId(`publication-verify-live-${id}`).click();
+        await expect(page.getByTestId(`publication-drift-warning-${id}`)).toHaveCount(0, {
+            timeout: 10_000,
+        });
+    });
+
     test("story bible works offline: add an entity, it persists in Dexie", async ({
         page,
     }) => {

@@ -7,6 +7,8 @@
  * - Drift warning appears for out_of_sync rows
  * - mark-published / verify-live forward to the right API
  * - AddPublicationModal forwards platform + metadata to create
+ * - every mutation goes through the storage seam, so the panel works
+ *   offline, and an offline refusal surfaces as richly as a 400 (#747)
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -14,6 +16,7 @@ import { render, screen, fireEvent, waitFor, act } from "@testing-library/react"
 
 import { PublicationsPanel } from "./PublicationsPanel";
 import type { PlatformSchema, Publication } from "../../api/client";
+import { PlatformMetadataError } from "../../lib/utils/publishing/platformMetadata";
 
 vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
@@ -231,6 +234,38 @@ describe("PublicationsPanel", () => {
         expect(payload.platform).toBe("medium");
         expect(payload.platform_metadata.title).toBe("My Article");
         expect(payload.platform_metadata.tags).toEqual(["ai", "python"]);
+    });
+
+    it("Add modal surfaces an offline refusal with the same field detail (#747)", async () => {
+        await renderPanel([]);
+        // Offline the seam validates against the seeded schema and throws
+        // PlatformMetadataError, not an ApiError. The field list must still
+        // reach the form, or the offline user only ever reads "failed".
+        mockCreatePub.mockRejectedValue(
+            new PlatformMetadataError("medium", ["missing required field: tags"]),
+        );
+
+        fireEvent.click(screen.getByTestId("publications-add-btn"));
+        await waitFor(() =>
+            expect(screen.getByTestId("publications-add-modal")).toBeInTheDocument(),
+        );
+        fireEvent.click(screen.getByTestId("publications-add-submit"));
+
+        await waitFor(() =>
+            expect(screen.getByTestId("publications-add-errors")).toBeInTheDocument(),
+        );
+        expect(screen.getByTestId("publications-add-errors").textContent).toContain(
+            "missing required field: tags",
+        );
+    });
+
+    it("reports a non-ApiError mutation failure instead of swallowing it (#747)", async () => {
+        await renderPanel([makePub({ id: "p-raw", status: "planned" })]);
+        mockMarkPublished.mockRejectedValue(new Error("Dexie is unhappy"));
+        const { notify } = await import("../../utils/platform/notify");
+
+        fireEvent.click(screen.getByTestId("publication-mark-published-p-raw"));
+        await waitFor(() => expect(notify.error).toHaveBeenCalled());
     });
 
     it("Add modal surfaces 400 errors from backend", async () => {

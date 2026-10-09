@@ -206,7 +206,9 @@ export function makeQueueingStorage(base: IStorageService): IStorageService {
         // Writing-history stats: read-only aggregation, no queue entry.
         writingStats: base.writingStats,
         authors: base.authors,
-        // Read-only publishing surfaces: straight passthrough, no queue entry.
+        // Publications (#747): local-only offline writes, like chapter labels
+        // and the KDP wizard state; the record is per-article, nothing is
+        // pushed anywhere.
         publications: base.publications,
         articlePlatforms: base.articlePlatforms,
         editorPluginStatus: base.editorPluginStatus,

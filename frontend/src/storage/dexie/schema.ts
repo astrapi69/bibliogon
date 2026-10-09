@@ -209,6 +209,10 @@ class BibliogonOfflineDB extends Dexie {
     chapterTemplates!: Table<ChapterTemplate, string>;
     /** Editable A+ documents (#891), one per book and language. */
     aplusDocuments!: Table<AplusDocumentRow, string>;
+    /** Publications (#747): one row per article-and-platform record, with
+     *  the snapshot the drift comparison reads. `article_id` backs the
+     *  per-article list. */
+    publications!: Table<GraphRow, string>;
     /** Translation-group membership (#746): one row per grouped book,
      *  `book_id` as the key because a book belongs to at most one group.
      *  Kept out of the book row on purpose - the API's `Book` shape has no
@@ -335,6 +339,10 @@ class BibliogonOfflineDB extends Dexie {
         // other reference registries.
         this.version(17).stores({
             articlePlatformsRef: "key",
+        });
+        // v18 (#747): publications, listed per article.
+        this.version(18).stores({
+            publications: "id, article_id",
         });
     }
 }
