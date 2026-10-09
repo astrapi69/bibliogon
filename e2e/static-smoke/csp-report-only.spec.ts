@@ -127,21 +127,21 @@ test("the statistics page loads without a CSP violation", async ({page}) => {
     await expectNoViolations(page, "statistics");
 });
 
-test("the chapter editor loads without a CSP violation", async ({page}) => {
-    // The surface with the most inline style: TipTap, KaTeX, and the
-    // sidebar's computed widths. Created through the UI because this
-    // build has no backend to seed against.
-    await page.goto("/books/new?type=prose");
-    await page.getByTestId("create-book-title").fill("CSP Testbuch");
-    const author = page.getByTestId("create-book-author");
-    if (await author.isVisible()) await author.fill("Asterios Raptis");
-    await page.getByTestId("create-book-submit").click();
-    await page.getByRole("button", {name: /CSP Testbuch/}).first().click();
-    await page.waitForURL(/\/book\/[^/?]+/, {timeout: 20_000});
-    await page.getByTestId("chapter-sidebar").waitFor({state: "visible"});
-    // Type, so TipTap has actually rendered content with the inline style
-    // attributes `style-src 'unsafe-inline'` exists for.
-    await page.locator(".ProseMirror").first().click();
+test("the TipTap editor loads and takes content without a CSP violation", async ({page}) => {
+    // The surface with the most inline style: TipTap's own node decorations,
+    // KaTeX's per-glyph style attributes, and the editor chrome's computed
+    // widths. The ARTICLE editor, not the book editor: a freshly created
+    // book has no chapter yet, so its editor pane never mounts a
+    // ProseMirror instance and there is nothing to type into.
+    await page.goto("/articles/new");
+    await page.getByTestId("create-article-title").fill("CSP Testartikel");
+    await page.getByTestId("create-article-submit").click();
+    await page.waitForURL(
+        (url) => /\/articles\/[^/]+$/.test(url.pathname) && !url.pathname.endsWith("/new"),
+        {timeout: 20_000},
+    );
+    const editor = page.locator(".ProseMirror").first();
+    await editor.click();
     await page.keyboard.type("Ein Satz mit Inhalt.");
-    await expectNoViolations(page, "chapter editor");
+    await expectNoViolations(page, "article editor");
 });
