@@ -81,6 +81,7 @@ ui:
     token_risk: "Le jeton est stocké sans chiffrement dans ce navigateur ; un script exécuté ici peut le lire. Créez un jeton fine-grained : uniquement les dépôts à importer, permission Contents: Read-only, avec une date d'expiration. Un jeton classique avec la portée repo donne un accès en écriture à tous vos dépôts."
     token_create_link: "Créer un jeton fine-grained sur GitHub"
     token_clear: "Supprimer le jeton"
+    token_remember: "Enregistrer le jeton dans ce navigateur. Sans cocher, il ne vaut que pour cette session."
     token_cleared: "Jeton supprimé."
     token_storage_error: "Le stockage des jetons de ce navigateur n'est pas disponible."
     error_invalid_url: "URL GitHub invalide. Exemple : https://github.com/user/repo"

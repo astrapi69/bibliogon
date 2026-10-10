@@ -81,6 +81,7 @@ ui:
     token_risk: "Το token αποθηκεύεται χωρίς κρυπτογράφηση σε αυτόν τον browser· ένα script που εκτελείται εδώ μπορεί να το διαβάσει. Δημιουργήστε ένα fine-grained token: μόνο τα αποθετήρια που θέλετε να εισαγάγετε, δικαίωμα Contents: Read-only, με ημερομηνία λήξης. Ένα κλασικό token με εύρος repo δίνει δικαίωμα εγγραφής σε όλα τα αποθετήριά σας."
     token_create_link: "Δημιουργία fine-grained token στο GitHub"
     token_clear: "Διαγραφή token"
+    token_remember: "Αποθήκευση του token σε αυτό το πρόγραμμα περιήγησης. Χωρίς επιλογή, ισχύει μόνο για αυτήν τη συνεδρία."
     token_cleared: "Το token διαγράφηκε."
     token_storage_error: "Η αποθήκευση token σε αυτόν τον browser δεν είναι διαθέσιμη."
     error_invalid_url: "Μη έγκυρο URL GitHub. Παράδειγμα: https://github.com/user/repo"

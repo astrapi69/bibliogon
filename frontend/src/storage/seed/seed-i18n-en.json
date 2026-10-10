@@ -88,6 +88,7 @@
       "token_risk": "The token is stored unencrypted in this browser; a script running here can read it. Create a fine-grained token: only the repositories you want to import, permission Contents: Read-only, with an expiry date. A classic token with repo scope grants write access to all your repositories.",
       "token_create_link": "Create a fine-grained token on GitHub",
       "token_clear": "Delete token",
+      "token_remember": "Store the token in this browser. Unticked, it only lasts for this session.",
       "token_cleared": "Token deleted.",
       "token_storage_error": "The token storage in this browser is not available.",
       "error_invalid_url": "Invalid GitHub URL. Example: https://github.com/user/repo",
