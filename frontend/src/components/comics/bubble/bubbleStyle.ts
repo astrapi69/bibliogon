@@ -43,4 +43,3 @@ export function buildTextOverlayStyle(
     if (read.italic) textOverlayStyle.fontStyle = "italic";
     return textOverlayStyle;
 }
-
