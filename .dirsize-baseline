@@ -9,6 +9,7 @@
 {
   "backend/app": 23,
   "backend/app/ai": 19,
+  "backend/app/import_plugins/handlers": 11,
   "backend/app/repositories": 13,
   "backend/app/routers": 39,
   "backend/app/services": 21,
@@ -16,8 +17,10 @@
   "backend/app/services/git": 12,
   "frontend/src/ai": 21,
   "frontend/src/api": 21,
+  "frontend/src/api/platform": 11,
   "frontend/src/components/articles": 39,
   "frontend/src/components/book": 52,
+  "frontend/src/components/book-metadata/aplus": 14,
   "frontend/src/components/comics": 31,
   "frontend/src/components/dashboard": 17,
   "frontend/src/components/editor": 28,
@@ -31,12 +34,16 @@
   "frontend/src/components/story-bible": 25,
   "frontend/src/export": 30,
   "frontend/src/hooks": 20,
+  "frontend/src/hooks/book": 12,
   "frontend/src/hooks/editor": 13,
   "frontend/src/hooks/ui": 32,
-  "frontend/src/import": 15,
+  "frontend/src/import": 14,
+  "frontend/src/lib": 13,
   "frontend/src/lib/components": 32,
   "frontend/src/lib/utils": 30,
+  "frontend/src/lib/utils/content": 14,
   "frontend/src/pages": 38,
   "frontend/src/storage": 22,
-  "frontend/src/storage/dexie": 21
+  "frontend/src/storage/dexie": 21,
+  "frontend/src/utils/platform": 13
 }
