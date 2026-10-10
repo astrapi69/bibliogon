@@ -142,6 +142,32 @@ describe("gatherCover", () => {
         expect((report as {errors: string[]}).errors[0]).toContain("No cover image");
     });
 
+    it("records the cover's real dimensions in the report", async () => {
+        // A closed ImageBitmap reports 0 x 0 per spec, and this report is
+        // the only record of the cover's size inside the ZIP - so the
+        // stub zeroes itself on close() the way a browser does.
+        const bitmap = {
+            width: 1600,
+            height: 2560,
+            close() {
+                bitmap.width = 0;
+                bitmap.height = 0;
+            },
+        };
+        vi.stubGlobal("createImageBitmap", vi.fn(async () => bitmap));
+        mocks.getBlob.mockResolvedValueOnce(new Blob(["PNGBYTES"]));
+
+        const {file, report} = await gatherCover(
+            completeBook({cover_image: "uploads/b1/cover.png"}),
+        );
+
+        expect(file?.filename).toBe("cover.png");
+        const info = (report as {info: {width: number; height: number}}).info;
+        expect(info.width).toBe(1600);
+        expect(info.height).toBe(2560);
+        vi.unstubAllGlobals();
+    });
+
     it("reports why rather than failing when the bytes are missing", async () => {
         mocks.getBlob.mockResolvedValueOnce(null);
         const {file, report} = await gatherCover(

@@ -120,9 +120,13 @@ export async function gatherCover(book: BookDetail): Promise<{
     }
 
     const bitmap = await createImageBitmap(blob);
+    // Read before closing: a closed ImageBitmap reports 0 x 0, and the
+    // report below is the only record of the cover's size inside the ZIP.
+    const width = bitmap.width;
+    const height = bitmap.height;
     const findings = validateCoverProbe({
-        width: bitmap.width,
-        height: bitmap.height,
+        width,
+        height,
         format: coverFormatFromFilename(filename),
         fileSizeBytes: blob.size,
     });
@@ -140,8 +144,8 @@ export async function gatherCover(book: BookDetail): Promise<{
                 .filter((f) => f.severity === "warning")
                 .map((f) => f.code),
             info: {
-                width: bitmap.width,
-                height: bitmap.height,
+                width,
+                height,
                 format: coverFormatFromFilename(filename),
                 file_size_bytes: blob.size,
                 // Named so a reader of the ZIP knows why the DPI row is
