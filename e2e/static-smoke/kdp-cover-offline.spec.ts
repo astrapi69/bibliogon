@@ -47,8 +47,14 @@ test("the cover step reaches both verdicts offline, without any /api call", asyn
     const bookPath = new URL(page.url()).pathname;
 
     // Step 0 gates on a chapter and a description, so give it both.
+    // Adding a chapter asks for its title in a prompt dialog, and
+    // nothing is created until that is confirmed - the previous run
+    // clicked the menu item and waited for a chapter that the open
+    // dialog was still waiting on.
     await page.getByTestId("chapter-add-trigger").click();
     await page.getByRole("menuitem", {name: /Neues Kapitel|New Chapter/}).click();
+    await page.locator('[role="dialog"] input').fill("Kapitel 1");
+    await page.getByTestId("app-dialog-confirm").click();
     await expect(page.locator('[data-testid^="chapter-item-"]').first()).toBeVisible({
         timeout: 15_000,
     });
