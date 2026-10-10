@@ -81,6 +81,7 @@ ui:
     token_risk: "Token bu tarayıcıda şifrelenmeden saklanır; burada çalışan bir betik onu okuyabilir. Fine-grained bir token oluşturun: yalnızca içe aktarmak istediğiniz depolar, Contents: Read-only izni ve bir son kullanma tarihi. repo kapsamlı klasik bir token tüm depolarınıza yazma erişimi verir."
     token_create_link: "GitHub'da fine-grained token oluştur"
     token_clear: "Token'ı sil"
+    token_remember: "Token'ı bu tarayıcıda sakla. İşaretlenmezse yalnızca bu oturum için geçerlidir."
     token_cleared: "Token silindi."
     token_storage_error: "Bu tarayıcıdaki token deposu kullanılamıyor."
     error_invalid_url: "Geçersiz GitHub URL'si. Örnek: https://github.com/user/repo"

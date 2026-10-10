@@ -88,6 +88,7 @@
       "token_risk": "O token é guardado sem encriptação neste navegador; um script executado aqui pode lê-lo. Crie um token fine-grained: apenas os repositórios que quer importar, permissão Contents: Read-only, com data de expiração. Um token clássico com âmbito repo dá acesso de escrita a todos os seus repositórios.",
       "token_create_link": "Criar um token fine-grained no GitHub",
       "token_clear": "Eliminar token",
+      "token_remember": "Guardar o token neste navegador. Sem marcar, vale apenas para esta sessão.",
       "token_cleared": "Token eliminado.",
       "token_storage_error": "O armazenamento de tokens deste navegador não está disponível.",
       "error_invalid_url": "URL do GitHub inválido. Exemplo: https://github.com/user/repo",

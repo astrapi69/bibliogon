@@ -59,6 +59,10 @@ export default function GitHubImportTab({ onImported, onClose }: GitHubImportTab
     const [urlInput, setUrlInput] = useState("");
     const [token, setToken] = useState<string>("");
     const [showToken, setShowToken] = useState(false);
+    // Off by default (#1089): a token typed for one import should not
+    // outlive the tab. Ticked on mount when one is already stored, so an
+    // existing user is not silently signed out.
+    const [rememberToken, setRememberToken] = useState(false);
 
     const [repoRef, setRepoRef] = useState<GitHubRepoRef | null>(null);
     const [rootPath, setRootPath] = useState("");
@@ -81,7 +85,9 @@ export default function GitHubImportTab({ onImported, onClose }: GitHubImportTab
         let cancelled = false;
         loadGitHubToken()
             .then((stored) => {
-                if (!cancelled && stored) setToken((current) => current || stored);
+                if (cancelled || !stored) return;
+                setToken((current) => current || stored);
+                setRememberToken(true);
             })
             .catch((err: unknown) => notify.error(storageErrorMessage, err));
         return () => {
@@ -140,10 +146,12 @@ export default function GitHubImportTab({ onImported, onClose }: GitHubImportTab
             );
             return;
         }
-        try {
-            await saveGitHubToken(token);
-        } catch (err) {
-            notify.error(storageErrorMessage, err);
+        if (rememberToken) {
+            try {
+                await saveGitHubToken(token);
+            } catch (err) {
+                notify.error(storageErrorMessage, err);
+            }
         }
         setRepoRef(ref);
         setRootPath(ref.path);
@@ -154,9 +162,26 @@ export default function GitHubImportTab({ onImported, onClose }: GitHubImportTab
 
     const handleClearToken = async () => {
         setToken("");
+        setRememberToken(false);
         try {
             await saveGitHubToken("");
             notify.success(t("ui.github_import.token_cleared", "Token gelöscht."));
+        } catch (err) {
+            notify.error(storageErrorMessage, err);
+        }
+    };
+
+    /**
+     * Unticking deletes the stored copy immediately rather than at the
+     * next Load: a user who changes their mind about keeping a token
+     * means now, and the field keeps the typed value so the import they
+     * are in the middle of still authenticates.
+     */
+    const handleRememberChange = async (next: boolean) => {
+        setRememberToken(next);
+        if (next) return;
+        try {
+            await saveGitHubToken("");
         } catch (err) {
             notify.error(storageErrorMessage, err);
         }
@@ -295,6 +320,18 @@ export default function GitHubImportTab({ onImported, onClose }: GitHubImportTab
                             )}
                         </p>
                         <SharedOriginNote testId="github-import-token-shared-origin" />
+                        <label className="flex min-h-[44px] items-center gap-2 text-xs">
+                            <input
+                                checked={rememberToken}
+                                data-testid="github-import-token-remember"
+                                onChange={(event) => void handleRememberChange(event.target.checked)}
+                                type="checkbox"
+                            />
+                            {t(
+                                "ui.github_import.token_remember",
+                                "Token in diesem Browser speichern. Ohne Haken gilt es nur für diese Sitzung.",
+                            )}
+                        </label>
                         <div className="flex flex-wrap items-center gap-x-4">
                             <a
                                 className="inline-flex min-h-[44px] items-center text-xs underline"

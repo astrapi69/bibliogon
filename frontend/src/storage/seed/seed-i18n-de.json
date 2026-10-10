@@ -88,6 +88,7 @@
       "token_risk": "Das Token liegt unverschlüsselt in diesem Browser; ein Skript, das hier ausgeführt wird, kann es lesen. Lege ein Fine-grained Token an: nur die Repositories, die du importieren willst, Berechtigung Contents: Read-only, mit Ablaufdatum. Ein klassisches Token mit repo-Scope erlaubt Schreibzugriff auf alle deine Repositories.",
       "token_create_link": "Fine-grained Token bei GitHub anlegen",
       "token_clear": "Token löschen",
+      "token_remember": "Token in diesem Browser speichern. Ohne Haken gilt es nur für diese Sitzung.",
       "token_cleared": "Token gelöscht.",
       "token_storage_error": "Der Token-Speicher im Browser ist nicht verfügbar.",
       "error_invalid_url": "Ungültige GitHub-URL. Beispiel: https://github.com/user/repo",

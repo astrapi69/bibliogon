@@ -173,7 +173,66 @@ describe("GitHubImportTab token handling (#880)", () => {
         expect(link.getAttribute("rel")).toContain("noopener");
     });
 
-    it("saves the typed token when a repository is loaded", async () => {
+    it("does NOT persist a typed token by default (#1089)", async () => {
+        // The default used to be "save it", so a token pasted for one
+        // import outlived the tab without the user ever asking. The
+        // import still authenticates with the typed value - what
+        // changes is only whether it is written.
+        useFeatureMock.mockReturnValue({ isActive: true });
+        parseGitHubUrl.mockReturnValue({ owner: "o", repo: "r", path: "" });
+        listGitHubContents.mockResolvedValue([]);
+        render(<GitHubImportTab onClose={() => {}} />);
+        fireEvent.click(screen.getByTestId("github-import-token-section-toggle"));
+        expect(
+            (screen.getByTestId("github-import-token-remember") as HTMLInputElement).checked,
+        ).toBe(false);
+        fireEvent.change(screen.getByTestId("github-import-token"), {
+            target: { value: "github_pat_typed" },
+        });
+        fireEvent.change(screen.getByTestId("github-import-url"), {
+            target: { value: "https://github.com/o/r" },
+        });
+        fireEvent.click(screen.getByTestId("github-import-load"));
+        await waitFor(() => expect(listGitHubContents).toHaveBeenCalled());
+        expect(listGitHubContents).toHaveBeenCalledWith(
+            { owner: "o", repo: "r", path: "" },
+            "",
+            "github_pat_typed",
+        );
+        expect(saveGitHubToken).not.toHaveBeenCalled();
+    });
+
+    it("ticks the remember box when a token is already stored (#1089)", async () => {
+        // An existing user must not be silently signed out by the new
+        // default: their token is stored, so the box reflects that.
+        useFeatureMock.mockReturnValue({ isActive: true });
+        loadGitHubToken.mockResolvedValueOnce("github_pat_stored");
+        render(<GitHubImportTab onClose={() => {}} />);
+        fireEvent.click(screen.getByTestId("github-import-token-section-toggle"));
+        await waitFor(() =>
+            expect(
+                (screen.getByTestId("github-import-token-remember") as HTMLInputElement).checked,
+            ).toBe(true),
+        );
+    });
+
+    it("deletes the stored copy the moment the box is unticked (#1089)", async () => {
+        // Not at the next Load: a user who changes their mind means now.
+        // The field keeps the value so the import in flight still works.
+        useFeatureMock.mockReturnValue({ isActive: true });
+        loadGitHubToken.mockResolvedValueOnce("github_pat_stored");
+        render(<GitHubImportTab onClose={() => {}} />);
+        fireEvent.click(screen.getByTestId("github-import-token-section-toggle"));
+        const box = await screen.findByTestId("github-import-token-remember");
+        await waitFor(() => expect((box as HTMLInputElement).checked).toBe(true));
+        fireEvent.click(box);
+        await waitFor(() => expect(saveGitHubToken).toHaveBeenCalledWith(""));
+        expect((screen.getByTestId("github-import-token") as HTMLInputElement).value).toBe(
+            "github_pat_stored",
+        );
+    });
+
+    it("saves the typed token when the box is ticked", async () => {
         useFeatureMock.mockReturnValue({ isActive: true });
         parseGitHubUrl.mockReturnValue({ owner: "o", repo: "r", path: "" });
         listGitHubContents.mockResolvedValue([]);
@@ -182,6 +241,7 @@ describe("GitHubImportTab token handling (#880)", () => {
         fireEvent.change(screen.getByTestId("github-import-token"), {
             target: { value: "github_pat_typed" },
         });
+        fireEvent.click(screen.getByTestId("github-import-token-remember"));
         fireEvent.change(screen.getByTestId("github-import-url"), {
             target: { value: "https://github.com/o/r" },
         });
