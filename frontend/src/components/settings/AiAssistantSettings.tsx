@@ -10,10 +10,10 @@ import {
     isBrowserUnsupportedTestResult,
     listModels,
     providerSupportsBrowserTest,
-    type AiErrorKind,
 } from "../../ai/llmClient";
 import { useStorageMode } from "../../storage/useStorageMode";
 import { useI18n } from "../../hooks/useI18n";
+import { aiErrorText } from "../../utils/ai/aiErrorText";
 import { AI_PROVIDER_PRESETS, AI_PROVIDER_IDS, getProviderPreset } from "../../utils/ai/aiProviders";
 import {
     baseUrlForProvider,
@@ -188,7 +188,7 @@ export function AiAssistantSettings({
                     ? offline && !providerSupportsBrowserTest(id)
                         ? t("ui.settings.ai_test_desktop_only", "Nur in Desktop-App testbar")
                         : t("ui.settings.ai_test_network", "Netzwerkfehler")
-                    : aiErrorText(kind);
+                    : aiErrorText(kind, t);
             notify.error(message, err);
             return { ok: false, message };
         }
@@ -213,26 +213,6 @@ export function AiAssistantSettings({
     );
 
     /** Localized honest message for a classified offline AI error. */
-    const aiErrorText = (kind: AiErrorKind): string => {
-        switch (kind) {
-            case "auth_error":
-                return t("ui.settings.ai_err_auth", "API-Schlüssel ungültig");
-            case "rate_limited":
-                return t(
-                    "ui.settings.ai_err_rate",
-                    "Rate Limit erreicht. Bitte später erneut versuchen.",
-                );
-            case "model_not_found":
-                return t("ui.settings.ai_err_model", "Modell nicht verfügbar");
-            case "invalid_request":
-                return t("ui.settings.ai_err_invalid", "Ungültige Anfrage");
-            case "server_error":
-                return t("ui.settings.ai_err_server", "Server-Fehler beim Anbieter");
-            default:
-                return t("ui.settings.ai_test_fail", "Verbindung fehlgeschlagen");
-        }
-    };
-
     /** Settings reflecting the current form edit for `aiProvider`, which also
      *  becomes the active provider on save. */
     const buildEditedSettings = (): AiSettings => {
@@ -589,7 +569,7 @@ export function AiAssistantSettings({
                                                 } else {
                                                     setAiTestStatus("fail");
                                                     notify.error(
-                                                        aiErrorText(classifyAiClientError(err)),
+                                                        aiErrorText(classifyAiClientError(err), t),
                                                         err,
                                                     );
                                                 }
