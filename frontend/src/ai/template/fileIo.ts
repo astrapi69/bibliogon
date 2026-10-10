@@ -12,23 +12,28 @@
  * responses. What is here is the part that needs the app: the seam, and
  * the `AiTemplateImportResult` shape the panel already renders.
  *
+ * Lives in `ai/template/` rather than beside the other `ai/` modules
+ * because the folder ratchet caps `ai/` at its current file count, and a
+ * sub-package for the template's seam half is the shape the God-Folder
+ * campaign asks for anyway.
+ *
  * @example
  * const {blob, filename} = await exportTemplateOffline("book", bookId);
  * const result = await importTemplateOffline("book", bookId, yaml, false);
  */
 
-import type { AiTemplateImportResult } from "../api/client";
-import { applyTemplate } from "../lib/ai/template/apply";
+import type { AiTemplateImportResult } from "../../api/client";
+import { applyTemplate } from "../../lib/ai/template/apply";
 import {
   buildArticleTemplateFromRecord,
   buildBookTemplateFromRecord,
   type ArticleTemplateSource,
   type BookTemplateSource,
-} from "../lib/ai/template/factories";
-import { templateFilename } from "../lib/ai/template/filename";
-import { TemplateSchemaError } from "../lib/ai/template/models";
-import { parseTemplate, serializeTemplate } from "../lib/ai/template/yaml";
-import { getStorage } from "../storage";
+} from "../../lib/ai/template/factories";
+import { templateFilename } from "../../lib/ai/template/filename";
+import { TemplateSchemaError } from "../../lib/ai/template/models";
+import { parseTemplate, serializeTemplate } from "../../lib/ai/template/yaml";
+import { getStorage } from "../../storage";
 
 export type TemplateKind = "article" | "book";
 

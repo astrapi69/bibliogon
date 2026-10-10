@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("../storage", () => ({ getStorage: vi.fn() }));
+vi.mock("../../storage", () => ({ getStorage: vi.fn() }));
 
-import { getStorage } from "../storage";
-import { TemplateSchemaError } from "../lib/ai/template/models";
-import { parseTemplate } from "../lib/ai/template/yaml";
-import { exportTemplateOffline, importTemplateOffline } from "./templateFileIo";
+import { getStorage } from "../../storage";
+import { TemplateSchemaError } from "../../lib/ai/template/models";
+import { parseTemplate } from "../../lib/ai/template/yaml";
+import { exportTemplateOffline, importTemplateOffline } from "./fileIo";
 
 // #745 stage 3: the seam half of the offline round-trip. What the file
 // says and what it does to a record is pinned against the endpoints in

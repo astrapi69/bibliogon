@@ -14,7 +14,7 @@ import { notify } from "../../utils/platform/notify";
 import { api, ApiError } from "../../api/client";
 import type { AiFillResponse, AiTemplateImportResult } from "../../api/client";
 import { aiFillArticle, aiFillBook } from "../../ai/aiFill";
-import { exportTemplateOffline, importTemplateOffline } from "../../ai/templateFileIo";
+import { exportTemplateOffline, importTemplateOffline } from "../../ai/template/fileIo";
 import { TemplateSchemaError } from "../../lib/ai/template/models";
 import { ARTICLE_OFFLINE_FILL_CLASSES } from "../../ai/articleFillPrompts";
 import { BOOK_OFFLINE_FILL_CLASSES } from "../../ai/bookFillPrompts";
