@@ -22,6 +22,17 @@ docker-app-launcher = "^0.28.0"
 pytest = "^9.0.0"
 pyinstaller = "^6.11.0"
 pillow = "^12.2.0"  # Used only by the icon-generation script; bumped from 11.x for CVE-2026-{25990,40192,42308,42309,42310,42311}
+# In the lock, not installed ad-hoc in CI: pip-audit scans the environment
+# it runs in, so the audited environment has to equal the lockfile BY
+# CONSTRUCTION - the same reason the backend job uses `poetry sync` (#952).
+# A pip-audit installed on the fly would drag its own transitives into the
+# scan and report findings that are not in anything Bibliogon ships.
+pip-audit = "^2.10.0"
+# Read by scripts/security_ignore_args.py, which the audit step runs in
+# this venv to splice the accepted-advisory list into pip-audit. It also
+# arrives as a pip-audit transitive; declared anyway, because a step that
+# depends on someone else's transitive breaks on their next release.
+pyyaml = "^6.0.3"
 
 [tool.poetry.scripts]
 bibliogon-launcher = "bibliogon_launcher.__main__:main"
