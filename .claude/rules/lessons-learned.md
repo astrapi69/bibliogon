@@ -6192,3 +6192,94 @@ test is measuring the wrong surface - whatever its name says.
   what that discipline is for. Three of #742's tests were confirmed red
   against deliberate breaks; this one was the fourth, it passed, and it did
   not deserve to.
+
+## A Node builtin in a browser bundle fails at runtime, and a Node-hosted test suite cannot see it
+
+Filed 2026-10-10 (#1070). Client-side EPUB export threw in every built
+bundle - the static GitHub-Pages PWA and the Docker frontend alike, since it
+is one bundle - and the Vitest suite was green the whole time.
+
+Vite does not fail a browser build on a bare `require('path')`. It
+externalizes it and substitutes a stub whose members are `undefined`. So
+`ejs`, reached through `epub-gen-memory`, ran
+
+```js
+path.basename(filename, path.extname(filename))
+```
+
+and got `r.extname is not a function` - at runtime, in the shipped app,
+after a build that printed no error. Vitest runs in Node, where
+`require('path')` is the real module, so the suite exercised a code path
+that cannot exist in a browser.
+
+The specific trigger was worth tracing because it is not obvious from the
+call site: `ejs.render(template, data)` with exactly **two** arguments
+copies a fixed list of names out of the DATA into the OPTIONS
+(`_OPTS_PASSABLE_WITH_DATA`), and that list contains `'filename'`.
+`epub-gen-memory` spreads a chapter object that has a `filename`, so every
+chapter render set `opts.filename` and reached the `path` call. Nothing in
+the calling code mentions `filename` as an option.
+
+### The rule
+
+A dependency that reaches a Node builtin is a runtime fault in a browser
+bundle and an invisible one in a Node-hosted test. Two things follow:
+
+- **Every format a build can emit needs at least one test in a real
+  browser against the real bundle.** EPUB had none: the bulk-export spec
+  covered Markdown, the picture-book and comic specs covered PDF. The
+  format with no browser-level coverage is the format that breaks, and
+  component tests cannot stand in for it - this is the Coverage-Illusion
+  rule with the environment, rather than the mocking, doing the lying.
+- **Alias the shim unconditionally, not per-environment.** One
+  implementation that both the build and the suite resolve beats a pair
+  that can disagree. (With the caveat worth stating in the config: Vitest
+  externalizes node_modules, so a dependency there still gets Node's real
+  module - what proves the browser path is the E2E, not the alias.)
+
+### Detection
+
+Find which dependencies in the bundle touch a Node builtin:
+
+```bash
+cd frontend
+grep -rl "require(['\"]\(path\|fs\|os\|crypto\)['\"])" node_modules \
+  --include=*.js --include=*.cjs | sed 's#node_modules/##; s#/.*##' | sort -u
+```
+
+Cross-reference against what is actually imported by `src/`. A hit that is
+CLI-only (a bundled `commander`, a build script) is fine; a hit on a module
+a page imports is this bug waiting for the right input.
+
+### Corollary: verify the test an issue proposes, not just the fix
+
+The #1066 issue filed alongside this one proposed an axe-core assertion
+over the form as the class-level pin. Written and run, it **passed against
+the broken code**: axe accepts an input's `placeholder` as its accessible
+name, so the `label` rule never fired for a label pointing at a
+nonexistent id. Measured rather than assumed:
+
+```
+WITH placeholder:    []
+WITHOUT placeholder: [["label","critical"]]
+```
+
+The same shape hit #1065's first draft: three cases counting
+`unhandledrejection` events were green before the fix, because happy-dom
+does not fire the event. Both were dropped or rewritten rather than shipped.
+
+An issue's suggested test is a hypothesis about what the tool measures.
+Run it against the unfixed code first; a green there means the approach
+cannot see the bug, whatever its name says.
+
+### Pairs with
+
+- "Coverage Illusion: passing tests != working feature" - the parent. This
+  is its environment-shaped instance: not a mock standing in for the real
+  thing, but a different runtime providing it.
+- "Do not rely on tests alone to validate a Vite major bump; always build
+  too" - same family, one step further: the build passes here as well, so
+  only running the artifact finds it.
+- `coding-standards.md` "A red-pin claim needs the red run linked" - the
+  corollary above is that discipline applied to a test someone else
+  proposed.
