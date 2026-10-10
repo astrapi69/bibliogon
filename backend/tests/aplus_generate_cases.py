@@ -216,6 +216,61 @@ FRAGMENT_CASES: list[dict[str, Any]] = [
         "parsed": {"module_three_images": {"title": "T"}},
     },
     {
+        # A bare key in the YAML parses to None, and the Python used to
+        # turn every one of those into the literal word "None" - fixed
+        # in #1086 for all ten text fields at once. Recorded here so
+        # the port is pinned against the fixed behaviour rather than
+        # against its author's belief about it.
+        "name": "every-text-key-is-bare",
+        "genre_key": None,
+        "parsed": {
+            "short_description": None,
+            "bullets": [{"heading": None, "body": None}],
+            "module_header": {
+                "title": None,
+                "text": None,
+                "image_prompt": None,
+                "alt_text": None,
+            },
+            "module_three_images": [
+                {"title": None, "text": None, "image_prompt": None, "alt_text": None}
+            ],
+        },
+    },
+    {
+        # The same collapse for whitespace-only values, which a model
+        # produces by quoting an empty answer.
+        "name": "every-text-key-is-whitespace",
+        "genre_key": None,
+        "parsed": {
+            "short_description": "  ",
+            "bullets": [{"heading": "\t", "body": " \n "}],
+            "module_header": {"title": " ", "text": "  ", "alt_text": "\t"},
+        },
+    },
+    {
+        # Surrounding whitespace is stripped from a real value too, not
+        # only collapsed when the value is nothing but whitespace.
+        "name": "text-values-are-stripped",
+        "genre_key": None,
+        "parsed": {
+            "short_description": "  Ein Satz.  ",
+            "bullets": [{"heading": " Kopf ", "body": "\tText\n"}],
+        },
+    },
+    {
+        # An unquoted number parses to an int, and the field is a
+        # string: the digits are kept. Pins that the #1086 collapse did
+        # not widen into "anything non-string becomes empty", and that
+        # both runtimes stringify an integer identically.
+        "name": "numeric-text-keeps-its-digits",
+        "genre_key": None,
+        "parsed": {
+            "short_description": 2026,
+            "bullets": [{"heading": 1, "body": 0}],
+        },
+    },
+    {
         # The style flags come from the genre, not from the model, so
         # the same fragment must build different image blocks per genre.
         "name": "kinderbuch-genre-stamps-its-own-style",
@@ -302,6 +357,17 @@ _ERROR_RESPONSE = _CLEAN_RESPONSE.replace(
     "  alt_text: Ein Kater sitzt auf einem Ziegeldach.", '  alt_text: ""'
 )
 
+#: The same error PLUS a tone warning - "Streit" is a soft word in the
+#: German ruleset, which outside an escalating genre earns a warning
+#: rather than an error. Needed because the correction section lists
+#: the ERRORS of the failed attempt and not its warnings, and a reply
+#: that produces only errors cannot tell the two apart: dropping the
+#: filter passed every other recorded case.
+_ERROR_AND_WARNING_RESPONSE = _ERROR_RESPONSE.replace(
+    "    body: Seine Welt endet an der Regenrinne.",
+    "    body: Seine Welt endet am Streit mit den Tauben.",
+)
+
 
 #: The generation loop, scripted. Each entry's ``responses`` are handed
 #: to the fake client in order; a loop that asks for more attempts than
@@ -358,6 +424,24 @@ LOOP_CASES: list[dict[str, Any]] = [
         "book": {"author": "A", "description": "Vorhanden.", "language": "en"},
         "language": "en",
         "responses": [{"content": "I cannot help with that.", "model": ""}],
+    },
+    {
+        # The correction section quotes the failed attempt's ERRORS. A
+        # reply carrying a warning as well pins that the warning is NOT
+        # quoted - without it, a port that passed every finding through
+        # built a different second prompt and no case noticed.
+        "name": "the-retry-quotes-errors-not-warnings",
+        "book": {
+            "title": "Der Kater auf dem Dach",
+            "author": "Asterios Raptis",
+            "language": "de",
+            "description": "Ein Kater beobachtet die Stadt.",
+        },
+        "language": "de",
+        "responses": [
+            {"content": _ERROR_AND_WARNING_RESPONSE, "model": "test-model-1"},
+            {"content": _CLEAN_RESPONSE, "model": "test-model-2"},
+        ],
     },
     {
         # ``model_used`` is sticky: a later reply with an empty model

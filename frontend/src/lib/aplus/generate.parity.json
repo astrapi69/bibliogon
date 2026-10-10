@@ -691,6 +691,225 @@
       }
     },
     {
+      "name": "every-text-key-is-bare",
+      "genre_key": null,
+      "parsed": {
+        "short_description": null,
+        "bullets": [
+          {
+            "heading": null,
+            "body": null
+          }
+        ],
+        "module_header": {
+          "title": null,
+          "text": null,
+          "image_prompt": null,
+          "alt_text": null
+        },
+        "module_three_images": [
+          {
+            "title": null,
+            "text": null,
+            "image_prompt": null,
+            "alt_text": null
+          }
+        ]
+      },
+      "draft": {
+        "short_description": "",
+        "bullets": [
+          {
+            "heading": "",
+            "body": ""
+          }
+        ],
+        "module_header": {
+          "title": "",
+          "text": "",
+          "image": {
+            "prompt": "",
+            "aspect_ratio": "97:60",
+            "size": "970x600",
+            "style_flags": [
+              "photorealistic",
+              "editorial",
+              "no text overlay"
+            ]
+          },
+          "alt_text": ""
+        },
+        "module_three_images": [
+          {
+            "title": "",
+            "text": "",
+            "image": {
+              "prompt": "",
+              "aspect_ratio": "1:1",
+              "size": "300x300",
+              "style_flags": [
+                "photorealistic",
+                "editorial",
+                "no text overlay"
+              ]
+            },
+            "alt_text": ""
+          }
+        ],
+        "validation": [],
+        "meta": {
+          "book_id": "book-1",
+          "language": "de",
+          "model": "test-model",
+          "ruleset_version": "4",
+          "generated_at": "<generated_at>"
+        }
+      }
+    },
+    {
+      "name": "every-text-key-is-whitespace",
+      "genre_key": null,
+      "parsed": {
+        "short_description": "  ",
+        "bullets": [
+          {
+            "heading": "\t",
+            "body": " \n "
+          }
+        ],
+        "module_header": {
+          "title": " ",
+          "text": "  ",
+          "alt_text": "\t"
+        }
+      },
+      "draft": {
+        "short_description": "",
+        "bullets": [
+          {
+            "heading": "",
+            "body": ""
+          }
+        ],
+        "module_header": {
+          "title": "",
+          "text": "",
+          "image": {
+            "prompt": "",
+            "aspect_ratio": "97:60",
+            "size": "970x600",
+            "style_flags": [
+              "photorealistic",
+              "editorial",
+              "no text overlay"
+            ]
+          },
+          "alt_text": ""
+        },
+        "module_three_images": [],
+        "validation": [],
+        "meta": {
+          "book_id": "book-1",
+          "language": "de",
+          "model": "test-model",
+          "ruleset_version": "4",
+          "generated_at": "<generated_at>"
+        }
+      }
+    },
+    {
+      "name": "text-values-are-stripped",
+      "genre_key": null,
+      "parsed": {
+        "short_description": "  Ein Satz.  ",
+        "bullets": [
+          {
+            "heading": " Kopf ",
+            "body": "\tText\n"
+          }
+        ]
+      },
+      "draft": {
+        "short_description": "Ein Satz.",
+        "bullets": [
+          {
+            "heading": "Kopf",
+            "body": "Text"
+          }
+        ],
+        "module_header": {
+          "title": "",
+          "text": "",
+          "image": {
+            "prompt": "",
+            "aspect_ratio": "97:60",
+            "size": "970x600",
+            "style_flags": [
+              "photorealistic",
+              "editorial",
+              "no text overlay"
+            ]
+          },
+          "alt_text": ""
+        },
+        "module_three_images": [],
+        "validation": [],
+        "meta": {
+          "book_id": "book-1",
+          "language": "de",
+          "model": "test-model",
+          "ruleset_version": "4",
+          "generated_at": "<generated_at>"
+        }
+      }
+    },
+    {
+      "name": "numeric-text-keeps-its-digits",
+      "genre_key": null,
+      "parsed": {
+        "short_description": 2026,
+        "bullets": [
+          {
+            "heading": 1,
+            "body": 0
+          }
+        ]
+      },
+      "draft": {
+        "short_description": "2026",
+        "bullets": [
+          {
+            "heading": "1",
+            "body": "0"
+          }
+        ],
+        "module_header": {
+          "title": "",
+          "text": "",
+          "image": {
+            "prompt": "",
+            "aspect_ratio": "97:60",
+            "size": "970x600",
+            "style_flags": [
+              "photorealistic",
+              "editorial",
+              "no text overlay"
+            ]
+          },
+          "alt_text": ""
+        },
+        "module_three_images": [],
+        "validation": [],
+        "meta": {
+          "book_id": "book-1",
+          "language": "de",
+          "model": "test-model",
+          "ruleset_version": "4",
+          "generated_at": "<generated_at>"
+        }
+      }
+    },
+    {
       "name": "kinderbuch-genre-stamps-its-own-style",
       "genre_key": "kinderbuch",
       "parsed": {
@@ -1281,6 +1500,146 @@
           "book_id": "book-1",
           "language": "en",
           "model": "",
+          "ruleset_version": "4",
+          "generated_at": "<generated_at>"
+        }
+      }
+    },
+    {
+      "name": "the-retry-quotes-errors-not-warnings",
+      "context": {
+        "book_id": "book-1",
+        "title": "Der Kater auf dem Dach",
+        "subtitle": null,
+        "author": "Asterios Raptis",
+        "language": "de",
+        "description_text": "Ein Kater beobachtet die Stadt.",
+        "genre_key": null,
+        "bisac_codes": [],
+        "categories": [],
+        "keywords": []
+      },
+      "language": "de",
+      "responses": [
+        {
+          "content": "\nshort_description: Ein Kater beobachtet die Stadt von den Daechern aus.\nbullets:\n  - heading: Beobachtung\n    body: Der Kater sieht die Stadt von oben.\n  - heading: Daecher\n    body: Seine Welt endet am Streit mit den Tauben.\n  - heading: Nacht\n    body: Dann gehoert ihm die Strasse.\nmodule_header:\n  title: Ueber dem Dach\n  text: Eine Erzaehlung aus der Hoehe.\n  image_prompt: cat on a rooftop, dusk, warm light\n  alt_text: \"\"\nmodule_three_images:\n  - title: Morgen\n    text: Die Stadt wacht auf.\n    image_prompt: rooftops at sunrise\n    alt_text: Daecher im Morgenlicht.\n  - title: Mittag\n    text: Schatten werden kurz.\n    image_prompt: rooftops at noon\n    alt_text: Daecher in der Mittagssonne.\n  - title: Abend\n    text: Die Ziegel geben die Waerme ab.\n    image_prompt: rooftops at dusk\n    alt_text: Daecher im Abendlicht.\n",
+          "model": "test-model-1"
+        },
+        {
+          "content": "\nshort_description: Ein Kater beobachtet die Stadt von den Daechern aus.\nbullets:\n  - heading: Beobachtung\n    body: Der Kater sieht die Stadt von oben.\n  - heading: Daecher\n    body: Seine Welt endet an der Regenrinne.\n  - heading: Nacht\n    body: Dann gehoert ihm die Strasse.\nmodule_header:\n  title: Ueber dem Dach\n  text: Eine Erzaehlung aus der Hoehe.\n  image_prompt: cat on a rooftop, dusk, warm light\n  alt_text: Ein Kater sitzt auf einem Ziegeldach.\nmodule_three_images:\n  - title: Morgen\n    text: Die Stadt wacht auf.\n    image_prompt: rooftops at sunrise\n    alt_text: Daecher im Morgenlicht.\n  - title: Mittag\n    text: Schatten werden kurz.\n    image_prompt: rooftops at noon\n    alt_text: Daecher in der Mittagssonne.\n  - title: Abend\n    text: Die Ziegel geben die Waerme ab.\n    image_prompt: rooftops at dusk\n    alt_text: Daecher im Abendlicht.\n",
+          "model": "test-model-2"
+        }
+      ],
+      "attempts": 2,
+      "temperatures": [
+        0.6,
+        0.6
+      ],
+      "prompts": [
+        [
+          {
+            "role": "system",
+            "content": "You write Amazon A+ Content copy in German. Reply with a single YAML document and nothing else - no prose before or after it, no markdown headings.\n\nHard rules:\n- Never use an em dash or en dash; use a plain hyphen or rewrite the sentence.\n- Never use emoji.\n- Never mention price, shipping, discounts, or availability.\n- Never reference a competing retailer, platform, or brand.\n- Never use a marketing imperative such as 'Learn', 'Discover', or 'Find out' (or their equivalent in the target language) - write descriptive prose instead.\n- Every image alt text must be a real, non-empty description.\n- Image prompts are comma-separated descriptive keywords, never literal text to render inside the image.\n"
+          },
+          {
+            "role": "user",
+            "content": "Book title: Der Kater auf dem Dach\nAuthor: Asterios Raptis\n\nSource description (use this as the basis for the copy):\nEin Kater beobachtet die Stadt.\n\nReply with exactly this YAML shape, filled in:\nshort_description: <string, max 300 characters>\nbullets:\n  - heading: <string, max 160 characters>\n    body: <string, max 1000 characters>\n  - heading: ...\n    body: ...\n  - heading: ...\n    body: ...\nmodule_header:\n  title: <string>\n  text: <string>\n  image_prompt: <comma-separated descriptive keywords>\n  alt_text: <string, max 100 characters, never empty>\nmodule_three_images:\n  - title: <string>\n    text: <string>\n    image_prompt: <comma-separated descriptive keywords>\n    alt_text: <string, max 100 characters, never empty>\n  - title: ...\n  - title: ...\n\n"
+          }
+        ],
+        [
+          {
+            "role": "system",
+            "content": "You write Amazon A+ Content copy in German. Reply with a single YAML document and nothing else - no prose before or after it, no markdown headings.\n\nHard rules:\n- Never use an em dash or en dash; use a plain hyphen or rewrite the sentence.\n- Never use emoji.\n- Never mention price, shipping, discounts, or availability.\n- Never reference a competing retailer, platform, or brand.\n- Never use a marketing imperative such as 'Learn', 'Discover', or 'Find out' (or their equivalent in the target language) - write descriptive prose instead.\n- Every image alt text must be a real, non-empty description.\n- Image prompts are comma-separated descriptive keywords, never literal text to render inside the image.\n"
+          },
+          {
+            "role": "user",
+            "content": "Book title: Der Kater auf dem Dach\nAuthor: Asterios Raptis\n\nSource description (use this as the basis for the copy):\nEin Kater beobachtet die Stadt.\n\nReply with exactly this YAML shape, filled in:\nshort_description: <string, max 300 characters>\nbullets:\n  - heading: <string, max 160 characters>\n    body: <string, max 1000 characters>\n  - heading: ...\n    body: ...\n  - heading: ...\n    body: ...\nmodule_header:\n  title: <string>\n  text: <string>\n  image_prompt: <comma-separated descriptive keywords>\n  alt_text: <string, max 100 characters, never empty>\nmodule_three_images:\n  - title: <string>\n    text: <string>\n    image_prompt: <comma-separated descriptive keywords>\n    alt_text: <string, max 100 characters, never empty>\n  - title: ...\n  - title: ...\n\n\nYour previous attempt had these problems - fix every one of them:\n- module_header.alt_text: Alt text is required and cannot be empty.\n"
+          }
+        ]
+      ],
+      "package": {
+        "short_description": "Ein Kater beobachtet die Stadt von den Daechern aus.",
+        "bullets": [
+          {
+            "heading": "Beobachtung",
+            "body": "Der Kater sieht die Stadt von oben."
+          },
+          {
+            "heading": "Daecher",
+            "body": "Seine Welt endet an der Regenrinne."
+          },
+          {
+            "heading": "Nacht",
+            "body": "Dann gehoert ihm die Strasse."
+          }
+        ],
+        "module_header": {
+          "title": "Ueber dem Dach",
+          "text": "Eine Erzaehlung aus der Hoehe.",
+          "image": {
+            "prompt": "cat on a rooftop, dusk, warm light",
+            "aspect_ratio": "97:60",
+            "size": "970x600",
+            "style_flags": [
+              "photorealistic",
+              "editorial",
+              "no text overlay"
+            ]
+          },
+          "alt_text": "Ein Kater sitzt auf einem Ziegeldach."
+        },
+        "module_three_images": [
+          {
+            "title": "Morgen",
+            "text": "Die Stadt wacht auf.",
+            "image": {
+              "prompt": "rooftops at sunrise",
+              "aspect_ratio": "1:1",
+              "size": "300x300",
+              "style_flags": [
+                "photorealistic",
+                "editorial",
+                "no text overlay"
+              ]
+            },
+            "alt_text": "Daecher im Morgenlicht."
+          },
+          {
+            "title": "Mittag",
+            "text": "Schatten werden kurz.",
+            "image": {
+              "prompt": "rooftops at noon",
+              "aspect_ratio": "1:1",
+              "size": "300x300",
+              "style_flags": [
+                "photorealistic",
+                "editorial",
+                "no text overlay"
+              ]
+            },
+            "alt_text": "Daecher in der Mittagssonne."
+          },
+          {
+            "title": "Abend",
+            "text": "Die Ziegel geben die Waerme ab.",
+            "image": {
+              "prompt": "rooftops at dusk",
+              "aspect_ratio": "1:1",
+              "size": "300x300",
+              "style_flags": [
+                "photorealistic",
+                "editorial",
+                "no text overlay"
+              ]
+            },
+            "alt_text": "Daecher im Abendlicht."
+          }
+        ],
+        "validation": [],
+        "meta": {
+          "book_id": "book-1",
+          "language": "de",
+          "model": "test-model-2",
           "ruleset_version": "4",
           "generated_at": "<generated_at>"
         }

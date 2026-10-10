@@ -63,6 +63,7 @@ from bibliogon_aplus.image_prompts import build_style_context
 from bibliogon_aplus.prompts import build_system_prompt, build_user_prompt
 from bibliogon_aplus.rules import get_ruleset
 from bibliogon_aplus.schema import AplusMeta, ValidationFinding
+from bibliogon_aplus.validation import validate_package
 
 from tests.aplus_context_cases import BookStub
 from tests.aplus_generate_cases import (
@@ -262,6 +263,41 @@ def test_the_correction_section_quotes_the_prior_attempts_errors() -> None:
     assert "previous attempt" not in first
     assert "previous attempt" in second
     assert "module_header.alt_text" in second
+
+
+def test_the_warning_case_actually_produces_a_warning() -> None:
+    """The error-vs-warning case has to carry both, or it proves nothing.
+
+    ``_ERROR_AND_WARNING_RESPONSE`` exists so the record pins that the
+    correction section lists the failed attempt's ERRORS and not its
+    warnings. A port that passed every finding through passed every
+    other recorded case, because none of them produced a warning
+    alongside an error. If the ruleset ever stops treating "Streit" as
+    a soft word, this case silently stops distinguishing the two and
+    the gap reopens - so the reply is validated here directly rather
+    than trusted.
+    """
+    from tests.aplus_generate_cases import _ERROR_AND_WARNING_RESPONSE
+
+    rules = get_ruleset()
+    styles = build_style_context(genre_key=None, rules=rules)
+    meta = AplusMeta(book_id="b", language="de", ruleset_version=rules.version, generated_at="x")
+    draft = _build_draft_package(_parse_ai_yaml_fragment(_ERROR_AND_WARNING_RESPONSE), meta, styles)
+    severities = {
+        finding.severity
+        for finding in validate_package(draft, language="de", genre_key=None, rules=rules)
+    }
+    assert severities == {"error", "warning"}, severities
+
+    retry = next(
+        case
+        for case in _compute_record()["loop_cases"]
+        if case["name"] == "the-retry-quotes-errors-not-warnings"
+    )
+    correction = retry["prompts"][1][1]["content"]
+    assert "module_header.alt_text" in correction
+    assert "genre_word_tone" not in correction
+    assert "bullets[1].body" not in correction
 
 
 def test_the_scripted_client_is_the_protocol_production_uses() -> None:
