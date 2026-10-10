@@ -104,7 +104,7 @@ make verify-theme         # theme gates: token completeness/undefined-refs + WCA
 make verify-components    # advisory (non-blocking): CSS-module classes re-declaring a shared control surface (CSS-first rule)
 make verify-seed-i18n     # guard: the offline i18n seed mirror matches the YAML catalogs
 make verify-seed-drift    # guard: every generated offline-seed file matches a fresh generation
-make verify-docs-discipline    # mkdocs nav sync (_meta.yaml) + orphan-page detection (mandatory pre-tag)
+make verify-docs-discipline    # mkdocs nav sync (_meta.yaml) + strict build + orphan-page detection (CI PR gate + mandatory pre-tag)
 make verify-docs-completeness  # version headers + help i18n parity + image/xref integrity (FAIL blocks, WARN advisory)
 make prod                 # Docker Compose (port 7880)
 make prod-down            # stop Docker
