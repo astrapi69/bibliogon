@@ -90,7 +90,7 @@ ALLOWLIST: list[tuple[str, str, str]] = [
         "plugins/bibliogon-plugin-learnset/bibliogon_learnset/validation.py",
         "_validator",
         "Cache lifetime: process. Caches the parsed VENDORED schema "
-        "files (learn-content-engine 0.23.0 pin) - static package "
+        "files (learn-content-engine 0.36.0 pin) - static package "
         "data no test fakes out, so no cross-test poisoning surface. "
         "Verified 2026-09-11 (#763).",
     ),

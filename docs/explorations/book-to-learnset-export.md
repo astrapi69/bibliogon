@@ -36,9 +36,11 @@ this is the differentiation feature, and it doubles as a marketing funnel
   source_language, estimated_minutes, cards: [], steps: []}` where steps are
   `{type: "theory", title, body}` prose blocks and `{type: "exercise",
   exercise: {type: "cloze"|..., prompt, sentence, blanks, ...}}`.
-- Schema SSoT is the **learn-content-engine repo/npm package** (0.23.0,
-  published): `schema/lesson.schema.json` + `schema/content-manifest.schema.json`
-  (+ `quality-rules.json`); the adaptive-learner `schema/` copies are
+- Schema SSoT is the **learn-content-engine repo/npm package**
+  (pinned in `vendor/engine-version.txt`; 0.36.0 since #965):
+  `schema/lesson.schema.json` + `schema/content-manifest.schema.json`
+  (+ `quality-rules.json`, which Bibliogon does not vendor because
+  nothing reads it); the adaptive-learner `schema/` copies are
   byte-identical vendored splits (verified 2026-09-11). Vendor FROM the
   engine, pin its version.
 - The engine ships `python/lce_schema.py` (engine#115) EXACTLY for Python

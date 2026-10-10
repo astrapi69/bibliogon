@@ -2,7 +2,7 @@
   "$defs": {
     "Card": {
       "additionalProperties": false,
-      "description": "The smallest learnable unit (Phase 43 / 2B-lesson).\n\nA card carries a single term / concept / fact in a single\ndirection. SRS (Phase 46) tracks one card at a time;\nindividual exercises reference cards by id so a single\n'Bonjour = Hello' card can drive a matching exercise, a\nfree-text drill, and a summary review without\nduplication.\n\nConvention: ``card.id`` is unique within the lesson, not\nglobally. Cross-lesson card sharing happens via a\nseparate ``shared/`` directory inside the set (P-111\nterritory — not yet implemented).",
+      "description": "The smallest learnable unit (Phase 43 / 2B-lesson).\n\nA card carries a single term / concept / fact in a single\ndirection. SRS (Phase 46) tracks one card at a time;\nindividual exercises reference cards by id so a single\n'Bonjour = Hello' card can drive a matching exercise, a\nfree-text drill, and a summary review without\nduplication.\n\nConvention: ``card.id`` is unique within the lesson, not\nglobally. Cross-lesson card sharing happens via a\nseparate ``shared/`` directory inside the set (P-111\nterritory - not yet implemented).",
       "properties": {
         "audio": {
           "anyOf": [
@@ -164,7 +164,7 @@
             }
           ],
           "default": null,
-          "description": "Optional Markdown footnote shown after the user answers. Pronunciation tips, etymology, false-friend warnings — anything that helps long-term retention.",
+          "description": "Optional Markdown footnote shown after the user answers. Pronunciation tips, etymology, false-friend warnings - anything that helps long-term retention.",
           "title": "Notes"
         },
         "tags": {
@@ -205,7 +205,7 @@
     },
     "CardTokenRole": {
       "additionalProperties": false,
-      "description": "One ``token → role`` annotation on a card.\n\nPhase 52I / v1.35.0 / P-130. The cloze generator looks up\nits target blank by matching ``token`` against the\n``ElementError.element_key`` — when a role is present, the\ngenerator can pick a same-role distractor pool instead of\na position-based heuristic.\n\nThe ``token`` is a verbatim slice of the card's ``front``;\nno whitespace normalisation, so authors can annotate even\nsub-word morphemes (an accent-bearing letter, an article\ncontraction) if a future generator needs it.",
+      "description": "One ``token → role`` annotation on a card.\n\nPhase 52I / v1.35.0 / P-130. The cloze generator looks up\nits target blank by matching ``token`` against the\n``ElementError.element_key`` - when a role is present, the\ngenerator can pick a same-role distractor pool instead of\na position-based heuristic.\n\nThe ``token`` is a verbatim slice of the card's ``front``;\nno whitespace normalisation, so authors can annotate even\nsub-word morphemes (an accent-bearing letter, an article\ncontraction) if a future generator needs it.",
       "properties": {
         "role": {
           "$ref": "#/$defs/TokenRole",
@@ -228,7 +228,7 @@
     },
     "ClozeBlank": {
       "additionalProperties": false,
-      "description": "One blank inside a cloze exercise's ``sentence`` (Phase 52D /\nv1.35.0 / P-127).\n\nMarker-based convention: the sentence carries visible ``___``\ntokens; ``blanks[i]`` provides the metadata for the i-th\nmarker (left-to-right). The validator enforces\n``sentence.count(\"___\") == len(blanks)`` so the i↔i mapping\nis unambiguous at render time.\n\n``accept`` carries the per-blank canonical + acceptable\nvariants — the renderer reuses FreeText's ``isFreeTextCorrect``\nmatcher (NFC-normalised + Levenshtein <= 1) so authors only\nneed to enumerate semantic variants (gendered article,\ncapitalisation, et cetera), not typos.",
+      "description": "One blank inside a cloze exercise's ``sentence`` (Phase 52D /\nv1.35.0 / P-127).\n\nMarker-based convention: the sentence carries visible ``___``\ntokens; ``blanks[i]`` provides the metadata for the i-th\nmarker (left-to-right). The validator enforces\n``sentence.count(\"___\") == len(blanks)`` so the i↔i mapping\nis unambiguous at render time.\n\n``accept`` carries the per-blank canonical + acceptable\nvariants - the renderer reuses FreeText's ``isFreeTextCorrect``\nmatcher (NFC-normalised + Levenshtein <= 1) so authors only\nneed to enumerate semantic variants (gendered article,\ncapitalisation, et cetera), not typos.",
       "properties": {
         "accept": {
           "description": "Accepted answers for this blank. First entry is the canonical (shown after a wrong attempt). Same shape as FREE_TEXT.accept.",
@@ -304,7 +304,7 @@
             }
           ],
           "default": null,
-          "description": "FREE_TEXT: list of accepted answers. Exact-match first, Levenshtein-tolerant fallback in the renderer. The first entry is the canonical answer shown after a wrong attempt. CLOZE ``multiselect`` (#1195) reuses this field with a mode-specific meaning: EVERY entry is a correct option (not just the first), rendered as a checkbox group with ``distractors`` and graded by exact-set match; the two lists must be disjoint.",
+          "description": "FREE_TEXT: list of accepted answers. Exact-match first, Levenshtein-tolerant fallback in the renderer; case is not an error unless ``case_sensitive`` is true. The first entry is the canonical answer shown after a wrong attempt. CLOZE ``multiselect`` (#1195) reuses this field with a mode-specific meaning: EVERY entry is a correct option (not just the first), rendered as a checkbox group with ``distractors`` and graded by exact-set match; the two lists must be disjoint.",
           "title": "Accept"
         },
         "accept_orderings": {
@@ -352,6 +352,12 @@
           "title": "Card Ids",
           "type": "array"
         },
+        "case_sensitive": {
+          "default": false,
+          "description": "FREE_TEXT: when true, an answer must match an ``accept`` entry in case (``I am Anna`` is right, ``i am Anna`` is wrong); when false (the default) case is not an error. Declare it only where the exercise teaches case, such as capitalisation. The rules follow it: ``accept`` and ``distractors`` are compared in case only when it is true (``E-FREETEXT-DISJOINT``). Schema 1.19, engine#242. Ignored by the other exercise types.",
+          "title": "Case Sensitive",
+          "type": "boolean"
+        },
         "cloze_mode": {
           "anyOf": [
             {
@@ -384,7 +390,7 @@
         },
         "distractors": {
           "default": [],
-          "description": "Content-only fallback distractors. The exercise renderer picks from this pool when no AI provider is configured (EXP-005 / P-114 dual mode). When AI is available, the AI generator may use the pool as a seed for harder distractors.",
+          "description": "Content-only fallback distractors. The exercise renderer picks from this pool when no AI provider is configured (EXP-005 / P-114 dual mode). When AI is available, the AI generator may use the pool as a seed for harder distractors. FREE_TEXT: no entry may also be an accepted answer (``E-FREETEXT-DISJOINT``, compared after trimming, in case only when ``case_sensitive`` is true).",
           "items": {
             "type": "string"
           },
@@ -569,6 +575,24 @@
             }
           ],
           "description": "Which exercise renderer handles this step. A core ExerciseType value, or an ``ext:<vendor>-<name>`` extension type (ExtExerciseType) that the lesson declares in ``requires_extensions``."
+        },
+        "variables": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ExerciseVariable"
+              },
+              "maxItems": 20,
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional variables of a parametric exercise (schema v1.14, engine#151): sampled ranges and computed expressions the consumer resolves per attempt, referenced as ``{{name}}`` from any string field of this exercise. Only an exercise that declares ``variables`` is scanned for references; without it, double braces are ordinary text (a lesson about Jinja2 templates is not parametric). One authored exercise, many concrete instances (Moodle Calculated, Canvas Formula, QTI template variables). Not restricted to any exercise type. Additive; content without it validates unchanged.",
+          "title": "Variables"
         }
       },
       "required": [
@@ -580,7 +604,7 @@
       "type": "object"
     },
     "ExerciseType": {
-      "description": "Closed enum of exercise types the loader knows about.\n\nEXP-001 + EXP-006: the four base types ship in Phase 43-45.\nPhase 52D / v1.35.0 added CLOZE (fill-in-the-blank with\n``___`` markers) — see the schema_version bump in\n``models.py``. Adding a sixth type (ordering, drag-image-\npair, etc.) requires a minor schema_version bump and a new\nenum value plus its renderer.",
+      "description": "Closed enum of exercise types the loader knows about.\n\nEXP-001 + EXP-006: the four base types ship in Phase 43-45.\nPhase 52D / v1.35.0 added CLOZE (fill-in-the-blank with\n``___`` markers) - see the schema_version bump in\n``models.py``. Adding a sixth type (ordering, drag-image-\npair, etc.) requires a minor schema_version bump and a new\nenum value plus its renderer.",
       "enum": [
         "matching",
         "picture_choice",
@@ -592,6 +616,53 @@
       "title": "ExerciseType",
       "type": "string"
     },
+    "ExerciseVariable": {
+      "additionalProperties": false,
+      "description": "One variable of a parametric exercise (schema v1.14, engine#151). SAMPLED when it carries ``min`` and ``max`` (optional ``step``; integers when ``step`` is absent, else multiples of ``step`` from ``min``): the consumer draws a value per attempt. COMPUTED when it carries ``expression`` (arithmetic over variables declared EARLIER in the same ``variables`` list: decimal numbers, names, ``+ - * /``, parentheses, unary minus): the consumer evaluates it after sampling. Exactly one of the two shapes (semantic rule E-VAR-KIND). ``tolerance`` is the absolute tolerance a consumer applies when this variable's value is an accepted answer. Any string field of the exercise may reference a variable as ``{{name}}``; the consumer substitutes every occurrence before rendering and grading. The engine validates the contract and never samples or evaluates.",
+      "properties": {
+        "name": {
+          "description": "Lowercase identifier: a letter, then letters, digits, underscores. Unique within the exercise.",
+          "maxLength": 32,
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "min": {
+          "description": "Sampled variable: inclusive lower bound.",
+          "title": "Min",
+          "type": "number"
+        },
+        "max": {
+          "description": "Sampled variable: inclusive upper bound (must exceed ``min``, rule E-VAR-RANGE).",
+          "title": "Max",
+          "type": "number"
+        },
+        "step": {
+          "description": "Sampled variable: the grid the value is drawn from, counted up from ``min``. Absent means integers.",
+          "exclusiveMinimum": 0,
+          "title": "Step",
+          "type": "number"
+        },
+        "expression": {
+          "description": "Computed variable: arithmetic over earlier variables (rules E-VAR-EXPR, E-VAR-UNDEFINED).",
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Expression",
+          "type": "string"
+        },
+        "tolerance": {
+          "description": "Absolute tolerance for grading when this variable's value is the accepted answer. Absent means exact.",
+          "minimum": 0,
+          "title": "Tolerance",
+          "type": "number"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "ExerciseVariable",
+      "type": "object"
+    },
     "ExtExerciseType": {
       "description": "Extension exercise type in the ``ext:<vendor>-<name>`` namespace (e.g. ``ext:acme-ordering``). Structurally opaque here: an exercise carrying it must be declared in the lesson's ``requires_extensions`` and is validated by a registered extension, never by the core schema. Core content never uses this branch, so pre-1.7 content validates unchanged.",
       "pattern": "^ext:[a-z0-9]+-[a-z0-9-]+$",
@@ -600,7 +671,7 @@
     },
     "InlineExample": {
       "additionalProperties": false,
-      "description": "One inline worked example on a theory step or exercise (schema v1.5).\n\nAn inline example carries REAL content the learner reads in place —\na sample sentence (language lessons) or a code snippet with syntax\nhighlighting (programming lessons). This is DISTINCT from\n``LessonStep.example_url`` (#139 / schema v1.4), which links OUT to an\nexternal illustration: ``example_url`` is the LINK variant,\n``examples`` is the INLINE-CONTENT variant. The two are complementary\nand may coexist on the same theory step.\n\nWhen ``language`` is set, ``content`` is treated as source code in\nthat language and rendered as a syntax-highlighted block (the same\n``CodeBlock`` the theory Markdown + code cards use); when it is\nabsent, ``content`` is plain text. Additive + optional, so content\nwithout ``examples`` validates unchanged.",
+      "description": "One inline worked example on a theory step or exercise (schema v1.5).\n\nAn inline example carries REAL content the learner reads in place -\na sample sentence (language lessons) or a code snippet with syntax\nhighlighting (programming lessons). This is DISTINCT from\n``LessonStep.example_url`` (#139 / schema v1.4), which links OUT to an\nexternal illustration: ``example_url`` is the LINK variant,\n``examples`` is the INLINE-CONTENT variant. The two are complementary\nand may coexist on the same theory step.\n\nWhen ``language`` is set, ``content`` is treated as source code in\nthat language and rendered as a syntax-highlighted block (the same\n``CodeBlock`` the theory Markdown + code cards use); when it is\nabsent, ``content`` is plain text. Additive + optional, so content\nwithout ``examples`` validates unchanged.",
       "properties": {
         "content": {
           "description": "The example's content. Plain text (e.g. a sample sentence) when ``language`` is absent; source code in ``language`` when it is set.",
@@ -646,7 +717,7 @@
     },
     "LessonResource": {
       "additionalProperties": false,
-      "description": "One lesson-level supplementary-media entry (EXP-029 / MED-05).\n\nMirrors a ``media.yaml`` resource minus ``domain`` (inherited\nfrom the parent set). Surfaced in the \"Vertiefe das Thema\"\nsection after the lesson summary. Optional + additive, so\npre-EXP-029 lessons load unchanged. Added to the authoritative\nschema (EXP-039) so the JSON-Schema / generated TS types cover\nit — previously this shape lived only in the frontend\n``ContentLessonResource`` interface, and a lesson carrying\n``resources`` was rejected by ``extra=\"forbid\"`` here.",
+      "description": "One lesson-level supplementary-media entry (EXP-029 / MED-05).\n\nMirrors a ``media.yaml`` resource minus ``domain`` (inherited\nfrom the parent set). Surfaced in the \"Vertiefe das Thema\"\nsection after the lesson summary. Optional + additive, so\npre-EXP-029 lessons load unchanged. Added to the authoritative\nschema (EXP-039) so the JSON-Schema / generated TS types cover\nit - previously this shape lived only in the frontend\n``ContentLessonResource`` interface, and a lesson carrying\n``resources`` was rejected by ``extra=\"forbid\"`` here.",
       "properties": {
         "author": {
           "anyOf": [
@@ -842,7 +913,7 @@
             }
           ],
           "default": null,
-          "description": "THEORY: optional inline worked examples rendered under the step body (schema v1.5, additive). DISTINCT from ``example_url``: that links OUT to an external illustration, ``examples`` carries the example content INLINE (a sample sentence, or a syntax-highlighted code snippet — see ``InlineExample.language``). The two may coexist on one step. Additive + optional; steps without ``examples`` validate unchanged.",
+          "description": "THEORY: optional inline worked examples rendered under the step body (schema v1.5, additive). DISTINCT from ``example_url``: that links OUT to an external illustration, ``examples`` carries the example content INLINE (a sample sentence, or a syntax-highlighted code snippet - see ``InlineExample.language``). The two may coexist on one step. Additive + optional; steps without ``examples`` validate unchanged.",
           "title": "Examples"
         },
         "exercise": {
@@ -1059,7 +1130,7 @@
       "type": "string"
     },
     "TokenRole": {
-      "description": "Closed enum of grammatical roles a card token can carry.\n\nPhase 52I / v1.35.0 / P-130. Annotates individual tokens\ninside a card's ``front`` so the v1.35.0+ cloze generator\ncan pick a semantically-meaningful blank instead of a\nposition-based one. Optional field on Card — old content\nwithout token_roles still validates and the generator\nfalls back to a positional heuristic.\n\nClosed enum to keep author input disciplined. Adding a\nrole (e.g. ``pronoun``, ``conjunction``, ``auxiliary``)\nis a minor schema_version bump — extending an open enum\nsilently would let typos masquerade as valid roles and\nthe generator would skip them without warning.",
+      "description": "Closed enum of grammatical roles a card token can carry.\n\nPhase 52I / v1.35.0 / P-130. Annotates individual tokens\ninside a card's ``front`` so the v1.35.0+ cloze generator\ncan pick a semantically-meaningful blank instead of a\nposition-based one. Optional field on Card - old content\nwithout token_roles still validates and the generator\nfalls back to a positional heuristic.\n\nClosed enum to keep author input disciplined. Adding a\nrole (e.g. ``pronoun``, ``conjunction``, ``auxiliary``)\nis a minor schema_version bump - extending an open enum\nsilently would let typos masquerade as valid roles and\nthe generator would skip them without warning.",
       "enum": [
         "article",
         "verb",
@@ -1076,7 +1147,7 @@
   "$id": "https://astrapi69.github.io/learn-content-engine/schema/lesson.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "One lesson in a content set (Phase 43 / 2B-lesson).\n\nA lesson is the unit a user works through end-to-end —\ntypically 5-15 minutes of content. The viewer (Phase 44)\nwalks the steps in order; SRS (Phase 46) tracks the\ncards referenced by each exercise.\n\nReferential integrity: every ``card_id`` referenced by\nany exercise step MUST exist in the lesson's ``cards``\nlist. Enforced by the model validator so the viewer can\ntrust the references later.",
+  "description": "One lesson in a content set (Phase 43 / 2B-lesson).\n\nA lesson is the unit a user works through end-to-end -\ntypically 5-15 minutes of content. The viewer (Phase 44)\nwalks the steps in order; SRS (Phase 46) tracks the\ncards referenced by each exercise.\n\nReferential integrity: every ``card_id`` referenced by\nany exercise step MUST exist in the lesson's ``cards``\nlist. Enforced by the model validator so the viewer can\ntrust the references later.",
   "properties": {
     "cards": {
       "default": [],
@@ -1155,6 +1226,17 @@
       "title": "Id",
       "$ref": "#/$defs/SlugId"
     },
+    "purpose": {
+      "default": "practice",
+      "description": "What the lesson is for (schema 1.17, engine#185). ``practice`` (the default when absent): a lesson that teaches and drills; every quality minimum applies. ``bridge``: an opening, a part divider, an interlude or a closing that carries theory and leads over, without an assessment intent; no minimum number of exercises or exercise types (schema 1.18). ``quiz``: a check of what was taught, often in one exercise type; no minimum number of exercise types. Read by the quality check (``validateLessonQuality``), never by ``validateLesson``: it does not change whether a lesson is valid.",
+      "enum": [
+        "practice",
+        "bridge",
+        "quiz"
+      ],
+      "title": "Lesson Purpose",
+      "type": "string"
+    },
     "requires_extensions": {
       "description": "Extensions this lesson needs, each ``ext:<vendor>-<name>@<major>`` (e.g. ``ext:acme-ordering@1``). A consumer that has not registered a declared extension refuses the lesson loudly (E-EXT-UNSUPPORTED) rather than mis-rendering. Absent / empty on core lessons; additive, so pre-1.7 content validates unchanged.",
       "items": {
@@ -1212,7 +1294,7 @@
         }
       ],
       "default": null,
-      "description": "Optional BCP-47 code of the language taught (Phase 60 / v1.44.0). Mirrors the parent set's ``target_language``; lets an exported standalone lesson carry its own pair. Absent on pre-v1.2 lessons — the parent set is authoritative.",
+      "description": "Optional BCP-47 code of the language taught (Phase 60 / v1.44.0). Mirrors the parent set's ``target_language``; lets an exported standalone lesson carry its own pair. Absent on pre-v1.2 lessons - the parent set is authoritative.",
       "title": "Target Language"
     },
     "title": {
@@ -1258,5 +1340,5 @@
   ],
   "title": "Lesson",
   "type": "object",
-  "x-schema-version": "1.13"
+  "x-schema-version": "1.19"
 }
