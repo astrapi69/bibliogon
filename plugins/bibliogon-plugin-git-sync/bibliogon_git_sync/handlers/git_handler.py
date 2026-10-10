@@ -2,10 +2,15 @@
 staging directory.
 
 Phase 1 scope: HTTPS/SSH URL shape recognition, sync clone via
-GitPython, timeout + size guardrails. Authentication is out of
-scope (PGS-02 will add credential injection via the existing
-credential_store). LFS, shallow-depth tuning, and branch
-selection are also deferred.
+GitPython, timeout + size guardrails. LFS, shallow-depth tuning,
+and branch selection are deferred.
+
+Authentication: the handler takes an ``env`` from its caller and
+hands it to git untouched. Splitting a credential out of a pasted
+URL and building that environment is the backend's job (#1072) -
+this package cannot import ``app``, because its CI job installs
+only its own tree. A per-book PAT configured in advance is
+PGS-02's job and still out of scope here.
 """
 
 from __future__ import annotations
@@ -44,7 +49,13 @@ class GitImportHandler:
             return False
         return bool(_GIT_URL_RE.match(url.strip()))
 
-    def clone(self, url: str, target_dir: Path, branch: str | None = None) -> Path:
+    def clone(
+        self,
+        url: str,
+        target_dir: Path,
+        branch: str | None = None,
+        env: dict[str, str] | None = None,
+    ) -> Path:
         """Clone ``url`` into ``target_dir`` and return the project
         root the orchestrator should dispatch through.
 
@@ -64,7 +75,7 @@ class GitImportHandler:
         Raises any GitPython exception unchanged; the endpoint maps
         it to HTTP 502 with the exception message in the detail.
         """
-        from git import Repo  # imported lazily to keep plugin-load cheap
+        import git  # imported lazily to keep plugin-load cheap
 
         clean_url = url.strip()
         repo_slug = _slug_from_url(clean_url)
@@ -93,7 +104,14 @@ class GitImportHandler:
         }
         if branch:
             clone_kwargs["branch"] = branch
-        Repo.clone_from(clean_url, str(dest), **clone_kwargs)
+        if env:
+            # Straight through: the caller built it, and a credential in
+            # it must reach git without passing through argv or a config
+            # file (#1072).
+            clone_kwargs["env"] = env
+        # Resolved at call time rather than imported above, so a test can
+        # replace `git.Repo` with a stub that captures what git was handed.
+        git.Repo.clone_from(clean_url, str(dest), **clone_kwargs)
         return dest
 
 

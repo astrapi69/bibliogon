@@ -35,6 +35,7 @@ from app.import_plugins import (
 )
 from app.import_plugins.protocol import DetectedProject
 from app.models import Book, BookImportSource
+from app.services.git.credentials import secret_git_env, split_url_credentials
 from app.services.import_staging import (
     _STAGING_DIR,
     drop_staged,
@@ -260,8 +261,17 @@ def detect_git_import(
     payload_dir = _STAGING_DIR / temp_ref / "payload"
     payload_dir.mkdir(parents=True, exist_ok=True)
 
+    # A user importing a private repository pastes
+    # `https://user:TOKEN@host/...`, which works - and which git then keeps,
+    # in the clone's config, in whatever we store and in whatever we log
+    # (#1072). Split it here, where the backend owns credentials, and hand
+    # the secret to git through the environment instead.
+    clone_url, clone_user, clone_secret = split_url_credentials(payload.git_url)
+    clone_env = secret_git_env(clone_url, clone_secret, username=clone_user)
     try:
-        staging_path = remote.clone(payload.git_url, payload_dir, branch=payload.branch)
+        staging_path = remote.clone(
+            clone_url, payload_dir, branch=payload.branch, env=clone_env or None
+        )
     except Exception as exc:
         drop_staged(temp_ref)
         raise HTTPException(

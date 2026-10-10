@@ -7,6 +7,13 @@ this module is the per-book convention layer.
 
 Storage layout: ``config/git_credentials/{book_id}.enc`` (Fernet-encrypted).
 Tests redirect via the ``GIT_CRED_DIR`` module attribute.
+
+Also the one place that takes a credential back OUT of a remote URL
+(:func:`split_url_credentials`, #1072), so the rest of the code can pass
+a URL around without carrying a secret in it. It lives here rather than
+in a module of its own because it is credential handling, and because
+``services/git`` is at its directory-size baseline - a 13th file would
+have to earn its place.
 """
 
 from __future__ import annotations
@@ -15,6 +22,7 @@ import contextlib
 from collections.abc import Iterator
 from pathlib import Path
 from typing import TYPE_CHECKING
+from urllib.parse import unquote, urlsplit, urlunsplit
 
 from app import credential_store
 from app.paths import get_config_dir
@@ -110,6 +118,50 @@ def ssh_env(url: str) -> dict[str, str] | None:
     return {"GIT_SSH_COMMAND": cmd}
 
 
+#: Schemes whose authority can carry ``user:password@``. An scp-style
+#: ``git@host:path`` URL has no scheme at all and is left alone: its colon
+#: separates host from path, and splitting on it would corrupt every SSH
+#: remote in the app. ``ssh://`` keeps its user because that is the account
+#: name, not a secret, and git needs it to connect.
+_CREDENTIAL_SCHEMES = frozenset({"http", "https"})
+
+
+def split_url_credentials(url: str) -> tuple[str, str | None, str | None]:
+    """Split ``url`` into (credential-free URL, username, secret).
+
+    The username and secret are ``None`` when the URL carries none, and
+    the returned URL is then the input with surrounding whitespace
+    removed - byte-for-byte otherwise, so a caller can store it without
+    worrying that a round-trip rewrote something.
+
+    A percent-encoded secret is decoded, because that is what git would
+    have sent and the credential helper has to send the same thing.
+
+    Never raises: a string this cannot parse comes back unchanged, so a
+    malformed URL stays the caller's 400 rather than becoming a 500.
+    """
+    candidate = url.strip()
+    if not candidate:
+        return candidate, None, None
+    try:
+        parts = urlsplit(candidate)
+    except ValueError:
+        return candidate, None, None
+    if parts.scheme.lower() not in _CREDENTIAL_SCHEMES:
+        return candidate, None, None
+    if not parts.hostname:
+        return candidate, None, None
+    username = unquote(parts.username) if parts.username else None
+    secret = unquote(parts.password) if parts.password else None
+    if username is None and secret is None:
+        return candidate, None, None
+    netloc = parts.hostname
+    if parts.port:
+        netloc = f"{netloc}:{parts.port}"
+    clean = urlunsplit((parts.scheme, netloc, parts.path, parts.query, parts.fragment))
+    return clean, username, secret
+
+
 #: The username git is told to use alongside a PAT. GitHub ignores the
 #: value for a token; GitLab and Bitbucket accept it. It only has to be
 #: non-empty.
@@ -123,18 +175,65 @@ PAT_USERNAME = "x-access-token"
 #: every process of the same user.
 PAT_ENV_VAR = "BIBLIOGON_GIT_PAT"
 
+
 #: A one-shot git credential helper, as the shell function form git
 #: accepts after ``!``. It answers only the ``get`` action - ``store``
 #: and ``erase`` are no-ops, so git cannot persist the token anywhere -
 #: and it reads the password from the environment, so the token appears
 #: neither in the config file nor in the process arguments.
-_CREDENTIAL_HELPER = (
-    '!f() { test "$1" = get && printf "username='
-    + PAT_USERNAME
-    + '\\npassword=%s\\n" "$'
-    + PAT_ENV_VAR
-    + '"; }; f'
-)
+def _credential_helper(username: str) -> str:
+    """The helper shell function, for one username."""
+    return (
+        '!f() { test "$1" = get && printf "username='
+        + username
+        + '\\npassword=%s\\n" "$'
+        + PAT_ENV_VAR
+        + '"; }; f'
+    )
+
+
+_CREDENTIAL_HELPER = _credential_helper(PAT_USERNAME)
+
+
+def secret_git_env(url: str, secret: str | None, *, username: str | None = None) -> dict[str, str]:
+    """The environment that authenticates ``url`` with ``secret``.
+
+    The same one-shot credential helper :func:`pat_git_config` builds, but
+    for a secret handed in directly rather than loaded for a book - the
+    import path has no book yet, so there is nothing stored to load
+    (#1072). Delivered through git's own ``GIT_CONFIG_COUNT`` /
+    ``GIT_CONFIG_KEY_n`` / ``GIT_CONFIG_VALUE_n`` (git >= 2.31) rather
+    than ``-c`` arguments, so the helper never appears in argv either;
+    GitPython also ``shlex``-splits its ``multi_options``, which a shell
+    function with spaces in it does not survive.
+
+    Returns an empty dict when there is nothing to authenticate with, so
+    a caller can always splat the result and git falls back to the user's
+    ambient credentials.
+
+    Example::
+
+        env = secret_git_env(clean_url, secret, username=user)
+        Repo.clone_from(clean_url, dest, env=env or None)
+    """
+    if not secret:
+        return {}
+    scheme = url.split("://", 1)[0].lower() if "://" in url else ""
+    if scheme not in ("http", "https"):
+        return {}
+    helper = _credential_helper(username or PAT_USERNAME)
+    return {
+        # Two keys with the same name: the empty one resets any ambient
+        # helper list so a globally configured helper can neither see this
+        # request nor cache the token.
+        "GIT_CONFIG_COUNT": "2",
+        "GIT_CONFIG_KEY_0": "credential.helper",
+        "GIT_CONFIG_VALUE_0": "",
+        "GIT_CONFIG_KEY_1": "credential.helper",
+        "GIT_CONFIG_VALUE_1": helper,
+        PAT_ENV_VAR: secret,
+        "GIT_TERMINAL_PROMPT": "0",
+    }
 
 
 def pat_git_config(url: str, book_id: str) -> tuple[list[str], dict[str, str]] | None:

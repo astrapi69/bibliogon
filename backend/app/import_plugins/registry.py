@@ -38,7 +38,13 @@ class RemoteSourceHandler(Protocol):
         """Return True when this handler recognises the URL shape."""
         ...
 
-    def clone(self, url: str, target_dir: Path, branch: str | None = None) -> Path:
+    def clone(
+        self,
+        url: str,
+        target_dir: Path,
+        branch: str | None = None,
+        env: dict[str, str] | None = None,
+    ) -> Path:
         """Materialise the remote source into ``target_dir`` and
         return the path the orchestrator should dispatch through
         ``find_handler()``. Usually ``target_dir`` itself or a
@@ -48,7 +54,14 @@ class RemoteSourceHandler(Protocol):
         the remote's default. Handlers must make the returned path
         branch-distinct (e.g. ``<slug>@<branch>``) so content
         signatures of same-layout branches do not collide in the
-        duplicate check."""
+        duplicate check.
+
+        ``env`` (#1072) is passed to the subprocess untouched. The
+        orchestrator builds it, because splitting a credential out of a
+        URL is the backend's business and a handler lives in a plugin
+        that cannot import ``app``. A credential belongs HERE and not in
+        the URL: argv is readable by every process of the same user and
+        a clone's config by anything that can read the working copy."""
         ...
 
 
