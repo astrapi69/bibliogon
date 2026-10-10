@@ -87,7 +87,9 @@ describe("AITemplatePanel offline (article)", () => {
 
         expect(screen.getByTestId("field-class-seo")).toBeTruthy();
         expect(screen.getByTestId("field-class-excerpt")).toBeTruthy();
-        expect(screen.queryByTestId("field-class-image_prompts")).toBeNull();
+        // Offered offline since #1077: its two columns became writable
+        // in #1076, which is what had kept the class out.
+        expect(screen.getByTestId("field-class-image_prompts")).toBeTruthy();
 
         fireEvent.click(screen.getByTestId("field-class-checkbox-seo"));
         fireEvent.click(screen.getByTestId("field-class-submit"));
@@ -130,7 +132,7 @@ describe("AITemplatePanel offline (article)", () => {
 });
 
 describe("AITemplatePanel offline (book)", () => {
-    it("offers only offline-supported book classes and runs aiFillBook", async () => {
+    it("offers every book class offline and runs aiFillBook", async () => {
         aiMock.aiFillBook.mockResolvedValue({
             book_id: "b1",
             updated_fields: ["keywords"],
@@ -150,8 +152,11 @@ describe("AITemplatePanel offline (book)", () => {
         await waitFor(() => expect(screen.getByTestId("field-class-dialog")).toBeTruthy());
 
         expect(screen.getByTestId("field-class-marketing_copy")).toBeTruthy();
-        expect(screen.queryByTestId("field-class-cover_prompt")).toBeNull();
-        expect(screen.queryByTestId("field-class-chapter_summaries")).toBeNull();
+        // Both offered offline since #1077: `cover_prompt` once its
+        // column was writable (#1076), `chapter_summaries` once the
+        // chapter-reconcile had a browser implementation (#745).
+        expect(screen.getByTestId("field-class-cover_prompt")).toBeTruthy();
+        expect(screen.getByTestId("field-class-chapter_summaries")).toBeTruthy();
 
         fireEvent.click(screen.getByTestId("field-class-checkbox-tags"));
         fireEvent.click(screen.getByTestId("field-class-submit"));
