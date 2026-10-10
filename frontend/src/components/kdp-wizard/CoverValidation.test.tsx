@@ -161,7 +161,7 @@ describe("CoverValidation", () => {
         await waitFor(() => {
             expect(
                 screen.getByTestId(
-                    "kdp-publishing-wizard-step-1-error-dimensions",
+                    "kdp-publishing-wizard-step-1-error-dimensions_too_small",
                 ),
             ).toBeTruthy()
         })
@@ -183,7 +183,7 @@ describe("CoverValidation", () => {
         await waitFor(() => {
             expect(
                 screen.getByTestId(
-                    "kdp-publishing-wizard-step-1-error-dimensions",
+                    "kdp-publishing-wizard-step-1-error-dimensions_too_large",
                 ),
             ).toBeTruthy()
         })
@@ -203,7 +203,7 @@ describe("CoverValidation", () => {
         await waitFor(() => {
             expect(
                 screen.getByTestId(
-                    "kdp-publishing-wizard-step-1-warning-aspect_ratio",
+                    "kdp-publishing-wizard-step-1-warning-aspect_ratio_outside_range",
                 ),
             ).toBeTruthy()
         })
@@ -224,7 +224,7 @@ describe("CoverValidation", () => {
         await waitFor(() => {
             expect(
                 screen.getByTestId(
-                    "kdp-publishing-wizard-step-1-error-format",
+                    "kdp-publishing-wizard-step-1-error-format_unsupported",
                 ),
             ).toBeTruthy()
         })
@@ -267,6 +267,63 @@ describe("CoverValidation", () => {
             "kdp-publishing-wizard-step-1-preview",
         ) as HTMLImageElement
         expect(img.src).toContain("/api/books/book-42/assets/file/my-cover.png")
+    })
+
+    it("offline, a cover over the byte limit is an error (#739)", async () => {
+        // The byte length is only free where the bytes are local, so this
+        // rule can only fire in dexie mode.
+        const oversized = new Blob(["x"], {type: "image/png"})
+        Object.defineProperty(oversized, "size", {
+            value: 60 * 1024 * 1024,
+            configurable: true,
+        })
+        getStorageMock.mockReturnValue({
+            mode: "dexie",
+            assets: {getBlob: vi.fn().mockResolvedValue(oversized)},
+        })
+        const onCanAdvanceChange = vi.fn()
+        render(
+            <CoverValidation
+                book={makeBook({cover_image: "cover.png"})}
+                onCanAdvanceChange={onCanAdvanceChange}
+            />,
+        )
+        await screen.findByTestId("kdp-publishing-wizard-step-1-preview")
+        fireImageLoad(1600, 2560)
+        await waitFor(() => {
+            expect(
+                screen.getByTestId(
+                    "kdp-publishing-wizard-step-1-error-file_size_exceeded",
+                ),
+            ).toBeTruthy()
+        })
+        expect(onCanAdvanceChange).toHaveBeenLastCalledWith(false)
+    })
+
+    it("online, the byte-length rule abstains rather than guessing (#739)", async () => {
+        // api mode has only a URL for the asset. The step must not fetch
+        // the whole cover to weigh it, and must not report a size verdict
+        // it cannot have reached.
+        const getBlob = vi.fn()
+        getStorageMock.mockReturnValue({mode: "api", assets: {getBlob}})
+        render(
+            <CoverValidation
+                book={makeBook({cover_image: "cover.jpg"})}
+                onCanAdvanceChange={vi.fn()}
+            />,
+        )
+        fireImageLoad(1600, 2560)
+        await waitFor(() => {
+            expect(
+                screen.getByTestId("kdp-publishing-wizard-step-1-summary-ok"),
+            ).toBeTruthy()
+        })
+        expect(getBlob).not.toHaveBeenCalled()
+        expect(
+            screen.queryByTestId(
+                "kdp-publishing-wizard-step-1-error-file_size_exceeded",
+            ),
+        ).toBeNull()
     })
 
     it("dexie/offline mode renders the cover from a blob URL, not /api (#300)", async () => {

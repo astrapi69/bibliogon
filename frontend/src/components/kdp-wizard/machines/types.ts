@@ -10,15 +10,17 @@
  *     Phase 1 types from ``frontend/src/api/client.ts``.
  *   - Everything else is new for Phase 2 and lives here.
  *
- * ``ImageDimensions`` + ``ValidationIssue`` are shaped identically
- * to the inline types in ``CoverValidation.tsx``. C2 refactors
- * that component to import from here instead.
+ * ``ImageDimensions`` is defined here and imported by
+ * ``CoverValidation.tsx``; ``ValidationIssue`` is now the shared
+ * ``CoverFinding`` from ``lib/kdp`` (#739), so the machine and the step
+ * cannot disagree about the shape of a cover finding.
  */
 
 import type {
     KdpMetadataCheckResult,
     KdpMetadataIssue,
 } from "../../../api/client";
+import type {CoverFinding} from "../../../lib/kdp/coverRequirements";
 
 // --- Region / currency / pricing primitives (Track 3) -------------
 
@@ -93,11 +95,9 @@ export interface ImageDimensions {
     height: number;
 }
 
-export interface ValidationIssue {
-    field: string;
-    severity: "error" | "warning";
-    message: string;
-}
+/** A cover finding as `lib/kdp` produces it: a code plus the numbers
+ *  behind it, with the wording left to whoever renders it. */
+export type ValidationIssue = CoverFinding;
 
 // --- Wizard error shape ------------------------------------------
 
