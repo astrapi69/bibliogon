@@ -148,6 +148,29 @@ const GUARDED: readonly GuardedNamespace[] = [
         allowlist: IMPLEMENTATION_LAYER,
     },
     {
+        // ms-tools: the whole namespace. The style check runs in the
+        // browser since #733 and the chapter metrics since #396, so
+        // neither needs the backend - but both are computation rather
+        // than storage, so the branch lives in a wrapper
+        // (utils/editor/runStyleCheck.ts) or inline (QualityTab), not
+        // behind a getStorage() member. Both are allowlisted below; the
+        // guard is here to catch a THIRD caller that forgets to branch
+        // and silently degrades offline.
+        label: "api.msTools",
+        pattern: /\bapi\.msTools\b/,
+        remedy:
+            "runStyleCheck() for the style check, or a storage.mode branch " +
+            "with computeChapterMetrics() (see #733, #396)",
+        allowlist: new Set([
+            ...IMPLEMENTATION_LAYER,
+            // The wrapper that owns the online/offline branch.
+            "utils/editor/runStyleCheck.ts",
+            // Branches on storage.mode inline and computes the metrics
+            // client-side in dexie mode (#396).
+            "components/quality/QualityTab.tsx",
+        ]),
+    },
+    {
         // Translation groups: the sibling list plus link/unlink, seam-backed
         // since #746. `importMultiBranch` is NOT guarded - it clones a git
         // repository server-side and has no browser path.

@@ -14,8 +14,17 @@
  * imported in the backendless build is cleaned exactly as a desktop import
  * cleans it (#733).
  *
- * Partial parity: the LanguageTool-style style checks the backend plugin
- * performs against a server have no browser counterpart.
+ * The editor's inline style check - filler words, passive voice, long
+ * sentences, repetitions, adverbs, adjectives, redundant phrases - mirrors
+ * `style_checker.py` in `src/lib/utils/msTools/styleFindings.ts`, including
+ * the offsets the decorations need, so the toolbar button works offline
+ * instead of being hidden (#733). Behaviour is pinned against output
+ * recorded from the Python checker itself.
+ *
+ * Not in the browser: the user allowlist YAML (no browser equivalent, ships
+ * empty), and the `/sanitize`, `/readability`, `/languages` and
+ * `/metrics/export` endpoints - none of which has ever had a frontend
+ * caller, in either mode.
  *
  * @example
  * import { computeChapterMetrics, sanitizeText } from "@/modules/module-ms-tools";
@@ -30,6 +39,13 @@ export {
 export type { SentenceComplexity } from "../../lib/utils/sentenceComplexity";
 export { WORDS_PER_MINUTE, getTextStats } from "../../lib/utils/textStats";
 export type { TextStats } from "../../lib/utils/textStats";
+export { checkStyle } from "../../lib/utils/msTools/styleFindings";
+export type {
+    StyleCheckOptions,
+    StyleCheckResult,
+    StyleFinding,
+    StyleFindingMessage,
+} from "../../lib/utils/msTools/styleFindings";
 export {
     sanitizeText,
     sanitizePreview,

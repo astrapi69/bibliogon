@@ -22,7 +22,7 @@ checks the first column against the directory instead (#871).
 
 | Plugin | Purpose | Frontend module | Offline impl (canonical) | Offline? | Gate |
 |--------|---------|-----------------|--------------------------|----------|------|
-| **ms-tools** | Style checks, metrics, Flesch / Schachtelsatz | `module-ms-tools` | `lib/utils/{chapterMetrics,sentenceComplexity,textStats}.ts` | **Partial** — metrics offline; server style-checks not | active |
+| **ms-tools** | Style checks, metrics, Flesch / Schachtelsatz | `module-ms-tools` | `lib/utils/{chapterMetrics,sentenceComplexity,textStats}.ts`, `lib/utils/msTools/styleFindings.ts` | **Partial** — metrics, sanitizer and the editor style check offline; the user allowlist YAML has no browser equivalent | active |
 | **export** (PDF) | PDF export | `module-pdf-export` | `export/formatPdf.ts` (`pdfmake`) | **Yes** | active |
 | **export** (EPUB) | EPUB export | `module-epub-export` | `export/formatEpub.ts` (`epub-gen-memory`) | **Yes** | active |
 | **export** (DOCX) | DOCX export | `module-docx-export` | `export/formatDocx.ts` (`docx`) | **Yes** | active |
@@ -112,6 +112,13 @@ provider directly from the browser. These are the `AI_GRAMMAR` /
 "configure a provider key" reason until a key is set), so the offline build
 offers a working grammar + translation path with no backend - the
 browser-direct counterpart to the desktop-only LanguageTool / DeepL paths.
+
+**Editor style check — now offline (#733, 2026-10-10):** the inline
+style check no longer gates on the plugin probe. `check_style` is ported
+to `lib/utils/msTools/styleFindings.ts`, including the offsets the
+decorations need, and `utils/editor/runStyleCheck.ts` owns the one
+online/offline branch; the toolbar offers the button whenever either
+implementation is available. The audio preview below stays desktop-only.
 
 **Editor server-bound tools — verified disabled offline (correction
 2026-06-24):** an earlier revision of this section claimed the inline

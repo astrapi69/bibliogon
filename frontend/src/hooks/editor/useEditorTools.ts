@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { Editor as TiptapEditor } from "@tiptap/react";
 import { api, ApiError } from "../../api/client";
 import { notify } from "../../utils/platform/notify";
+import { runStyleCheck } from "../../utils/editor/runStyleCheck";
 import { useI18n } from "../useI18n";
 import type { SpellcheckMatch } from "../../components/editor/EditorPanels";
 
@@ -21,9 +22,13 @@ export function useEditorTools(args: {
     editor: TiptapEditor | null;
     bookId?: string;
     chapterTitle?: string;
+    /** The book's language, for the style check's per-language word
+     *  lists. The toggle used to hard-code "de", which analysed an
+     *  English book against German filler words. */
+    language?: string;
     aiContextChars: number;
 }) {
-    const { editor, bookId, chapterTitle, aiContextChars } = args;
+    const { editor, bookId, chapterTitle, language, aiContextChars } = args;
     const { t } = useI18n();
 
     const [showSpellcheck, setShowSpellcheck] = useState(false);
@@ -77,7 +82,7 @@ export function useEditorTools(args: {
                 setStyleCheckLoading(false);
                 return;
             }
-            const result = await api.msTools.check(text, "de", bookId);
+            const result = await runStyleCheck(text, language || "de", bookId);
             editor.commands.setStyleFindings(result.findings);
         } catch {
             notify.error(t("ui.editor.spellcheck_error", "Stilprüfung fehlgeschlagen"));

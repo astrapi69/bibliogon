@@ -396,3 +396,35 @@ def test_longest_sentences_respects_limit():
 def test_longest_sentences_empty_text():
     """Empty text yields no candidates."""
     assert longest_sentences("") == []
+
+
+class TestFillerOffsetsAgainstOriginalText:
+    """Offsets must index the text the caller passed in.
+
+    The check used to search ``text.lower()`` and report offsets from
+    that copy. Lowering is not length-preserving for every character, so
+    one character earlier in the text was enough to shift every filler
+    offset after it, and the editor highlighted from the second letter
+    of the word onward.
+    """
+
+    def test_offset_points_at_the_word_after_a_lengthening_lowercase(self) -> None:
+        # "İ".lower() is two code points, so the lowered copy is one
+        # longer than the original from here on.
+        text = "İstanbul ist actually nicht very weit."
+        findings = check_filler_words(text, "en")
+        assert findings, "the filler words in this text should be found"
+        for finding in findings:
+            start = finding["offset"]
+            end = start + finding["length"]
+            assert text[start:end].lower() == finding["word"], (
+                f"offset {start} points at {text[start:end]!r}, "
+                f"not at {finding['word']!r}"
+            )
+
+    def test_offset_points_at_the_word_in_plain_text(self) -> None:
+        text = "Das ist eigentlich ganz einfach."
+        for finding in check_filler_words(text, "de"):
+            start = finding["offset"]
+            end = start + finding["length"]
+            assert text[start:end].lower() == finding["word"]
