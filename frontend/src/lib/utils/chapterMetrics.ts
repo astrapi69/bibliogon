@@ -29,6 +29,14 @@ import type {
 
 import { htmlToPlainText } from "./content/htmlToPlainText";
 
+import {
+    ADJECTIVE_FALSE_POSITIVES,
+    ADJECTIVE_SUFFIXES,
+    ADVERB_SUFFIXES,
+    FILLER_WORDS,
+    PASSIVE_PATTERNS,
+} from "./msTools/styleRules";
+
 const MAX_SENTENCE_LENGTH = 25;
 
 /** Per-language vowel groups for the syllable heuristic. */
@@ -46,77 +54,6 @@ const FLESCH_COEFFICIENTS: Record<string, [number, number, number]> = {
     de: [180.0, 1.0, 58.5],
     es: [206.835, 1.02, 60.0],
     fr: [207.0, 1.015, 73.6],
-};
-
-/** Filler word lists per language (mirrors content/fillers/{lang}.yaml). */
-const FILLER_WORDS: Record<string, string[]> = {
-    de: [
-        "eigentlich", "sozusagen", "quasi", "irgendwie", "gewissermaßen",
-        "grundsätzlich", "im Grunde", "im Prinzip", "halt", "eben",
-        "einfach", "wirklich", "ziemlich", "relativ", "durchaus",
-        "natürlich", "selbstverständlich", "offensichtlich", "offenbar",
-        "ja", "nun", "also", "jedenfalls", "übrigens", "bekanntlich",
-        "naja", "tja", "sicherlich", "gewiss", "freilich",
-    ],
-    en: [
-        "actually", "basically", "essentially", "literally", "virtually",
-        "really", "very", "quite", "rather", "somewhat",
-        "just", "simply", "honestly", "frankly", "obviously",
-        "clearly", "definitely", "certainly", "surely", "perhaps",
-        "kind of", "sort of", "you know", "I mean", "in fact",
-        "as a matter of fact", "to be honest", "needless to say",
-    ],
-    es: [
-        "realmente", "basicamente", "obviamente", "literalmente", "simplemente",
-        "en realidad", "de hecho", "la verdad", "digamos", "o sea",
-        "bueno", "pues", "como que", "tipo", "practicamente",
-    ],
-    fr: [
-        "vraiment", "en fait", "justement", "effectivement", "absolument",
-        "franchement", "quand meme", "en gros", "genre", "bon",
-        "bref", "voila", "du coup", "en quelque sorte", "disons",
-    ],
-};
-
-/** Passive-voice detectors per language (mirror PASSIVE_PATTERNS). */
-const PASSIVE_PATTERNS: Record<string, RegExp[]> = {
-    de: [
-        /\b(wird|werden|wurde|wurden|worden|werde|wirst|werdet)\b\s+\w+t\b/giu,
-        /\b(ist|sind|war|waren)\b\s+\w+(t|en)\s+worden\b/giu,
-    ],
-    en: [
-        /\b(is|are|was|were|been|being|be)\b\s+(\w+\s+)?(written|taken|made|done|seen|given|told|found|known|called|used|said|asked|built|held|kept|left|lost|paid|read|run|set|shown|thought|understood|won|\w+ed)\b/giu,
-    ],
-};
-
-const ADVERB_SUFFIXES: Record<string, string[]> = {
-    de: ["lich", "weise", "falls", "lings", "waerts"],
-    en: ["ly"],
-    es: ["mente"],
-    fr: ["ment"],
-};
-
-const ADJECTIVE_SUFFIXES: Record<string, string[]> = {
-    de: ["ig", "isch", "bar", "sam", "haft", "los", "voll", "reich", "arm"],
-    en: ["ous", "ive", "ful", "less", "able", "ible", "ical"],
-    es: ["oso", "osa", "ivo", "iva", "ble"],
-    fr: ["eux", "euse", "ble"],
-};
-
-const ADJECTIVE_FALSE_POSITIVES: Record<string, Set<string>> = {
-    de: new Set([
-        "landschaft", "gesellschaft", "wissenschaft", "wirtschaft",
-        "botschaft", "mannschaft", "eigenschaft", "bereitschaft",
-        "nachbarschaft", "freundschaft", "leidenschaft", "herrschaft",
-    ]),
-    en: new Set([
-        "table", "able", "cable", "fable", "stable", "double", "trouble",
-        "give", "live", "have", "five", "drive", "arrive",
-        "house", "mouse", "because", "use", "refuse", "excuse",
-        "bus", "plus", "us", "thus", "focus", "bonus", "campus",
-    ]),
-    es: new Set(),
-    fr: new Set(),
 };
 
 const WORD_RE = /[\p{L}\p{N}_]+/gu;

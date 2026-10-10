@@ -31,6 +31,7 @@ import {
 import { useEditorDisplaySettings } from "../../hooks/editor/useEditorDisplaySettings";
 import { useAiChapterReview } from "../../hooks/ai/useAiChapterReview";
 import { useEditorWordCount } from "../../hooks/editor/useEditorWordCount";
+import { runStyleCheck } from "../../utils/editor/runStyleCheck";
 import { useEditorImageUpload } from "../../hooks/editor/useEditorImageUpload";
 import EditorStatusBar from "../../lib/components/EditorStatusBar";
 import { WORDS_PER_MINUTE } from "../../lib/utils/textStats";
@@ -39,7 +40,7 @@ import { useEditorTools } from "../../hooks/editor/useEditorTools";
 import { useI18n } from "../../hooks/useI18n";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../../features/featureConfig";
-import { api, ApiError } from "../../api/client";
+import { ApiError } from "../../api/client";
 import { aiComplete, AiNotConfiguredError } from "../../ai/aiComplete";
 import { getStorage } from "../../storage";
 import { notify } from "../../utils/platform/notify";
@@ -364,7 +365,18 @@ export default function Editor({
     } = chapterReview;
 
     // Grammar spellcheck + ms-tools style check + TTS audio preview.
-    const tools = useEditorTools({ editor, bookId, chapterTitle, aiContextChars });
+    // The style check needs either the backend plugin or the browser
+    // implementation; Dexie mode has the latter.
+    const styleCheckAvailable =
+        getStorage().mode === "dexie" || isPluginAvailable(pluginStatus, "ms-tools");
+
+    const tools = useEditorTools({
+        editor,
+        bookId,
+        chapterTitle,
+        language: bookContext?.language,
+        aiContextChars,
+    });
     const {
         showSpellcheck,
         spellcheckResults,
@@ -418,7 +430,11 @@ export default function Editor({
             try {
                 const text = editor.getText();
                 if (!text.trim()) return;
-                const result = await api.msTools.check(text, bookContext?.language || "de", bookId);
+                const result = await runStyleCheck(
+                    text,
+                    bookContext?.language || "de",
+                    bookId,
+                );
                 if (cancelled) return;
                 editor.commands.setStyleFindings(result.findings);
                 setStyleCheckActive(true);
@@ -771,9 +787,12 @@ export default function Editor({
                     styleCheckActive={styleCheckActive}
                     styleCheckLoading={styleCheckLoading}
                     onToggleStyleCheck={
-                        isPluginAvailable(pluginStatus, "ms-tools")
-                            ? handleToggleStyleCheck
-                            : undefined
+                        // Offline the check runs in the browser (#733), so
+                        // it does not need the plugin to be reachable. The
+                        // probe returns an empty map in Dexie mode, which
+                        // would otherwise hide the button in the one build
+                        // that just gained the ability to use it.
+                        styleCheckAvailable ? handleToggleStyleCheck : undefined
                     }
                     documentTitle={documentTitle ?? chapterTitle}
                     documentSubtitle={documentSubtitle}
