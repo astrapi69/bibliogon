@@ -18,6 +18,20 @@ name: Prod Container Smoke
 # `prove_gate_catches_white_page` - see that input's description.
 
 on:
+  # Path-scoped, not every PR: a 20-minute two-image build on an unrelated
+  # change buys nothing. These are the files that decide whether the
+  # container renders - the compose stack, both Dockerfiles, nginx's config
+  # and the headers it includes, and the gate itself.
+  pull_request:
+    paths:
+      - "docker-compose.prod.yml"
+      - "backend/Dockerfile"
+      - "frontend/Dockerfile"
+      - "frontend/nginx.conf"
+      - "frontend/security/**"
+      - "e2e/prod-container/**"
+      - "e2e/playwright.prod-container.config.ts"
+      - ".github/workflows/prod-container-smoke.yml"
   workflow_call:
   workflow_dispatch:
     inputs:
