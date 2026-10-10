@@ -59,7 +59,11 @@ export default function ClientExportMenu({ getDocument, disabled, testId }: Prop
       const doc = await getDocument();
       await downloadExport(doc, format);
       notify.success(t("ui.export.success", "Export erstellt."));
-    } catch {
+    } catch (err) {
+      // The toast says only that it failed, so without this the cause of a
+      // broken export exists nowhere - which is how the bundled EPUB
+      // builder stayed broken through a release (#1070).
+      console.error(`client export failed (${format})`, err);
       notify.error(t("ui.export.failed", "Export fehlgeschlagen."));
     } finally {
       setBusy(false);
@@ -71,7 +75,8 @@ export default function ClientExportMenu({ getDocument, disabled, testId }: Prop
       const doc = await getDocument();
       setPreviewDoc(doc);
       setPreviewOpen(true);
-    } catch {
+    } catch (err) {
+      console.error("client export preview failed", err);
       notify.error(t("ui.export.failed", "Export fehlgeschlagen."));
     }
   }

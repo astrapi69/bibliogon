@@ -15,6 +15,10 @@
  * `static-smoke/bulk-export-offline.spec.ts` covers Markdown and the
  * picture-book / comic specs cover PDF - EPUB is the format that had no
  * browser-level coverage at all, which is how the bug shipped.
+ *
+ * Driven through `ClientExportMenu`, which is what the export page renders
+ * when the client engine is in play; `ExportForm` is the backend path and
+ * never appears offline.
  */
 
 import {test, expect} from "@playwright/test";
@@ -71,8 +75,11 @@ test("a book exports as a readable EPUB with no /api call", async ({page}) => {
     await editor.click();
     await page.keyboard.type("Oben auf dem Dach beginnt die Geschichte.");
 
+    // Offline the export page renders `ClientExportMenu`, not the
+    // backend-driven `ExportForm` - the client engine is the whole point
+    // of the page here.
     await page.goto(`/books/${bookId}/export`);
-    await page.getByTestId("export-format-epub").click();
+    await page.getByTestId("export-page-client-trigger").click();
 
     const errorToast = page.locator(".Toastify__toast--error");
     const downloaded = page.waitForEvent("download", {timeout: 60_000}).catch(() => null);
@@ -81,7 +88,7 @@ test("a book exports as a readable EPUB with no /api call", async ({page}) => {
         .waitFor({state: "visible", timeout: 60_000})
         .then(() => null)
         .catch(() => null);
-    await page.getByTestId("export-submit").click();
+    await page.getByTestId("client-export-epub").click();
     const file = await Promise.race([downloaded, failed]);
     if (!file) {
         const reported = (await errorToast.count())
