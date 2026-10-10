@@ -15,6 +15,12 @@
  * lives in `src/lib/aplus/` (pure, library-grade); this barrel is the
  * stable plugin-parity seam under `modules/`.
  *
+ * The generate route's deterministic half is ported too: the missing-
+ * field check that short-circuits before any model call, the book
+ * context, the cache key and the image slots' copy-and-paste strings
+ * (`context.parity.json`). What is left of the route is the model call
+ * itself and the cache table.
+ *
  * Partial parity: generating a package still needs the backend, and the
  * `aplus-ai` feature stays gated with its reason (#891). Editing an A+
  * document by hand already works offline through the storage seam
@@ -43,3 +49,25 @@ export {
     startsWithImperativeVerb,
     validateAplusPackage,
 } from "../../lib/aplus/validation";
+export {
+    JUVENILE_TEXT_MARKERS,
+    buildBookContext,
+    computeSourceHash,
+    findMissingFields,
+} from "../../lib/aplus/bookContext";
+export type {
+    BookContext,
+    BookContextSource,
+    MissingFieldFinding,
+} from "../../lib/aplus/bookContext";
+export {
+    buildStyleContext,
+    renderImagePrompt,
+    withRenderedPrompts,
+} from "../../lib/aplus/imagePrompts";
+export type {
+    AplusImageStyleContext,
+    ImagePromptSlot,
+    ModuleImageStyle,
+    RenderablePackage,
+} from "../../lib/aplus/imagePrompts";
