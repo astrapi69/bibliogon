@@ -235,7 +235,7 @@ test("the export preview iframe renders without a CSP violation", async ({page})
 });
 
 test("the real service worker registers without a CSP violation", async ({page, context}) => {
-    // The race below is 15s inside a 60s budget: a single step whose
+    // The waits below are 20s inside a 60s budget: a single step whose
     // timeout approaches the test timeout gets cut off mid-flight and
     // never spends what it was given.
     test.setTimeout(60_000);
@@ -245,37 +245,27 @@ test("the real service worker registers without a CSP violation", async ({page, 
     // evaluated under the policy - a wrong directive here is an app that
     // works on first load and serves nothing offline afterwards.
     await allowServiceWorker(context);
+
+    // Observed from OUTSIDE the page, not through `page.evaluate`. Two
+    // earlier attempts measured this from inside and failed for two
+    // different reasons that were both the test's: reading
+    // `registration.active.state` once caught it at "activating", and
+    // polling that read died with "Execution context was destroyed" -
+    // an active worker claims the page, which navigates it. Playwright's
+    // own event is immune to both, and it is the exact evidence
+    // `worker-src` can withhold: a blocked worker script never starts,
+    // so this never fires and the wait fails loudly.
+    const workerAppeared = context.waitForEvent("serviceworker", {timeout: 20_000});
     await page.goto("/");
     await page.getByTestId("dashboard-header").waitFor({state: "visible"});
+    const worker = await workerAppeared;
+    expect(worker.url(), "the registered worker is not the built one").toMatch(/sw\.js/);
 
-    // Two steps, because they fail for different reasons. First: did the
-    // worker register at all? Asserted, not logged - a worker that never
-    // registers would make the violation check below pass by measuring
-    // nothing. `ready` never settles when there is no registration, hence
-    // the race.
-    const registered = await page.evaluate(() => {
-        if (!("serviceWorker" in navigator)) return Promise.resolve(false);
-        return Promise.race([
-            navigator.serviceWorker.ready.then(() => true),
-            new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 15_000)),
-        ]);
-    });
-    expect(registered, "the service worker never registered").toBe(true);
-
-    // Then: let it finish activating. `ready` resolves as soon as there is
-    // an active worker, which can still read "activating" in that same
-    // tick - the first run of this test asserted the exact state once and
-    // caught it mid-lifecycle. A poll is safe here where a reload-and-retry
-    // would not be: reading the state does not change it.
-    await expect
-        .poll(
-            () =>
-                page.evaluate(async () => {
-                    const registration = await navigator.serviceWorker.getRegistration();
-                    return registration?.active?.state ?? "no-active-worker";
-                }),
-            {timeout: 15_000},
-        )
-        .toBe("activated");
+    // The violation list is secondary here and says so: the worker claiming
+    // the page can navigate it, and the init script that owns the array runs
+    // again on the new document. An empty array is therefore not proof that
+    // nothing was blocked during the first load - the event above is. Read
+    // after the page settles, so at least a steady-state violation surfaces.
+    await page.waitForLoadState("load");
     await expectNoViolations(page, "service worker registration");
 });
