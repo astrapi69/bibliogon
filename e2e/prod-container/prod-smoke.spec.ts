@@ -26,7 +26,7 @@
  * the first navigation rather than passing with zero assertions.
  */
 
-import {test, expect, type Page} from "@playwright/test";
+import {test, expect, type BrowserContext, type Page} from "@playwright/test";
 
 /**
  * One line of text at the app's 16px base size, rounded down. Taken from
@@ -36,6 +36,23 @@ import {test, expect, type Page} from "@playwright/test";
  * of inert assertion #1001 had to repair twice.
  */
 const ONE_LINE_PX = 24;
+
+/**
+ * The service worker is aborted here, as in every sibling static-smoke
+ * spec. Two reasons, both about what this gate is for: a precaching
+ * worker would serve one test's bundle to the next and mask a changed
+ * artifact, and the worker's own auto-update (focus / visibility /
+ * hourly) races Playwright's per-test storage wipe and logs an uncaught
+ * InvalidStateError that has nothing to do with whether the container
+ * renders. The real worker IS measured, against the canonical CSP, in
+ * static-smoke/csp-report-only.spec.ts; the uncaught error it raises
+ * here is #1065.
+ */
+const SW_SCRIPTS = /\/(registerSW\.js|sw\.js)(\?|$)/;
+
+test.beforeEach(async ({context}: {context: BrowserContext}) => {
+    await context.route(SW_SCRIPTS, (route) => route.abort());
+});
 
 interface PageFailures {
     console: string[];
@@ -161,10 +178,26 @@ test("a book written through the container is still there after a reload", async
     // whose data directory is not writable.
     const title = `Prod-Container Buch ${Date.now()}`;
     await page.goto("/books/new?type=prose");
+
+    // Both fields are required and both are filled, in that order, with
+    // the submit button's own state as the gate. The sibling offline
+    // specs treat the author as optional (`if (await author.isVisible())`)
+    // because the seeded profile pre-fills it; against a fresh backend
+    // there is no profile, and an optional fill turns "the form cannot be
+    // submitted" into a 15-second timeout on a disabled button that says
+    // nothing about which field is missing.
     await page.getByTestId("create-book-title").fill(title);
     const author = page.getByTestId("create-book-author");
-    if (await author.isVisible()) await author.fill("Asterios Raptis");
-    await page.getByTestId("create-book-submit").click();
+    await expect(author).toBeVisible();
+    await author.fill("Asterios Raptis");
+
+    const submit = page.getByTestId("create-book-submit");
+    await expect(
+        submit,
+        "the create-book submit stayed disabled with both required fields filled" +
+            " - something cleared them after the profile load resolved",
+    ).toBeEnabled();
+    await submit.click();
 
     await page.goto("/");
     await expect(page.getByRole("button", {name: new RegExp(title)}).first()).toBeVisible({
