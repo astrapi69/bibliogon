@@ -281,6 +281,7 @@ export default function ExportForm({bookId, bookTitle, hasManualToc, onDone}: Pr
                             key={f.id}
                             className={`${styles.formatBtn} ${format === f.id ? styles.formatBtnActive : ""}`}
                             onClick={() => setFormat(f.id)}
+                            data-testid={`export-format-${f.id}`}
                         >
                             <strong>{t(f.labelKey, f.labelFallback)}</strong>
                             <span style={{fontSize: "0.75rem", color: "var(--text-muted)"}}>{t(f.descKey, f.descFallback)}</span>
@@ -452,6 +453,7 @@ export default function ExportForm({bookId, bookTitle, hasManualToc, onDone}: Pr
                     className="btn btn-primary"
                     onClick={handleExport}
                     disabled={exporting}
+                    data-testid="export-submit"
                 >
                     <Download size={16}/>
                     {exporting
