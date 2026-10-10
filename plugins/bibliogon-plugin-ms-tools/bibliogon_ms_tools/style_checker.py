@@ -242,15 +242,20 @@ def check_filler_words(text: str, language: str = "de") -> list[dict]:
     fillers = _load_fillers(language)
     findings: list[dict] = []
 
-    text_lower = text.lower()
+    # Matched case-insensitively against the ORIGINAL text, not a
+    # lowered copy: lowering is not always length-preserving (Turkish
+    # "\u0130".lower() is two code points), so offsets taken from the
+    # lowered string point one character off for everything after such a
+    # character - the editor then highlights from the second letter of
+    # the word onward. Every other check here searches `text` directly.
     for filler in fillers:
         pattern = re.compile(r"\b" + re.escape(filler) + r"\b", re.I)
-        for match in pattern.finditer(text_lower):
+        for match in pattern.finditer(text):
             findings.append({
                 "type": "filler_word",
                 "word": filler,
                 "offset": match.start(),
-                "length": len(filler),
+                "length": len(match.group()),
                 "severity": "info",
                 "message": {
                     "de": f"Fuellwort '{filler}' - kann oft gestrichen werden.",
