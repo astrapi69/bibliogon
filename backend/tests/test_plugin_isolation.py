@@ -22,7 +22,9 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+from tests.repo_root import find_repo_root
+
+REPO_ROOT = find_repo_root(Path(__file__))
 PLUGINS_DIR = REPO_ROOT / "plugins"
 
 #: (importing plugin, imported plugin) pairs that are allowed.

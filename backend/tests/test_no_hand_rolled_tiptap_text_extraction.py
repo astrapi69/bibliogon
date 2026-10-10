@@ -36,7 +36,9 @@ import ast
 import re
 from pathlib import Path
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
+from tests.repo_root import find_repo_root
+
+_REPO_ROOT = find_repo_root(Path(__file__))
 
 #: Files that walk TipTap nodes but legitimately do NOT need an HTML
 #: fallback. Each entry states WHY - "it's inconvenient" is not a

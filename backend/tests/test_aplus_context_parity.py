@@ -69,8 +69,9 @@ from tests.aplus_context_cases import (
     STYLE_GENRES,
     BookStub,
 )
+from tests.repo_root import find_repo_root
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = find_repo_root(Path(__file__))
 FIXTURE_PATH = REPO_ROOT / "frontend" / "src" / "lib" / "aplus" / "context.parity.json"
 
 

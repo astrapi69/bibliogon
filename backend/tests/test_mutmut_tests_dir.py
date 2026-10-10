@@ -91,6 +91,50 @@ def test_every_test_touching_the_mutated_scope_is_on_the_allowlist() -> None:
     )
 
 
+#: ``Path(__file__)`` combined with two or more upward steps. One step
+#: lands on ``tests/`` and two on ``backend/`` (or on ``mutants/``, which
+#: is what mutmut wants), so only three-plus reaches above the backend and
+#: breaks inside the mutants tree.
+_FILE_RELATIVE_ROOT = re.compile(r"__file__.*?(?:parents\[(?:[2-9]|\d\d)\]|(?:\.parent){3,})")
+
+
+def test_no_listed_test_walks_up_to_the_repo_root_from_its_own_path() -> None:
+    """``parents[2]`` is ``backend/`` inside ``mutants/``, not the root.
+
+    mutmut copies the suite to ``backend/mutants/tests/``, one level
+    deeper relative to the backend than the real tree, so a test building
+    a repo-root-relative path from ``__file__`` reads it out of
+    ``backend/`` instead. Nothing fails loudly: a fixture path simply
+    does not exist, the assertion fires for the wrong reason, and because
+    stats collection runs pytest under ``-x`` and mutmut exits 1 on the
+    first failure, ONE such file aborts the whole run before a single
+    mutant is checked. That is what the 39 -> 86 expansion hit:
+    ``checked=0 of 13421``.
+
+    ``tests/repo_root.find_repo_root`` resolves correctly from either
+    tree, so the fix is to call it rather than to keep adding symlinks
+    next to ``mutants/`` for whichever directory a new test happens to
+    need.
+    """
+    offenders = []
+    for entry in _mutmut_config()["tests_dir"]:
+        path = BACKEND_DIR / entry
+        if not path.exists():
+            continue  # reported by the case below
+        for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            if line.lstrip().startswith("#"):
+                continue
+            if _FILE_RELATIVE_ROOT.search(line):
+                offenders.append(f"{entry}:{number}: {line.strip()}")
+
+    assert not offenders, (
+        "These listed tests build a repo-root path from __file__, which "
+        "resolves one directory too deep inside mutmut's mutants/ tree and "
+        "aborts stats collection for every mutant. Use "
+        "tests.repo_root.find_repo_root(Path(__file__)) instead:\n  " + "\n  ".join(offenders)
+    )
+
+
 def test_the_allowlist_names_files_that_exist() -> None:
     # A renamed or deleted test silently stops contributing: mutmut passes
     # the path to pytest, which ignores a missing arg under -q, so the
