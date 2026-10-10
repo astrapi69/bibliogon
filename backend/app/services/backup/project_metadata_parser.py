@@ -7,6 +7,7 @@ on-disk project metadata into a persistable Book. Chapter and asset import
 live in their own sibling modules.
 """
 
+import datetime
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -49,6 +50,52 @@ class ProjectMetadata:
     extras: dict[str, Any] = field(default_factory=dict)
 
 
+def _scalar(value: Any) -> str | None:
+    """One YAML scalar as a string, or None when there is nothing in it.
+
+    YAML types what it reads: ``date: 2026-03-01`` is a
+    ``datetime.date``, ``edition: 2`` is an ``int``, and an unquoted
+    13-digit ISBN is an ``int`` too. Every field below is declared
+    ``str | None`` on ``ProjectMetadata`` and on ``DetectedProject``,
+    so an untyped pass-through made the detect endpoint answer HTTP 500
+    for a project whose metadata.yaml carried a publication date -
+    which is the natural way to write one and the shape Pandoc metadata
+    uses (#1091).
+
+    A date renders in ISO form, which is what the user wrote and what
+    the metadata round-trips back to. ``str()`` would agree for a date
+    and disagree for a datetime, which it renders with a space where
+    ISO wants a T.
+
+    None and whitespace-only collapse to None rather than to the string
+    "None" - the same trap #1086 closed in the A+ generator, in a
+    second file.
+    """
+    if value is None:
+        return None
+    if isinstance(value, (datetime.date, datetime.datetime)):
+        return value.isoformat()
+    text = str(value).strip()
+    return text or None
+
+
+def _optional_int(value: Any) -> int | None:
+    """One YAML scalar as an int, or None when it is not one.
+
+    ``series_index`` is declared ``int | None``, so a volume written as
+    a word ("volume: zwei") has to become None rather than break the
+    response the way an untyped date did.
+    """
+    if isinstance(value, bool) or value is None:
+        return None
+    if isinstance(value, int):
+        return value
+    try:
+        return int(str(value).strip())
+    except (TypeError, ValueError):
+        return None
+
+
 def _read_metadata_yaml(path: Path) -> dict[str, Any]:
     if not path.exists():
         return {}
@@ -72,17 +119,19 @@ def _parse_project_metadata(metadata: dict[str, Any], project_root: Path) -> Pro
 
     config_dir = project_root / "config"
     return ProjectMetadata(
-        title=metadata.get("title", project_root.name),
-        subtitle=metadata.get("subtitle"),
+        # Every string field goes through `_scalar`, because YAML types
+        # what it reads and these are all declared `str | None` (#1091).
+        title=_scalar(metadata.get("title")) or project_root.name,
+        subtitle=_scalar(metadata.get("subtitle")),
         author=_parse_author(metadata.get("author")),
         language=_normalize_language(metadata.get("lang", metadata.get("language", "de"))),
         series_name=series_name,
         series_index=series_idx,
-        description=metadata.get("description"),
-        edition=metadata.get("edition"),
-        publisher=metadata.get("publisher"),
-        publisher_city=metadata.get("publisher_city"),
-        publish_date=metadata.get("date"),
+        description=_scalar(metadata.get("description")),
+        edition=_scalar(metadata.get("edition")),
+        publisher=_scalar(metadata.get("publisher")),
+        publisher_city=_scalar(metadata.get("publisher_city")),
+        publish_date=_scalar(metadata.get("date")),
         isbn_ebook=isbn_ebook,
         isbn_paperback=isbn_pb,
         isbn_hardcover=isbn_hc,
@@ -108,7 +157,9 @@ def _parse_project_metadata(metadata: dict[str, Any], project_root: Path) -> Pro
         # use the snake_case variant. Accept both plus a plain ``cover``
         # fallback so a metadata.yaml written by hand still lands a cover.
         cover_image=(
-            metadata.get("cover-image") or metadata.get("cover_image") or metadata.get("cover")
+            _scalar(metadata.get("cover-image"))
+            or _scalar(metadata.get("cover_image"))
+            or _scalar(metadata.get("cover"))
         ),
         custom_css=_read_custom_css(config_dir, project_root),
     )
@@ -148,9 +199,9 @@ def _normalize_language(lang: Any) -> str:
 def _parse_series(metadata: dict[str, Any]) -> tuple[str | None, int | None]:
     series_raw = metadata.get("series")
     if isinstance(series_raw, dict):
-        return series_raw.get("title"), series_raw.get("volume")
-    if isinstance(series_raw, str):
-        return series_raw, metadata.get("series_index")
+        return _scalar(series_raw.get("title")), _optional_int(series_raw.get("volume"))
+    if series_raw is not None and not isinstance(series_raw, (list, dict)):
+        return _scalar(series_raw), _optional_int(metadata.get("series_index"))
     return None, None
 
 
@@ -161,7 +212,8 @@ def _parse_isbn(metadata: dict[str, Any]) -> tuple[str | None, str | None, str |
 
     def pick(key: str, fallback_key: str) -> str | None:
         primary = isbn_raw.get(key) if isinstance(isbn_raw, dict) else None
-        return primary or identifiers.get(fallback_key) or None
+        fallback = identifiers.get(fallback_key) if isinstance(identifiers, dict) else None
+        return _scalar(primary) or _scalar(fallback)
 
     return (
         pick("ebook", "isbn_ebook"),
@@ -174,7 +226,11 @@ def _parse_asin(metadata: dict[str, Any]) -> tuple[str | None, str | None, str |
     asin_raw = metadata.get("asin", {})
     if not isinstance(asin_raw, dict):
         return None, None, None
-    return asin_raw.get("ebook"), asin_raw.get("paperback"), asin_raw.get("hardcover")
+    return (
+        _scalar(asin_raw.get("ebook")),
+        _scalar(asin_raw.get("paperback")),
+        _scalar(asin_raw.get("hardcover")),
+    )
 
 
 def _parse_keywords(metadata: dict[str, Any]) -> str | None:
