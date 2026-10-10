@@ -133,10 +133,11 @@ interface Props {
      *  BookMetadataEditor keep their current labeled-button style
      *  (no parallel-surface regression). */
     compact?: boolean
-    /** Book type of the owning book. When ``"picture_book"`` the
-     *  control offers a CLIENT-side PDF path offline (#497) so the
-     *  backendless PWA can still download a picture-book PDF; other
-     *  book types (incl. comics) keep the backend-only behaviour. */
+    /** Book type of the owning book. ``"picture_book"`` (#497) and
+     *  ``"comic_book"`` (#742) each have a browser PDF engine, so the
+     *  control offers a CLIENT-side path when the backend one is
+     *  unavailable; any other book type keeps the backend-only
+     *  behaviour. */
     bookType?: string
 }
 
@@ -152,15 +153,20 @@ export default function PdfExportControls({
     const {t} = useI18n()
     // The high-fidelity picture-book + comic PDF runs through the
     // backend WeasyPrint image-layout walker, gated behind
-    // ``PANDOC_EXPORT`` (desktop-only). For PICTURE-BOOKS there is
-    // now a browser-side pdfmake fallback (#497) so the backendless
-    // PWA can still download a (lower-fidelity) PDF offline; comics
-    // stay backend-only (panels/bubbles are not yet client-rendered).
-    // The controls stay visible + disabled-with-reason per policy #78
-    // when neither path is available.
+    // ``PANDOC_EXPORT`` (desktop-only). Both book types now also have a
+    // browser pdfmake engine - picture books since #497, comics since
+    // #742 - so the backendless PWA can download a PDF offline either
+    // way. The controls stay visible + disabled-with-reason per policy
+    // #78 for any other book type, where neither path exists.
     const pandoc = useFeature(FEATURES.PANDOC_EXPORT)
-    const clientPicturebook = bookType === "picture_book" && !pandoc.isActive
-    const canExport = pandoc.isActive || clientPicturebook
+    const clientEngine =
+        bookType === "picture_book"
+            ? "picturebook"
+            : bookType === "comic_book"
+              ? "comic"
+              : null
+    const useClientEngine = clientEngine !== null && !pandoc.isActive
+    const canExport = pandoc.isActive || useClientEngine
     const [format, setFormat] = useState<PictureBookFormat>(
         DEFAULT_PICTURE_BOOK_FORMAT,
     )
@@ -256,7 +262,7 @@ export default function PdfExportControls({
         if (exporting || !canExport) return
         setExporting(true)
         try {
-            if (clientPicturebook) {
+            if (useClientEngine && clientEngine === "picturebook") {
                 // #497: offline picture-book PDF via the browser
                 // pdfmake engine (bleed marks are a print-shop
                 // backend-only feature, so the client path applies
@@ -265,6 +271,12 @@ export default function PdfExportControls({
                     "../../export/picturebook/gatherPicturebookPdf"
                 )
                 await downloadPicturebookPdf(bookId, bookId, format)
+            } else if (useClientEngine && clientEngine === "comic") {
+                // #742: offline comic PDF. Same bleed caveat as above.
+                const {downloadComicPdf} = await import(
+                    "../../export/comic/gatherComicPdf"
+                )
+                await downloadComicPdf(bookId, bookId, format)
             } else {
                 // PDF-KDP-FORMATS-01 + PDF-BLEED-MARKS-01: thread non-
                 // default selections as query params. Defaults emit
@@ -290,7 +302,7 @@ export default function PdfExportControls({
         } finally {
             setExporting(false)
         }
-    }, [bookId, exporting, format, bleed, canExport, clientPicturebook, t])
+    }, [bookId, exporting, format, bleed, canExport, useClientEngine, clientEngine, t])
 
     const formatLabel = t("ui.page_editor.pdf_format_label", "PDF format")
     const formatSelect = (
