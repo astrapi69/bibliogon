@@ -186,17 +186,26 @@ test("a book written through the container is still there after a reload", async
     const title = `Prod-Container Buch ${Date.now()}`;
     await page.goto("/books/new?type=prose");
 
-    // Both fields are required and both are filled, in that order, with
-    // the submit button's own state as the gate. The sibling offline
-    // specs treat the author as optional (`if (await author.isVisible())`)
-    // because the seeded profile pre-fills it; against a fresh backend
-    // there is no profile, and an optional fill turns "the form cannot be
-    // submitted" into a 15-second timeout on a disabled button that says
-    // nothing about which field is missing.
-    await page.getByTestId("create-book-title").fill(title);
+    // Both fields are required. The sibling offline specs treat the
+    // author as optional (`if (await author.isVisible())`) because the
+    // seeded profile pre-fills it; against a fresh backend there is no
+    // profile, so an optional fill turns "the form cannot be submitted"
+    // into a timeout on a disabled button.
+    //
+    // Author first, and its value asserted. The author field re-mounts
+    // when the profile load resolves (#1066), and a `fill` that catches
+    // that re-render loses focus to the autofocused title input - the
+    // first run of this test put "Asterios Raptis" at the END OF THE
+    // TITLE and left the author empty. Filling it before the title means
+    // a lost fill corrupts a field that is overwritten next rather than
+    // the one that was already correct, and toHaveValue is what turns
+    // "the fill went somewhere else" into a named failure.
     const author = page.getByTestId("create-book-author");
     await expect(author).toBeVisible();
     await author.fill("Asterios Raptis");
+    await expect(author).toHaveValue("Asterios Raptis");
+    await page.getByTestId("create-book-title").fill(title);
+    await expect(page.getByTestId("create-book-title")).toHaveValue(title);
 
     const submit = page.getByTestId("create-book-submit");
     // The message carries the form's actual state, because "disabled"
