@@ -8,13 +8,49 @@ const DEXIE_WITH_KEY: FeatureContext = { mode: "dexie", hasAiKey: true };
 
 describe("featureRegistry", () => {
     it("resolves desktop-only features to active online, disabled offline", () => {
-        expect(featureRegistry.getState(FEATURES.GIT_SYNC, API)).toBe("active");
-        expect(featureRegistry.getState(FEATURES.GIT_SYNC, DEXIE_NO_KEY)).toBe("disabled");
+        expect(featureRegistry.getState(FEATURES.TTS, API)).toBe("active");
+        expect(featureRegistry.getState(FEATURES.TTS, DEXIE_NO_KEY)).toBe("disabled");
         // Desktop-only features stay disabled offline even with an AI key.
         expect(featureRegistry.getState(FEATURES.TTS, DEXIE_WITH_KEY)).toBe("disabled");
-        expect(featureRegistry.getReason(FEATURES.GIT_SYNC, DEXIE_NO_KEY)).toBe(
+        expect(featureRegistry.getReason(FEATURES.TTS, DEXIE_NO_KEY)).toBe(
             FEATURE_REASON.REQUIRES_DESKTOP_APP,
         );
+    });
+
+    it("names the write limit on the git features instead of pointing at the desktop (#1100)", () => {
+        // #880 decided the direction: pull-only in the browser, push on the
+        // desktop. The reason the user reads has to be that decision, not
+        // "this lives in the desktop app" - a write-capable token here would
+        // sit on an origin shared with every sibling project site (#991).
+        for (const id of [FEATURES.GIT_SYNC, FEATURES.GIT_BACKUP]) {
+            expect(featureRegistry.getState(id, API)).toBe("active");
+            expect(featureRegistry.getState(id, DEXIE_NO_KEY)).toBe("disabled");
+            // An AI key is irrelevant to a git credential.
+            expect(featureRegistry.getState(id, DEXIE_WITH_KEY)).toBe("disabled");
+            expect(featureRegistry.getReason(id, DEXIE_NO_KEY)).toBe(
+                FEATURE_REASON.WRITE_REQUIRES_DESKTOP_APP,
+            );
+            // Policy #78: visible + explained, never hidden.
+            expect(featureRegistry.getState(id, DEXIE_NO_KEY)).not.toBe("hidden");
+        }
+    });
+
+    it("leaves the other desktop-only members on the generic reason (#1100 boundary)", () => {
+        // The new reason belongs to the two git features alone. If it leaked
+        // into the bucket, every desktop-only surface would start claiming a
+        // write-credential limit it does not have.
+        for (const id of [
+            FEATURES.TTS,
+            FEATURES.LAN_MODE,
+            FEATURES.PANDOC_EXPORT,
+            FEATURES.GRAMMAR,
+            FEATURES.LEARNSET_EXPORT,
+            FEATURES.PORTFOLIO_BOARD,
+        ]) {
+            expect(featureRegistry.getReason(id, DEXIE_NO_KEY)).toBe(
+                FEATURE_REASON.REQUIRES_DESKTOP_APP,
+            );
+        }
     });
 
     it("gates grammar as desktop-only (server-bound, no browser path) (#34)", () => {

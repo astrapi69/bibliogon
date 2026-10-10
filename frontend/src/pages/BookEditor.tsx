@@ -226,7 +226,7 @@ export default function BookEditor() {
         t,
         navigate,
         bookId,
-        offlineGate,
+        gitDisabledReason: gitSync.isActive ? null : (gitSync.reason ?? null),
         storyBibleAvailable,
         setSelectedStoryEntityId,
         closeSidebarOnNarrow,
