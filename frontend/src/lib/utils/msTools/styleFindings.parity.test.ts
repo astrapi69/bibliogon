@@ -31,6 +31,12 @@ const CASES = record.cases as unknown as RecordedCase[];
  * consumer is a JavaScript string walk. Everything else is compared as
  * usual; the offsets are asserted to be the correct ones for this
  * runtime instead, which is the stronger claim.
+ *
+ * The divergence stays at this layer. It does NOT mean the online path is
+ * wrong: ``utils/editor/runStyleCheck`` re-indexes the backend's
+ * code-point offsets on arrival (#1039), so both modes hand the editor
+ * UTF-16. What the record holds is still the Python offsets, which is why
+ * they are excluded here rather than asserted equal.
  */
 const ASTRAL_OFFSET_CASES = new Set(["astral-before-finding"]);
 
