@@ -59,7 +59,11 @@ jobs:
   mutmut-import:
     name: mutmut (import scope)
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    # 150, not 90: closing the tests_dir drift (#722) turned 1627 no_tests
+    # mutants into mutants that actually run a test suite, and the run went
+    # from ~50 to ~73 minutes against a 90-minute cap. The allowlist is the
+    # thing that must not shrink, so the budget is what moves.
+    timeout-minutes: 150
     if: github.event_name == 'workflow_dispatch' || vars.DISABLE_NIGHTLY_MUTATION != 'true'
     steps:
       - uses: actions/checkout@v5
@@ -186,16 +190,26 @@ jobs:
       # how much do they actually pin?", which is the question a threshold
       # can answer honestly. The uncovered pool is tracked separately.
       #
-      # Baseline on the first green full run (2026-08-16, run 31964070604):
-      # 7935 killed / 2205 survived / 2781 no_tests / 7 timeout of 12928 =
-      # 78.3% exercised, 61.4% of total. The 75% default leaves ~3pp of
-      # headroom so ordinary churn does not trip it. Raise it as the score
-      # improves; override without a code change by setting the
-      # MUTATION_MIN_SCORE repository variable.
+      # Baseline on the first run with the drift closed (#722, 2026-10-10,
+      # run 38017494159): 9951 killed / 2309 survived / 1154 no_tests /
+      # 7 timeout of 13421 = 81.2% exercised, 74.1% of total, in ~73
+      # minutes. The 78% default leaves ~3pp of headroom so ordinary churn
+      # does not trip it.
+      #
+      # The previous baseline (2026-08-16, run 31964070604) read 7935 /
+      # 2205 / 2781 of 12928 = 78.3% exercised. Expanding tests_dir from 39
+      # files to 86 moved 1627 mutants out of no_tests and into a verdict,
+      # and most of them were killed - which is why the TOTAL score jumped
+      # 12.7pp while the exercised score moved 2.9pp. The exercised score is
+      # still the gate for the reason above; the total score is now worth
+      # watching because the allowlist is enforced rather than drifting.
+      #
+      # Raise it as the score improves; override without a code change by
+      # setting the MUTATION_MIN_SCORE repository variable.
       - name: Verify mutation run and score
         working-directory: backend
         env:
-          MUTATION_MIN_SCORE: ${{ vars.MUTATION_MIN_SCORE || '75.0' }}
+          MUTATION_MIN_SCORE: ${{ vars.MUTATION_MIN_SCORE || '78.0' }}
         run: |
           python <<'PY'
           import json
@@ -203,7 +217,7 @@ jobs:
           import sys
           from pathlib import Path
 
-          min_score = float(os.environ.get("MUTATION_MIN_SCORE", "75.0"))
+          min_score = float(os.environ.get("MUTATION_MIN_SCORE", "78.0"))
           stats_path = Path("mutants/mutmut-cicd-stats.json")
           if not stats_path.exists():
               sys.exit(f"{stats_path} missing -- mutmut produced no stats at all")

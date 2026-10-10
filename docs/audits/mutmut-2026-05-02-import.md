@@ -700,8 +700,60 @@ score moves as the newly-covered modules contribute their own
 kill ratio.
 
 **Reviewing this later: re-measure before trusting the threshold.** The
-75% default is calibrated against the 39-file allowlist. Expanding to 66
+75% default is calibrated against the 39-file allowlist. Expanding it
 changes both the runtime and the denominator, so the next full run's
 numbers are the new baseline — and if the runtime approaches the
 90-minute timeout, raise `timeout-minutes` rather than shrinking the
 allowlist again.
+
+### 2026-10-10 — the drift closed, and the numbers it moved
+
+Done, per that instruction. `tests_dir` went from 39 files to 86, and
+[run 38017494159](https://github.com/astrapi69/bibliogon/actions/runs/38017494159)
+is the new baseline:
+
+```
+total=13421  checked=13421  killed=9951  survived=2309
+no_tests=1154  timeout=7
+score vs total:     9951/13421 = 74.1%
+score vs exercised: 9951/12260 = 81.2%
+```
+
+| | 2026-08-16 (39 files) | 2026-10-10 (86 files) |
+|---|---|---|
+| killed | 7935 | 9951 |
+| survived | 2205 | 2309 |
+| no_tests | 2781 | 1154 |
+| exercised score | 78.3% | **81.2%** |
+| total score | 61.4% | **74.1%** |
+| wall clock | 51 min | **73 min** |
+
+The arithmetic closes: `no_tests` fell by 1627 and the mutated scope
+itself grew by 493 (source added since August), so 2120 mutants needed a
+verdict that had none before — and they came back 2016 killed against 104
+survived, 95%. That is why the total score jumped 12.7pp while the
+exercised score moved only 2.9pp. The missing files were not covering
+untested code; they were covering code the allowlist had simply stopped
+naming.
+
+Two knobs moved with the measurement, both per the instruction above:
+
+- `timeout-minutes` **90 → 150**. 73 minutes against a 90-minute cap is
+  81% of the budget, and the allowlist is the thing that must not
+  shrink.
+- `MUTATION_MIN_SCORE` **75.0 → 78.0**, keeping the same ~3pp of
+  headroom under the new exercised score. (A `MUTATION_MIN_SCORE`
+  repository variable, if one is set, still wins over this default.)
+
+**The entry above says 27 missing files. The real number was 47.** The
+grep behind it (`test files referencing app.services.* or
+app.import_plugins.*`) found 60 against 33 listed, and 60 − 33 = 27 was
+reported. Auditing every candidate for the enforcement guard found **47**
+— the grep had missed files that reach the mutated scope through a
+`TestClient` request or a transitive import rather than by naming the
+module. That is also why the guard is derived from `paths_to_mutate`
+rather than from a hand-written list: a scope widening widens the guard,
+and nobody has to re-run the grep.
+
+The remaining 1154 `no_tests` mutants are the real uncovered pool now,
+not allowlist debt. They are what a coverage follow-up should target.
