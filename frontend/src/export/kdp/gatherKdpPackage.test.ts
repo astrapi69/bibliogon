@@ -4,7 +4,10 @@ import {unzipSync, strFromU8} from "fflate";
 const {storage, mocks} = vi.hoisted(() => {
     const mocks = {
         epub: vi.fn(async () => new Blob(["EPUB"])),
-        pdf: vi.fn(async () => new Blob(["PDF"])),
+        // Typed with the geometry parameter, not just `async () =>`:
+        // the assertion below reads calls[0][1], and a zero-arg mock
+        // makes that a type error rather than a test.
+        pdf: vi.fn(async (_doc: unknown, _geometry?: unknown) => new Blob(["PDF"])),
         picturebookPdf: vi.fn(async () => new Blob(["PB"])),
         comicPdf: vi.fn(async () => new Blob(["COMIC"])),
         picturebookPages: vi.fn(async () => [{imageDataUrl: null, text: "a"}]),
