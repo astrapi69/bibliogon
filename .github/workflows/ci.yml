@@ -257,6 +257,60 @@ jobs:
       - name: Directory size ratchet
         run: python scripts/check_directory_size.py
 
+  docs-gate:
+    name: Docs build + nav sync
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Full history: mkdocs-git-revision-date-localized-plugin reads the
+      # commit date of every page and warns without it - and `--strict`,
+      # which check_mkdocs_orphans.sh runs, turns that warning into a
+      # failure.
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      # The docs toolchain has its own venv (docs/pyproject.toml), not the
+      # backend's. Separate cache key for the same reason.
+      - name: Cache Poetry virtualenv (docs)
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/pypoetry/virtualenvs
+          key: poetry-docs-${{ runner.os }}-py3.12-${{ hashFiles('docs/poetry.lock') }}
+          restore-keys: |
+            poetry-docs-${{ runner.os }}-py3.12-
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      # `sync`, not `install`: the cache restores by key PREFIX, so an exact
+      # miss hands this job the newest venv built from an OLDER lock, and
+      # `install` prunes nothing (#980).
+      - name: Install docs dependencies
+        working-directory: docs
+        run: poetry sync --no-interaction --no-ansi
+
+      # #1097: until now `mkdocs build --strict` ran only on a push to main
+      # (deploy-docs.yml, path-filtered) and on a tag (release-gate.yml), so a
+      # commit that broke the docs build merged to develop green and the
+      # release gate failed on work merged days earlier.
+      #
+      # One target covers both halves: verify-mkdocs-nav checks mkdocs.yml
+      # against the docs/help/_meta.yaml single source of truth, and
+      # check-mkdocs-orphans runs the strict build itself (exit 2 when the
+      # build fails, independently of its orphan grep - the orphan message
+      # MkDocs logs at INFO is the reason that script exists at all).
+      #
+      # Deliberately not path-filtered: a page breaks just as easily from a
+      # change outside docs/help/** - an xref target renamed, a screenshot
+      # deleted - which is exactly what the deploy workflow's filter misses.
+      - name: Docs discipline (nav sync + mkdocs build --strict)
+        run: make verify-docs-discipline
+
   commit-trailers:
     name: Commit trailers
     runs-on: ubuntu-latest
