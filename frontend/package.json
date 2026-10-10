@@ -86,7 +86,8 @@
     "tailwind-merge": "^3.6.0",
     "tiptap-footnotes": "3.0.1",
     "turndown": "^7.2.4",
-    "xstate": "^5.31.1"
+    "xstate": "^5.31.1",
+    "yaml": "2.9.1"
   },
   "devDependencies": {
     "@astrapi69/vite-plugin-build-version": "^0.1.0",
