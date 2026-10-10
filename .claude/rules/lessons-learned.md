@@ -6026,3 +6026,60 @@ A filter that fails open on an input it does not recognise inverts the usual
 is the opposite: if the shape is unfamiliar, it must still be handled, and the
 test set needs one case per accepted shape - not one case per shape you
 happened to write first.
+
+## A parity record taken below the API boundary cannot see what the route supplies
+
+Filed 2026-10-10 (#1042), from my own regression in #1041.
+
+Recording the original's behaviour and asserting the port reproduces it is a
+strong technique - it caught a real divergence in #1036 and two live bugs in
+#1041. It has one blind spot, and I walked straight into it.
+
+`styleFindings.parity.json` records `check_style(text, language)` - the
+library function, with its own defaults. But the editor does not call the
+library function; it calls `POST /api/ms-tools/check`, and that route
+resolves the thresholds first:
+
+```
+request override > Book.ms_tools_* columns > plugin YAML > code defaults
+```
+
+So the port reproduced the recorded output exactly, 27 cases green, while
+ignoring every tier of that resolution. The record could not see the gap
+because the parameter is computed one layer above the thing being recorded.
+
+### The rule
+
+When recording a reference implementation for a port, record **at the
+boundary the consumer actually calls**, not at the function that does the
+work. If that is impractical - the route needs a DB, a session, a running
+app - then enumerate what the boundary adds on top of the function and pin
+each item separately. Concretely, before declaring a port faithful, read the
+route handler and ask of every argument: *where does this value come from,
+and does my port have an equivalent source?* Three answers are legitimate:
+
+- **the port reads the same source** (here: the book's columns come through
+  the storage seam, so there was no excuse),
+- **the source has no browser equivalent** (the plugin YAML; a backendless
+  build ships none), which is a decision to state, not an omission to leave
+  implicit,
+- **the caller supplies it** (the request override), which the port's own
+  signature must then accept.
+
+### Why reading the handler is not optional
+
+The gap was invisible from every direction I had looked: the function
+signature has defaults, so calling it with two arguments compiles and runs;
+the record is derived from the same call shape, so it agrees; and the
+frontend type did not even carry the columns, so nothing failed to
+type-check. Only the route reads them. Fifteen lines of `routes.py` would
+have shown it before the merge instead of after.
+
+### Pairs with
+
+- "End-to-end behavior tests are not 'kwarg passes through' tests" - same
+  family, one layer out: that rule is about asserting a flag's observable
+  effect, this one is about which layer you record as the reference.
+- "Pre-Inspection MUST audit all callers of a touched endpoint" - the
+  caller-side twin. This is the producer side: audit what the endpoint does
+  to its inputs before mirroring the function behind it.

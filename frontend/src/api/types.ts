@@ -255,6 +255,13 @@ export interface Book {
     audiobook_filename: string | null;
     audiobook_overwrite_existing: boolean;
     audiobook_skip_chapter_types: string[];
+    /** Per-book ms-tools threshold overrides. The style check resolves
+     *  request > book > plugin config > built-in default; these are the
+     *  book tier, and the offline check reads them through the seam
+     *  (#1042). No UI writes them yet - they arrive by API or in a
+     *  restored backup. */
+    ms_tools_max_sentence_length?: number | null;
+    ms_tools_repetition_window?: number | null;
     created_at: string;
     updated_at: string;
     /** Manual chapter collections (CHAPTER-COLLECTIONS-01). Rides the
