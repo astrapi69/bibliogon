@@ -86,10 +86,19 @@ def import_backup_archive(file: UploadFile, db: Session) -> dict[str, int]:
         imported_books = 0
         imported_chapters = 0
         book_dirs = [path for path in books_dir.iterdir() if path.is_dir()]
+        restored_dirs: list[Path] = []
         for book_dir in sorted(book_dirs):
             if _restore_book_from_dir(db, book_dir):
                 imported_books += 1
                 imported_chapters += _count_chapters(book_dir)
+                restored_dirs.append(book_dir)
+        # Entity-page links come last, after every book's pages and
+        # chapters exist (#1081). A link is exported under the ENTITY's
+        # book directory and may point at a page in another one, so
+        # restoring it inside the per-book pass failed the FK whenever
+        # the entity's book sorted first - a coin flip on random book
+        # ids that 500'd the whole restore on half of all attempts.
+        _restore_entity_page_links(db, restored_dirs)
 
         # Articles segment (manifest version 2.0+). Missing directory is
         # the legacy 1.0 case - treat as zero articles, do not raise.
@@ -452,13 +461,57 @@ def _restore_book_children(db: Session, book_dir: Path) -> None:
     _restore_simple(db, book_dir / "comic_bubbles.json", ComicBubble)
     _restore_simple(db, book_dir / "story_entities.json", StoryEntity)
     db.flush()
-    _restore_simple(db, book_dir / "story_entity_page_links.json", StoryEntityPageLink)
     _restore_simple(db, book_dir / "format_states.json", BookFormatState)
     _restore_simple(db, book_dir / "aplus_content.json", AplusContent)
     _restore_simple(db, book_dir / "aplus_documents.json", AplusDocument)
     _restore_simple(db, book_dir / "publishing_state.json", BookPublishingState)
     db.flush()
     _restore_simple(db, book_dir / "arc_reviewers.json", ArcReviewer)
+
+
+def _restore_entity_page_links(db: Session, book_dirs: list[Path]) -> int:
+    """Restore every book's entity-page links, after all books (#1081).
+
+    Returns the number of links written. A link whose page or chapter is
+    not in the archive is skipped rather than inserted: a selective
+    export can carry the entity's book and not the target's, and one
+    dangling row is not worth failing a restore the user may have
+    nothing else of.
+    """
+    db.flush()
+    written = 0
+    for book_dir in book_dirs:
+        path = book_dir / "story_entity_page_links.json"
+        if not path.exists():
+            continue
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(payload, dict):
+            payload = [payload]
+        if not isinstance(payload, list):
+            continue
+        for row_data in payload:
+            if not isinstance(row_data, dict):
+                continue
+            page_id = row_data.get("page_id")
+            chapter_id = row_data.get("chapter_id")
+            if page_id and not db.get(Page, page_id):
+                logger.warning(
+                    "Skipping entity-page link %s: page %s is not in the archive",
+                    row_data.get("id"),
+                    page_id,
+                )
+                continue
+            if chapter_id and not db.get(Chapter, chapter_id):
+                logger.warning(
+                    "Skipping entity-page link %s: chapter %s is not in the archive",
+                    row_data.get("id"),
+                    chapter_id,
+                )
+                continue
+            db.add(restore_row(StoryEntityPageLink, row_data))
+            written += 1
+    db.flush()
+    return written
 
 
 def _restore_article_comments(db: Session, article_dir: Path, article_id: str) -> None:
