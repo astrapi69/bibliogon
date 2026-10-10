@@ -659,6 +659,10 @@ def update_book(
             "keywords",
             "categories",
             "bisac_codes",
+            # The AI-template column joins the list, PATCH-able since
+            # #1076; its entries are mappings rather than strings, which
+            # changes nothing about the storage shape.
+            "chapter_summaries",
         ) and isinstance(value, list):
             value = json.dumps(value)
         setattr(book, key, value)

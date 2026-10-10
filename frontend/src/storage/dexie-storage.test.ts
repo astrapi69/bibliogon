@@ -1894,3 +1894,63 @@ describe("DexieStorage — articles trash + bulk (offline seam, Bug fix)", () =>
     expect(await dexieStorage.articles.listTrash()).toHaveLength(0);
   });
 });
+
+describe("DexieStorage — the AI-template columns (#1076)", () => {
+    it("seeds an article with the defaults ArticleOut returns", async () => {
+        const created = await dexieStorage.articles.create({ title: "Offline Artikel" });
+        // Not `undefined`: an offline row that omits what the online shape
+        // always populates is the divergence `buildArticle` exists to
+        // avoid, and the one a consumer reading `.length` crashes on.
+        expect(created.featured_image_prompt).toBeNull();
+        expect(created.inline_image_prompts).toEqual([]);
+    });
+
+    it("seeds a book with the defaults BookOut returns", async () => {
+        const created = await dexieStorage.books.create({
+            title: "Offline Buch",
+            author: "A",
+        });
+        expect(created.cover_image_prompt).toBeNull();
+        expect(created.chapter_summaries).toEqual([]);
+    });
+
+    it("carries an article's prompts through update and back out of get", async () => {
+        const created = await dexieStorage.articles.create({ title: "Offline Artikel" });
+        const prompts = [{ section_hint: "Intro", prompt: "Overlapping headlines" }];
+        await dexieStorage.articles.update(created.id, {
+            featured_image_prompt: "A newspaper dissolving into pixels",
+            inline_image_prompts: prompts,
+        });
+        // Re-read rather than trusting the update's own return: the seam's
+        // contract is what the next reader sees.
+        const reread = await dexieStorage.articles.get(created.id);
+        expect(reread.featured_image_prompt).toBe("A newspaper dissolving into pixels");
+        expect(reread.inline_image_prompts).toEqual(prompts);
+    });
+
+    it("carries a book's prompt and summaries through update and back out of get", async () => {
+        const created = await dexieStorage.books.create({
+            title: "Offline Buch",
+            author: "A",
+        });
+        const summaries = [{ chapter_id: "c1", title: "Eins", summary: "Eine Zeile." }];
+        await dexieStorage.books.update(created.id, {
+            cover_image_prompt: "Hand-drawn vintage map, no text in image",
+            chapter_summaries: summaries,
+        });
+        const reread = await dexieStorage.books.get(created.id);
+        expect(reread.cover_image_prompt).toBe("Hand-drawn vintage map, no text in image");
+        expect(reread.chapter_summaries).toEqual(summaries);
+    });
+
+    it("leaves the prompts alone when an update does not mention them", async () => {
+        const created = await dexieStorage.articles.create({ title: "Offline Artikel" });
+        await dexieStorage.articles.update(created.id, {
+            featured_image_prompt: "Keep me",
+        });
+        await dexieStorage.articles.update(created.id, { title: "Umbenannt" });
+        const reread = await dexieStorage.articles.get(created.id);
+        expect(reread.title).toBe("Umbenannt");
+        expect(reread.featured_image_prompt).toBe("Keep me");
+    });
+});

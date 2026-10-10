@@ -395,6 +395,11 @@ def update_article(
     # convention as tags above.
     if "article_metadata" in updates and updates["article_metadata"] is not None:
         updates["article_metadata"] = json.dumps(updates["article_metadata"])
+    # Same encode-on-write convention for the AI-template column (#1076).
+    # The schema shape-checks the entries; what reaches the column is the
+    # JSON text ``ArticleOut``'s decoder reads back.
+    if "inline_image_prompts" in updates and updates["inline_image_prompts"] is not None:
+        updates["inline_image_prompts"] = json.dumps(updates["inline_image_prompts"])
     for key, value in updates.items():
         setattr(article, key, value)
     return repo.save(article)

@@ -111,6 +111,14 @@ export const booksApi = {
         notes?: string | null;
         /** Manual chapter collections (CHAPTER-COLLECTIONS-01). */
         collections?: import("./types").BookCollection[] | null;
+        /** UNIVERSAL-AI-TEMPLATE-01 columns (#1076). PATCH-only, like
+         *  the writing goals above. An empty `chapter_summaries` array
+         *  clears the column; an absent key leaves it alone. `null` is
+         *  not offered, because `BookOut` never returns it - the column
+         *  reads back as `[]` - and a Dexie row merged from a payload
+         *  that could carry null would not match what the API returns. */
+        cover_image_prompt?: string | null;
+        chapter_summaries?: import("./types").ChapterSummary[];
       },
     ) =>
       request<Book>(`/books/${id}`, {

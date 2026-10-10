@@ -267,6 +267,11 @@ export interface Book {
     /** Manual chapter collections (CHAPTER-COLLECTIONS-01). Rides the
      *  base Book row through the storage seam (PATCH return + offline). */
     collections?: BookCollection[] | null;
+    /** UNIVERSAL-AI-TEMPLATE-01 columns, PATCH-able since #1076 - see
+     *  the pair on `Article`. One summary per chapter, carrying the
+     *  chapter's canonical id so a re-import can match it back. */
+    cover_image_prompt?: string | null;
+    chapter_summaries?: ChapterSummary[];
 }
 
 export interface BookDetail extends Book {
@@ -573,6 +578,14 @@ export interface Article {
      *  a DB column. Drives the article-list count badge so the
      *  dashboard can render counts without an N+1 fetch per
      *  article. Defaults to 0 server-side. */
+    /** UNIVERSAL-AI-TEMPLATE-01 columns. `ArticleOut` has returned both
+     *  since that work landed; the shape here was missing them until
+     *  #1076 made them PATCH-able, which is why the offline AI-fill
+     *  omitted its `image_prompts` class for want of somewhere to
+     *  write. Prompt text for the hero image, and one
+     *  `{section_hint, prompt}` entry per in-body illustration. */
+    featured_image_prompt?: string | null;
+    inline_image_prompts?: InlineImagePrompt[];
     comments_count?: number;
 }
 
@@ -679,6 +692,12 @@ export interface ArticleUpdate {
      *  keys. */
     content_type?: ContentType;
     article_metadata?: Record<string, unknown>;
+    /** UNIVERSAL-AI-TEMPLATE-01 columns (#1076). Writable through the
+     *  same PATCH as the rest, now that the backend's `ArticleUpdate`
+     *  carries them; an empty `inline_image_prompts` array clears the
+     *  column, where an absent key leaves it alone. */
+    featured_image_prompt?: string | null;
+    inline_image_prompts?: InlineImagePrompt[];
 }
 
 // --- Publication (AR-02 Phase 2) ---
@@ -788,6 +807,23 @@ export interface DroppedChapterSummary {
     chapter_id?: string | null;
     title?: string | null;
     entry?: unknown;
+}
+
+/** One in-body illustration prompt on an Article. Mirrors the entry
+ *  shape the `.biblio.yaml` template documents: a short label saying
+ *  where the illustration goes, plus the image-generation prompt. */
+export interface InlineImagePrompt {
+    section_hint?: string | null;
+    prompt?: string | null;
+}
+
+/** One chapter summary on a Book, carrying the chapter's canonical id
+ *  so a re-imported template can be matched back to the right chapter
+ *  rather than by title alone. */
+export interface ChapterSummary {
+    chapter_id?: string | null;
+    title?: string | null;
+    summary?: string | null;
 }
 
 /** Per-record import response. ``article_id`` / ``book_id`` is
