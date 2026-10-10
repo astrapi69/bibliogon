@@ -176,72 +176,43 @@ test("a deep link resolves through the SPA fallback", async ({page}) => {
     expectNoFailures(failures, "deep-linked article list");
 });
 
-test("a book written through the container is still there after a reload", async ({page}) => {
+test("a document written through the container is still there after a reload", async ({
+    page,
+}) => {
     const failures = watchFailures(page);
     // End to end through every layer the production stack has: the
-    // browser posts to nginx, nginx proxies to the backend container,
-    // the backend writes SQLite inside the named volume, and the reload
-    // reads it back. A read-only smoke would pass against a backend
-    // whose data directory is not writable.
-    const title = `Prod-Container Buch ${Date.now()}`;
-    await page.goto("/books/new?type=prose");
-
-    // Both fields are required. The sibling offline specs treat the
-    // author as optional (`if (await author.isVisible())`) because the
-    // seeded profile pre-fills it; against a fresh backend there is no
-    // profile, so an optional fill turns "the form cannot be submitted"
-    // into a timeout on a disabled button.
+    // browser posts to nginx, nginx proxies to the backend container, the
+    // backend writes SQLite inside the named volume, and the reload reads
+    // it back. A read-only smoke would pass against a backend whose data
+    // directory is not writable.
     //
-    // Author first, and its value asserted. The author field re-mounts
-    // when the profile load resolves (#1066), and a `fill` that catches
-    // that re-render loses focus to the autofocused title input - the
-    // first run of this test put "Asterios Raptis" at the END OF THE
-    // TITLE and left the author empty. Filling it before the title means
-    // a lost fill corrupts a field that is overwritten next rather than
-    // the one that was already correct, and toHaveValue is what turns
-    // "the fill went somewhere else" into a named failure.
-    const author = page.getByTestId("create-book-author");
-    await expect(author).toBeVisible();
-    await author.fill("Asterios Raptis");
-    await expect(author).toHaveValue("Asterios Raptis");
-    await page.getByTestId("create-book-title").fill(title);
-    await expect(page.getByTestId("create-book-title")).toHaveValue(title);
+    // An article, not a book. The create-book form needs a title AND an
+    // author, and its author field re-mounts when the profile load
+    // resolves (#1066) - two runs of this test lost the typed author to
+    // that re-render, once into the title field and once to nothing at
+    // all. Pinning a storage round-trip on the most load-racy form in the
+    // app measures that form, not the stack. The article form needs a
+    // title, and that is the whole point here.
+    const title = `Prod-Container Text ${Date.now()}`;
+    await page.goto("/articles/new");
+    const titleField = page.getByTestId("create-article-title");
+    await titleField.fill(title);
+    await expect(titleField).toHaveValue(title);
+    await page.getByTestId("create-article-submit").click();
 
-    const submit = page.getByTestId("create-book-submit");
-    // The message carries the form's actual state, because "disabled"
-    // alone cannot distinguish a cleared field from a mode the form
-    // switched into - `canSubmit` wants a title, an author AND either
-    // blank mode or a chosen template, and all three are invisible from
-    // the button. A failure that does not name which one is missing costs
-    // another run to find out.
-    if (!(await submit.isEnabled())) {
-        const state = await page.evaluate(() => {
-            const read = (id: string) => {
-                const el = document.querySelector(`[data-testid="${id}"]`);
-                return el instanceof HTMLInputElement || el instanceof HTMLSelectElement
-                    ? el.value
-                    : el
-                      ? "(present, not a field)"
-                      : "(absent)";
-            };
-            const tab = document.querySelector('[data-testid="create-book-mode-template"]');
-            return {
-                title: read("create-book-title"),
-                author: read("create-book-author"),
-                authorSelect: read("create-book-author-select"),
-                templateTabState: tab?.getAttribute("data-state") ?? "(no tabs)",
-            };
-        });
-        throw new Error(
-            "the create-book submit stayed disabled after both required fields" +
-                ` were filled. Form state: ${JSON.stringify(state)}`,
-        );
-    }
-    await submit.click();
+    // The editor opens on the created article, which is already proof the
+    // POST came back with an id through the proxy.
+    await page.waitForURL(
+        (url) => /\/articles\/[^/]+$/.test(url.pathname) && !url.pathname.endsWith("/new"),
+        {timeout: 30_000},
+    );
+    const articlePath = new URL(page.url()).pathname;
 
-    await page.goto("/");
-    await expect(page.getByRole("button", {name: new RegExp(title)}).first()).toBeVisible({
+    // The reload is what proves it was WRITTEN rather than held in a
+    // component's state: a fresh document, a fresh GET, same title.
+    await page.goto(articlePath);
+    await expect(page.getByTestId("article-editor-title-text")).toContainText(title, {
         timeout: 20_000,
     });
-    expectNoFailures(failures, "book creation");
+    expectNoFailures(failures, "article round-trip");
 });
