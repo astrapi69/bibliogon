@@ -30,6 +30,7 @@ import {
     type StyleCheckOptions,
     type StyleCheckResult,
 } from "../../lib/utils/msTools/styleFindings";
+import { toUtf16Offsets } from "../../lib/utils/msTools/styleOffsets";
 
 export async function runStyleCheck(
     text: string,
@@ -38,9 +39,24 @@ export async function runStyleCheck(
 ): Promise<StyleCheckResult> {
     const storage = getStorage();
     if (storage.mode === "dexie") {
+        // Already UTF-16: the browser checker indexes the same JavaScript
+        // string the editor walks. Converting here would shift every
+        // finding a second time (#1039).
         return checkStyle(text, language, await bookThresholds(storage, bookId));
     }
-    return (await api.msTools.check(text, language, bookId)) as StyleCheckResult;
+    const result = (await api.msTools.check(
+        text,
+        language,
+        bookId,
+    )) as StyleCheckResult;
+    // The backend reports code-point offsets, because that is how Python
+    // indexes a string. The editor maps them by walking a JavaScript
+    // string, where an astral character takes two units, so without this
+    // every finding after an emoji is highlighted one character short per
+    // astral character before it (#1039). Converted on arrival rather
+    // than in the backend: the API's offsets stay meaningful to a Python
+    // consumer, and the only consumer needing UTF-16 is this one.
+    return { ...result, findings: toUtf16Offsets(text, result.findings) };
 }
 
 /**

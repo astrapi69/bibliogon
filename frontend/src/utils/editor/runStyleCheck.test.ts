@@ -33,6 +33,43 @@ describe("runStyleCheck", () => {
         vi.clearAllMocks();
     });
 
+    it("re-indexes the backend's code-point offsets to UTF-16 (#1039)", async () => {
+        // style_checker.py reports match.start(), a code-point index; the
+        // editor maps it by walking a JavaScript string. Without the
+        // conversion the decoration lands one character short per astral
+        // character before the finding.
+        const text = "\u{1F3E0} Das ist eigentlich einfach.";
+        getStorageMock.mockReturnValue({mode: "api"});
+        checkMock.mockResolvedValue({
+            findings: [{type: "filler_word", word: "eigentlich", offset: 10, length: 10}],
+            total_words: 4,
+        });
+
+        const {findings} = await runStyleCheck(text, "de", "book-1");
+
+        expect(text.slice(findings[0].offset, findings[0].offset + findings[0].length)).toBe(
+            "eigentlich",
+        );
+        expect(findings[0].offset).toBe(11);
+        // Everything else on the finding survives the rewrite.
+        expect(findings[0]).toMatchObject({type: "filler_word", word: "eigentlich"});
+    });
+
+    it("leaves the browser checker's offsets alone (#1039)", async () => {
+        // The offline checker indexes the same JavaScript string the
+        // editor walks, so its offsets are already UTF-16. Converting
+        // them too would shift every finding a second time - a bug the
+        // api-mode test above cannot see.
+        const text = "\u{1F3E0} Das ist eigentlich einfach.";
+        dexieWithBook({});
+
+        const {findings} = await runStyleCheck(text, "de", "book-1");
+
+        const filler = findings.find((f) => f.word === "eigentlich");
+        expect(filler).toBeDefined();
+        expect(text.slice(filler!.offset, filler!.offset + filler!.length)).toBe("eigentlich");
+    });
+
     it("asks the backend in api mode", async () => {
         getStorageMock.mockReturnValue({mode: "api"});
         checkMock.mockResolvedValue({findings: [], total_words: 3});
