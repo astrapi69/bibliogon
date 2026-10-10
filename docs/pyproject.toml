@@ -14,6 +14,13 @@ mkdocs-static-i18n = "^1.2.0"
 mkdocs-git-revision-date-localized-plugin = "^1.2.0"
 pyyaml = "^6.0"
 
+[tool.poetry.group.dev.dependencies]
+# In the lock, not installed ad-hoc in CI: pip-audit scans the environment
+# it runs in, so the audited environment has to equal the lockfile BY
+# CONSTRUCTION (#952, #1047). PyYAML is already a main dependency here, so
+# the accepted-advisory reader runs in this venv without another pin.
+pip-audit = "^2.10.0"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

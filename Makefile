@@ -450,7 +450,7 @@ bandit-backend: ## bandit Python SAST (medium severity + confidence; baseline: d
 # shell; only bandit Low/Medium stays warn-only. `make audit` /
 # `make security-backend` remain the push/PR gate mirrored from ci.yml.
 
-check-security: ## Dependency + SAST scan over backend + launcher + frontend (blocks on Critical/High; mirrors security-scan.yml Phase 2)
+check-security: ## Dependency + SAST scan over every tree with a lockfile (blocks on Critical/High; mirrors security-scan.yml)
 	@cd backend && poetry run python -m pip install --quiet --upgrade pip
 	cd backend && poetry run pip-audit --skip-editable \
 	  $$(poetry run python ../scripts/security_ignore_args.py)
@@ -460,7 +460,10 @@ check-security: ## Dependency + SAST scan over backend + launcher + frontend (bl
 	  --severity-level medium --confidence-level medium -q
 	cd launcher && poetry run pip-audit --skip-editable \
 	  $$(poetry run python ../scripts/security_ignore_args.py)
+	cd docs && poetry run pip-audit --skip-editable \
+	  $$(poetry run python ../scripts/security_ignore_args.py)
 	cd frontend && npm audit --audit-level=high
+	cd e2e && npm audit --audit-level=high
 
 # --- Circular dependency check (mirrors the madge step in ci.yml) ---
 # Run via npx (pinned major): madge@8's optional typescript peer is <6.1,

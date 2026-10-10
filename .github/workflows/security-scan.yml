@@ -14,7 +14,9 @@ name: Security Scan
 #   - bandit     High severity blocks; Low/Medium stay warn-only.
 #   - npm audit  --audit-level=high with a real exit code.
 # The launcher tree joined the gate in #1047: it is frozen into the binary
-# attached to every release, so its lock ships to users.
+# attached to every release, so its lock ships to users. The `e2e/` and
+# `docs/` trees joined in the same issue's phase 2 - they ship nothing, but
+# an unwatched lockfile is what #1047 is about.
 # The trigger stays Weekly + manual dispatch (no PR trigger - that gate is
 # ci.yml). A red here means a new advisory landed against a merged
 # dependency; triage it, then either fix or add a justified entry to
@@ -134,6 +136,70 @@ jobs:
           echo "accepted advisories (see .security-ignore.yml): ${IGNORE:-none}"
           poetry run pip-audit --skip-editable $IGNORE
 
+  # The last two dependency trees with their own lockfile and no gate
+  # (#1047 phase 2): `e2e/` (Playwright + axe-core) and `docs/` (MkDocs).
+  # Neither ships - the E2E suite runs in CI, the docs tree builds a static
+  # site - so a finding here is a developer-machine and CI-runner concern,
+  # not a user-facing one.
+  #
+  # Blocking anyway, which is a deliberate choice over the "advisory first"
+  # the issue proposed: an advisory job is a job nobody reads, and the whole
+  # reason #1047 exists is that an unwatched tree drifts. Both trees are
+  # small (3 dev dependencies in e2e, 5 in docs), so the cost of a red run
+  # is a bump, not an archaeology session. If a Playwright transitive ever
+  # does block a release, `.security-ignore.yml` takes a dated entry with a
+  # reason, which is a better record than a step whose output scrolls past.
+  tooling-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: e2e/package-lock.json
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      # No browsers: `npm ci` alone installs the dependency tree npm audit
+      # reads, and downloading Chromium to audit a lockfile would add two
+      # minutes for nothing.
+      - name: Install e2e dependencies
+        working-directory: e2e
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+        run: npm ci
+
+      - name: npm audit for e2e (blocks on high + critical)
+        working-directory: e2e
+        run: |
+          echo "=== npm audit, e2e tree (high + critical advisories) ==="
+          npm audit --audit-level=high
+
+      - name: Install docs dependencies (synced to the lockfile)
+        working-directory: docs
+        run: poetry sync --no-interaction --no-ansi
+
+      - name: Upgrade the venv's own pip before auditing it
+        working-directory: docs
+        run: poetry run python -m pip install --quiet --upgrade pip
+
+      # pip-audit comes from the docs venv's own lock, same as the backend
+      # and launcher jobs, so the audited environment equals the lockfile.
+      - name: pip-audit for docs (blocks on non-ignored advisories)
+        working-directory: docs
+        run: |
+          echo "=== pip-audit, docs tree (MkDocs) ==="
+          IGNORE=$(poetry run python ../scripts/security_ignore_args.py)
+          echo "accepted advisories (see .security-ignore.yml): ${IGNORE:-none}"
+          poetry run pip-audit --skip-editable $IGNORE
+
   frontend-security:
     runs-on: ubuntu-latest
     steps:
@@ -160,7 +226,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     if: always()
-    needs: [python-security, launcher-security, frontend-security]
+    needs: [python-security, launcher-security, tooling-security, frontend-security]
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
