@@ -1,8 +1,10 @@
 import {
     type Article,
     type ArticleCreate,
+    type ArticleUpdate,
     type Book,
     type BookCreate,
+    type BookUpdate,
     type ChapterLabel,
     type PageCreate,
     type StoryEntityLinkOut,
@@ -126,6 +128,91 @@ export function bookCreateFrom(book: Book): BookCreate {
         book_type: book.book_type as BookCreate["book_type"],
         status: book.status as BookCreate["status"],
     };
+}
+
+/**
+ * Keys a book restore must NOT carry, by the reason it must not.
+ *
+ * The complement of this set is what travels, so a column added to
+ * `Book` tomorrow is restored the day it lands - which is the whole
+ * point. A hand-written list of what to KEEP had drifted to ten of
+ * fifty-three fields, dropping every ISBN, every ASIN, the KDP
+ * marketing block and the audiobook configuration (#1078).
+ *
+ * - `id` - the restore assigns a new one; carrying the bundle's would
+ *   re-point the row at a book that no longer exists.
+ * - `created_at` / `updated_at` - the restoring device's, and no
+ *   update body accepts them.
+ * - `book_type` - immutable after creation; `PATCH /api/books/{id}`
+ *   answers 400 for it, so `bookCreateFrom` is the only place it may
+ *   be set.
+ * - `cover_image` - the asset importer owns it, and sets it only once
+ *   the cover bytes are actually in place. A reference restored here
+ *   would point at a file that may never arrive.
+ * - `deleted_at` - the export lists live books only, so this is always
+ *   null in a bundle; dropping it says so rather than relying on it.
+ * - `offline_available` - a Dexie-only, per-device flag (see
+ *   `OfflineBookRow`). Whether THIS device holds the book offline is
+ *   not a property of the book, so it does not travel in a backup.
+ */
+const BOOK_RESTORE_DROP_KEYS = new Set<string>([
+    "id",
+    "created_at",
+    "updated_at",
+    "book_type",
+    "cover_image",
+    "deleted_at",
+    "offline_available",
+]);
+
+/**
+ * Keys an article restore must NOT carry.
+ *
+ * Same shape as the book set. `original_published_at` and
+ * `comments_count` are computed from other rows rather than stored,
+ * and `ArticleUpdate` does not accept them; `featured_image_asset_id`
+ * is the asset importer's, like the book cover.
+ */
+const ARTICLE_RESTORE_DROP_KEYS = new Set<string>([
+    "id",
+    "created_at",
+    "updated_at",
+    "deleted_at",
+    "comments_count",
+    "original_published_at",
+    "featured_image_asset_id",
+]);
+
+function withoutKeys<T extends object>(row: T, drop: Set<string>): Record<string, unknown> {
+    return Object.fromEntries(
+        Object.entries(row).filter(([key]) => !drop.has(key)),
+    );
+}
+
+/**
+ * Everything of a backed-up book that the create call did not carry.
+ *
+ * Written through `storage.books.update` right after the create, so a
+ * restored book is the book that was exported rather than its ten
+ * best-known fields.
+ *
+ * @example
+ * const created = await storage.books.create(bookCreateFrom(book));
+ * await storage.books.update(created.id, bookRestoreFields(book));
+ */
+export function bookRestoreFields(book: Book): BookUpdate {
+    return withoutKeys(book, BOOK_RESTORE_DROP_KEYS) as BookUpdate;
+}
+
+/**
+ * Everything of a backed-up article that the create call did not carry.
+ *
+ * @example
+ * const created = await storage.articles.create(articleCreateFrom(article));
+ * await storage.articles.update(created.id, articleRestoreFields(article));
+ */
+export function articleRestoreFields(article: Article): ArticleUpdate {
+    return withoutKeys(article, ARTICLE_RESTORE_DROP_KEYS) as ArticleUpdate;
 }
 
 export function articleCreateFrom(article: Article): ArticleCreate {
@@ -254,6 +341,7 @@ export async function importFullBackup(
             continue;
         }
         const created = await storage.books.create(bookCreateFrom(book));
+        await storage.books.update(created.id, bookRestoreFields(book));
         bookIdMap.set(book.id, created.id);
         imported.books++;
         const chapters = [...(entry.chapters ?? [])].sort(
@@ -325,14 +413,7 @@ export async function importFullBackup(
         }
         const created = await storage.articles.create(articleCreateFrom(article));
         articleIdMap.set(article.id, created.id);
-        await storage.articles.update(created.id, {
-            content_json: article.content_json,
-            status: article.status,
-            tags: article.tags,
-            topic: article.topic,
-            seo_title: article.seo_title,
-            seo_description: article.seo_description,
-        });
+        await storage.articles.update(created.id, articleRestoreFields(article));
         imported.articles++;
     }
 

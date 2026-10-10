@@ -666,6 +666,30 @@ export interface ArticleAsset {
     uploaded_at: string;
 }
 
+/**
+ * PATCH body for a book - everything the row carries except what no
+ * update may change.
+ *
+ * Derived from `Book` rather than listed, so a new column is patchable
+ * the day it lands. The four exclusions mirror the backend's
+ * `BookUpdate`, which after #1076 accepts every other field of
+ * `BookOut`: `id` identifies rather than describes, the timestamps
+ * belong to the server, and `book_type` is immutable after creation
+ * (`PATCH /api/books/{id}` answers 400 for it).
+ *
+ * A hand-written counterpart to this used to live inline in
+ * `api/books.ts` and carried ten of the row's fields, which is how the
+ * client restore came to drop every ISBN and the whole KDP marketing
+ * block (#1078).
+ */
+export type BookUpdate = Partial<
+    Omit<Book, "id" | "book_type" | "created_at" | "updated_at">
+> & {
+    /** Relationship-graph node positions (STORY-BIBLE-RELATIONSHIP-GRAPH-01
+     *  C5). Persisted on the book but not part of the read shape. */
+    graph_layout?: Record<string, {x: number; y: number}> | null;
+};
+
 export interface ArticleUpdate {
     title?: string;
     subtitle?: string | null;

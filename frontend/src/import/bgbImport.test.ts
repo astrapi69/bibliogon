@@ -337,7 +337,14 @@ describe("importBgbFile", () => {
             }),
         });
         await importBgbFile(file);
-        expect(recorded.bookUpdates).toHaveLength(0);
+        // Every restored book now gets one update carrying the columns
+        // the create call does not take (#1078), so the assertion is
+        // that none of them mentions `cover_image` - not that no update
+        // happened. A reference restored without its bytes would point
+        // at a file that never arrives.
+        for (const update of recorded.bookUpdates) {
+            expect(Object.keys(update.data)).not.toContain("cover_image");
+        }
     });
 
     it("restores an article featured image and sets featured_image_asset_id", async () => {

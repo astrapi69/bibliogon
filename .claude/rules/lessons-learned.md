@@ -6283,3 +6283,74 @@ cannot see the bug, whatever its name says.
 - `coding-standards.md` "A red-pin claim needs the red run linked" - the
   corollary above is that discipline applied to a test someone else
   proposed.
+
+## A write path that enumerates fields diverges from the read path that does not
+
+Filed 2026-10-10 from #1076 and #1078, found an hour apart in the same
+audit and sharing one shape: the thing that READS an entity takes the whole
+row, the thing that WRITES it names the fields one by one, and the list goes
+stale silently because nothing compares the two.
+
+**#1076, at the API boundary.** `ArticleOut` and `BookOut` returned
+`featured_image_prompt`, `inline_image_prompts`, `cover_image_prompt` and
+`chapter_summaries`; `ArticleUpdate` and `BookUpdate` never listed them.
+Pydantic's default `extra="ignore"` makes that silent in the worst way - the
+PATCH returns 200 and writes nothing. Two AI endpoints wrote the columns by
+mutating the ORM row directly, so the columns looked alive.
+
+**#1078, at the restore boundary.** The client backup exports the whole row
+(`BackupBook.book` is a `Book`), and `bookCreateFrom` restores ten fields of
+fifty-two. Every ISBN, every ASIN, the whole KDP marketing block and the
+entire audiobook configuration are in the bundle and dropped on the way back
+in.
+
+### Why neither was caught
+
+In both cases a test existed and passed, because it tested the fields the
+list already had. The backup case is sharper: `backup-roundtrip.spec.ts` DOES
+assert `isbn_ebook` and `keywords` survive - against `/api/backup/export`,
+the BACKEND path, which is introspection-driven and therefore complete. The
+client path has its own gate, `backup-acceptance.spec.ts`, whose header
+promises to "verify EVERY entity is back" and which does exactly that, by
+entity. Not one of the dropped fields is set before its export, so not one
+can be missed after its import.
+
+So the rule is not "write more field assertions". It is:
+
+- **Compare key SETS, not values.** A test that asserts `title`, `author`
+  and `keywords` survived grows stale the day column fifty-three lands. A
+  test that takes a fully-populated row, round-trips it, and compares
+  `Object.keys` minus a named drop-list covers every future column on the
+  day it is added. The drop-list is the only thing a new column can require
+  a human to touch, and only when the column is genuinely derived.
+- **Prefer a key-drop to a key-list wherever the shapes are meant to
+  match.** `Omit<Book, "id" | "created_at" | ...>` says what must NOT travel
+  and lets everything else through; `Pick` says what may, and silently keeps
+  saying it after the entity has moved on. This is the same reasoning the
+  backend's `.bgb` `serialize_row` / `restore_row` already followed, which
+  is why the backend path has none of these holes.
+- **When one layer enumerates and another does not, measure the gap rather
+  than assuming it.** Twelve lines of Python comparing `BookOut`'s fields to
+  `BookUpdate`'s turned "are there other missing columns?" from a worry into
+  a list: after #1076 the answer is `id`, `book_type`, `created_at`,
+  `updated_at` - all deliberate. The same measurement is worth running
+  whenever a new `*Out` / `*Update` pair or a new restore path appears.
+
+### Detection
+
+```bash
+# API: fields a read model exposes that its update model will not accept.
+python3 - <<'PY'
+import re, pathlib
+s = pathlib.Path("backend/app/schemas/__init__.py").read_text()
+def fields(name):
+    m = re.search(rf"^class {name}\(BaseModel\):\n(.*?)(?=^class )", s, re.S | re.M)
+    return re.findall(r"^    ([a-z_][a-z0-9_]*)\s*:", m.group(1), re.M)
+for out, upd in (("BookOut", "BookUpdate"), ("ArticleOut", "ArticleUpdate")):
+    print(out, "->", upd, ":", [f for f in fields(out) if f not in fields(upd)])
+PY
+```
+
+Every name that comes back is either derived (correct, and belongs in a
+documented drop-list) or a column the API can show and not change. There is
+no third category.

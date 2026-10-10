@@ -80,7 +80,34 @@ test.describe("BACKUP-AKZEPTANZTEST (#61)", () => {
         await createChapter(book.id, "Kapitel 1", "Inhalt eins", "chapter");
         await createChapter(book.id, "Kapitel 2", "Inhalt zwei", "chapter");
         await createChapter(book.id, "Kapitel 3", "Inhalt drei", "chapter");
-        await createArticle("Akzeptanz Artikel", "de");
+        // #1078: the columns the client restore used to drop. The gate
+        // verified every ENTITY and almost no FIELD, which is how a
+        // restore that wrote ten of a book's fifty-three could stay
+        // green. One value per lost group: a publishing identifier, the
+        // KDP marketing block, a style threshold, the audiobook config.
+        await api(`/books/${book.id}`, {
+            method: "PATCH",
+            body: JSON.stringify({
+                isbn_ebook: "978-0-1234-5678-0",
+                keywords: ["kartografie", "feldbuch"],
+                html_description: "<p>Amazon-Beschreibung</p>",
+                backpage_author_bio: "Autorenvita",
+                notes: "Projektnotizen",
+                ms_tools_max_sentence_length: 28,
+                audiobook_skip_chapter_types: ["excerpt"],
+                cover_image_prompt: "Handgezeichnete Karte, kein Text im Bild",
+            }),
+        });
+        const acceptanceArticle = await createArticle("Akzeptanz Artikel", "de");
+        await api(`/articles/${acceptanceArticle.id}`, {
+            method: "PATCH",
+            body: JSON.stringify({
+                excerpt: "Der Anrisstext",
+                canonical_url: "https://example.invalid/akzeptanz",
+                series: "Artikelreihe",
+                featured_image_prompt: "Zeitung loest sich in Pixel auf",
+            }),
+        });
         await wipeAuthors();
         await createAuthor("Autor Eins");
         await createAuthor("Autor Zwei");
@@ -245,6 +272,34 @@ test.describe("BACKUP-AKZEPTANZTEST (#61)", () => {
                 {timeout: 15000},
             )
             .toBe(true);
+
+        // #1078: the fields, not just the rows. Read back from the API
+        // rather than from the bundle, so what is proven is the restored
+        // row.
+        const restoredBook = await api<Record<string, unknown>>(`/books/${books[0].id}`);
+        expect(restoredBook.isbn_ebook).toBe("978-0-1234-5678-0");
+        expect(restoredBook.keywords).toEqual(["kartografie", "feldbuch"]);
+        expect(restoredBook.html_description).toBe("<p>Amazon-Beschreibung</p>");
+        expect(restoredBook.backpage_author_bio).toBe("Autorenvita");
+        expect(restoredBook.notes).toBe("Projektnotizen");
+        expect(restoredBook.ms_tools_max_sentence_length).toBe(28);
+        expect(restoredBook.audiobook_skip_chapter_types).toEqual(["excerpt"]);
+        expect(restoredBook.cover_image_prompt).toBe(
+            "Handgezeichnete Karte, kein Text im Bild",
+        );
+
+        const restoredArticleId = (await getArticles()).find(
+            (a) => a.title === "Akzeptanz Artikel",
+        )!.id;
+        const restoredArticle = await api<Record<string, unknown>>(
+            `/articles/${restoredArticleId}`,
+        );
+        expect(restoredArticle.excerpt).toBe("Der Anrisstext");
+        expect(restoredArticle.canonical_url).toBe("https://example.invalid/akzeptanz");
+        expect(restoredArticle.series).toBe("Artikelreihe");
+        expect(restoredArticle.featured_image_prompt).toBe(
+            "Zeitung loest sich in Pixel auf",
+        );
 
         // #931: the comic graph must survive the round trip. Before the
         // fix the book row came back with zero pages, so every assertion
