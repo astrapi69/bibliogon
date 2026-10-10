@@ -22,7 +22,7 @@ from typing import Any
 import git
 
 from app.services.git.backup import configure_remote, repo_path
-from app.services.git.urls import split_url_credentials
+from app.services.git.credentials import split_url_credentials
 
 logger = logging.getLogger(__name__)
 

@@ -7,6 +7,13 @@ this module is the per-book convention layer.
 
 Storage layout: ``config/git_credentials/{book_id}.enc`` (Fernet-encrypted).
 Tests redirect via the ``GIT_CRED_DIR`` module attribute.
+
+Also the one place that takes a credential back OUT of a remote URL
+(:func:`split_url_credentials`, #1072), so the rest of the code can pass
+a URL around without carrying a secret in it. It lives here rather than
+in a module of its own because it is credential handling, and because
+``services/git`` is at its directory-size baseline - a 13th file would
+have to earn its place.
 """
 
 from __future__ import annotations
@@ -15,6 +22,7 @@ import contextlib
 from collections.abc import Iterator
 from pathlib import Path
 from typing import TYPE_CHECKING
+from urllib.parse import unquote, urlsplit, urlunsplit
 
 from app import credential_store
 from app.paths import get_config_dir
@@ -108,6 +116,50 @@ def ssh_env(url: str) -> dict[str, str] | None:
     key_path = ssh_keys.private_key_path().resolve()
     cmd = f'ssh -i "{key_path}" -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new'
     return {"GIT_SSH_COMMAND": cmd}
+
+
+#: Schemes whose authority can carry ``user:password@``. An scp-style
+#: ``git@host:path`` URL has no scheme at all and is left alone: its colon
+#: separates host from path, and splitting on it would corrupt every SSH
+#: remote in the app. ``ssh://`` keeps its user because that is the account
+#: name, not a secret, and git needs it to connect.
+_CREDENTIAL_SCHEMES = frozenset({"http", "https"})
+
+
+def split_url_credentials(url: str) -> tuple[str, str | None, str | None]:
+    """Split ``url`` into (credential-free URL, username, secret).
+
+    The username and secret are ``None`` when the URL carries none, and
+    the returned URL is then the input with surrounding whitespace
+    removed - byte-for-byte otherwise, so a caller can store it without
+    worrying that a round-trip rewrote something.
+
+    A percent-encoded secret is decoded, because that is what git would
+    have sent and the credential helper has to send the same thing.
+
+    Never raises: a string this cannot parse comes back unchanged, so a
+    malformed URL stays the caller's 400 rather than becoming a 500.
+    """
+    candidate = url.strip()
+    if not candidate:
+        return candidate, None, None
+    try:
+        parts = urlsplit(candidate)
+    except ValueError:
+        return candidate, None, None
+    if parts.scheme.lower() not in _CREDENTIAL_SCHEMES:
+        return candidate, None, None
+    if not parts.hostname:
+        return candidate, None, None
+    username = unquote(parts.username) if parts.username else None
+    secret = unquote(parts.password) if parts.password else None
+    if username is None and secret is None:
+        return candidate, None, None
+    netloc = parts.hostname
+    if parts.port:
+        netloc = f"{netloc}:{parts.port}"
+    clean = urlunsplit((parts.scheme, netloc, parts.path, parts.query, parts.fragment))
+    return clean, username, secret
 
 
 #: The username git is told to use alongside a PAT. GitHub ignores the

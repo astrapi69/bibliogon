@@ -35,8 +35,7 @@ from app.import_plugins import (
 )
 from app.import_plugins.protocol import DetectedProject
 from app.models import Book, BookImportSource
-from app.services.git.credentials import secret_git_env
-from app.services.git.urls import split_url_credentials
+from app.services.git.credentials import secret_git_env, split_url_credentials
 from app.services.import_staging import (
     _STAGING_DIR,
     drop_staged,

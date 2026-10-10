@@ -25,7 +25,7 @@ from sqlalchemy.orm import Session
 
 from app.models import GitSyncMapping
 from app.paths import get_upload_dir
-from app.services.git.urls import split_url_credentials
+from app.services.git.credentials import split_url_credentials
 
 logger = logging.getLogger(__name__)
 

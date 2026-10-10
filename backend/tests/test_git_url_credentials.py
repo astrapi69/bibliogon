@@ -20,7 +20,7 @@ from pathlib import Path
 
 import pytest
 
-from app.services.git.urls import split_url_credentials
+from app.services.git.credentials import split_url_credentials
 
 TOKEN = "ghp_0123456789abcdefghijklmnopqrstuvwxyz"
 
