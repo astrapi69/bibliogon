@@ -47,7 +47,7 @@ export default function AppUpdateBanner() {
   useEffect(() => subscribeToUpdates(setAvailable), []);
 
   useEffect(() => {
-    checkForUpdate();
+    void checkForUpdate();
   }, [location.pathname]);
 
   if (releaseBannerActive || !available || dismissed) return null;

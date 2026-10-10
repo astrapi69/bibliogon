@@ -29,6 +29,7 @@ class FakeWorker extends EventTarget {
 class FakeRegistration extends EventTarget {
     installing: FakeWorker | null = null;
     waiting: FakeWorker | null = null;
+    active: FakeWorker | null = null;
     update = vi.fn(() => Promise.resolve());
 }
 
@@ -215,5 +216,113 @@ describe("checkForUpdateNow", () => {
         });
         const { checkForUpdateNow } = await import("./swUpdateManager");
         await expect(checkForUpdateNow()).resolves.toBe("unsupported");
+    });
+});
+
+/**
+ * #1065: `registration.update()` rejects with `InvalidStateError` when the
+ * browser cannot name the script to re-fetch - the registration is still
+ * installing, or it was torn down under the page (storage cleared, a
+ * Danger-Zone reset, the browser's own "clear site data"). The call used to
+ * be a bare `void reg.update()`, so the rejection reached the window as an
+ * uncaught error: anything watching `window.onerror` saw it, and so did a
+ * user with the console open.
+ *
+ * These assert the contract that replaced the bare `void`: `checkForUpdate`
+ * hands back a promise that settles and never rejects. The window-level
+ * observation is NOT asserted here - happy-dom does not fire
+ * `unhandledrejection` for this, so a counter over that event is green
+ * either way. The real-browser measurement is the prod-container gate
+ * (#704), which is where the error was found.
+ */
+describe("swUpdateManager — a rejected update stays off the window (#1065)", () => {
+    function invalidState(): DOMException {
+        return new DOMException(
+            "Failed to update a ServiceWorker for scope ('http://localhost/') " +
+                "with script ('Unknown'): The object is in an invalid state.",
+            "InvalidStateError",
+        );
+    }
+
+    it("settles rather than rejecting when the cached registration throws", async () => {
+        container.controller = {};
+        teardown = initSwUpdateManager();
+        await flush();
+        registration.update = vi.fn(() => Promise.reject(invalidState()));
+
+        await expect(checkForUpdate()).resolves.toBeUndefined();
+    });
+
+    it("settles rather than rejecting on the getRegistration path", async () => {
+        registration.update = vi.fn(() => Promise.reject(invalidState()));
+
+        // No initSwUpdateManager(), so the module has no cached registration
+        // and checkForUpdate takes the getRegistration() branch.
+        await expect(checkForUpdate()).resolves.toBeUndefined();
+    });
+
+    it("settles when getRegistration itself throws", async () => {
+        container.getRegistration = () => Promise.reject(invalidState());
+
+        await expect(checkForUpdate()).resolves.toBeUndefined();
+    });
+
+    it("skips the update entirely while a worker is still installing", async () => {
+        container.controller = {};
+        teardown = initSwUpdateManager();
+        await flush();
+        registration.installing = new FakeWorker("installing");
+
+        await checkForUpdate();
+
+        // The first-load case the issue calls the one that reaches users: the
+        // page registers a worker and a focus/visibility event fires while it
+        // is still installing. There is nothing to re-fetch, so the right
+        // behaviour is not to ask.
+        expect(registration.update).not.toHaveBeenCalled();
+    });
+
+    it("skips the update when the active worker is redundant", async () => {
+        container.controller = {};
+        teardown = initSwUpdateManager();
+        await flush();
+        registration.active = new FakeWorker("redundant");
+
+        await checkForUpdate();
+
+        expect(registration.update).not.toHaveBeenCalled();
+    });
+
+    it("keeps checking after a rejected check", async () => {
+        container.controller = {};
+        teardown = initSwUpdateManager();
+        await flush();
+        const update = vi
+            .fn()
+            .mockImplementationOnce(() => Promise.reject(invalidState()))
+            .mockImplementation(() => Promise.resolve());
+        registration.update = update;
+
+        await checkForUpdate();
+        await checkForUpdate();
+
+        // A swallowed failure must not latch anything off: the next tick is
+        // the whole recovery story for a torn-down registration.
+        expect(update).toHaveBeenCalledTimes(2);
+    });
+
+    it("reports an installing worker as an update, not an error, on demand", async () => {
+        container.controller = {};
+        teardown = initSwUpdateManager();
+        await flush();
+        registration.installing = new FakeWorker("installing");
+        registration.update = vi.fn(() => Promise.reject(invalidState()));
+
+        const {checkForUpdateNow} = await import("./swUpdateManager");
+
+        // The Settings button used to call update() unguarded, so an update
+        // that was already installing resolved as "error" - the one state in
+        // which the news is good.
+        await expect(checkForUpdateNow()).resolves.toBe("update-available");
     });
 });
