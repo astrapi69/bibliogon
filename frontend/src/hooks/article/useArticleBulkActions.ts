@@ -2,6 +2,7 @@ import { useState, type Dispatch, type SetStateAction } from "react";
 import type { NavigateFunction } from "react-router-dom";
 
 import { api, ApiError, Article, BookDetail } from "../../api/client";
+import { runArticleBulkExport } from "../../export/bulk/bulkExportRun";
 import { getStorage } from "../../storage";
 import { notify } from "../../utils/platform/notify";
 import { downloadBlob } from "../../shared/utils/downloadBlob";
@@ -88,14 +89,15 @@ export function useArticleBulkActions({
         navigate(`/book/${book.id}`);
     };
 
-    /** Bulk export. Reads the current filtered list in display
-     *  order, restricts to the selected IDs, then POSTs them to the
-     *  backend bulk endpoint. The backend preserves the input order
-     *  in the response (combined sections / ZIP iteration), so the
-     *  user sees exactly what they selected, in the order they saw
-     *  it on screen. Toasts on failure with the server message
-     *  (which includes the offending article title for fail-loud
-     *  pandoc errors). */
+    /** Bulk export. Reads the current filtered list in display order and
+     *  restricts to the selected IDs, so the user sees exactly what they
+     *  selected in the order they saw it - both paths preserve that order
+     *  (combined sections / ZIP iteration on the backend, by construction
+     *  in the client engine).
+     *
+     *  `runArticleBulkExport` picks the path: the browser engine offline
+     *  (#743), the backend's Pandoc loop online. A failure names the
+     *  offending article either way. */
     const handleBulkExport = async (format: BulkExportFormat, mode: BulkExportMode) => {
         const ordered = filters.filteredArticles
             .map((a) => a.id)
@@ -103,14 +105,22 @@ export function useArticleBulkActions({
         if (ordered.length === 0) return;
         if (ordered.length > BULK_LIMIT_HARD) return; // bar already disables, double-guard.
         try {
-            const { blob, filename } = await api.articles.bulkExport(ordered, format, mode);
+            const { blob, filename } = await runArticleBulkExport(
+                ordered,
+                format,
+                mode,
+                undefined,
+                t("ui.articles.bulk.combined_title", "Artikel"),
+            );
             downloadBlob(blob, filename);
             selection.clear();
         } catch (err) {
             const message =
                 err instanceof ApiError
                     ? err.detail
-                    : t("ui.articles.bulk.export_failed", "Bulk export failed");
+                    : err instanceof Error
+                      ? err.message
+                      : t("ui.articles.bulk.export_failed", "Bulk export failed");
             notify.error(message, err);
         }
     };

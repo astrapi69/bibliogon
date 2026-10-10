@@ -1492,6 +1492,7 @@ ui:
       format_label: "Biçim"
       mode_label: "Çıktı"
       mode_zip: "ZIP arşivi"
+      combined_title: "Makaleler"
       mode_combined: "Birleştirilmiş belge"
       export_button: "Dışa aktar"
       clear_button: "Seçimi temizle"

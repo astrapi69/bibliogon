@@ -1545,6 +1545,7 @@
         "format_label": "Formato",
         "mode_label": "Salida",
         "mode_zip": "Archivo ZIP",
+        "combined_title": "Artículos",
         "mode_combined": "Documento combinado",
         "export_button": "Exportar",
         "clear_button": "Quitar selección",

@@ -1,6 +1,7 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 
 import { api, ApiError, Book } from "../../api/client";
+import { runBookBulkExport } from "../../export/bulk/bulkExportRun";
 import { getStorage } from "../../storage";
 import { downloadBlob } from "../../shared/utils/downloadBlob";
 import {
@@ -76,26 +77,30 @@ export function useDashboardBulkActions({
     const orderedSelectedIds = (): string[] =>
         filters.filteredBooks.map((b) => b.id).filter((id) => selection.isSelected(id));
 
-    /** Bulk export. Reads the current filtered list in display order,
-     *  restricts to the selected IDs, then POSTs them to the backend
-     *  bulk endpoint. The backend preserves the input order in the
-     *  response (ZIP iteration), so the user gets exactly what they
-     *  selected, in the order they saw it on screen. Toasts on
-     *  failure with the server message (which includes the offending
-     *  book's title for fail-loud Pandoc errors). */
+    /** Bulk export. Reads the current filtered list in display order and
+     *  restricts to the selected IDs, so the user gets exactly what they
+     *  selected in the order they saw it - both paths preserve that order
+     *  (the backend through ZIP iteration, the client by construction).
+     *
+     *  `runBookBulkExport` picks the path: the browser engine offline
+     *  (#743), the backend's Pandoc loop online. A failure names the
+     *  offending book either way - the server message carries its title
+     *  for fail-loud Pandoc errors, and the client wrapper adds it. */
     const handleBulkBookExport = async (format: BookBulkExportFormat) => {
         const ordered = orderedSelectedIds();
         if (ordered.length === 0) return;
         if (ordered.length > BOOK_BULK_LIMIT_HARD) return;
         try {
-            const { blob, filename } = await api.books.bulkExport(ordered, format);
+            const { blob, filename } = await runBookBulkExport(ordered, format);
             downloadBlob(blob, filename);
             selection.clear();
         } catch (err) {
             const message =
                 err instanceof ApiError
                     ? err.detail
-                    : t("ui.dashboard.bulk.export_failed", "Bulk book export failed");
+                    : err instanceof Error
+                      ? err.message
+                      : t("ui.dashboard.bulk.export_failed", "Bulk book export failed");
             notify.error(message, err);
         }
     };
