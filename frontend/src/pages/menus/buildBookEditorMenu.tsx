@@ -16,8 +16,8 @@ import {
     Share2,
 } from "lucide-react";
 
-import { type ChapterType } from "../api/client";
-import { type EditorMenuGroup } from "../lib/components/EditorMenu";
+import { type ChapterType } from "../../api/client";
+import { type EditorMenuGroup } from "../../lib/components/EditorMenu";
 
 type TranslateFn = (key: string, fallback?: string) => string;
 
@@ -31,8 +31,15 @@ export interface BookEditorMenuDeps {
     t: TranslateFn;
     navigate: NavigateFunction;
     bookId: string | undefined;
-    /** Offline (desktop-only) gate — disables the git actions with a reason. */
-    offlineGate: boolean;
+    /**
+     * The git features' reason key when they are gated, `null` when active.
+     * Read from the feature registry by the caller rather than rebuilt here:
+     * this file used to hardcode `ui.feature.requires_desktop_app` a second
+     * time, which is how it kept saying "lives in the desktop app" after
+     * #1100 gave the two git features a reason of their own (#880's
+     * pull-only direction, #991's shared origin).
+     */
+    gitDisabledReason: string | null;
     /** Whether the story-bible plugin is available (adds two Ansicht items). */
     storyBibleAvailable: boolean;
     setSelectedStoryEntityId: (id: string | null) => void;
@@ -74,7 +81,7 @@ export function buildBookEditorMenu(deps: BookEditorMenuDeps): BookEditorMenu {
         t,
         navigate,
         bookId,
-        offlineGate,
+        gitDisabledReason,
         storyBibleAvailable,
         setSelectedStoryEntityId,
         closeSidebarOnNarrow,
@@ -96,14 +103,14 @@ export function buildBookEditorMenu(deps: BookEditorMenuDeps): BookEditorMenu {
         closeSidebarOnNarrow();
     };
 
-    const disabled: Record<string, string> = offlineGate
-        ? {
-              "git-backup": t(
-                  "ui.feature.requires_desktop_app",
-                  "Nur in der Desktop-App verfügbar.",
-              ),
-              "git-sync": t("ui.feature.requires_desktop_app", "Nur in der Desktop-App verfügbar."),
-          }
+    const gitReasonText = gitDisabledReason
+        ? t(
+              gitDisabledReason,
+              "Schreibzugriff (Push) nur in der Desktop-App: im Browser teilen sich alle Projektseiten dieses Hosts eine Origin, ein schreibfähiges GitHub-Token wäre dort für jede von ihnen lesbar.",
+          )
+        : "";
+    const disabled: Record<string, string> = gitDisabledReason
+        ? { "git-backup": gitReasonText, "git-sync": gitReasonText }
         : {};
 
     const groups: EditorMenuGroup[] = [

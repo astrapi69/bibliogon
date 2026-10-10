@@ -39,10 +39,12 @@
   "frontend/src/hooks/ui": 32,
   "frontend/src/import": 14,
   "frontend/src/lib": 13,
+  "frontend/src/lib/ai/template": 12,
+  "frontend/src/lib/aplus": 13,
   "frontend/src/lib/components": 32,
   "frontend/src/lib/utils": 30,
   "frontend/src/lib/utils/content": 14,
-  "frontend/src/pages": 38,
+  "frontend/src/pages": 37,
   "frontend/src/storage": 22,
   "frontend/src/storage/dexie": 21,
   "frontend/src/utils/platform": 13
