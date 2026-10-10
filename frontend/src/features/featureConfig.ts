@@ -185,6 +185,15 @@ const ALWAYS_ACTIVE: readonly string[] = [
     // no hierarchy, nothing for a server to compute - so the sibling list,
     // the link and the unlink all run against Dexie offline (#746).
     FEATURES.TRANSLATION_LINKS,
+    // The `.biblio.yaml` round-trip runs in the browser since #745: the
+    // file is built from the record through the storage seam and a filled
+    // one is applied back through it, with the header, the field order,
+    // the field text, the apply rules and the download name all pinned
+    // against the endpoints' own recorded responses. Active in both
+    // modes - which is the point of the format, since the third workflow
+    // is a user pasting the file into an assistant that has never heard
+    // of Bibliogon.
+    FEATURES.AI_TEMPLATE_FILE_IO,
     // The bulk Export buttons render each selected book or article through
     // the same client export engine the single-file download uses, then pack
     // the results with fflate - so the ZIP and the combined document are
@@ -256,10 +265,6 @@ const NEEDS_KEY_AND_NETWORK: readonly string[] = [
  * the user owns is hidden — it stays visible and explained); online the
  * strategy abstains so the descriptor `active` default wins.
  *
- * `ai-template-file-io` is in this bucket rather than the key-dependent one:
- * the `.biblio.yaml` Export/Import round-trip calls backend `/api` with no
- * offline path, so it stays desktop-only even with a configured AI key.
- *
  * `portfolio-board` (#810) is in this bucket for the same reason as the
  * server-bound review surfaces: the per-format retail state lives in the
  * `book_format_states` table that the promotion plugin owns, with no Dexie
@@ -294,7 +299,6 @@ const DESKTOP_ONLY: readonly string[] = [
     FEATURES.TTS,
     FEATURES.LAN_MODE,
     FEATURES.PANDOC_EXPORT,
-    FEATURES.AI_TEMPLATE_FILE_IO,
     FEATURES.GRAMMAR,
 ];
 

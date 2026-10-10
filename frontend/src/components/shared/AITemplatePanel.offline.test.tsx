@@ -108,24 +108,29 @@ describe("AITemplatePanel offline (article)", () => {
         expect(fill.getAttribute("title")).toContain("Settings > AI");
     });
 
-    it("disables Export and Import offline without a key (backend-only, policy #78)", () => {
+    it("offers Export and Import offline without a key (#745)", () => {
+        // The round-trip moved into the browser in #745: the file is
+        // built from the record through the storage seam and a filled
+        // one is applied back through it. No AI key is involved - the
+        // third workflow is a user pasting the file into an assistant
+        // elsewhere, which is the reason the format exists.
         renderPanel("article", "a1", false);
         expect(
             (screen.getByTestId("ai-template-export") as HTMLButtonElement).disabled,
-        ).toBe(true);
+        ).toBe(false);
         expect(
             (screen.getByTestId("ai-template-import") as HTMLButtonElement).disabled,
-        ).toBe(true);
+        ).toBe(false);
     });
 
-    it("disables Export and Import offline even with a key (backend-only, no offline path)", () => {
+    it("offers Export and Import offline with a key as well", () => {
         renderPanel("article", "a1", true);
         expect(
             (screen.getByTestId("ai-template-export") as HTMLButtonElement).disabled,
-        ).toBe(true);
+        ).toBe(false);
         expect(
             (screen.getByTestId("ai-template-import") as HTMLButtonElement).disabled,
-        ).toBe(true);
+        ).toBe(false);
     });
 });
 
