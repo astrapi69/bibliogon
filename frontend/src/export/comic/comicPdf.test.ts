@@ -28,10 +28,22 @@ function nodes(def: Record<string, unknown>): Record<string, unknown>[] {
 }
 
 describe("comicFormatDims", () => {
-    it("defaults to the standard US comic trim", () => {
-        expect(comicFormatDims()).toEqual([477, 738]);
-        expect(comicFormatDims("nonsense")).toEqual([477, 738]);
+    it("resolves the five trims the dropdown offers", () => {
+        // The same catalogue as the picture book, because the dropdown is
+        // the same dropdown and the backend walker shares it too. A
+        // comic-specific table would fall back to its own default for any
+        // key it did not share, so the user would pick a trim and get
+        // another.
+        expect(comicFormatDims("8.5x8.5")).toEqual([612, 612]);
+        expect(comicFormatDims("8x10")).toEqual([576, 720]);
         expect(comicFormatDims("8.5x11")).toEqual([612, 792]);
+        expect(comicFormatDims("11x8.5")).toEqual([792, 612]);
+        expect(comicFormatDims("10x8")).toEqual([720, 576]);
+    });
+
+    it("defaults to the dropdown's default for a missing or unknown key", () => {
+        expect(comicFormatDims()).toEqual([612, 612]);
+        expect(comicFormatDims("6.625x10.25")).toEqual([612, 612]);
     });
 });
 

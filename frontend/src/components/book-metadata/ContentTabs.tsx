@@ -225,12 +225,18 @@ export default function ContentTabs({
                     Recurring-Component-Unification Rule's canonical 2-site
                     extract-plus-migrate). Picture-book-only — prose books
                     export via the chapter pipeline + ExportDialog. */}
-                {book.book_type === "picture_book" && (
+                {/* The two book types with a page-image PDF path. Comics
+                  * were omitted here while their PDF was backend-only;
+                  * #742 gave them a browser engine, and leaving the
+                  * Design tab picture-book-only would be the half-wired
+                  * secondary surface PDF-KDP-FORMATS-01 shipped. */}
+                {(book.book_type === "picture_book" ||
+                    book.book_type === "comic_book") && (
                     <div className={styles.row}>
                         <PdfExportControls
                             bookId={book.id}
                             testidPrefix="metadata"
-                            bookType="picture_book"
+                            bookType={book.book_type}
                             exportButtonClassName="button button-primary"
                             spinnerClassName="bookMetaSpin"
                         />

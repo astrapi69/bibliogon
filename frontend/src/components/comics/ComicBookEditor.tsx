@@ -245,7 +245,12 @@ export default function ComicBookEditor({
             onChange={handleChangeGridTemplate}
           />
         )}
-        <PdfExportControls bookId={bookId} testidPrefix="comic-book-editor" compact />
+        <PdfExportControls
+          bookId={bookId}
+          testidPrefix="comic-book-editor"
+          bookType="comic_book"
+          compact
+        />
         {fullscreen.isSupported && (
           <button
             type="button"

@@ -79,6 +79,11 @@ vi.mock("../../utils/platform/notify", () => ({
 }))
 
 // #497: the offline picture-book client path is dynamically imported.
+const mockDownloadComicPdf = vi.fn()
+vi.mock("../../export/comic/gatherComicPdf", () => ({
+    downloadComicPdf: (...args: unknown[]) => mockDownloadComicPdf(...args),
+}))
+
 const mockDownloadPicturebookPdf = vi.fn()
 vi.mock("../../export/picturebook/gatherPicturebookPdf", () => ({
     downloadPicturebookPdf: (...args: unknown[]) =>
@@ -88,6 +93,8 @@ vi.mock("../../export/picturebook/gatherPicturebookPdf", () => ({
 beforeEach(() => {
     mockDownloadPicturebookPdf.mockReset()
     mockDownloadPicturebookPdf.mockResolvedValue(undefined)
+    mockDownloadComicPdf.mockReset()
+    mockDownloadComicPdf.mockResolvedValue(undefined)
     mockDocumentExportDownload.mockReset()
     mockDocumentExportDownload.mockResolvedValue(undefined)
     mockGetApp.mockReset()
@@ -520,7 +527,11 @@ describe("PdfExportControls - offline picture-book client PDF (#497)", () => {
         expect(mockDocumentExportDownload).not.toHaveBeenCalled()
     })
 
-    it("keeps a non-picture-book (comic) backend-gated offline", async () => {
+    it("routes a comic offline export through the comic client engine (#742)", async () => {
+        // This case used to assert the opposite - comics were
+        // backend-gated offline because panels and bubbles had no browser
+        // renderer. #742 gave them one, so the pin moves with the
+        // behaviour rather than being deleted.
         renderControls(
             <PdfExportControls
                 bookId="b1"
@@ -532,11 +543,57 @@ describe("PdfExportControls - offline picture-book client PDF (#497)", () => {
         const btn = (await screen.findByTestId(
             "pe-export-pdf",
         )) as HTMLButtonElement
+        await waitFor(() => expect(btn.disabled).toBe(false))
+        fireEvent.click(btn)
+        await waitFor(() =>
+            expect(mockDownloadComicPdf).toHaveBeenCalledWith(
+                "b1",
+                "b1",
+                "8.5x8.5",
+            ),
+        )
+        expect(mockDownloadPicturebookPdf).not.toHaveBeenCalled()
+        expect(mockDocumentExportDownload).not.toHaveBeenCalled()
+    })
+
+    it("keeps a prose book backend-gated offline", async () => {
+        // The gate still exists; it is just narrower. A book type with no
+        // browser engine has to stay disabled-with-reason per policy #78
+        // rather than offering an export that cannot run.
+        renderControls(
+            <PdfExportControls bookId="b1" testidPrefix="pe" bookType="prose" />,
+            "dexie",
+        )
+        const btn = (await screen.findByTestId(
+            "pe-export-pdf",
+        )) as HTMLButtonElement
         expect(btn.disabled).toBe(true)
         fireEvent.click(btn)
         await new Promise((resolve) => setTimeout(resolve, 20))
         expect(mockDownloadPicturebookPdf).not.toHaveBeenCalled()
+        expect(mockDownloadComicPdf).not.toHaveBeenCalled()
         expect(mockDocumentExportDownload).not.toHaveBeenCalled()
+    })
+
+    it("uses the BACKEND path for a comic on a backend deployment (regression)", async () => {
+        // The high-fidelity WeasyPrint walker stays the default wherever
+        // it is available; the browser engine is the offline fallback, not
+        // a replacement.
+        renderControls(
+            <PdfExportControls
+                bookId="b1"
+                testidPrefix="pe"
+                bookType="comic_book"
+            />,
+            "api",
+        )
+        const btn = (await screen.findByTestId(
+            "pe-export-pdf",
+        )) as HTMLButtonElement
+        await waitFor(() => expect(btn.disabled).toBe(false))
+        fireEvent.click(btn)
+        await waitFor(() => expect(mockDocumentExportDownload).toHaveBeenCalled())
+        expect(mockDownloadComicPdf).not.toHaveBeenCalled()
     })
 
     it("uses the BACKEND path on a backend deployment even for a picture book (regression)", async () => {

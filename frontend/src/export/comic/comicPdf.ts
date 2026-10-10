@@ -38,16 +38,7 @@ import {
     type ComicRect,
 } from "../../lib/comics/comicGrid";
 import { renderPdfDefinition, type PdfDocDefinition } from "../formatPdf";
-
-/** KDP comic trim sizes (inches) -> pdfmake points (1 in = 72 pt). */
-export const COMIC_PDF_FORMAT_DIMS: Record<string, [number, number]> = {
-    "6.625x10.25": [477, 738], // standard US comic
-    "8.5x11": [612, 792],
-    "8.5x8.5": [612, 612],
-    "7x10": [504, 720],
-};
-
-const DEFAULT_DIMS: [number, number] = COMIC_PDF_FORMAT_DIMS["6.625x10.25"];
+import { picturebookFormatDims } from "../picturebook/picturebookPdf";
 
 /** 0.5 in page margin, as the picture-book engine uses. */
 const MARGIN = 36;
@@ -104,9 +95,18 @@ export interface ComicPdfPage {
     panels: ComicPdfPanel[];
 }
 
-/** Resolve a trim-size key to its point dimensions. */
+/**
+ * Resolve a trim-size key to its point dimensions.
+ *
+ * Deliberately the picture-book table, not a comic-specific one: the
+ * backend walker reuses the same trim catalogue for comic PDFs (Q4 a), and
+ * `PdfExportControls` offers that one list on both surfaces. A separate
+ * table here would accept the five keys the dropdown can produce and
+ * silently fall back to its own default for any it did not share, so the
+ * user would pick a trim and get another.
+ */
 export function comicFormatDims(format?: string): [number, number] {
-    return (format && COMIC_PDF_FORMAT_DIMS[format]) || DEFAULT_DIMS;
+    return picturebookFormatDims(format);
 }
 
 function clampPct(value: unknown, fallback: number): number {
