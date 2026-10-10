@@ -115,6 +115,14 @@ CASES: list[dict[str, Any]] = [
         "text": "Er sprach freundlich und handelte moeglicherweise voreilig.",
     },
     {
+        # ADVERB_SUFFIXES["de"] listed "waerts", which real prose never
+        # contains, so the -w\u00e4rts adverbs the rule exists for were
+        # invisible. Fixed in #1040; this case is what keeps it fixed.
+        "name": "adverb-de-waerts",
+        "language": "de",
+        "text": "Er ging vorw\u00e4rts und blickte r\u00fcckw\u00e4rts.",
+    },
+    {
         "name": "adverb-en",
         "language": "en",
         "text": "She quickly walked and quietly closed the door.",
@@ -150,14 +158,19 @@ CASES: list[dict[str, Any]] = [
         "text": "Meine persoenliche Meinung ist bereits schon bekannt.",
     },
     {
-        # The German redundant-phrase list is spelled with ASCII
-        # transliterations ("persoenliche", "zukuenftige"), so real
-        # German prose does not match it. Recorded so the port
-        # reproduces the list as it is, and so the day the list is
-        # corrected this case changes and says so (#1040).
+        # Was the proof of the defect: the German list was spelled in
+        # ASCII transliterations, so this text scored 0. #1040 added the
+        # real spellings beside the transliterated ones, and the record
+        # moved from 0 findings to 3 - which is what the case is now for.
         "name": "redundant-de-real-umlauts",
         "language": "de",
-        "text": "Meine pers\u00f6nliche Meinung zu den zuk\u00fcnftigen Pl\u00e4nen.",
+        # Uninflected on purpose: the phrases are matched with \\b, so
+        # "zuk\u00fcnftigen Pl\u00e4nen" would not match "zuk\u00fcnftige Pl\u00e4ne"
+        # and the case would keep reporting 0 for the wrong reason.
+        "text": (
+            "Meine pers\u00f6nliche Meinung: zuk\u00fcnftige Pl\u00e4ne "
+            "sind v\u00f6llig \u00fcberfl\u00fcssig."
+        ),
     },
     {
         "name": "redundant-en",

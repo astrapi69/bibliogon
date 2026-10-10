@@ -220,6 +220,38 @@ def test_redundant_phrase_english():
     assert "future plans" in phrases
 
 
+def test_redundant_phrase_german_real_umlauts():
+    # #1040: the list was spelled in ASCII transliterations, so the three
+    # entries carrying oe/ue/ae matched nothing a German author types.
+    text = "Meine persönliche Meinung: zukünftige Pläne sind völlig überflüssig."
+    findings = check_redundant_phrases(text, "de")
+    assert {f["word"] for f in findings} == {
+        "persönliche Meinung",
+        "zukünftige Pläne",
+        "völlig überflüssig",
+    }
+    assert {f["suggestion"] for f in findings} == {"Meinung", "Pläne", "überflüssig"}
+
+
+def test_redundant_phrase_german_keeps_matching_transliterated_input():
+    # Imported text and umlaut-less keyboards produce this spelling, and a
+    # redundancy there is still a redundancy, so both forms stay listed.
+    text = "Meine persoenliche Meinung: zukuenftige Plaene sind voellig ueberfluessig."
+    findings = check_redundant_phrases(text, "de")
+    assert {f["word"] for f in findings} == {
+        "persoenliche Meinung",
+        "zukuenftige Plaene",
+        "voellig ueberfluessig",
+    }
+
+
+def test_adverb_german_waerts_suffix_matches_real_umlauts():
+    # Same defect in ADVERB_SUFFIXES: "waerts" never fired on real prose,
+    # so the -wärts adverbs the rule exists for were invisible (#1040).
+    findings = check_adverbs("Er ging vorwärts und blickte rückwärts.", "de")
+    assert {f["word"] for f in findings} == {"vorwärts", "rückwärts"}
+
+
 def test_no_false_positive_on_clean_text():
     text = "Die Planung war erfolgreich abgeschlossen."
     findings = check_redundant_phrases(text, "de")
