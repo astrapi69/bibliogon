@@ -45,10 +45,9 @@ async function createComicBook(page: Page, title: string): Promise<string> {
     const author = page.getByTestId("create-book-author");
     if (await author.isVisible()) await author.fill("Asterios Raptis");
     await page.getByTestId("create-book-submit").click();
-    await page
-        .getByRole("button", {name: new RegExp(title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))})
-        .first()
-        .click();
+    // A comic book is a pageable type, so CreateBookPage navigates
+    // straight into the editor. The dashboard-then-click dance the prose
+    // specs do would wait for a button that is never reached.
     await page.waitForURL(/\/book\/[^/?]+/, {timeout: 20_000});
     return new URL(page.url()).pathname;
 }
