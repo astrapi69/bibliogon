@@ -154,6 +154,13 @@ def _record_case(client: TestClient, case: dict[str, Any]) -> dict[str, Any]:
     assert detect.status_code == 200, detect.text
     detected = detect.json()
 
+    # DetectedProject calls it format_name. An earlier draft read "format",
+    # got None for every case, and recorded "" sixteen times - a pin that
+    # could not have failed. Assert it is non-empty here so the record cannot
+    # go vacuous again without the recorder saying so.
+    detected_format = detected["detected"]["format_name"]
+    assert detected_format, f"{case['name']}: detect returned no format_name"
+
     execute = client.post(
         "/api/import/execute",
         json={
@@ -187,7 +194,7 @@ def _record_case(client: TestClient, case: dict[str, Any]) -> dict[str, Any]:
         return {
             "name": case["name"],
             "files": case["files"],
-            "detected_format": detected["detected"].get("format") or detected.get("format") or "",
+            "detected_format": detected_format,
             "book": row,
             "chapters": [
                 {

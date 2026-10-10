@@ -201,8 +201,12 @@ CASES: list[dict[str, Any]] = [
     },
     {
         # An author list of MAPPINGS carrying `name`, which is the
-        # Pandoc shape, plus the legacy `cover-back-page-*` sidecar
-        # names and the plain `cover` metadata key.
+        # Pandoc shape, plus the alternative spellings the parser
+        # accepts for the same three things: the legacy
+        # `cover-back-page-*` sidecar names, the plain `cover`
+        # metadata key, and `language` as the fallback for `lang`
+        # (every other case uses `lang`, so without this one a port
+        # could drop the fallback and the record would not notice).
         "name": "author-mappings-legacy-sidecars-plain-cover-key",
         "files": {
             "config/metadata.yaml": _file(
@@ -212,6 +216,7 @@ CASES: list[dict[str, Any]] = [
                 "    affiliation: Lissabon\n"
                 "  - name: Jan Berg\n"
                 "cover: assets/covers/cover.png\n"
+                "language: pt\n"
             ),
             "config/cover-back-page-description.md": _file("Alte Rückseite."),
             "config/cover-back-page-author-introduction.md": _file("Alte Biografie."),

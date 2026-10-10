@@ -42,7 +42,7 @@
           "b64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg=="
         }
       },
-      "detected_format": "",
+      "detected_format": "wbt-zip",
       "book": {
         "id": "<volatile>",
         "title": "Der Kater auf dem Dach",
@@ -163,7 +163,7 @@
           "text": "# Eins\n\nText.\n"
         }
       },
-      "detected_format": "",
+      "detected_format": "wbt-zip",
       "book": {
         "id": "<volatile>",
         "title": "Nur Paperback",
@@ -266,7 +266,7 @@
           "text": "# Glossar\n\nText.\n"
         }
       },
-      "detected_format": "",
+      "detected_format": "wbt-zip",
       "book": {
         "id": "<volatile>",
         "title": "Alphabetisch",
@@ -397,7 +397,7 @@
           "text": "# Notizen\n\nNicht importiert.\n"
         }
       },
-      "detected_format": "",
+      "detected_format": "wbt-zip",
       "book": {
         "id": "<volatile>",
         "title": "Reste",
@@ -508,7 +508,7 @@
           "text": "# Vorwort Druck\n\nText.\n"
         }
       },
-      "detected_format": "",
+      "detected_format": "wbt-zip",
       "book": {
         "id": "<volatile>",
         "title": "Druckvarianten",
@@ -605,7 +605,7 @@
           "text": "# Interlude\n\nText.\n"
         }
       },
-      "detected_format": "",
+      "detected_format": "wbt-zip",
       "book": {
         "id": "<volatile>",
         "title": "Typen",
@@ -710,7 +710,7 @@
           "text": "## Nur H2\n\nText.\n"
         }
       },
-      "detected_format": "",
+      "detected_format": "wbt-zip",
       "book": {
         "id": "<volatile>",
         "title": "Ohne H1",
@@ -798,7 +798,7 @@
           "text": "# Eins\n\nText.\n"
         }
       },
-      "detected_format": "",
+      "detected_format": "wbt-zip",
       "book": {
         "id": "<volatile>",
         "title": "Mehrere Autoren",
@@ -873,7 +873,7 @@
       "name": "author-mappings-legacy-sidecars-plain-cover-key",
       "files": {
         "config/metadata.yaml": {
-          "text": "title: Pandoc-Autoren\nauthor:\n  - name: Marta Rivers\n    affiliation: Lissabon\n  - name: Jan Berg\ncover: assets/covers/cover.png\n"
+          "text": "title: Pandoc-Autoren\nauthor:\n  - name: Marta Rivers\n    affiliation: Lissabon\n  - name: Jan Berg\ncover: assets/covers/cover.png\nlanguage: pt\n"
         },
         "config/cover-back-page-description.md": {
           "text": "Alte Rückseite."
@@ -888,13 +888,13 @@
           "b64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg=="
         }
       },
-      "detected_format": "",
+      "detected_format": "wbt-zip",
       "book": {
         "id": "<volatile>",
         "title": "Pandoc-Autoren",
         "subtitle": null,
         "author": "Marta Rivers, Jan Berg",
-        "language": "de",
+        "language": "pt",
         "series": null,
         "series_index": null,
         "description": null,
@@ -975,7 +975,7 @@
           "text": "# Eins\n\nText.\n"
         }
       },
-      "detected_format": "",
+      "detected_format": "wbt-zip",
       "book": {
         "id": "<volatile>",
         "title": "Ohne Autor",
@@ -1056,7 +1056,7 @@
           "text": "# Eins\n\nText.\n"
         }
       },
-      "detected_format": "",
+      "detected_format": "wbt-zip",
       "book": {
         "id": "<volatile>",
         "title": "Im Ordner",
@@ -1152,7 +1152,7 @@
           "text": "kein Bild"
         }
       },
-      "detected_format": "",
+      "detected_format": "wbt-zip",
       "book": {
         "id": "<volatile>",
         "title": "Bilder",
@@ -1254,7 +1254,7 @@
           "text": "# Eins\n\n<p style=\"text-align: center; position: fixed\">Zentriert</p>\n\n<p style=\"font-family: 'Arial'; color: red\">Rot</p>\n\n<p style=position:fixed>Unquoted</p>\n\n<p style=\"position: fixed\">Nur verboten</p>\n"
         }
       },
-      "detected_format": "",
+      "detected_format": "wbt-zip",
       "book": {
         "id": "<volatile>",
         "title": "Styles",
@@ -1335,7 +1335,7 @@
           "text": "---\ntitle: Eins\nposition: 0\n---\n\n# Eins\n\nText.\n"
         }
       },
-      "detected_format": "",
+      "detected_format": "wbt-zip",
       "book": {
         "id": "<volatile>",
         "title": "Frontmatter",
@@ -1416,7 +1416,7 @@
           "text": ""
         }
       },
-      "detected_format": "",
+      "detected_format": "wbt-zip",
       "book": {
         "id": "<volatile>",
         "title": "Leer",
@@ -1492,7 +1492,7 @@
           "text": "h1 { color: #333; }"
         }
       },
-      "detected_format": "",
+      "detected_format": "wbt-zip",
       "book": {
         "id": "<volatile>",
         "title": "Stil",
