@@ -1492,6 +1492,7 @@ ui:
       format_label: "Format"
       mode_label: "Sortie"
       mode_zip: "Archive ZIP"
+      combined_title: "Articles"
       mode_combined: "Document combiné"
       export_button: "Exporter"
       clear_button: "Annuler la sélection"

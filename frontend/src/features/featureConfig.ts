@@ -185,6 +185,12 @@ const ALWAYS_ACTIVE: readonly string[] = [
     // no hierarchy, nothing for a server to compute - so the sibling list,
     // the link and the unlink all run against Dexie offline (#746).
     FEATURES.TRANSLATION_LINKS,
+    // The bulk Export buttons render each selected book or article through
+    // the same client export engine the single-file download uses, then pack
+    // the results with fflate - so the ZIP and the combined document are
+    // built in the browser offline and by Pandoc online, from one branch
+    // in `bulkExportRun` (#743).
+    FEATURES.BULK_EXPORT,
     // Amazon's browse categories are reference data, not a server
     // computation, so the suggestions come from a client catalog offline
     // and the field behaves the same in both modes (#738).
@@ -278,7 +284,6 @@ const DESKTOP_ONLY: readonly string[] = [
     FEATURES.TTS,
     FEATURES.LAN_MODE,
     FEATURES.PANDOC_EXPORT,
-    FEATURES.BULK_EXPORT,
     FEATURES.AI_TEMPLATE_FILE_IO,
     FEATURES.GRAMMAR,
     FEATURES.TRANSLATION,

@@ -1503,6 +1503,7 @@
         "format_label": "Format",
         "mode_label": "Output",
         "mode_zip": "ZIP archive",
+        "combined_title": "Articles",
         "mode_combined": "Combined document",
         "export_button": "Export",
         "clear_button": "Clear selection",

@@ -7,7 +7,7 @@
  */
 
 import type { ExportDocument, ExportFormat } from "./documentModel";
-import { downloadBlob, downloadText, slugifyFilename } from "./download";
+import { downloadBlob, slugifyFilename } from "./download";
 import { toDocxBlob } from "./formatDocx";
 import { toEpubBlob } from "./formatEpub";
 import { toHtml } from "./formatHtml";
@@ -51,12 +51,31 @@ export const EXPORT_FORMATS: ExportFormat[] = [
   "latex",
 ];
 
-/** Produce + download `doc` in `format`. Binary formats lazy-load their
- *  (heavy) generator libraries; text formats are synchronous. */
-export async function downloadExport(
+/** One rendered document: the bytes plus how a browser should label them. */
+export interface RenderedExport {
+  /** The file's bytes, ready for a Blob or a ZIP entry. */
+  bytes: Uint8Array;
+  /** `<slug>.<ext>`, derived from the document title. */
+  filename: string;
+  /** Content type, with the charset for the text formats. */
+  mime: string;
+}
+
+/**
+ * Render `doc` in `format` without touching the DOM.
+ *
+ * Split out of {@link downloadExport} so the bulk path can put the same
+ * bytes into a ZIP entry instead of a download (#743). Binary formats
+ * lazy-load their (heavy) generator libraries; text formats are
+ * synchronous and are encoded as UTF-8 here.
+ *
+ * @example
+ * const { bytes, filename } = await renderExport(doc, "epub");
+ */
+export async function renderExport(
   doc: ExportDocument,
   format: ExportFormat,
-): Promise<void> {
+): Promise<RenderedExport> {
   const spec = FORMAT_SPECS[format];
   const filename = `${slugifyFilename(doc.title)}.${spec.ext}`;
 
@@ -69,8 +88,14 @@ export async function downloadExport(
           : format === "latex"
             ? toLatex(doc)
             : toText(doc);
-    downloadText(payload, filename, spec.mime);
-    return;
+    return {
+      bytes: new TextEncoder().encode(payload),
+      filename,
+      // The charset stays on the text formats: `downloadText` has always
+      // sent it, and dropping it here would change what the single-file
+      // download produces.
+      mime: `${spec.mime};charset=utf-8`,
+    };
   }
 
   const blob =
@@ -79,5 +104,18 @@ export async function downloadExport(
       : format === "epub"
         ? await toEpubBlob(doc)
         : await toDocxBlob(doc);
-  downloadBlob(blob, filename);
+  return {
+    bytes: new Uint8Array(await blob.arrayBuffer()),
+    filename,
+    mime: spec.mime,
+  };
+}
+
+/** Produce + download `doc` in `format`. */
+export async function downloadExport(
+  doc: ExportDocument,
+  format: ExportFormat,
+): Promise<void> {
+  const { bytes, filename, mime } = await renderExport(doc, format);
+  downloadBlob(new Blob([bytes as BlobPart], { type: mime }), filename);
 }

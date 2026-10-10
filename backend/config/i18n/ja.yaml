@@ -1452,6 +1452,7 @@ ui:
       format_label: "形式"
       mode_label: "出力"
       mode_zip: "ZIP アーカイブ"
+      combined_title: "記事"
       mode_combined: "結合した文書"
       export_button: "エクスポート"
       clear_button: "選択を解除"
