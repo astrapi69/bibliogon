@@ -10,14 +10,16 @@ Style checks find patterns that disrupt reading flow or make text feel vague: fi
 
 - **Filler words**: language-specific catalogs (e.g. "actually", "basically", "really" for English)
 - **Passive voice**: marks passive constructions; exceptions for scientific or formal writing
-- **Long sentences**: configurable threshold (default: 25 words)
-- **Word repetitions**: within a configurable window (default: 50 words), excluding stop words
+- **Long sentences**: configurable threshold (shipped at 30 words; 25 is the built-in fallback when the setting is absent)
+- **Word repetitions**: within a window of 50 words, excluding stop words (per-book override only; there is no plugin setting for it)
 - **Adverb density**: flags high density of -ly/-lich adverbs per paragraph
 - **Redundant phrases**: conservative list ("personal opinion", "future plans", etc.)
 
 ## Text Sanitization
 
-Cleans invisible junk from pasted content (Word, Google Docs, browsers): non-breaking spaces, zero-width characters, BOM, empty tags, style attributes, multiple whitespace. Can run manually per chapter or automatically on import.
+Cleans invisible junk from pasted content (Word, Google Docs, browsers): non-breaking spaces, zero-width characters, BOM, empty tags, style attributes, multiple whitespace. Runs automatically on import.
+
+> **Planned for a future version.** Triggering sanitization manually per chapter, and previewing what it would change before applying it, do not exist yet. Today the cleanup happens only as part of an import.
 
 ## Text Metrics
 
@@ -25,7 +27,7 @@ Cleans invisible junk from pasted content (Word, Google Docs, browsers): non-bre
 - Flesch-Kincaid readability index (language-specific variants)
 - Average sentence length and word length
 - Adjective and adverb density
-- Estimated reading time (configurable words/minute)
+- Estimated reading time (200 words/minute, fixed)
 - Filler word percentage and passive voice percentage
 
 All metrics are shown per chapter and as a book overview in the quality tab.
@@ -56,4 +58,13 @@ Two buttons at the top of the tab export the full report as **Markdown** (`.md`)
 
 ## Configuration
 
-Settings under `Settings > Plugins > Manuscript Tools`: sentence length threshold, repetition window, reading speed, filler word list (per language), auto-sanitization on import, active checks toggle. Settings are stored per book.
+Two settings under `Settings > Plugins > Manuscript Tools`, and they apply to every book:
+
+- **Sentence length threshold** (`max_sentence_length`)
+- **Auto-sanitization on import** (`auto_sanitize_on_import`)
+
+The **filler word lists** and the **allowlist** of terms excluded from every check are YAML files inside the plugin package, at `content/fillers/{lang}.yaml` and `content/allowlist/{lang}.yaml`. Edit them there; they are read at app start.
+
+A book can also carry its own thresholds (`ms_tools_max_sentence_length`, `ms_tools_repetition_window`, `ms_tools_max_filler_ratio`), which override the global defaults. Resolution order is request > book > plugin > built-in default.
+
+> **Planned for a future version.** There is no field for the per-book thresholds in the book metadata yet. They are honoured once set, but setting them currently requires the API or an imported backup.

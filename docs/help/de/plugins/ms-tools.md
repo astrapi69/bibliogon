@@ -32,13 +32,13 @@ Ausnahmen: In wissenschaftlichen Texten, Gerichtsurteilen oder wenn das Subjekt 
 
 ### Lange Sätze
 
-Sätze über 25 Wörter sind schwerer zu erfassen. Das Plugin markiert Sätze die diesen Schwellwert überschreiten und schlägt Trennpunkte vor (meist Kommas oder Konjunktionen wo der Satz natürlich geteilt werden kann).
+Sätze über 30 Wörter sind schwerer zu erfassen. Das Plugin markiert Sätze die diesen Schwellwert überschreiten und schlägt Trennpunkte vor (meist Kommas oder Konjunktionen wo der Satz natürlich geteilt werden kann).
 
-Der Schwellwert ist konfigurierbar. Für Sachbücher sind 20 Wörter typisch, für literarische Texte darf es mehr sein. In den Plugin-Einstellungen kannst du den Wert pro Buch anpassen.
+Der Schwellwert ist konfigurierbar. Für Sachbücher sind 20 Wörter typisch, für literarische Texte darf es mehr sein. Er gilt unter `Einstellungen > Plugins > Manuskript-Tools` für alle Bücher; siehe [Konfiguration](#konfiguration) für den Stand der Pro-Buch-Werte.
 
 ### Wortwiederholungen
 
-Nah aufeinander folgende Wiederholungen des gleichen Wortes wirken ungeschickt. Das Plugin markiert Wörter die innerhalb eines einstellbaren Fensters (Default: 50 Wörter) zweimal oder öfter auftauchen.
+Nah aufeinander folgende Wiederholungen des gleichen Wortes wirken ungeschickt. Das Plugin markiert Wörter die innerhalb eines Fensters von 50 Wörtern zweimal oder öfter auftauchen. Das Fenster lässt sich nur pro Buch überschreiben; eine Plugin-Einstellung dafür gibt es nicht.
 
 Häufige Ausnahmen wie "der", "die", "das", "und", "ist" werden automatisch ignoriert. Die Stoppwort-Liste ist pro Sprache vorkonfiguriert.
 
@@ -58,7 +58,9 @@ Die Liste ist klein und konservativ gehalten um Fehlalarme zu vermeiden.
 
 Wenn du Inhalte aus Word, Google Docs, Browsern oder PDFs übernimmst, schleppst du oft unsichtbaren Datenmüll mit: geschützte Leerzeichen, Unicode-Varianten von Zeichen, leere Absätze, doppelte Leerzeichen. Das fällt beim Lesen nicht auf, macht aber im Export (besonders EPUB und Audiobook) Probleme.
 
-Die Sanitization bereinigt typische Fehlerquellen auf Knopfdruck. Du kannst sie manuell auslösen oder automatisch beim Import aktivieren.
+Die Sanitization bereinigt typische Fehlerquellen beim Import.
+
+> **Geplant für eine zukünftige Version.** Ein manuelles Auslösen pro Kapitel gibt es noch nicht. Die Bereinigung läuft heute ausschließlich automatisch beim Import (siehe unten).
 
 ### Was bereinigt wird
 
@@ -89,7 +91,7 @@ Die Sanitization bereinigt typische Fehlerquellen auf Knopfdruck. Du kannst sie 
 - Absichtliche Formatierungen wie Zitate oder Code-Blöcke
 - Manuelle Zeilenumbrüche in Gedichten oder Dialogen
 
-Wenn du dir unsicher bist, aktiviere zuerst die Vorschau-Funktion die zeigt was geändert würde, bevor du die Änderungen übernimmst.
+> **Geplant für eine zukünftige Version.** Eine Vorschau, die vor dem Übernehmen zeigt was geändert würde, ist noch nicht gebaut. Beim Import wird direkt bereinigt.
 
 ### Sanitization beim Import
 
@@ -110,7 +112,7 @@ Die Basis. Pro Kapitel, pro Sektion und für das gesamte Buch.
 - Zeichen ohne Leerzeichen
 - Absätze
 - Sätze
-- Geschätzte Druckseiten (250 Wörter = 1 Seite, konfigurierbar)
+- Geschätzte Druckseiten (250 Wörter = 1 Seite, fest)
 
 ### Lesbarkeitsindex (Flesch-Kincaid)
 
@@ -145,7 +147,7 @@ Anteil von Adjektiven und Adverbien am Gesamttext. Über 15% ist ein Warnsignal.
 
 ### Lesezeit
 
-Geschätzte Lesezeit basierend auf Wortzahl und durchschnittlicher Lesegeschwindigkeit (Default: 200 Wörter pro Minute, konfigurierbar). Anzeige pro Kapitel und für das gesamte Buch.
+Geschätzte Lesezeit basierend auf Wortzahl und durchschnittlicher Lesegeschwindigkeit (200 Wörter pro Minute, fest). Anzeige pro Kapitel und für das gesamte Buch.
 
 ### Füllwort-Quote
 
@@ -189,14 +191,16 @@ Die Schwellwerte existieren auf zwei Ebenen:
 
 **Plugin-global** unter `Einstellungen > Plugins > Manuskript-Tools` (Defaults für alle Bücher):
 
-- **Satzlänge-Schwellwert**: Ab wieviel Wörtern ein Satz als lang markiert wird. Default: 25.
+- **Satzlänge-Schwellwert** (`max_sentence_length`): Ab wieviel Wörtern ein Satz als lang markiert wird. Ausgeliefert mit 30; ohne Eintrag greift der eingebaute Default 25.
 - **Auto-Sanitization beim Import**: Boolean, Default an. Säubert Markdown-Importe von unsichtbaren Unicode-Zeichen, HTML-Artefakten und typografischen Anführungszeichen.
 
-**Pro Buch** im BookEditor > Metadaten (überschreibt die globalen Defaults für dieses Buch):
+**Pro Buch** gibt es drei Spalten am Buch, die die globalen Defaults überschreiben:
 
 - **Satzlänge-Schwellwert** (`ms_tools_max_sentence_length`)
 - **Wiederholungs-Fenster** (`ms_tools_repetition_window`)
 - **Max. Füllwort-Anteil** (`ms_tools_max_filler_ratio`)
+
+> **Geplant für eine zukünftige Version.** Diese drei Werte werden respektiert, sobald sie gesetzt sind, aber es gibt noch kein Feld dafür in den Buch-Metadaten. Setzen lassen sie sich derzeit nur über die API oder ein importiertes Backup.
 
 Auflösungs-Reihenfolge: Request > Buch > Plugin-global > Built-in-Default.
 
@@ -207,7 +211,7 @@ Die **Füllwort-Listen** und die **Allowlist** (Begriffe von der Prüfung ausgen
 ## Häufige Fragen
 
 **Warum markiert das Plugin ein Wort das ich bewusst einsetze?**
-Die Stil-Checks kennen deinen Kontext nicht. Ignorier den Treffer wenn er nicht passt. Du kannst einzelne Begriffe in den Plugin-Einstellungen von der Prüfung ausnehmen.
+Die Stil-Checks kennen deinen Kontext nicht. Ignorier den Treffer wenn er nicht passt. Einzelne Begriffe lassen sich über die Allowlist von der Prüfung ausnehmen - als YAML-Datei im Plugin-Paket unter `content/allowlist/{lang}.yaml`, nicht über die Plugin-Einstellungen.
 
 **Werden meine Texte an einen Server gesendet?**
 Nein. Das komplette Plugin läuft lokal. Keine Cloud-Komponente, keine Telemetrie.
