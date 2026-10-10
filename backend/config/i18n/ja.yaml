@@ -3764,6 +3764,12 @@ ui:
     cover_load_failed: "カバーを読み込めませんでした。"
     cover_summary_ok: "カバーは KDP の要件を満たしています。"
     cover_summary_fail: "カバーは KDP の要件を満たしていません。"
+    cover_finding:
+      format_unsupported: "形式 '{format}' はサポートされていません。KDP が必要とするのは {allowed} です。"
+      file_size_exceeded: "ファイルサイズ {size} MB は上限の {max} MB を超えています。"
+      dimensions_too_small: "画像 {width}x{height} は小さすぎます。最小: {min_width}x{min_height}。"
+      dimensions_too_large: "画像 {width}x{height} は大きすぎます。最大: {max_width}x{max_height}。"
+      aspect_ratio_outside_range: "縦横比 {ratio} は推奨範囲（{min}-{max}）外です。"
     export_hint: "Bibliogon は原稿、カバー、メタデータ、KDP カバー検証レポートを含む ZIP を作成します。KDP へのアップロードはご自身で行ってください。Bibliogon が代わりにアップロードすることはありません。"
     export_generate: "KDP パッケージを作成"
     export_generating: "パッケージを作成中…"

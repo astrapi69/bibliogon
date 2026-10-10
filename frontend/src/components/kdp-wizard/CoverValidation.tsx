@@ -51,24 +51,72 @@ interface Props {
     onValidated?: (dim: ImageDimensions, issues: CoverFinding[]) => void
 }
 
-/** The wording of a finding. The rule behind it lives in `lib/kdp`.
+/** English template per code, used when a catalog has no entry yet. */
+const FINDING_FALLBACKS: Record<CoverFinding["code"], string> = {
+    format_unsupported: "Unsupported format '{format}'. KDP requires {allowed}.",
+    file_size_exceeded: "File size {size} MB exceeds the maximum {max} MB.",
+    dimensions_too_small:
+        "Image {width}x{height} is too small. Minimum: {min_width}x{min_height}.",
+    dimensions_too_large:
+        "Image {width}x{height} is too large. Maximum: {max_width}x{max_height}.",
+    aspect_ratio_outside_range:
+        "Aspect ratio {ratio} is outside the recommended range ({min}-{max}).",
+}
+
+/** What the sentence's placeholders stand for.
  *
- *  Still English-only, as it was before the rules moved out; localising
- *  these the way #889 localised the A+ findings is tracked separately. */
-function messageFor(finding: CoverFinding): string {
-    const {params} = finding
+ *  The finding carries only what was measured; the thresholds it is
+ *  measured against come from the requirements, so a changed threshold
+ *  changes the message without anyone editing eight catalogs. */
+function placeholdersFor(finding: CoverFinding): Record<string, string | number> {
+    const req = KDP_COVER_REQUIREMENTS
     switch (finding.code) {
         case "format_unsupported":
-            return `Unsupported format '${params.format}'. KDP requires JPG, JPEG, PNG, or TIFF.`
+            return {
+                format: finding.params.format,
+                allowed: req.allowedFormats.join(", ").toUpperCase(),
+            }
         case "file_size_exceeded":
-            return `File size ${params.fileSizeMb} MB exceeds the maximum ${KDP_COVER_REQUIREMENTS.maxFileSizeMb} MB.`
+            return {size: finding.params.fileSizeMb, max: req.maxFileSizeMb}
         case "dimensions_too_small":
-            return `Image ${params.width}x${params.height} is too small. Minimum: ${KDP_COVER_REQUIREMENTS.minWidth}x${KDP_COVER_REQUIREMENTS.minHeight}.`
+            return {
+                width: finding.params.width,
+                height: finding.params.height,
+                min_width: req.minWidth,
+                min_height: req.minHeight,
+            }
         case "dimensions_too_large":
-            return `Image ${params.width}x${params.height} is too large. Maximum: ${KDP_COVER_REQUIREMENTS.maxWidth}x${KDP_COVER_REQUIREMENTS.maxHeight}.`
+            return {
+                width: finding.params.width,
+                height: finding.params.height,
+                max_width: req.maxWidth,
+                max_height: req.maxHeight,
+            }
         case "aspect_ratio_outside_range":
-            return `Aspect ratio ${params.ratio} is outside the recommended range (${KDP_COVER_REQUIREMENTS.aspectRatioMin}\u2013${KDP_COVER_REQUIREMENTS.aspectRatioMax}).`
+            return {
+                ratio: finding.params.ratio,
+                min: req.aspectRatioMin,
+                max: req.aspectRatioMax,
+            }
     }
+}
+
+/** The finding's sentence in the UI language, with its numbers filled in.
+ *
+ *  Interpolation happens here rather than in `t`, which takes only a key
+ *  and a fallback - the same split `AplusFindings` uses (#889). */
+function messageFor(
+    finding: CoverFinding,
+    t: (key: string, fallback?: string) => string,
+): string {
+    const template = t(
+        `ui.kdp_publishing_wizard.cover_finding.${finding.code}`,
+        FINDING_FALLBACKS[finding.code],
+    )
+    return Object.entries(placeholdersFor(finding)).reduce(
+        (text, [name, value]) => text.replaceAll(`{${name}}`, String(value)),
+        template,
+    )
 }
 
 export default function CoverValidation({
@@ -281,7 +329,7 @@ export default function CoverValidation({
                         >
                             <AlertCircle size={14} />
                             <span style={styles.issueMessage}>
-                                {messageFor(issue)}
+                                {messageFor(issue, t)}
                             </span>
                         </li>
                     ))}
@@ -302,7 +350,7 @@ export default function CoverValidation({
                         >
                             <AlertCircle size={14} />
                             <span style={styles.issueMessage}>
-                                {messageFor(issue)}
+                                {messageFor(issue, t)}
                             </span>
                         </li>
                     ))}

@@ -3951,6 +3951,13 @@
       "cover_load_failed": "Não foi possível carregar a capa.",
       "cover_summary_ok": "A capa cumpre os requisitos da KDP.",
       "cover_summary_fail": "A capa não cumpre os requisitos da KDP.",
+      "cover_finding": {
+        "format_unsupported": "Formato '{format}' não suportado. O KDP exige {allowed}.",
+        "file_size_exceeded": "O ficheiro tem {size} MB e excede o máximo de {max} MB.",
+        "dimensions_too_small": "A imagem {width}x{height} é demasiado pequena. Mínimo: {min_width}x{min_height}.",
+        "dimensions_too_large": "A imagem {width}x{height} é demasiado grande. Máximo: {max_width}x{max_height}.",
+        "aspect_ratio_outside_range": "A proporção {ratio} está fora do intervalo recomendado ({min}-{max})."
+      },
       "export_hint": "O Bibliogon cria um ZIP com o manuscrito, a capa, os metadados e um relatório de validação da capa para a KDP. Carregue para a KDP por si próprio — o Bibliogon NÃO carrega por si.",
       "export_generate": "Criar pacote KDP",
       "export_generating": "A criar o pacote…",

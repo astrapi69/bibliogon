@@ -61,12 +61,21 @@ export const KDP_COVER_REQUIREMENTS: CoverRequirements = {
     allowedFormats: ["jpg", "jpeg", "tiff", "png"],
 };
 
-export type CoverFindingCode =
-    | "format_unsupported"
-    | "file_size_exceeded"
-    | "dimensions_too_small"
-    | "dimensions_too_large"
-    | "aspect_ratio_outside_range";
+/**
+ * Every code `validateCoverProbe` can produce, in the order it produces
+ * them. A runtime list rather than a bare union so the catalogs can be
+ * checked against it: a code added here without a translation would
+ * otherwise fall back to English in all eight languages, silently.
+ */
+export const COVER_FINDING_CODES = [
+    "format_unsupported",
+    "file_size_exceeded",
+    "dimensions_too_small",
+    "dimensions_too_large",
+    "aspect_ratio_outside_range",
+] as const;
+
+export type CoverFindingCode = (typeof COVER_FINDING_CODES)[number];
 
 export type CoverFindingField =
     | "format"

@@ -3764,6 +3764,12 @@ ui:
     cover_load_failed: "Kapak yüklenemedi."
     cover_summary_ok: "Kapak, KDP gereksinimlerini karşılıyor."
     cover_summary_fail: "Kapak, KDP gereksinimlerini karşılamıyor."
+    cover_finding:
+      format_unsupported: "'{format}' biçimi desteklenmiyor. KDP {allowed} biçimlerini ister."
+      file_size_exceeded: "Dosya {size} MB ve {max} MB üst sınırını aşıyor."
+      dimensions_too_small: "{width}x{height} boyutundaki görsel çok küçük. En az: {min_width}x{min_height}."
+      dimensions_too_large: "{width}x{height} boyutundaki görsel çok büyük. En fazla: {max_width}x{max_height}."
+      aspect_ratio_outside_range: "{ratio} en-boy oranı önerilen aralığın ({min}-{max}) dışında."
     export_hint: "Bibliogon; manuskript, kapak, meta veriler ve bir KDP kapak doğrulama raporu içeren bir ZIP oluşturur. KDP'ye kendiniz yükleyin — Bibliogon sizin yerinize YÜKLEMEZ."
     export_generate: "KDP paketi oluştur"
     export_generating: "Paket oluşturuluyor…"
