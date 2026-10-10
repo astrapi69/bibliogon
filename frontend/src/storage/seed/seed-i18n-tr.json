@@ -3961,6 +3961,7 @@
         "aspect_ratio_outside_range": "{ratio} en-boy oranı önerilen aralığın ({min}-{max}) dışında."
       },
       "export_hint": "Bibliogon; manuskript, kapak, meta veriler ve bir KDP kapak doğrulama raporu içeren bir ZIP oluşturur. KDP'ye kendiniz yükleyin — Bibliogon sizin yerinize YÜKLEMEZ.",
+      "export_client_note": "Paket bu tarayıcıda oluşturulur. İç PDF seçilen kesim boyutuna ve kenar boşluklarına sahiptir, ancak heceleme, taşma payı kutusu ve kesim işaretleri içermez — yapıyı ve sayfa sayısını kontrol etmek için uygundur; son baskı yüklemesi için masaüstü uygulamasını kullanın.",
       "export_generate": "KDP paketi oluştur",
       "export_generating": "Paket oluşturuluyor…",
       "export_done": "Paket oluşturuldu + indirildi.",

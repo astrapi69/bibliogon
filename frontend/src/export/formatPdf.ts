@@ -167,12 +167,31 @@ export async function renderPdfDefinition(
   return pdfMake.createPdf(definition).getBlob();
 }
 
+/**
+ * Page geometry for a PDF that has to come out at a specific size - a KDP
+ * print interior at a trim size and margin preset (#741). Omitted, pdfmake
+ * uses its A4 default with its own margins, which is the right answer for
+ * an ordinary export.
+ */
+export interface PdfPageGeometry {
+  /** Page box in PDF points. */
+  size: { width: number; height: number };
+  /** Margins in points, in pdfmake's [left, top, right, bottom] order. */
+  margins: [number, number, number, number];
+}
+
 /** Generate a PDF Blob for the export model. */
-export async function toPdfBlob(doc: ExportDocument): Promise<Blob> {
+export async function toPdfBlob(
+  doc: ExportDocument,
+  geometry?: PdfPageGeometry,
+): Promise<Blob> {
   return renderPdfDefinition({
     content: docToPdfContent(doc),
     styles: PDF_STYLES,
     defaultStyle: { fontSize: 11, lineHeight: 1.3 },
+    ...(geometry
+      ? { pageSize: geometry.size, pageMargins: geometry.margins }
+      : {}),
     info: {
       title: doc.title,
       author: doc.author || undefined,

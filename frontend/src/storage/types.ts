@@ -378,8 +378,11 @@ export interface CommentStorage {
  * worst of both worlds: every PATCH was rejected by the offline guard
  * and swallowed, so choices silently never persisted.
  *
- * The package build (`api.kdp.buildPackage`) stays on `api.kdp`: it
- * renders the print PDF server-side and has no browser path (#741).
+ * The package build is NOT a seam member either, but for a different
+ * reason since #741: it has a browser path now, and the choice between
+ * them is computation rather than storage. The branch lives in
+ * `export/kdp/runKdpPackage.ts`, the same shape as `runStyleCheck` and
+ * `bulkExportRun`, and the seam guard allowlists that one file.
  */
 export interface KdpStorage {
     /** Deterministic field inspection, mirrored client-side (#738), so the

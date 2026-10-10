@@ -138,14 +138,20 @@ const GUARDED: readonly GuardedNamespace[] = [
     },
     {
         // KDP wizard persistence (#737) plus the metadata check and the
-        // category catalog (#738). Guarded per-method rather than all of
-        // api.kdp: buildPackage renders the ZIP server-side and has no
-        // browser path, so it stays a direct call.
-        label: "api.kdp state, reviewer + check methods",
-        pattern:
-            /\bapi\.kdp\s*\.\s*(getPublishingState|upsertPublishingState|listReviewers|addReviewer|updateReviewer|deleteReviewer|checkMetadata|listCategories)\b/,
-        remedy: "getStorage().kdp.<same method> (see #737, #738)",
-        allowlist: IMPLEMENTATION_LAYER,
+        // category catalog (#738). The whole namespace now: buildPackage
+        // was the one exception, and since #741 it has a browser path too.
+        label: "api.kdp",
+        pattern: /\bapi\.kdp\b/,
+        remedy:
+            "getStorage().kdp.<same method> for state + checks (#737, #738), " +
+            "runKdpPackage() for the package build (#741)",
+        allowlist: new Set([
+            ...IMPLEMENTATION_LAYER,
+            // The one branch that decides server-vs-browser, which is
+            // where the direct call belongs - the same shape as
+            // runStyleCheck and bulkExportRun.
+            "export/kdp/runKdpPackage.ts",
+        ]),
     },
     {
         // ms-tools: the whole namespace. The style check runs in the

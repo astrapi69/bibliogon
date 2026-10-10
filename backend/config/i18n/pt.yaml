@@ -3773,6 +3773,7 @@ ui:
       dimensions_too_large: "A imagem {width}x{height} é demasiado grande. Máximo: {max_width}x{max_height}."
       aspect_ratio_outside_range: "A proporção {ratio} está fora do intervalo recomendado ({min}-{max})."
     export_hint: "O Bibliogon cria um ZIP com o manuscrito, a capa, os metadados e um relatório de validação da capa para a KDP. Carregue para a KDP por si próprio — o Bibliogon NÃO carrega por si."
+    export_client_note: "O pacote é criado neste navegador. O PDF do interior tem o tamanho de corte e as margens escolhidos, mas sem hifenização, sem caixa de sangria e sem marcas de corte — bom para verificar a estrutura e o número de páginas; para o carregamento final de impressão use a aplicação de computador."
     export_generate: "Criar pacote KDP"
     export_generating: "A criar o pacote…"
     export_done: "Pacote criado + transferido."

@@ -1,10 +1,12 @@
 /**
  * KDP Publishing Wizard — Step 3: Export Package.
  *
- * Triggers the backend's ``POST /api/kdp/package/{book_id}``
- * endpoint, which builds the KDP-ready ZIP (per A4 layout) and
- * streams it back as a FileResponse. The component then triggers
- * a browser download.
+ * Builds the KDP-ready ZIP and triggers a browser download.
+ * ``runKdpPackage`` picks the path: the backend's
+ * ``POST /api/kdp/package/{book_id}`` online, the client assembler
+ * offline (#741). Offline the step says so before the user clicks,
+ * because the interior comes out of pdfmake rather than WeasyPrint
+ * and a proof PDF presented as press-ready is the wrong surprise.
  *
  * UX states:
  *   - Idle (initial)         — "Generate Package" button
@@ -23,7 +25,8 @@
 import {useState} from "react"
 import {Download, Loader2, CheckCircle, AlertCircle, Package} from "lucide-react"
 
-import {BookDetail, ApiError, api} from "../../api/client"
+import {BookDetail, ApiError} from "../../api/client"
+import {runKdpPackage, usesClientKdpPackage} from "../../export/kdp/runKdpPackage"
 import {useI18n} from "../../hooks/useI18n"
 import type {FormatState} from "./machines/types"
 
@@ -84,6 +87,10 @@ export default function ExportPackage({
 }: Props) {
     const {t} = useI18n()
     const [state, setState] = useState<State>({kind: "idle"})
+    // Read once per render rather than held in state: the storage mode can
+    // flip mid-session (the connectivity monitor), and a note cached at
+    // mount would describe the wrong builder.
+    const clientBuilt = usesClientKdpPackage()
 
     // Last step — Finish is always available. Report can-advance
     // = true once on mount so the wizard's nav contract is clean.
@@ -107,9 +114,9 @@ export default function ExportPackage({
         // ``exporting`` state.
         onGenerate?.()
         try {
-            const {blob, filename} = await api.kdp.buildPackage(book.id, {
-                format_kind: format.kind,
-                trim_size: format.trim_size,
+            const {blob, filename} = await runKdpPackage(book, {
+                formatKind: format.kind,
+                trimSize: format.trim_size,
                 margin: format.margin,
             })
             const url = triggerDownload(blob, filename)
@@ -153,6 +160,18 @@ export default function ExportPackage({
                     "Bibliogon erstellt ein ZIP mit Manuskript, Cover, Metadaten und einem KDP-Cover-Validierungsbericht. Bei KDP hochladen — Bibliogon lädt NICHT für dich hoch.",
                 )}
             </p>
+
+            {clientBuilt && (
+                <p
+                    style={styles.fidelityNote}
+                    data-testid="kdp-publishing-wizard-step-2-client-note"
+                >
+                    {t(
+                        "ui.kdp_publishing_wizard.export_client_note",
+                        "Das Paket wird in diesem Browser erstellt. Das Innen-PDF hat die gewählte Trimmgrösse und Ränder, aber keine Silbentrennung, keine Beschnittzugabe-Box und keine Schnittmarken — gut zum Prüfen von Struktur und Seitenzahl, für den finalen Druck-Upload nimm die Desktop-App.",
+                    )}
+                </p>
+            )}
 
             <ul style={styles.contentList}>
                 <li>
@@ -268,6 +287,16 @@ export default function ExportPackage({
 const styles: Record<string, React.CSSProperties> = {
     stepContent: {
         minHeight: 280,
+    },
+    fidelityNote: {
+        fontSize: "0.8125rem",
+        color: "var(--text-muted)",
+        background: "var(--bg-secondary)",
+        border: "1px solid var(--border)",
+        borderRadius: "var(--radius-sm)",
+        padding: "10px 12px",
+        marginBottom: 16,
+        lineHeight: 1.5,
     },
     hint: {
         fontSize: "0.875rem",
