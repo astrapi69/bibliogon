@@ -134,6 +134,15 @@ async function openExportStep(page: Page): Promise<void> {
     // disabled, and a bare click would time out without saying which step
     // refused.
     for (const step of [1, 2, 3, 4]) {
+        if (step === 3) {
+            // The pricing step's ADVANCE guard is `royalty_plan !== null`
+            // and nothing preselects one, so the walk has to make the
+            // choice a user would. Which plan is picked never reaches the
+            // package - it only unlocks the step.
+            await page
+                .getByTestId("kdp-publishing-wizard-step-2-royalty-70")
+                .check();
+        }
         const next = page.getByTestId(`kdp-publishing-wizard-step-${step}-next`);
         await expect(next, `step ${step} would not let the wizard advance`).toBeEnabled({
             timeout: 15_000,
