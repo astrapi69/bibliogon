@@ -103,6 +103,14 @@ function watchFailures(page: Page): PageFailures {
     });
     page.on("requestfailed", (request) => {
         const failure = request.failure()?.errorText ?? "unknown";
+        // A navigation cancels whatever was still in flight, and Chromium
+        // reports each of those as ERR_ABORTED - three of them on this
+        // suite's reload, all requests the page no longer needed. Nothing
+        // this gate is looking for arrives under that text: a blocked
+        // resource is ERR_BLOCKED_BY_CSP or ERR_BLOCKED_BY_CLIENT, a dead
+        // host is ERR_CONNECTION_REFUSED, and a 404 produces a response
+        // rather than a failure.
+        if (failure === "net::ERR_ABORTED") return;
         failures.requests.push(`${request.method()} ${request.url()} - ${failure}`);
     });
     page.on("response", (response) => {
