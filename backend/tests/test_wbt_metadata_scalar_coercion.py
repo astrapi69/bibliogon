@@ -109,9 +109,7 @@ class TestOtherNumericScalars:
         assert _detect(path).publisher == "42"
 
     def test_a_numeric_isbn_becomes_its_digits(self, tmp_path: Path) -> None:
-        path = _zip_with_metadata(
-            tmp_path, "title: T\nauthor: A\nisbn:\n  ebook: 9783000000010\n"
-        )
+        path = _zip_with_metadata(tmp_path, "title: T\nauthor: A\nisbn:\n  ebook: 9783000000010\n")
         assert _detect(path).isbn_ebook == "9783000000010"
 
     def test_a_numeric_identifiers_isbn_becomes_its_digits(self, tmp_path: Path) -> None:
@@ -139,3 +137,66 @@ class TestOtherNumericScalars:
         detected = _detect(path)
         assert detected.series == "R"
         assert detected.series_index is None
+
+
+class TestContainerValuesAreNotScalars:
+    """A list or a mapping where a scalar belongs (#1103).
+
+    ``_scalar`` used ``str(value)`` for anything that was not None and
+    not a date, so a container reached the field as its Python repr -
+    a book whose title is the literal ``['A', 'B']``, visible on the
+    dashboard, in the editor header and in every export. Same family as
+    the ``"None"`` string #1086 closed and the 500 #1091 closed: an
+    untyped YAML value reaching a field declared ``str | None``.
+    """
+
+    def test_a_list_title_does_not_become_its_repr(self, tmp_path: Path) -> None:
+        # detect resolves the title fallback itself, so the assertion is
+        # "the project's name, not the YAML literal" rather than None.
+        path = _zip_with_metadata(
+            tmp_path, "title:\n  - Erster Teil\n  - Zweiter Teil\nauthor: A\n"
+        )
+        assert _detect(path).title == "book"
+
+    def test_a_mapping_publisher_does_not_become_its_repr(self, tmp_path: Path) -> None:
+        path = _zip_with_metadata(
+            tmp_path, "title: T\nauthor: A\npublisher:\n  name: Eigenverlag\n  city: Zuerich\n"
+        )
+        assert _detect(path).publisher is None
+
+    def test_a_list_keyword_field_survives(self, tmp_path: Path) -> None:
+        """Boundary: ``keywords`` is read by its own parser, which WANTS
+        a list, so the container rule must not reach it. DetectedProject
+        carries the list; the Book column carries it JSON-encoded."""
+        path = _zip_with_metadata(tmp_path, "title: T\nauthor: A\nkeywords:\n  - eins\n  - zwei\n")
+        assert _detect(path).keywords == ["eins", "zwei"]
+        assert _import(path).keywords == '["eins", "zwei"]'
+
+    def test_the_nested_readers_still_reach_their_leaves(self, tmp_path: Path) -> None:
+        """Boundary: ``series``, ``isbn``, ``asin`` and ``identifiers``
+        are mappings on purpose. They index into the container and call
+        ``_scalar`` on the leaf, so the rule must not blank them."""
+        path = _zip_with_metadata(
+            tmp_path,
+            "title: T\nauthor: A\n"
+            "series:\n  title: Reihe\n  volume: 3\n"
+            "isbn:\n  ebook: 978-3-000000-01-0\n"
+            "asin:\n  paperback: B0TEST0002\n"
+            "identifiers:\n  isbn_hardcover: 978-3-000000-03-4\n",
+        )
+        detected = _detect(path)
+        assert detected.series == "Reihe"
+        assert detected.series_index == 3
+        assert detected.isbn_ebook == "978-3-000000-01-0"
+        assert detected.asin_paperback == "B0TEST0002"
+        assert detected.isbn_hardcover == "978-3-000000-03-4"
+
+    def test_a_list_title_falls_back_to_the_project_name_on_import(self, tmp_path: Path) -> None:
+        """The import path, not just detect: a blanked title falls back
+        to the project directory's name, which is what the user sees."""
+        path = _zip_with_metadata(
+            tmp_path, "title:\n  - Erster Teil\nauthor: A\n", name="mein-buch.zip"
+        )
+        book = _import(path)
+        assert book.title == "book"
+        assert "[" not in book.title

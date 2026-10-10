@@ -70,11 +70,23 @@ def _scalar(value: Any) -> str | None:
     None and whitespace-only collapse to None rather than to the string
     "None" - the same trap #1086 closed in the A+ generator, in a
     second file.
+
+    A container is not a scalar, so a list or a mapping where one of
+    these fields belongs collapses to None rather than to its Python
+    repr (#1103). Without that, ``title: [a, b]`` imported a book whose
+    title was the literal ``['a', 'b']`` - visible on the dashboard, in
+    the editor header and in every export, which is quieter than the
+    500 #1091 produced and therefore worse. The readers that WANT a
+    container (``series``, ``isbn``, ``asin``, ``identifiers``,
+    ``keywords``, ``author``) index into it first and call this on the
+    leaf, so they are unaffected.
     """
     if value is None:
         return None
     if isinstance(value, (datetime.date, datetime.datetime)):
         return value.isoformat()
+    if isinstance(value, (list, tuple, set, dict)):
+        return None
     text = str(value).strip()
     return text or None
 
