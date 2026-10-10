@@ -320,3 +320,89 @@ describe("AuthorSelectInput — profile select mode", () => {
         expect(screen.getByTestId("test-prefix-author")).toBeInTheDocument();
     });
 });
+
+/**
+ * Label association (#1066). Three call sites render their own
+ * ``<label htmlFor>`` next to this component - CreateBookForm,
+ * WizardStepsBig and MetadataFields - so the control that is on screen
+ * has to be the one carrying the canonical id. Which control that is
+ * depends on whether there are profile identities to pick between, and
+ * the id logic used to key off custom mode instead, leaving the only
+ * visible input with the ``-custom`` suffix whenever there was no
+ * select. These render the label the call sites render and ask the DOM
+ * the question a screen reader asks.
+ */
+describe("AuthorSelectInput — label association", () => {
+    function withLabel(props: Record<string, unknown>) {
+        return render(
+            <>
+                <label htmlFor="test-prefix-author">Autor</label>
+                <AuthorSelectInput
+                    {...({
+                        value: "",
+                        onChange: vi.fn(),
+                        suggestions: [],
+                        showAddToAuthorsCheckbox: false,
+                        addToAuthorsDb: false,
+                        onAddToAuthorsDbChange: vi.fn(),
+                        testidPrefix: "test-prefix",
+                        addToAuthorsLabel: "",
+                        customOptionLabel: "Anderer Name …",
+                        ...props,
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    } as any)}
+                />
+            </>,
+        );
+    }
+
+    it("points the label at the free-text input when there is no profile select", () => {
+        withLabel({});
+        expect(screen.getByLabelText("Autor")).toBe(
+            screen.getByTestId("test-prefix-author"),
+        );
+    });
+
+    it("points the label at the free-text input for a single-name profile", () => {
+        withLabel({profileChoices: ["Asterios Raptis"]});
+        expect(screen.getByLabelText("Autor")).toBe(
+            screen.getByTestId("test-prefix-author"),
+        );
+    });
+
+    it("points the label at the select when there are identities to pick between", () => {
+        withLabel({
+            value: "Asterios Raptis",
+            profileChoices: ["Asterios Raptis", "Draven Quantum"],
+        });
+        expect(screen.getByLabelText("Autor")).toBe(
+            screen.getByTestId("test-prefix-author-select"),
+        );
+    });
+
+    it("moves the label onto the free-text input once custom mode is entered", () => {
+        withLabel({
+            value: "Asterios Raptis",
+            profileChoices: ["Asterios Raptis", "Draven Quantum"],
+        });
+        fireEvent.change(screen.getByTestId("test-prefix-author-select"), {
+            target: {value: "__author_custom__"},
+        });
+        expect(screen.getByLabelText("Autor")).toBe(
+            screen.getByTestId("test-prefix-author"),
+        );
+    });
+
+    it("keeps one element owning the id, never two", () => {
+        const {container} = withLabel({
+            value: "Asterios Raptis",
+            profileChoices: ["Asterios Raptis", "Draven Quantum"],
+        });
+        fireEvent.change(screen.getByTestId("test-prefix-author-select"), {
+            target: {value: "__author_custom__"},
+        });
+        expect(
+            container.querySelectorAll("#test-prefix-author"),
+        ).toHaveLength(1);
+    });
+});
