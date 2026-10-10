@@ -31,8 +31,19 @@ vi.mock("../../hooks/useI18n", () => ({
     }),
 }))
 
-const {mockBuildPackage} = vi.hoisted(() => ({
+const {mockBuildPackage, mockRunKdpPackage, mockUsesClient} = vi.hoisted(() => ({
     mockBuildPackage: vi.fn(),
+    mockRunKdpPackage: vi.fn(),
+    mockUsesClient: vi.fn(() => false),
+}))
+
+// The router is mocked rather than the storage mode, so these tests pin
+// what the COMPONENT does with the branch - renders the note, calls the
+// router once, passes the wizard's format through - and the branch itself
+// is pinned where it lives, in runKdpPackage.test.ts.
+vi.mock("../../export/kdp/runKdpPackage", () => ({
+    runKdpPackage: mockRunKdpPackage,
+    usesClientKdpPackage: mockUsesClient,
 }))
 
 vi.mock("../../api/client", async () => {
@@ -108,6 +119,20 @@ function makeBook(): BookDetail {
 describe("ExportPackage", () => {
     beforeEach(() => {
         vi.clearAllMocks()
+        // Online by default, which is what the pre-#741 tests below
+        // assume; the offline cases set it themselves.
+        mockUsesClient.mockReturnValue(false)
+        mockRunKdpPackage.mockImplementation((...args: unknown[]) => {
+            const [book, options] = args as [
+                {id: string},
+                {formatKind: string; trimSize?: string; margin?: string},
+            ]
+            return mockBuildPackage(book.id, {
+                format_kind: options.formatKind,
+                trim_size: options.trimSize,
+                margin: options.margin,
+            })
+        })
         // Stub URL.createObjectURL / revokeObjectURL because happy-
         // dom doesn't implement them by default.
         global.URL.createObjectURL = vi.fn(() => "blob:mock-url")
@@ -293,5 +318,63 @@ describe("ExportPackage", () => {
             ).toBeTruthy()
         })
         expect(mockBuildPackage).toHaveBeenCalledTimes(2)
+    })
+
+    it("says the browser builds the package, before the user clicks", async () => {
+        // Before, not after: a proof PDF handed over as press-ready is the
+        // wrong surprise, and the step is the last chance to say so.
+        mockUsesClient.mockReturnValue(true)
+        render(
+            <ExportPackage
+                book={makeBook()}
+                format={makeFormat()}
+                onCanAdvanceChange={vi.fn()}
+            />,
+        )
+        const note = await screen.findByTestId(
+            "kdp-publishing-wizard-step-2-client-note",
+        )
+        expect(note.textContent).toContain("in diesem Browser")
+        expect(note.textContent).toContain("Schnittmarken")
+    })
+
+    it("keeps the note away when the backend builds the package", () => {
+        mockUsesClient.mockReturnValue(false)
+        render(
+            <ExportPackage
+                book={makeBook()}
+                format={makeFormat()}
+                onCanAdvanceChange={vi.fn()}
+            />,
+        )
+        expect(
+            screen.queryByTestId("kdp-publishing-wizard-step-2-client-note"),
+        ).toBeNull()
+    })
+
+    it("hands the wizard's format selection to the router, not a default", async () => {
+        // The format lives in the wizard's machine; a step that drops it
+        // builds a 6x9 paperback for a user who chose a 7x10 hardcover,
+        // and nothing in the resulting ZIP would say so.
+        mockRunKdpPackage.mockResolvedValue({
+            blob: new Blob(["z"]),
+            filename: "x-kdp-package.zip",
+        })
+        render(
+            <ExportPackage
+                book={makeBook()}
+                format={makeFormat({kind: "hardcover", trim_size: "7x10", margin: "wide"})}
+                onCanAdvanceChange={vi.fn()}
+            />,
+        )
+        fireEvent.click(
+            screen.getByTestId("kdp-publishing-wizard-step-2-generate"),
+        )
+        await waitFor(() => expect(mockRunKdpPackage).toHaveBeenCalledTimes(1))
+        expect(mockRunKdpPackage.mock.calls[0][1]).toEqual({
+            formatKind: "hardcover",
+            trimSize: "7x10",
+            margin: "wide",
+        })
     })
 })

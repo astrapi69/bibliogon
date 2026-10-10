@@ -3961,6 +3961,7 @@
         "aspect_ratio_outside_range": "Das Seitenverhältnis {ratio} liegt außerhalb des empfohlenen Bereichs ({min}-{max})."
       },
       "export_hint": "Bibliogon erstellt ein ZIP mit Manuskript, Cover, Metadaten und einem KDP-Cover-Validierungsbericht. Bei KDP hochladen — Bibliogon lädt NICHT für dich hoch.",
+      "export_client_note": "Das Paket wird in diesem Browser erstellt. Das Innen-PDF hat die gewählte Trimmgrösse und Ränder, aber keine Silbentrennung, keine Beschnittzugabe-Box und keine Schnittmarken — gut zum Prüfen von Struktur und Seitenzahl, für den finalen Druck-Upload nimm die Desktop-App.",
       "export_generate": "KDP-Paket erstellen",
       "export_generating": "Paket wird erstellt…",
       "export_done": "Paket erstellt + heruntergeladen.",

@@ -3961,6 +3961,7 @@
         "aspect_ratio_outside_range": "Aspect ratio {ratio} is outside the recommended range ({min}-{max})."
       },
       "export_hint": "Bibliogon builds a ZIP with manuscript, cover, metadata, and a KDP cover validation report. Upload to KDP yourself — Bibliogon does NOT upload for you.",
+      "export_client_note": "The package is built in this browser. The interior PDF has the chosen trim size and margins, but no hyphenation, no bleed box and no crop marks — good for checking structure and page count; use the desktop app for the final print upload.",
       "export_generate": "Build KDP package",
       "export_generating": "Building package…",
       "export_done": "Package built + downloaded.",

@@ -3961,6 +3961,7 @@
         "aspect_ratio_outside_range": "Le rapport hauteur/largeur {ratio} est hors de la plage recommandée ({min}-{max})."
       },
       "export_hint": "Bibliogon génère un ZIP contenant le manuscrit, la couverture, les métadonnées et un rapport de validation de couverture KDP. Téléversez-le vous-même sur KDP — Bibliogon ne le téléverse PAS pour vous.",
+      "export_client_note": "Le paquet est généré dans ce navigateur. Le PDF intérieur reprend le format de coupe et les marges choisis, mais sans césure, sans zone de fond perdu et sans traits de coupe — pratique pour vérifier la structure et la pagination ; pour le téléversement d'impression final, utilisez l'application de bureau.",
       "export_generate": "Générer le paquet KDP",
       "export_generating": "Génération du paquet…",
       "export_done": "Paquet généré et téléchargé.",
