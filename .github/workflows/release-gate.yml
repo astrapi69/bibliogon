@@ -86,6 +86,16 @@ jobs:
           chmod +x scripts/sync_versions.py
           python3 scripts/sync_versions.py --check
 
+  prod-container-smoke:
+    name: Prod container renders
+    # The gate #704 asked for: the production compose stack opened in a
+    # real browser. Every other pre-release check asserts a proxy for
+    # "the app works" - a health endpoint, a status code, a successful
+    # image build - and the sister project shipped a white page with all
+    # of those green. Called here rather than nightly because the thing
+    # it protects is a release artifact.
+    uses: ./.github/workflows/prod-container-smoke.yml
+
   verify-build-infra:
     name: Verify build infrastructure
     # Closes the gap identified by the release-automation audit

@@ -1,0 +1,111 @@
+name: Prod Container Smoke
+
+# The production stack, opened in a real browser (#704).
+#
+# Every other gate in the release chain checks a proxy for what it cares
+# about: the compose healthcheck curls /api/health, `docker build` proves
+# the image compiles, the launcher waits for a status code. None of them
+# loads the page. A white page over the launcher shipped in the sister
+# project with all three green - a CSP blocked every resource while the
+# server stayed healthy. Bibliogon has the same structural gap: e2e-smoke
+# runs against the Vite dev server, the static-smoke suite against `vite
+# preview`, and neither has ever opened the image nginx ships.
+#
+# Pre-release, not nightly: release-gate.yml calls this on every v* tag
+# push, and it can be dispatched by hand against any branch.
+#
+# To prove the gate still catches the bug it exists for, dispatch it with
+# `prove_gate_catches_white_page` - see that input's description.
+
+on:
+  # Path-scoped, not every PR: a 20-minute two-image build on an unrelated
+  # change buys nothing. These are the files that decide whether the
+  # container renders - the compose stack, both Dockerfiles, nginx's config
+  # and the headers it includes, and the gate itself.
+  pull_request:
+    paths:
+      - "docker-compose.prod.yml"
+      - "backend/Dockerfile"
+      - "frontend/Dockerfile"
+      - "frontend/nginx.conf"
+      - "frontend/security/**"
+      - "e2e/prod-container/**"
+      - "e2e/playwright.prod-container.config.ts"
+      - ".github/workflows/prod-container-smoke.yml"
+  workflow_call:
+  workflow_dispatch:
+    inputs:
+      prove_gate_catches_white_page:
+        description: >-
+          Serve the container under an enforcing default-src 'none' CSP,
+          reproducing the sister project's white page. The gate MUST fail.
+          A green run with this on means the gate measures nothing.
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prod-container-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  prod-smoke:
+    name: Prod container renders
+    runs-on: ubuntu-latest
+    # The compose build is two images from scratch (poetry + every plugin,
+    # npm + a Vite production build). 45 is the observed build plus a wide
+    # margin; raise it rather than trimming what the gate loads.
+    timeout-minutes: 45
+    steps:
+      # No `ref`: the default is the commit that triggered the run, which
+      # for a workflow_call is the caller's - the tag being gated.
+      - uses: actions/checkout@v5
+
+      - name: Break the CSP on purpose
+        if: ${{ inputs.prove_gate_catches_white_page }}
+        # The red proof, kept in the workflow rather than performed once
+        # in a throwaway commit: anyone can re-run it and see the gate is
+        # still load-bearing. It rewrites only the generated header file
+        # in this runner's checkout.
+        run: |
+          set -euo pipefail
+          echo "::warning::Serving under an enforcing default-src 'none' CSP."
+          echo "::warning::This run MUST be red. A green one means the gate is inert."
+          cat > frontend/security/nginx-security-headers.conf <<'CONF'
+          add_header Content-Security-Policy "default-src 'none'" always;
+          add_header X-Content-Type-Options "nosniff" always;
+          CONF
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Install E2E deps (Playwright)
+        working-directory: e2e
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        working-directory: e2e
+        run: npx playwright install chromium --with-deps
+
+      - name: Build, start and measure the stack
+        # One implementation, three callers: `make test-prod-container`
+        # builds the images, waits for nginx, runs the gate, prints the
+        # container logs on failure and tears the stack down with its
+        # volume. release.yml calls the same target before it tags, and
+        # Aster calls it by hand.
+        run: make test-prod-container
+
+      - uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: prod-container-test-results
+          path: e2e/test-results/
+          retention-days: 7

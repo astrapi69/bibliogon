@@ -154,6 +154,17 @@ jobs:
         if: ${{ !inputs.skip_e2e }}
         run: make test-static-smoke
 
+      - name: Prod container smoke
+        if: ${{ !inputs.skip_e2e }}
+        # #704: the stack the launcher manages, opened in a real browser,
+        # BEFORE release-finish tags. The two smokes above measure the Vite
+        # dev server and `vite preview`; neither has ever loaded the image
+        # nginx ships, which is where a dropped header include or a missing
+        # SPA fallback lives. release-gate.yml runs the same gate on the tag
+        # push, but that is after the tag exists - this is the one that can
+        # still stop a release.
+        run: make test-prod-container
+
       - name: Finish release
         # Make target: verify pins -> merge --no-ff to main -> tag -> push
         # main + tag -> back-sync develop -> delete release branch.
