@@ -118,23 +118,64 @@ function handleControllerChange(): void {
 }
 
 /**
+ * Whether asking this registration for an update can do anything.
+ *
+ * `update()` rejects with `InvalidStateError` when the browser cannot name
+ * the script to re-fetch, and two states produce that (#1065): a worker is
+ * still installing, so there is no settled script yet; or the active worker
+ * is `redundant`, which is what a registration torn down under the page
+ * looks like. In both cases the check has nothing to ask for, so the right
+ * move is not to ask - the hourly tick comes round again.
+ */
+function canRequestUpdate(reg: ServiceWorkerRegistration): boolean {
+  if (reg.installing) return false;
+  if (reg.active && reg.active.state === "redundant") return false;
+  return true;
+}
+
+/**
+ * Ask one registration for an update. Never rejects: a registration can be
+ * torn down between the guard and the call (storage cleared, a Danger-Zone
+ * reset, the browser's own "clear site data"), and there is nothing to
+ * recover - the next check starts over.
+ */
+async function requestUpdate(reg: ServiceWorkerRegistration): Promise<void> {
+  if (!canRequestUpdate(reg)) return;
+  try {
+    await reg.update();
+  } catch (err) {
+    // Debug, not warn: during a first install this is the expected outcome
+    // of a focus event, and a user with the console open should not be shown
+    // something they cannot act on.
+    console.debug("[sw] update check skipped:", err);
+  }
+}
+
+/**
  * Ask the active registration to check the server for a new worker. This is
  * the proactive half (kept from the v0.48.0 updater): the browser only checks
  * on navigation by default, so a long-open / reopened tab can sit on a stale
  * bundle until nudged.
+ *
+ * Returns a promise that settles and NEVER rejects. Callers are event
+ * handlers and an interval, which ignore it; it exists so the
+ * never-rejects contract is something a test can observe, rather than a
+ * `void` whose failure only shows up as an uncaught error in a browser.
  */
-export function checkForUpdate(): void {
+export async function checkForUpdate(): Promise<void> {
   if (!swSupported()) return;
   if (registration) {
-    void registration.update();
+    await requestUpdate(registration);
     return;
   }
-  void navigator.serviceWorker.getRegistration().then((reg) => {
-    if (reg) {
-      wireRegistration(reg);
-      void reg.update();
-    }
-  });
+  try {
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (!reg) return;
+    wireRegistration(reg);
+    await requestUpdate(reg);
+  } catch (err) {
+    console.debug("[sw] registration lookup failed:", err);
+  }
 }
 
 /** Outcome of an on-demand {@link checkForUpdateNow} check. */
@@ -164,7 +205,12 @@ export async function checkForUpdateNow(): Promise<UpdateCheckResult> {
       if (reg) wireRegistration(reg);
     }
     if (!reg) return "unsupported";
-    await reg.update();
+    // Guarded for the same reason as the proactive path: an update that is
+    // already installing used to reject here and resolve as "error", which
+    // is the one state in which the news is good (#1065).
+    if (canRequestUpdate(reg)) {
+      await reg.update();
+    }
     const hasController = navigator.serviceWorker.controller != null;
     if (reg.waiting && hasController) {
       setWaiting(reg.waiting);
@@ -199,9 +245,9 @@ export function initSwUpdateManager(): () => void {
   });
 
   const onVisibility = (): void => {
-    if (document.visibilityState === "visible") checkForUpdate();
+    if (document.visibilityState === "visible") void checkForUpdate();
   };
-  const onFocus = (): void => checkForUpdate();
+  const onFocus = (): void => void checkForUpdate();
   document.addEventListener("visibilitychange", onVisibility);
   window.addEventListener("focus", onFocus);
   const intervalId = window.setInterval(checkForUpdate, HOURLY_MS);
