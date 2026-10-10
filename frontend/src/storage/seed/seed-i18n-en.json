@@ -1554,6 +1554,7 @@
       "translate_section": "Translate",
       "translate_open": "Translate this text",
       "translate_hint": "Creates a new draft in the target language. Inline formatting (bold/italic) is lost during translation.",
+      "translate_partial": "{count} part(s) could not be translated and were left in the original.",
       "translate_running": "Translating…",
       "translate_submit": "Translate",
       "translate_success": "Translation created.",

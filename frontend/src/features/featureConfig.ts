@@ -236,8 +236,18 @@ const NEEDS_NETWORK: readonly string[] = [FEATURES.GITHUB_IMPORT, FEATURES.URL_I
  * mode, when no key is configured (with the AI-key reason); active otherwise.
  * The AI Story Bible / Storyboard extraction (#374) lives here: it streams the
  * whole manuscript to the provider, so a genuine offline state must gate it.
+ *
+ * `translation` joined it with #751. It was desktop-only while the only
+ * implementations were the backend's DeepL and LMStudio - DeepL's browser
+ * path is the verify-first question still open on that issue, and LMStudio
+ * is a localhost server a PWA cannot reach. The article translation now
+ * runs through the user's own AI provider instead, which needs the same key
+ * and the same live connection as the extraction above.
  */
-const NEEDS_KEY_AND_NETWORK: readonly string[] = [FEATURES.AI_STORY_EXTRACTION];
+const NEEDS_KEY_AND_NETWORK: readonly string[] = [
+    FEATURES.AI_STORY_EXTRACTION,
+    FEATURES.TRANSLATION,
+];
 
 /**
  * Features that genuinely cannot work in a browser (no git binary, no TTS
@@ -286,7 +296,6 @@ const DESKTOP_ONLY: readonly string[] = [
     FEATURES.PANDOC_EXPORT,
     FEATURES.AI_TEMPLATE_FILE_IO,
     FEATURES.GRAMMAR,
-    FEATURES.TRANSLATION,
 ];
 
 /**

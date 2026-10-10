@@ -17,18 +17,33 @@ describe("featureRegistry", () => {
         );
     });
 
-    it("gates grammar + translation as desktop-only (server-bound, no browser path) (#34)", () => {
-        for (const id of [FEATURES.GRAMMAR, FEATURES.TRANSLATION]) {
-            expect(featureRegistry.getState(id, API)).toBe("active");
-            expect(featureRegistry.getState(id, DEXIE_NO_KEY)).toBe("disabled");
-            // Server-bound surfaces stay disabled offline even with an AI key.
-            expect(featureRegistry.getState(id, DEXIE_WITH_KEY)).toBe("disabled");
-            expect(featureRegistry.getReason(id, DEXIE_NO_KEY)).toBe(
-                FEATURE_REASON.REQUIRES_DESKTOP_APP,
-            );
-            // Policy #78: visible + explained, never hidden.
-            expect(featureRegistry.getState(id, DEXIE_NO_KEY)).not.toBe("hidden");
-        }
+    it("gates grammar as desktop-only (server-bound, no browser path) (#34)", () => {
+        // Translation left this case with #751; grammar is still here
+        // because its browser path depends on a LanguageTool CORS
+        // preflight nobody has been able to run yet (#750).
+        expect(featureRegistry.getState(FEATURES.GRAMMAR, API)).toBe("active");
+        expect(featureRegistry.getState(FEATURES.GRAMMAR, DEXIE_NO_KEY)).toBe("disabled");
+        // Server-bound surfaces stay disabled offline even with an AI key.
+        expect(featureRegistry.getState(FEATURES.GRAMMAR, DEXIE_WITH_KEY)).toBe("disabled");
+        expect(featureRegistry.getReason(FEATURES.GRAMMAR, DEXIE_NO_KEY)).toBe(
+            FEATURE_REASON.REQUIRES_DESKTOP_APP,
+        );
+        // Policy #78: visible + explained, never hidden.
+        expect(featureRegistry.getState(FEATURES.GRAMMAR, DEXIE_NO_KEY)).not.toBe("hidden");
+    });
+
+    it("gates translation on an AI key and a live connection (#751)", () => {
+        // It was desktop-only while the only implementations were the
+        // backend's DeepL and LMStudio. The article translation now runs
+        // through the user's own provider, so the gate is the provider's:
+        // a key, and a network to reach it over.
+        expect(featureRegistry.getState(FEATURES.TRANSLATION, API)).toBe("active");
+        expect(featureRegistry.getState(FEATURES.TRANSLATION, DEXIE_NO_KEY)).toBe("disabled");
+        expect(featureRegistry.getReason(FEATURES.TRANSLATION, DEXIE_NO_KEY)).toBe(
+            FEATURE_REASON.REQUIRES_AI_KEY,
+        );
+        expect(featureRegistry.getState(FEATURES.TRANSLATION, DEXIE_WITH_KEY)).toBe("active");
+        expect(featureRegistry.getState(FEATURES.TRANSLATION, DEXIE_NO_KEY)).not.toBe("hidden");
     });
 
     it("gates the portfolio board as desktop-only (server table, no Dexie mirror) (#810)", () => {

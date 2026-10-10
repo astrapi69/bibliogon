@@ -1596,6 +1596,7 @@
       "translate_section": "Cevir",
       "translate_open": "Bu metni cevir",
       "translate_hint": "Hedef dilde yeni bir taslak olusturur. Satir ici bicimlendirme (kalin/italik) cevirken kaybolur.",
+      "translate_partial": "{count} bölüm çevrilemedi ve özgün dilinde kaldı.",
       "translate_running": "Ceviriliyor…",
       "translate_submit": "Cevir",
       "translate_success": "Ceviri olusturuldu.",

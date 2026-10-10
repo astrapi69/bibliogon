@@ -1554,6 +1554,7 @@
       "translate_section": "Traduzir",
       "translate_open": "Traduzir este texto",
       "translate_hint": "Cria um novo rascunho no idioma de destino. A formatacao em linha (negrito/italico) perde-se na traducao.",
+      "translate_partial": "{count} parte(s) não puderam ser traduzidas e ficaram no original.",
       "translate_running": "A traduzir…",
       "translate_submit": "Traduzir",
       "translate_success": "Traducao criada.",
