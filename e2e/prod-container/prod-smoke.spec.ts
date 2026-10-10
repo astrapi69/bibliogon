@@ -59,6 +59,24 @@ test.beforeEach(async ({context}: {context: BrowserContext}) => {
     await context.route(SW_SCRIPTS, (route) =>
         route.fulfill({status: 200, contentType: "application/javascript", body: ""}),
     );
+    // The onboarding dialogs auto-open and their Radix overlay swallows
+    // every click underneath - which is what happened here: a fresh
+    // container configures no AI provider, so the AI-setup wizard opened
+    // over the create-article form and `<div data-state="open"
+    // aria-hidden="true">` intercepted the pointer for 15 seconds.
+    //
+    // On the CONTEXT, not the page, per the #441 fixture lesson: a script
+    // registered on one page does not reach a tab opened later from the
+    // same context.
+    await context.addInitScript(() => {
+        try {
+            localStorage.setItem("bibliogon-donation-onboarding-seen", "true");
+            localStorage.setItem("bibliogon-ai-setup-dismissed", "true");
+            localStorage.setItem("bibliogon-migration-offered", "true");
+        } catch {
+            /* storage unavailable: the assertions report it */
+        }
+    });
 });
 
 interface PageFailures {
