@@ -4734,6 +4734,50 @@ status check ran earlier in the chain rather than
 immediately before the commit. Run it as the line above
 the commit, not as the line above the work.
 
+### `git status --short` hides the one line that mattered (addendum 2026-10-10)
+
+The parent rule says PLAIN `git status`, and the word is
+load-bearing. `--short` (and `-s`, and `--porcelain`) print
+the file table and omit the header - which is where the
+branch name lives.
+
+A whole feature went to the wrong branch behind that
+omission. The sequence: branch from `develop`, stash the
+work to go handle another PR, come back, `git checkout
+<branch> && git rebase develop`, then - later, after another
+`git checkout develop` for the other PR's merge - `git stash
+pop` and keep working. The pop restored the files; it did not
+restore the branch. Every `git status --short` from then on
+showed exactly the right files and never said `On branch
+develop`.
+
+The commit landed on local `develop`. The follow-up `git push
+-u origin <branch>` then SUCCEEDED, pushing the branch at its
+real head, which carried none of the work - and a push that
+pushes nothing prints nothing alarming. The workflow
+dispatched against that branch failed with `Error: No tests
+found`, which reads like a config problem and is actually
+"the file is not in this commit".
+
+Two things follow:
+
+- **Run `git status` with no flags as the line above the
+  commit.** The file table is the part a `--short` run gives
+  you; the header is the part that catches a branch you did
+  not mean to be on. `git branch --show-current` answers the
+  same question in one line when the table is noise.
+- **After `git stash pop`, re-check the branch.** A stash is
+  branch-agnostic by design: it pops wherever HEAD happens to
+  be, and the working tree afterwards looks identical either
+  way. Any `checkout` between the stash and the pop is a
+  place this can happen.
+
+Cheap to repair while nothing is pushed: `git reset --hard
+origin/develop` on the polluted local branch after
+cherry-picking the commit where it belongs. The repair cost
+scales badly the moment that `develop` gets pushed, which is
+the version of this worth preventing.
+
 ### Pairs with
 
 - "Multi-tool collaboration tracking: re-sync before
