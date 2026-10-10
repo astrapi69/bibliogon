@@ -74,6 +74,13 @@ test("a book exports as a readable EPUB with no /api call", async ({page}) => {
     const editor = page.locator(".ProseMirror").first();
     await editor.click();
     await page.keyboard.type("Oben auf dem Dach beginnt die Geschichte.");
+    // The editor autosaves on a debounce, and navigating away before it
+    // lands leaves the chapter empty - which an EPUB then renders as
+    // `<p></p>`, passing every structural assertion while proving nothing
+    // about the render. Wait for the editor's own saved status.
+    await expect(page.getByTestId("editor-save-status-saved")).toBeVisible({
+        timeout: 20_000,
+    });
 
     // Offline the export page renders `ClientExportMenu`, not the
     // backend-driven `ExportForm` - the client engine is the whole point
