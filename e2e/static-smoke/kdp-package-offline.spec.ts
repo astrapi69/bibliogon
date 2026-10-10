@@ -161,6 +161,14 @@ test("the package is assembled in the browser, with no /api call", async ({page}
     page.on("request", (request) => {
         if (new URL(request.url()).pathname.includes("/api/")) apiCalls.push(request.url());
     });
+    // Collected so a build that fails inside the browser says why. The step
+    // reports a caught failure in its own banner, but an uncaught one only
+    // exists here.
+    const noise: string[] = [];
+    page.on("console", (message) => {
+        if (message.type() === "error") noise.push(message.text());
+    });
+    page.on("pageerror", (error) => noise.push(`pageerror: ${error.message}`));
 
     await completeBook(page, "Der Kater auf dem Dach");
     await openExportStep(page);
@@ -172,9 +180,28 @@ test("the package is assembled in the browser, with no /api call", async ({page}
         page.getByTestId("kdp-publishing-wizard-step-2-client-note"),
     ).toBeVisible();
 
-    const download = page.waitForEvent("download", {timeout: 120_000});
+    // Raced against the step's own error banner rather than waited for
+    // alone: a bare download wait reports nothing but "no download in two
+    // minutes", which is true of every way this can break.
+    const errorBanner = page.getByTestId("kdp-publishing-wizard-step-2-error");
+    const downloaded = page
+        .waitForEvent("download", {timeout: 120_000})
+        .catch(() => null);
+    const failed = errorBanner
+        .waitFor({state: "visible", timeout: 120_000})
+        .then(() => null)
+        .catch(() => null);
     await page.getByTestId("kdp-publishing-wizard-step-2-generate").click();
-    const file = await download;
+    const file = await Promise.race([downloaded, failed]);
+    if (!file) {
+        const reported = (await errorBanner.count())
+            ? await errorBanner.innerText()
+            : "(the step reported nothing)";
+        throw new Error(
+            `the package was never produced.\nstep said: ${reported}\n` +
+                `console: ${noise.join("\n          ") || "(quiet)"}`,
+        );
+    }
     expect(file.suggestedFilename()).toBe("der-kater-auf-dem-dach-kdp-package.zip");
 
     // The archive, not just the download event: a zero-byte Blob would
