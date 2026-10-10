@@ -445,6 +445,51 @@
       }
     },
     {
+      "name": "adverb-de-waerts",
+      "language": "de",
+      "text": "Er ging vorwärts und blickte rückwärts.",
+      "expected": {
+        "total_words": 6,
+        "total_sentences": 1,
+        "finding_count": 2,
+        "filler_count": 0,
+        "passive_count": 0,
+        "long_sentence_count": 0,
+        "repetition_count": 0,
+        "adverb_count": 2,
+        "adjective_count": 0,
+        "redundant_phrase_count": 0,
+        "filler_ratio": 0.0,
+        "passive_ratio": 0.0,
+        "adverb_ratio": 0.3333,
+        "adjective_ratio": 0.0,
+        "findings": [
+          {
+            "type": "adverb",
+            "word": "vorwärts",
+            "offset": 8,
+            "length": 8,
+            "severity": "info",
+            "message": {
+              "de": "Adverb 'vorwärts' - staerkeres Verb statt Adverb+schwaches Verb?",
+              "en": "Adverb 'vorwärts' - consider a stronger verb instead."
+            }
+          },
+          {
+            "type": "adverb",
+            "word": "rückwärts",
+            "offset": 29,
+            "length": 9,
+            "severity": "info",
+            "message": {
+              "de": "Adverb 'rückwärts' - staerkeres Verb statt Adverb+schwaches Verb?",
+              "en": "Adverb 'rückwärts' - consider a stronger verb instead."
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "adverb-en",
       "language": "en",
       "text": "She quickly walked and quietly closed the door.",
@@ -729,32 +774,90 @@
     {
       "name": "redundant-de-real-umlauts",
       "language": "de",
-      "text": "Meine persönliche Meinung zu den zukünftigen Plänen.",
+      "text": "Meine persönliche Meinung: zukünftige Pläne sind völlig überflüssig.",
       "expected": {
-        "total_words": 7,
+        "total_words": 8,
         "total_sentences": 1,
-        "finding_count": 1,
+        "finding_count": 6,
         "filler_count": 0,
         "passive_count": 0,
         "long_sentence_count": 0,
         "repetition_count": 0,
         "adverb_count": 0,
-        "adjective_count": 1,
-        "redundant_phrase_count": 0,
+        "adjective_count": 3,
+        "redundant_phrase_count": 3,
         "filler_ratio": 0.0,
         "passive_ratio": 0.0,
         "adverb_ratio": 0.0,
-        "adjective_ratio": 0.1429,
+        "adjective_ratio": 0.375,
         "findings": [
           {
             "type": "adjective",
-            "word": "zukünftigen",
-            "offset": 33,
+            "word": "zukünftige",
+            "offset": 27,
+            "length": 10,
+            "severity": "info",
+            "message": {
+              "de": "Adjektiv 'zukünftige' - zu viele Adjektive schwaecht den Text.",
+              "en": "Adjective 'zukünftige' - high adjective density weakens prose."
+            }
+          },
+          {
+            "type": "adjective",
+            "word": "völlig",
+            "offset": 49,
+            "length": 6,
+            "severity": "info",
+            "message": {
+              "de": "Adjektiv 'völlig' - zu viele Adjektive schwaecht den Text.",
+              "en": "Adjective 'völlig' - high adjective density weakens prose."
+            }
+          },
+          {
+            "type": "adjective",
+            "word": "überflüssig",
+            "offset": 56,
             "length": 11,
             "severity": "info",
             "message": {
-              "de": "Adjektiv 'zukünftigen' - zu viele Adjektive schwaecht den Text.",
-              "en": "Adjective 'zukünftigen' - high adjective density weakens prose."
+              "de": "Adjektiv 'überflüssig' - zu viele Adjektive schwaecht den Text.",
+              "en": "Adjective 'überflüssig' - high adjective density weakens prose."
+            }
+          },
+          {
+            "type": "redundant_phrase",
+            "word": "persönliche Meinung",
+            "offset": 6,
+            "length": 19,
+            "suggestion": "Meinung",
+            "severity": "info",
+            "message": {
+              "de": "Redundant: 'persönliche Meinung' - 'Meinung' reicht.",
+              "en": "Redundant: 'persönliche Meinung' - 'Meinung' is sufficient."
+            }
+          },
+          {
+            "type": "redundant_phrase",
+            "word": "zukünftige Pläne",
+            "offset": 27,
+            "length": 16,
+            "suggestion": "Pläne",
+            "severity": "info",
+            "message": {
+              "de": "Redundant: 'zukünftige Pläne' - 'Pläne' reicht.",
+              "en": "Redundant: 'zukünftige Pläne' - 'Pläne' is sufficient."
+            }
+          },
+          {
+            "type": "redundant_phrase",
+            "word": "völlig überflüssig",
+            "offset": 49,
+            "length": 18,
+            "suggestion": "überflüssig",
+            "severity": "info",
+            "message": {
+              "de": "Redundant: 'völlig überflüssig' - 'überflüssig' reicht.",
+              "en": "Redundant: 'völlig überflüssig' - 'überflüssig' is sufficient."
             }
           }
         ]

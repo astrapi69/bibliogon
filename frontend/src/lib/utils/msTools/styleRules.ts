@@ -60,7 +60,7 @@ export const PASSIVE_PATTERNS: Record<string, RegExp[]> = {
 
 /** Adverb suffixes per language. */
 export const ADVERB_SUFFIXES: Record<string, string[]> = {
-    de: ["lich", "weise", "falls", "lings", "waerts"],
+    de: ["lich", "weise", "falls", "lings", "wärts"],
     en: ["ly"],
     es: ["mente"],
     fr: ["ment"],
@@ -102,12 +102,18 @@ export const REDUNDANT_PHRASES: Record<
     string,
     readonly (readonly [string, string])[]
 > = {
+    // Mirrors the Python list, including the doubled German entries: the
+    // real spelling is what the rule is for, the transliteration stays
+    // because imported text and umlaut-less keyboards produce it (#1040).
     de: [
+        ["persönliche Meinung", "Meinung"],
         ["persoenliche Meinung", "Meinung"],
+        ["zukünftige Pläne", "Pläne"],
         ["zukuenftige Plaene", "Plaene"],
         ["kurze Zusammenfassung", "Zusammenfassung"],
         ["komplett fertig", "fertig"],
-        ["voellig überfluessig", "überfluessig"],
+        ["völlig überflüssig", "überflüssig"],
+        ["voellig ueberfluessig", "ueberfluessig"],
         ["bereits schon", "bereits"],
         ["nochmals wieder", "nochmals"],
         ["gemeinsam zusammen", "gemeinsam"],

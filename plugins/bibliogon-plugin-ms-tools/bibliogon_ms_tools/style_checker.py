@@ -117,12 +117,23 @@ PASSIVE_PATTERNS: dict[str, list[re.Pattern]] = {
 
 # Redundant phrases per language (conservative list)
 REDUNDANT_PHRASES: dict[str, list[tuple[str, str]]] = {
+    # Three entries used to be spelled in ASCII transliterations, one of
+    # them mixed ("voellig überfluessig" - a real u-umlaut beside an
+    # ASCII oe/ue). German manuscripts carry umlauts, so those entries
+    # matched nothing an author actually types (#1040). Each now appears
+    # twice: the real spelling, which is what the rule is for, and the
+    # transliteration, because imported text and umlaut-less keyboards
+    # produce it and a redundancy there is still a redundancy. The
+    # mixed spelling matched neither and is gone.
     "de": [
+        ("persönliche Meinung", "Meinung"),
         ("persoenliche Meinung", "Meinung"),
+        ("zukünftige Pläne", "Pläne"),
         ("zukuenftige Plaene", "Plaene"),
         ("kurze Zusammenfassung", "Zusammenfassung"),
         ("komplett fertig", "fertig"),
-        ("voellig überfluessig", "überfluessig"),
+        ("völlig überflüssig", "überflüssig"),
+        ("voellig ueberfluessig", "ueberfluessig"),
         ("bereits schon", "bereits"),
         ("nochmals wieder", "nochmals"),
         ("gemeinsam zusammen", "gemeinsam"),
@@ -155,7 +166,10 @@ REDUNDANT_PHRASES: dict[str, list[tuple[str, str]]] = {
 
 # Adverb suffixes per language
 ADVERB_SUFFIXES: dict[str, list[str]] = {
-    "de": ["lich", "weise", "falls", "lings", "waerts"],
+    # "wärts", not "waerts": the ASCII spelling never fired on real prose,
+    # so the -wärts adverbs this rule exists for (vorwärts, rückwärts)
+    # were invisible (#1040). Same defect as REDUNDANT_PHRASES above.
+    "de": ["lich", "weise", "falls", "lings", "wärts"],
     "en": ["ly"],
     "es": ["mente"],
     "fr": ["ment"],
