@@ -309,6 +309,21 @@ CASES: list[dict[str, Any]] = [
         },
     },
     {
+        # The keywords column stores a json.dumps of the list, and both
+        # deployments have to write the SAME bytes or a .bgb diff and the
+        # backup comparison report a change nobody made. Two things about
+        # json.dumps are invisible to an ASCII-only fixture: the ", "
+        # separator, and ensure_ascii, which escapes every code point at or
+        # above U+007F - including an astral character as a surrogate pair.
+        "name": "keywords-carry-python-json-escaping",
+        "files": {
+            "config/metadata.yaml": _file(
+                "title: Schlagworte\nauthor: A\nkeywords:\n  - Käse\n  - Stadt\n  - 😀\n  - ascii\n"
+            ),
+            "manuscript/chapters/01-eins.md": _file("# Eins\n\nText.\n"),
+        },
+    },
+    {
         # A stylesheet NOT in config/: the loader scans assets/css and
         # assets/styles before falling back to an rglob.
         "name": "stylesheet-from-assets-css",

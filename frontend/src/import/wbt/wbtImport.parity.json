@@ -1480,6 +1480,87 @@
       "assets": []
     },
     {
+      "name": "keywords-carry-python-json-escaping",
+      "files": {
+        "config/metadata.yaml": {
+          "text": "title: Schlagworte\nauthor: A\nkeywords:\n  - Käse\n  - Stadt\n  - 😀\n  - ascii\n"
+        },
+        "manuscript/chapters/01-eins.md": {
+          "text": "# Eins\n\nText.\n"
+        }
+      },
+      "detected_format": "wbt-zip",
+      "book": {
+        "id": "<volatile>",
+        "title": "Schlagworte",
+        "subtitle": null,
+        "author": "A",
+        "language": "de",
+        "series": null,
+        "series_index": null,
+        "description": null,
+        "book_idea": null,
+        "expose": null,
+        "genre": null,
+        "book_type": "prose",
+        "status": "draft",
+        "word_target": null,
+        "word_target_deadline": null,
+        "edition": null,
+        "publisher": null,
+        "publisher_city": null,
+        "publish_date": null,
+        "isbn_ebook": null,
+        "isbn_paperback": null,
+        "isbn_hardcover": null,
+        "asin_ebook": null,
+        "asin_paperback": null,
+        "asin_hardcover": null,
+        "keywords": "[\"K\\u00e4se\", \"Stadt\", \"\\ud83d\\ude00\", \"ascii\"]",
+        "categories": null,
+        "bisac_codes": null,
+        "html_description": null,
+        "backpage_description": null,
+        "backpage_author_bio": null,
+        "universal_link": null,
+        "cover_image": null,
+        "custom_css": null,
+        "notes": null,
+        "graph_layout": null,
+        "collections": null,
+        "repository_url": null,
+        "cover_image_prompt": null,
+        "chapter_summaries": "[]",
+        "ai_assisted": false,
+        "ai_tokens_used": 0,
+        "tts_engine": null,
+        "tts_voice": null,
+        "tts_language": null,
+        "tts_speed": null,
+        "audiobook_merge": null,
+        "audiobook_filename": null,
+        "audiobook_overwrite_existing": false,
+        "audiobook_skip_chapter_types": null,
+        "translation_group_id": null,
+        "ms_tools_max_sentence_length": null,
+        "ms_tools_repetition_window": null,
+        "ms_tools_max_filler_ratio": null,
+        "created_at": "<volatile>",
+        "updated_at": "<volatile>",
+        "deleted_at": null
+      },
+      "chapters": [
+        {
+          "title": "Eins",
+          "chapter_type": "chapter",
+          "position": 100,
+          "plain_text": "Eins Text.",
+          "style_attributes": []
+        }
+      ],
+      "assets": []
+    },
+    {
       "name": "stylesheet-from-assets-css",
       "files": {
         "config/metadata.yaml": {
