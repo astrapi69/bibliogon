@@ -31,13 +31,27 @@ test.beforeEach(async ({context}) => {
 });
 
 /** Answer every provider call by echoing the user message with a prefix,
- *  so each translated field is identifiable in the result. */
+ *  so each translated field is identifiable in the result.
+ *
+ *  The Settings AI tab also loads the model list from the same host
+ *  (`GET /v1/models`, #451). That request carries no body, so it is answered
+ *  from its own branch and kept out of `calls` - counting it would make the
+ *  "the provider was never asked" assertion pass without a translation. */
 async function stubProvider(page: Page, calls: string[]): Promise<void> {
     await page.route(PROVIDER, async (route) => {
-        const body = route.request().postDataJSON() as {
+        const request = route.request();
+        if (request.method() !== "POST") {
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({data: [{id: "gpt-4o-mini"}]}),
+            });
+            return;
+        }
+        const body = request.postDataJSON() as {
             messages?: {role: string; content: string}[];
-        };
-        const user = (body.messages ?? []).find((m) => m.role === "user")?.content ?? "";
+        } | null;
+        const user = (body?.messages ?? []).find((m) => m.role === "user")?.content ?? "";
         calls.push(user);
         await route.fulfill({
             status: 200,
@@ -69,7 +83,12 @@ async function configureProviderKey(page: Page): Promise<void> {
     await keyInput.fill("sk-test-key-for-e2e");
     // Settings auto-save on change (#473), so leaving the field commits it.
     await keyInput.blur();
-    await page.waitForTimeout(500);
+    // The table re-renders from the config the save returned, so the row
+    // flipping from "add a key" to "remove this key" is the persisted-key
+    // signal. A fixed wait would race the 500ms auto-save debounce.
+    await expect(page.getByTestId("ai-provider-delete-openai")).toBeVisible({
+        timeout: 20_000,
+    });
 }
 
 async function createArticle(page: Page, title: string): Promise<string> {
