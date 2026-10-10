@@ -1,0 +1,119 @@
+{
+  "extract": [
+    {
+      "name": "empty",
+      "content": "",
+      "expected": ""
+    },
+    {
+      "name": "whitespace-only",
+      "content": "   \n  ",
+      "expected": ""
+    },
+    {
+      "name": "plain-text",
+      "content": "Das ist schon Prosa.",
+      "expected": "Das ist schon Prosa."
+    },
+    {
+      "name": "html-imported",
+      "content": "<h1>Titel</h1><p>Ein Satz.</p><p>Noch einer.</p>",
+      "expected": "Titel\nEin Satz.\nNoch einer."
+    },
+    {
+      "name": "html-with-entities",
+      "content": "<p>Caf&eacute; &amp; Kuchen</p>",
+      "expected": "Café & Kuchen"
+    },
+    {
+      "name": "single-paragraph",
+      "content": "{\"type\": \"doc\", \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Ein Satz.\"}]}]}",
+      "expected": "Ein Satz.\n"
+    },
+    {
+      "name": "two-paragraphs",
+      "content": "{\"type\": \"doc\", \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Erster Absatz.\"}]}, {\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Zweiter Absatz.\"}]}]}",
+      "expected": "Erster Absatz.\n\nZweiter Absatz.\n"
+    },
+    {
+      "name": "split-text-nodes",
+      "content": "{\"type\": \"doc\", \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Ein \"}, {\"type\": \"text\", \"text\": \"geteilter \"}, {\"type\": \"text\", \"text\": \"Satz.\"}]}]}",
+      "expected": "Ein \ngeteilter \nSatz.\n"
+    },
+    {
+      "name": "heading-and-blockquote",
+      "content": "{\"type\": \"doc\", \"content\": [{\"type\": \"heading\", \"attrs\": {\"level\": 2}, \"content\": [{\"type\": \"text\", \"text\": \"Kapitel\"}]}, {\"type\": \"blockquote\", \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Zitat.\"}]}]}]}",
+      "expected": "Kapitel\n\nZitat.\n\n"
+    },
+    {
+      "name": "bullet-list",
+      "content": "{\"type\": \"doc\", \"content\": [{\"type\": \"bulletList\", \"content\": [{\"type\": \"listItem\", \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Eins\"}]}]}, {\"type\": \"listItem\", \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Zwei\"}]}]}]}]}",
+      "expected": "Eins\n\n\nZwei\n\n"
+    },
+    {
+      "name": "image-figure-no-text",
+      "content": "{\"type\": \"doc\", \"content\": [{\"type\": \"imageFigure\", \"attrs\": {\"src\": \"a.png\", \"alt\": \"A\"}}, {\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Bildunterschrift folgt.\"}]}]}",
+      "expected": "Bildunterschrift folgt.\n"
+    },
+    {
+      "name": "empty-doc",
+      "content": "{\"type\": \"doc\", \"content\": []}",
+      "expected": ""
+    },
+    {
+      "name": "malformed-json",
+      "content": "{\"type\": \"doc\", \"content\": [",
+      "expected": "{\"type\": \"doc\", \"content\": ["
+    }
+  ],
+  "rebuild": [
+    {
+      "name": "one-for-one",
+      "original": "{\"type\": \"doc\", \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Ein Satz.\"}]}, {\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Noch einer.\"}]}]}",
+      "translated": "One sentence.\n\nAnd another.",
+      "expected": "{\"type\": \"doc\", \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"One sentence.\"}]}, {\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"And another.\"}]}]}"
+    },
+    {
+      "name": "fewer-segments-than-nodes",
+      "original": "{\"type\": \"doc\", \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Eins.\"}]}, {\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Zwei.\"}]}, {\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Drei.\"}]}]}",
+      "translated": "One.",
+      "expected": "{\"type\": \"doc\", \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"One.\"}]}, {\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Zwei.\"}]}, {\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Drei.\"}]}]}"
+    },
+    {
+      "name": "more-segments-than-nodes",
+      "original": "{\"type\": \"doc\", \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Eins.\"}]}]}",
+      "translated": "One.\nTwo.\nThree.",
+      "expected": "{\"type\": \"doc\", \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"One.\"}]}]}"
+    },
+    {
+      "name": "split-text-nodes-get-one-segment-each",
+      "original": "{\"type\": \"doc\", \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Ein \"}, {\"type\": \"text\", \"text\": \"geteilter \"}, {\"type\": \"text\", \"text\": \"Satz.\"}]}]}",
+      "translated": "A\nsplit\nsentence.",
+      "expected": "{\"type\": \"doc\", \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"A\"}, {\"type\": \"text\", \"text\": \"split\"}, {\"type\": \"text\", \"text\": \"sentence.\"}]}]}"
+    },
+    {
+      "name": "marks-and-attrs-survive",
+      "original": "{\"type\": \"doc\", \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"fett\", \"marks\": [{\"type\": \"bold\"}]}, {\"type\": \"text\", \"text\": \" normal\"}]}]}",
+      "translated": "bold\n normal",
+      "expected": "{\"type\": \"doc\", \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"bold\", \"marks\": [{\"type\": \"bold\"}]}, {\"type\": \"text\", \"text\": \" normal\"}]}]}"
+    },
+    {
+      "name": "non-json-original-returns-the-translation",
+      "original": "<p>Ein Satz.</p>",
+      "translated": "One sentence.",
+      "expected": "One sentence."
+    },
+    {
+      "name": "empty-original",
+      "original": "",
+      "translated": "One sentence.",
+      "expected": ""
+    },
+    {
+      "name": "empty-translation",
+      "original": "{\"type\": \"doc\", \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Ein Satz.\"}]}]}",
+      "translated": "",
+      "expected": "{\"type\": \"doc\", \"content\": [{\"type\": \"paragraph\", \"content\": [{\"type\": \"text\", \"text\": \"Ein Satz.\"}]}]}"
+    }
+  ]
+}
