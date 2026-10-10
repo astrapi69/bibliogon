@@ -9,10 +9,13 @@ import { request } from "../http";
  * either a generated (or cached) package or, when the book lacks a required
  * field, a missing-fields answer without any AI call; `GET /aplus/{book_id}`
  * returns the last generated package and 404s when there is none.
- * Generation and validation run in the backend (desktop-only, gated through
- * `FEATURES.APLUS_AI`). The editable document (#891) goes through the storage
- * seam `getStorage().aplusDocuments`, which picks these endpoints online and
- * IndexedDB offline.
+ *
+ * These endpoints are the ONLINE path only. Since #890 the browser builds a
+ * package itself (`ai/aplus/generateOffline`) against the user's own
+ * provider, so `FEATURES.APLUS_AI` now gates on a configured key and live
+ * connectivity rather than on the desktop app. The editable document (#891)
+ * goes through the storage seam `getStorage().aplusDocuments`, which picks
+ * these endpoints online and IndexedDB offline.
  *
  * @example
  * const result = await aplus.generate(bookId, { language: "de" });

@@ -8,7 +8,12 @@ import {
     isAplusMissingFields,
     type AplusFinding,
     type AplusMissingField,
+    type AplusMissingFields,
+    type AplusPackage,
 } from "../../../api/platform";
+import { AiNotConfiguredError } from "../../../ai/aiComplete";
+import { generateAplusOffline } from "../../../ai/aplus/generateOffline";
+import { AiClientError, classifyAiClientError } from "../../../ai/llmClient";
 import { FEATURES } from "../../../features/featureConfig";
 import { useAplusDocument, type AplusSaveState } from "../../../hooks/book/useAplusDocument";
 import {
@@ -21,6 +26,8 @@ import {
 import { documentToText, type AplusTextLabels } from "../../../lib/utils/aplus/aplusText";
 import { copyToClipboard } from "../../../utils/platform/clipboard";
 import { notify } from "../../../utils/platform/notify";
+import { getStorage } from "../../../storage";
+import { aiErrorText } from "../../../utils/ai/aiErrorText";
 import { useDialog } from "../../shared/AppDialog";
 import { RadixSelect } from "../../shared/RadixSelect";
 import type { TFunc } from "../tabTypes";
@@ -135,7 +142,16 @@ function MissingFieldsList({
     );
 }
 
-/** Why AI fill is unavailable, or null when it can run. */
+/**
+ * Why AI fill is unavailable, or null when it can run.
+ *
+ * `featureReason` is whatever the registry resolved. Since #890 that is
+ * no longer "requires the desktop app" in the web app - A+ generation
+ * runs browser-direct with the user's own key - but it still carries
+ * the missing-key and the offline-network reasons, and the fallback
+ * text stays the desktop one for any deployment where the registry
+ * says so.
+ */
 function aiBlocker(featureReason: string | undefined, aiAvailable: boolean, language: string, t: TFunc): string | null {
     if (featureReason) return t(featureReason, "Nur in der Desktop-App verfügbar.");
     if (!aiAvailable) {
@@ -148,6 +164,31 @@ function aiBlocker(featureReason: string | undefined, aiAvailable: boolean, lang
         return t("ui.aplus.ai_language_unsupported", "KI-Vorschläge gibt es für Deutsch, Englisch, Französisch und Spanisch.");
     }
     return null;
+}
+
+/**
+ * What went wrong, in the reader's language.
+ *
+ * The online path fails with an `ApiError` whose `detail` the backend
+ * already wrote for a human. The offline path fails with the browser
+ * AI client's own errors, which the generic "{message}: {String(err)}"
+ * rendered as "AiClientError: ..." - so each one gets the message the
+ * rest of the app uses for the same cause, and only a genuinely
+ * unknown error falls back to its string.
+ */
+function generateErrorText(err: unknown, t: TFunc): string {
+    const prefix = t("ui.aplus.generate_error", "A+ Content konnte nicht erzeugt werden");
+    if (err instanceof AiNotConfiguredError) {
+        return t(
+            "ui.feature.requires_ai_key",
+            "Diese Funktion benötigt einen konfigurierten KI-Schlüssel (Einstellungen > KI-Assistent)",
+        );
+    }
+    if (err instanceof AiClientError) {
+        return prefix + ": " + aiErrorText(classifyAiClientError(err), t);
+    }
+    if (err instanceof ApiError) return prefix + ": " + err.detail;
+    return prefix + ": " + String(err);
 }
 
 /**
@@ -196,7 +237,14 @@ export default function AplusSection({ book, aiAvailable, t, onSelectSection }: 
         }
         setFilling(true);
         try {
-            const result = await api.aplus.generate(book.id, { language, force: true });
+            // Offline the package is built in the browser against the
+            // user's own provider; online the endpoint does it with the
+            // server's key. Both answer in the same shape, including the
+            // missing-fields short-circuit.
+            const result: AplusPackage | AplusMissingFields =
+                getStorage().mode === "dexie"
+                    ? await generateAplusOffline(book.id, { language })
+                    : await api.aplus.generate(book.id, { language, force: true });
             if (isAplusMissingFields(result)) {
                 setMissing(result.missing_fields);
                 return;
@@ -206,11 +254,7 @@ export default function AplusSection({ book, aiAvailable, t, onSelectSection }: 
             await aplus.replace(packageToDocument(result as GeneratedAplusPackage, doc, newModuleId));
             notify.success(t("ui.aplus.generated", "A+ Content erzeugt"));
         } catch (err: unknown) {
-            const detail = err instanceof ApiError ? err.detail : String(err);
-            notify.error(
-                t("ui.aplus.generate_error", "A+ Content konnte nicht erzeugt werden") + ": " + detail,
-                err,
-            );
+            notify.error(generateErrorText(err, t), err);
         } finally {
             setFilling(false);
         }

@@ -252,9 +252,15 @@ const NEEDS_NETWORK: readonly string[] = [FEATURES.GITHUB_IMPORT, FEATURES.URL_I
  * is a localhost server a PWA cannot reach. The article translation now
  * runs through the user's own AI provider instead, which needs the same key
  * and the same live connection as the extraction above.
+ *
+ * `aplus-ai` joined it with #890 for the same reason, having been
+ * desktop-only while the ruleset, the validator and the generator were all
+ * Python. A whole A+ package is one provider round trip, so a genuine
+ * offline state has to gate it rather than let the button fail on click.
  */
 const NEEDS_KEY_AND_NETWORK: readonly string[] = [
     FEATURES.AI_STORY_EXTRACTION,
+    FEATURES.APLUS_AI,
     FEATURES.TRANSLATION,
 ];
 
@@ -284,17 +290,17 @@ const NEEDS_KEY_AND_NETWORK: readonly string[] = [
  * schemas with Python jsonschema, so it has no browser implementation to
  * route through the storage seam.
  *
- * `aplus-ai` (#891) gates only the AI fill of the A+ document: the package
- * is built from the plugin's versioned Python ruleset and every field is
- * checked by its deterministic Python validator. Editing the A+ document by
- * hand is not gated; it goes through the storage seam and works offline.
- * Browser-direct AI plus a TypeScript validator is tracked in #890.
+ * `aplus-ai` LEFT this bucket in #890. The three Python halves it was gated
+ * on all have browser ports now: the versioned ruleset ships in the offline
+ * seed, the deterministic validator is a TypeScript mirror pinned against the
+ * Python's own recorded findings, and the generator's prompts, YAML-fragment
+ * parse and retry loop are pinned the same way. It joins
+ * `NEEDS_KEY_AND_NETWORK`, since it reaches the user's provider directly.
  */
 const DESKTOP_ONLY: readonly string[] = [
     FEATURES.GIT_SYNC,
     FEATURES.GIT_BACKUP,
     FEATURES.LEARNSET_EXPORT,
-    FEATURES.APLUS_AI,
     FEATURES.PORTFOLIO_BOARD,
     FEATURES.TTS,
     FEATURES.LAN_MODE,

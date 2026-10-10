@@ -46,6 +46,30 @@ describe("featureRegistry", () => {
         expect(featureRegistry.getState(FEATURES.TRANSLATION, DEXIE_NO_KEY)).not.toBe("hidden");
     });
 
+    it("gates A+ AI fill on an AI key and a live connection, not on the desktop (#890)", () => {
+        // It was desktop-only while the ruleset, the validator and the
+        // generator were all Python. All three have browser ports now, so
+        // what is left is the provider's own gate.
+        expect(featureRegistry.getState(FEATURES.APLUS_AI, API)).toBe("active");
+        expect(featureRegistry.getState(FEATURES.APLUS_AI, DEXIE_WITH_KEY)).toBe("active");
+        expect(featureRegistry.getState(FEATURES.APLUS_AI, DEXIE_NO_KEY)).toBe("disabled");
+        expect(featureRegistry.getReason(FEATURES.APLUS_AI, DEXIE_NO_KEY)).toBe(
+            FEATURE_REASON.REQUIRES_AI_KEY,
+        );
+        // The reason a user reads must no longer point at the desktop app
+        // for either mode - that was the whole gate this change removes.
+        expect(featureRegistry.getReason(FEATURES.APLUS_AI, DEXIE_NO_KEY)).not.toBe(
+            FEATURE_REASON.REQUIRES_DESKTOP_APP,
+        );
+        expect(
+            featureRegistry.getState(FEATURES.APLUS_AI, {
+                mode: "dexie",
+                hasAiKey: true,
+                online: false,
+            }),
+        ).toBe("disabled");
+    });
+
     it("gates the portfolio board as desktop-only (server table, no Dexie mirror) (#810)", () => {
         expect(featureRegistry.getState(FEATURES.PORTFOLIO_BOARD, API)).toBe("active");
         expect(featureRegistry.getState(FEATURES.PORTFOLIO_BOARD, DEXIE_NO_KEY)).toBe("disabled");

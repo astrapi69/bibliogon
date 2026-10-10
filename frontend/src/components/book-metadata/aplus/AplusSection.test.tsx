@@ -12,11 +12,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import type { BookDetail } from "../../../api/client";
+import { AiNotConfiguredError } from "../../../ai/aiComplete";
+import { AiClientError } from "../../../ai/llmClient";
 
 const docGet = vi.fn();
 const docSave = vi.fn();
+let storageMode = "api";
 vi.mock("../../../storage", () => ({
-    getStorage: () => ({ aplusDocuments: { get: docGet, save: docSave } }),
+    getStorage: () => ({ mode: storageMode, aplusDocuments: { get: docGet, save: docSave } }),
+}));
+
+const generateOfflineMock = vi.fn();
+vi.mock("../../../ai/aplus/generateOffline", () => ({
+    generateAplusOffline: (...args: unknown[]) => generateOfflineMock(...args),
 }));
 
 const generateMock = vi.fn();
@@ -104,6 +112,8 @@ function openModule(index: number) {
 
 beforeEach(() => {
     aiFeatureActive = true;
+    storageMode = "api";
+    generateOfflineMock.mockReset();
     docGet.mockReset();
     docSave.mockReset();
     generateMock.mockReset();
@@ -150,7 +160,7 @@ describe("AplusSection", () => {
         await waitFor(() => expect(docGet).toHaveBeenCalledWith("b1", "de"));
     });
 
-    it("disables AI fill with a reason in the web app", async () => {
+    it("disables AI fill with a reason whenever the registry says so", async () => {
         aiFeatureActive = false;
         render(<AplusSection book={BOOK} aiAvailable t={t} />);
         await screen.findByTestId("aplus-basics-toggle");
@@ -190,6 +200,78 @@ describe("AplusSection", () => {
         expect((screen.getByTestId("aplus-module-0-slot-0-prompt") as HTMLTextAreaElement).value).toBe(
             "farm --ar 97:60",
         );
+    });
+
+    it("builds the package in the browser offline and never calls the endpoint", async () => {
+        // The point of #890 stage 3b. A port that left the endpoint call
+        // in place would still pass every assertion above, because the
+        // mocked endpoint answers in the same shape - so the absence of
+        // the endpoint call is the assertion that matters.
+        storageMode = "dexie";
+        generateOfflineMock.mockResolvedValue(PACKAGE);
+        render(<AplusSection book={BOOK} aiAvailable t={t} />);
+        await openBasics();
+        fireEvent.click(screen.getByTestId("aplus-ai-fill"));
+        await waitFor(() =>
+            expect((screen.getByTestId("aplus-short-description") as HTMLTextAreaElement).value).toBe(
+                "Filimón sabe reír.",
+            ),
+        );
+        expect(generateOfflineMock).toHaveBeenCalledWith("b1", { language: "es" });
+        expect(generateMock).not.toHaveBeenCalled();
+        expect(docSave).toHaveBeenCalled();
+    });
+
+    it("keeps using the endpoint online and never the browser path", async () => {
+        // The other half of the same branch: online must not start
+        // generating locally with a key the server already holds.
+        generateMock.mockResolvedValue(PACKAGE);
+        render(<AplusSection book={BOOK} aiAvailable t={t} />);
+        await openBasics();
+        fireEvent.click(screen.getByTestId("aplus-ai-fill"));
+        await waitFor(() => expect(generateMock).toHaveBeenCalled());
+        expect(generateOfflineMock).not.toHaveBeenCalled();
+    });
+
+    it("shows the missing-fields answer the browser path produced", async () => {
+        storageMode = "dexie";
+        generateOfflineMock.mockResolvedValue({
+            book_id: "b1",
+            missing_fields: [{ field: "author", reason: "An author name is required." }],
+        });
+        render(<AplusSection book={BOOK} aiAvailable t={t} />);
+        await openBasics();
+        fireEvent.click(screen.getByTestId("aplus-ai-fill"));
+        const missing = await screen.findByTestId("aplus-missing");
+        expect(missing.textContent).toContain("An author name is required.");
+        expect(docSave).not.toHaveBeenCalled();
+    });
+
+    it("names the cause when the browser-direct provider call fails", async () => {
+        // The generic handler rendered this as "AiClientError: ..." -
+        // the class name, which tells the author nothing about the key
+        // they have to fix.
+        storageMode = "dexie";
+        generateOfflineMock.mockRejectedValue(
+            new AiClientError("boom", { status: 401, detail: "invalid api key" }),
+        );
+        render(<AplusSection book={BOOK} aiAvailable t={t} />);
+        await openBasics();
+        fireEvent.click(screen.getByTestId("aplus-ai-fill"));
+        await waitFor(() => expect(notifyError).toHaveBeenCalled());
+        const message = String(notifyError.mock.calls[0][0]);
+        expect(message).toContain("API-Schlüssel ungültig");
+        expect(message).not.toContain("AiClientError");
+    });
+
+    it("points at the AI settings when no key is configured", async () => {
+        storageMode = "dexie";
+        generateOfflineMock.mockRejectedValue(new AiNotConfiguredError());
+        render(<AplusSection book={BOOK} aiAvailable t={t} />);
+        await openBasics();
+        fireEvent.click(screen.getByTestId("aplus-ai-fill"));
+        await waitFor(() => expect(notifyError).toHaveBeenCalled());
+        expect(String(notifyError.mock.calls[0][0])).toContain("KI-Schlüssel");
     });
 
     it("asks before AI overwrites typed text and leaves it alone on cancel", async () => {
