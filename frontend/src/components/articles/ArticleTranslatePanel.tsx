@@ -5,10 +5,23 @@ import { Languages, Loader2 } from "lucide-react";
 import { api, ApiError, Article } from "../../api/client";
 import { useI18n } from "../../hooks/useI18n";
 import { useFeature } from "@astrapi69/feature-strategy-react";
-import { FEATURES } from "../../features/featureConfig";
+import { FEATURE_REASON, FEATURES } from "../../features/featureConfig";
 import { RadixSelect } from "../shared/RadixSelect";
 import { notify } from "../../utils/platform/notify";
+import { getStorage } from "../../storage";
+import { translateArticleWithAi } from "../../utils/translation/translateArticleWithAi";
 import layout from "../../pages/ArticleEditor.module.css";
+
+/** German fallbacks per reason key, for the case where the catalog has no
+ *  entry. One message for every reason this gate can produce, so the text
+ *  cannot contradict the key it was chosen for. */
+const REASON_FALLBACKS: Record<string, string> = {
+    [FEATURE_REASON.REQUIRES_AI_KEY]:
+        "Dafür wird ein API-Schlüssel in den KI-Einstellungen benötigt.",
+    [FEATURE_REASON.REQUIRES_NETWORK]: "Dafür wird eine Internetverbindung benötigt.",
+    [FEATURE_REASON.REQUIRES_DESKTOP_APP]: "Diese Funktion benötigt die Desktop-App.",
+    default: "Diese Funktion benötigt die Desktop-App.",
+};
 
 /** Languages Bibliogon UI ships in. Mirrors backend/config/i18n/. */
 const SUPPORTED_LANGUAGES: { code: string; label: string }[] = [
@@ -38,12 +51,18 @@ type ProviderInfo = {
 export default function ArticleTranslatePanel({ article }: { article: Article }) {
     const { t } = useI18n();
     const navigate = useNavigate();
-    // Translation execution (DeepL / LMStudio) runs through the backend
-    // translation plugin; offline (Dexie) it resolves disabled so the section
-    // stays visible + explained instead of firing /api on the guardedFetch
-    // backstop (#34). No provider/health fetch is attempted when disabled.
+    // DeepL and LMStudio run through the backend plugin and have no browser
+    // path - DeepL's is the verify-first question still open on #750/#751,
+    // LMStudio is a localhost server a PWA cannot reach. Offline the article
+    // is translated through the user's own AI provider instead (#751), so
+    // the gate is a key plus a live connection rather than "requires the
+    // desktop app", and the section explains whichever actually applies.
     const translation = useFeature(FEATURES.TRANSLATION);
-    const offline = !translation.isActive;
+    const unavailable = !translation.isActive;
+    const usesAiProvider = getStorage().mode === "dexie";
+    // No provider/health fetch offline: there is no provider endpoint to
+    // ask, and the dropdown it feeds is hidden.
+    const offline = unavailable || usesAiProvider;
 
     const [translateOpen, setTranslateOpen] = useState(false);
     const [translateLang, setTranslateLang] = useState("en");
@@ -90,6 +109,25 @@ export default function ArticleTranslatePanel({ article }: { article: Article })
     const noProvidersAvailable =
         providers !== null && providers.every((p) => !p.configured || !p.healthy);
 
+    /** The offline path: the user's own AI provider, one call per piece.
+     *  A piece that fails keeps its source value, so the result is an
+     *  article with one untranslated field rather than no article - said
+     *  out loud instead of passed off as a clean translation. */
+    const translateWithProvider = async (): Promise<string> => {
+        const result = await translateArticleWithAi(article, {
+            targetLang: translateLang,
+        });
+        if (result.untranslatedPieces > 0) {
+            notify.warning(
+                t(
+                    "ui.articles.translate_partial",
+                    "{count} Teil(e) konnten nicht übersetzt werden und blieben im Original.",
+                ).replace("{count}", String(result.untranslatedPieces)),
+            );
+        }
+        return result.articleId;
+    };
+
     const handleTranslate = async () => {
         if (!article || translating) return;
         if (translateLang === article.language) {
@@ -103,13 +141,17 @@ export default function ArticleTranslatePanel({ article }: { article: Article })
         }
         setTranslating(true);
         try {
-            const result = await api.articleTranslation.translate(article.id, translateLang, {
-                sourceLang: article.language,
-                provider: translateProvider,
-            });
+            const articleId = usesAiProvider
+                ? await translateWithProvider()
+                : (
+                      await api.articleTranslation.translate(article.id, translateLang, {
+                          sourceLang: article.language,
+                          provider: translateProvider,
+                      })
+                  ).article_id;
             notify.success(t("ui.articles.translate_success", "Übersetzung erstellt."));
             setTranslateOpen(false);
-            navigate(`/articles/${result.article_id}`);
+            navigate(`/articles/${articleId}`);
         } catch (err) {
             // Surface the backend detail (e.g. "No DeepL API key
             // configured...") via notify's ApiError content - the
@@ -120,7 +162,12 @@ export default function ArticleTranslatePanel({ article }: { article: Article })
         }
     };
 
-    if (offline) {
+    if (unavailable) {
+        // The reason key comes from the registry; the fallback has to match
+        // it, or a missing catalog entry would tell a PWA user to install
+        // the desktop app when what they need is an API key.
+        const reasonKey = translation.reason ?? FEATURE_REASON.REQUIRES_DESKTOP_APP;
+        const reason = t(reasonKey, REASON_FALLBACKS[reasonKey] ?? REASON_FALLBACKS.default);
         return (
             <>
                 <h4 className={layout.sectionHeading}>
@@ -131,10 +178,7 @@ export default function ArticleTranslatePanel({ article }: { article: Article })
                     className="btn btn-ghost btn-sm"
                     disabled
                     data-testid="article-editor-translate-open"
-                    title={t(
-                        "ui.feature.requires_desktop_app",
-                        "Diese Funktion benötigt die Desktop-App.",
-                    )}
+                    title={reason}
                     style={{
                         alignSelf: "flex-start",
                         display: "inline-flex",
@@ -149,10 +193,7 @@ export default function ArticleTranslatePanel({ article }: { article: Article })
                     data-testid="article-editor-translate-offline"
                     style={{ fontSize: "0.75rem", color: "var(--text-muted)", margin: 0 }}
                 >
-                    {t(
-                        "ui.feature.requires_desktop_app",
-                        "Diese Funktion benötigt die Desktop-App.",
-                    )}
+                    {reason}
                 </p>
             </>
         );
@@ -261,9 +302,16 @@ export default function ArticleTranslatePanel({ article }: { article: Article })
                             onClick={() => void handleTranslate()}
                             disabled={
                                 translating ||
-                                !providerAvailable ||
-                                providers === null ||
-                                noProvidersAvailable
+                                // The provider checks gate the BACKEND path
+                                // only. Offline there is no provider list to
+                                // wait for - the AI provider is whichever one
+                                // Settings holds - so requiring a fetched
+                                // list would leave the button permanently
+                                // disabled with no way to find out why.
+                                (!usesAiProvider &&
+                                    (!providerAvailable ||
+                                        providers === null ||
+                                        noProvidersAvailable))
                             }
                             data-testid="article-editor-translate-submit"
                         >

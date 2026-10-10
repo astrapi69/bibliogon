@@ -1505,6 +1505,7 @@ ui:
     translate_section: "Übersetzen"
     translate_open: "Diesen Text übersetzen"
     translate_hint: "Erstellt einen neuen Text-Entwurf in der Zielsprache. Inline-Formatierung (fett/kursiv) geht beim Übersetzen verloren."
+    translate_partial: "{count} Teil(e) konnten nicht übersetzt werden und blieben im Original."
     translate_running: "Übersetzt…"
     translate_submit: "Übersetzen"
     translate_success: "Übersetzung erstellt."

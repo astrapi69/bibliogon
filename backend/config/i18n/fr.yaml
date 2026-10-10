@@ -1542,6 +1542,7 @@ ui:
     translate_section: "Traduire"
     translate_open: "Traduire ce texte"
     translate_hint: "Cree un nouveau brouillon dans la langue cible. Le formatage en ligne (gras/italique) est perdu lors de la traduction."
+    translate_partial: "{count} partie(s) n'ont pas pu être traduites et sont restées dans l'original."
     translate_running: "Traduction…"
     translate_submit: "Traduire"
     translate_success: "Traduction creee."
