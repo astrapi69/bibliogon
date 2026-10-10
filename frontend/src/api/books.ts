@@ -96,30 +96,12 @@ export const booksApi = {
 
     update: (
       id: string,
-      // Writing-goals fields (WRITING-GOALS-PROGRESS-TRACKING-01) are
-      // PATCH-only, so they widen Partial<BookCreate> inline rather
-      // than polluting the create shape.
-      data: Partial<BookCreate> & {
-        word_target?: number | null;
-        word_target_deadline?: string | null;
-        /** Relationship-graph node positions (STORY-BIBLE-RELATIONSHIP-GRAPH-01 C5). */
-        graph_layout?: Record<string, { x: number; y: number }> | null;
-        /** Cover reference (``assets/covers/cover-x.png``). PATCH-only -
-         *  the .bgb importer re-points it onto the restored cover asset. */
-        cover_image?: string | null;
-        /** Project-level notes scratchpad (CHAPTER-SYNOPSIS-NOTES-01). */
-        notes?: string | null;
-        /** Manual chapter collections (CHAPTER-COLLECTIONS-01). */
-        collections?: import("./types").BookCollection[] | null;
-        /** UNIVERSAL-AI-TEMPLATE-01 columns (#1076). PATCH-only, like
-         *  the writing goals above. An empty `chapter_summaries` array
-         *  clears the column; an absent key leaves it alone. `null` is
-         *  not offered, because `BookOut` never returns it - the column
-         *  reads back as `[]` - and a Dexie row merged from a payload
-         *  that could carry null would not match what the API returns. */
-        cover_image_prompt?: string | null;
-        chapter_summaries?: import("./types").ChapterSummary[];
-      },
+      // `BookUpdate` is derived from `Book` minus the four fields no
+      // PATCH may change (#1078). It replaced a hand-written widening
+      // of `Partial<BookCreate>` that listed ten fields, which is how
+      // the client restore came to drop every ISBN and the whole KDP
+      // marketing block.
+      data: import("./types").BookUpdate,
     ) =>
       request<Book>(`/books/${id}`, {
         method: "PATCH",

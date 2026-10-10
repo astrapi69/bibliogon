@@ -1,12 +1,19 @@
 import {describe, it, expect, vi, beforeEach} from "vitest";
 
-import {BackupImportError, importFullBackup, parseBackupBundle} from "./backupImport";
+import {
+    articleRestoreFields,
+    BackupImportError,
+    bookRestoreFields,
+    importFullBackup,
+    parseBackupBundle,
+} from "./backupImport";
 
 const updateApp = vi.fn(async (d: Record<string, unknown>) => d);
 const authorsList = vi.fn(async () => [] as unknown[]);
 const authorsCreate = vi.fn(async (d: {name: string}) => ({id: "na", ...d}));
 const booksList = vi.fn(async () => [] as {id: string}[]);
 const booksCreate = vi.fn(async (_d: Record<string, unknown>) => ({id: "new-b1"}));
+const booksUpdate = vi.fn(async (_id: string, _d: Record<string, unknown>) => ({}));
 const chaptersCreate = vi.fn(
     async (_bookId: string, _d: {title: string; content?: string}) => ({id: "nc"}),
 );
@@ -71,7 +78,7 @@ vi.mock("../storage", () => ({
     getStorage: () => ({
         settings: {updateApp, getApp},
         authors: {list: authorsList, create: authorsCreate},
-        books: {list: booksList, create: booksCreate},
+        books: {list: booksList, create: booksCreate, update: booksUpdate},
         chapters: {create: chaptersCreate},
         pages: {create: pagesCreate},
         comics: {createPanel, createBubble},
@@ -130,6 +137,7 @@ beforeEach(() => {
         authorsCreate,
         booksList,
         booksCreate,
+        booksUpdate,
         chaptersCreate,
         articlesList,
         articlesCreate,
@@ -655,5 +663,185 @@ describe("importFullBackup — the seam-writable tables (#1008)", () => {
         expect(result.imported.publications).toBe(0);
         expect(result.imported.kdp_publishing_state).toBe(0);
         expect(result.imported.translation_groups).toBe(0);
+    });
+});
+
+describe("importFullBackup — the fields the restore used to drop (#1078)", () => {
+    /** A book carrying one value in every column a restore has to carry back. */
+    const populatedBook = {
+        id: "b1",
+        title: "Book One",
+        language: "de",
+        book_type: "prose",
+        status: "ready",
+        subtitle: "Ein Untertitel",
+        author: "Marta Rivers",
+        genre: "Sachbuch",
+        series: "Reihe",
+        series_index: 2,
+        description: "Kurzbeschreibung",
+        book_idea: "Die Praemisse",
+        expose: "Das lange Expose",
+        edition: "2. Auflage",
+        publisher: "Eigenverlag",
+        publisher_city: "Lissabon",
+        publish_date: "2026-01-01",
+        isbn_ebook: "978-0-1234-5678-0",
+        isbn_paperback: "978-0-1234-5678-1",
+        isbn_hardcover: "978-0-1234-5678-2",
+        asin_ebook: "B000000001",
+        asin_paperback: "B000000002",
+        asin_hardcover: "B000000003",
+        keywords: ["kartografie", "feldbuch"],
+        categories: ["Sachbuch > Natur"],
+        bisac_codes: ["NAT000000"],
+        html_description: "<p>Amazon-Beschreibung</p>",
+        backpage_description: "Rueckseitentext",
+        backpage_author_bio: "Autorenvita",
+        custom_css: "p { color: red; }",
+        notes: "Projektnotizen",
+        repository_url: "https://example.invalid/repo.git",
+        word_target: 50000,
+        word_target_deadline: "2026-12-31",
+        ai_assisted: true,
+        tts_engine: "edge",
+        tts_voice: "de-DE-KatjaNeural",
+        tts_language: "de",
+        tts_speed: 1.1,
+        audiobook_merge: "merged",
+        audiobook_filename: "hoerbuch.mp3",
+        audiobook_overwrite_existing: true,
+        audiobook_skip_chapter_types: ["excerpt"],
+        ms_tools_max_sentence_length: 28,
+        ms_tools_repetition_window: 40,
+        cover_image_prompt: "Handgezeichnete Karte, kein Text im Bild",
+        chapter_summaries: [{chapter_id: "c1", title: "One", summary: "Eine Zeile."}],
+        collections: null,
+        created_at: "2026-01-01T00:00:00Z",
+        updated_at: "2026-01-02T00:00:00Z",
+    };
+
+    const populatedArticle = {
+        id: "ar1",
+        title: "Art",
+        content_json: '{"a":1}',
+        status: "published",
+        tags: ["a"],
+        topic: "Thema",
+        seo_title: "SEO",
+        seo_description: "SEO-Text",
+        excerpt: "Der Anrisstext",
+        canonical_url: "https://example.invalid/post",
+        featured_image_url: "https://cdn.example.invalid/bild.png",
+        series: "Artikelreihe",
+        featured_image_prompt: "Zeitung loest sich in Pixel auf",
+        inline_image_prompts: [{section_hint: "Intro", prompt: "Schlagzeilen"}],
+    };
+
+    it("writes every carried book column back, not the ten the create takes", async () => {
+        await importFullBackup(
+            fileOf(bundle({books: [{book: populatedBook, chapters: []}]})),
+        );
+        expect(booksUpdate).toHaveBeenCalledTimes(1);
+        const [bookId, patch] = booksUpdate.mock.calls[0];
+        expect(bookId).toBe("new-b1");
+        // Spot-checked across the groups that were lost whole: publishing
+        // identifiers, the KDP marketing block, the style thresholds and
+        // the audiobook configuration.
+        expect(patch.isbn_ebook).toBe("978-0-1234-5678-0");
+        expect(patch.asin_paperback).toBe("B000000002");
+        expect(patch.keywords).toEqual(["kartografie", "feldbuch"]);
+        expect(patch.bisac_codes).toEqual(["NAT000000"]);
+        expect(patch.html_description).toBe("<p>Amazon-Beschreibung</p>");
+        expect(patch.backpage_author_bio).toBe("Autorenvita");
+        expect(patch.notes).toBe("Projektnotizen");
+        expect(patch.word_target).toBe(50000);
+        expect(patch.ms_tools_max_sentence_length).toBe(28);
+        expect(patch.audiobook_skip_chapter_types).toEqual(["excerpt"]);
+        expect(patch.cover_image_prompt).toBe("Handgezeichnete Karte, kein Text im Bild");
+    });
+
+    it("keeps identity, timestamps and the asset-owned cover out of the patch", async () => {
+        await importFullBackup(
+            fileOf(bundle({books: [{book: {...populatedBook, cover_image: "assets/covers/c.png"}, chapters: []}]})),
+        );
+        const [, patch] = booksUpdate.mock.calls[0];
+        // `id` would re-point the row at the bundle's old id; the
+        // timestamps belong to the restoring device; `book_type` is
+        // immutable and the backend answers 400; `cover_image` is the
+        // asset importer's to set, and a stale reference is worse than
+        // none.
+        for (const key of ["id", "created_at", "updated_at", "book_type", "cover_image"]) {
+            expect(Object.keys(patch)).not.toContain(key);
+        }
+    });
+
+    it("writes the article columns the old six-field update left behind", async () => {
+        await importFullBackup(fileOf(bundle({articles: [populatedArticle]})));
+        const [, patch] = articlesUpdate.mock.calls[0];
+        expect(patch.excerpt).toBe("Der Anrisstext");
+        expect(patch.canonical_url).toBe("https://example.invalid/post");
+        expect(patch.featured_image_url).toBe("https://cdn.example.invalid/bild.png");
+        expect(patch.series).toBe("Artikelreihe");
+        expect(patch.featured_image_prompt).toBe("Zeitung loest sich in Pixel auf");
+        expect(patch.inline_image_prompts).toEqual([
+            {section_hint: "Intro", prompt: "Schlagzeilen"},
+        ]);
+        // Still carries what it already did.
+        expect(patch.content_json).toBe('{"a":1}');
+        expect(patch.tags).toEqual(["a"]);
+    });
+
+    it("keeps the derived article fields out of the patch", async () => {
+        await importFullBackup(
+            fileOf(bundle({articles: [{...populatedArticle, comments_count: 4, original_published_at: "2020-01-01T00:00:00Z", deleted_at: null}]})),
+        );
+        const [, patch] = articlesUpdate.mock.calls[0];
+        // `comments_count` and `original_published_at` are computed from
+        // other rows and `ArticleUpdate` does not accept them; sending
+        // them would be a silently ignored field at best.
+        for (const key of ["id", "created_at", "updated_at", "deleted_at",
+                           "comments_count", "original_published_at"]) {
+            expect(Object.keys(patch)).not.toContain(key);
+        }
+    });
+});
+
+describe("the restore carries every column the offline builders create (#1078)", () => {
+    /**
+     * The oracle is `buildBook` / `buildArticle`, not a hand-written
+     * field list. Those two already have to carry every column the API
+     * shape returns (their own doc-comment says why), so comparing key
+     * sets against them means a column added tomorrow is covered the
+     * day it lands - which is the property the old whitelist lacked.
+     */
+    it("book: patch keys are the builder's keys minus the documented drops", async () => {
+        const {buildBook} = await import("../storage/dexie/helpers");
+        const row = buildBook({title: "T", author: "A"}, "b-oracle");
+        const patch = bookRestoreFields(row as unknown as Parameters<typeof bookRestoreFields>[0]);
+        const dropped = Object.keys(row).filter((k) => !(k in patch));
+        // `offline_available` is in the drop set too but absent here:
+        // it is a Dexie-only per-device flag the builder does not mint,
+        // so no oracle built from the builder can see it.
+        expect(dropped.sort()).toEqual(
+            ["book_type", "cover_image", "created_at", "deleted_at", "id", "updated_at"],
+        );
+    });
+
+    it("article: patch keys are the builder's keys minus the documented drops", async () => {
+        const {buildArticle} = await import("../storage/dexie/helpers");
+        const row = buildArticle({title: "T"}, "a-oracle");
+        const patch = articleRestoreFields(row);
+        const dropped = Object.keys(row).filter((k) => !(k in patch));
+        expect(dropped.sort()).toEqual(
+            [
+                "comments_count",
+                "created_at",
+                "deleted_at",
+                "id",
+                "original_published_at",
+                "updated_at",
+            ],
+        );
     });
 });

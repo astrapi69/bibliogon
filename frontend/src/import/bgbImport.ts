@@ -40,7 +40,12 @@ import type {
     Chapter,
     StoryEntityCreate,
 } from "../api/client";
-import { articleCreateFrom, bookCreateFrom } from "../export/backupImport";
+import {
+    articleCreateFrom,
+    articleRestoreFields,
+    bookCreateFrom,
+    bookRestoreFields,
+} from "../export/backupImport";
 import { planAuthorsImport } from "../components/settings/authorsImportExport";
 import {
     baseUrlChangesBesideKeys,
@@ -281,6 +286,7 @@ async function importBooks(
         }
 
         const created = await storage.books.create(bookCreateFrom(book));
+        await storage.books.update(created.id, bookRestoreFields(book));
         const newId = created.id;
         imported.books++;
 
@@ -559,12 +565,10 @@ async function importArticles(
             storage,
         );
         await storage.articles.update(created.id, {
-            content_json: article.content_json,
-            status: article.status,
-            tags: article.tags,
-            topic: article.topic,
-            seo_title: article.seo_title,
-            seo_description: article.seo_description,
+            ...articleRestoreFields(article),
+            // The asset importer owns this one: the bundle's id belongs
+            // to the old row, and `articleRestoreFields` drops it for
+            // that reason.
             ...(featuredImageAssetId ? { featured_image_asset_id: featuredImageAssetId } : {}),
         });
         imported.articles++;
