@@ -12,11 +12,23 @@ import {
 } from "./templateApply";
 
 describe("extractBodyText", () => {
-  it("returns empty string for null/empty/invalid JSON", () => {
+  it("returns empty string for null/empty input", () => {
     expect(extractBodyText(null)).toBe("");
     expect(extractBodyText(undefined)).toBe("");
     expect(extractBodyText("")).toBe("");
-    expect(extractBodyText("not json")).toBe("");
+    expect(extractBodyText("   ")).toBe("");
+  });
+
+  it("falls back to the content itself when it is not TipTap JSON (#824)", () => {
+    // This case used to return "", which is what the backend stopped
+    // doing in #824: an imported article is HTML until someone opens and
+    // saves it, so a failed parse is "HTML content", not "no content".
+    // Returning "" handed the model an empty body for every
+    // never-opened import.
+    expect(extractBodyText("<p>Hallo <strong>Welt</strong>.</p>")).toBe("Hallo Welt.");
+    // Neither JSON nor markup: a legacy plain-text row, passed through
+    // trimmed rather than discarded.
+    expect(extractBodyText("  not json  ")).toBe("not json");
   });
 
   it("concatenates nested text nodes joined by newlines", () => {

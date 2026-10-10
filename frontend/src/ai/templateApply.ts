@@ -22,93 +22,34 @@
  * `extractBodyText` mirrors the backend's plain-text TipTap walker (raw text
  * concatenation, no list/heading/image markers) rather than reusing
  * `utils/tiptap-markdown.nodeToPlainText`, so the LLM sees the same body shape
- * the backend prompts were tuned against.
+ * the backend prompts were tuned against. It now comes from
+ * `lib/ai/template/bodyPreview.ts` (#745 stage 2), which adds the HTML
+ * fallback the backend gained in #824: an imported article is HTML until
+ * someone opens and saves it, and the version here returned "" for exactly
+ * that case - so offline AI-fill was handing the model an empty body for
+ * every never-opened import.
  */
-
-/** Apply result for one field, mirroring the backend's three reasons. */
-export const APPLY_UPDATED = "updated";
-export const APPLY_SKIP_EMPTY = "value-is-empty";
-export const APPLY_SKIP_POPULATED = "field-already-populated";
-
-export type ApplyResult =
-  | typeof APPLY_UPDATED
-  | typeof APPLY_SKIP_EMPTY
-  | typeof APPLY_SKIP_POPULATED;
-
-/** A mutable entity record (Dexie/API article or book shape). */
-export type EntityRecord = Record<string, unknown>;
 
 /**
- * Walk a serialised TipTap doc and return concatenated plain text. Returns
- * `""` on parse failure or empty input. Mirrors
- * `template_schema.extract_body_text`.
+ * The per-field write rules now live in `lib/ai/template/applyField.ts`.
+ *
+ * They moved there in #745 stage 2, which needed them from `lib/` - a
+ * module under `lib/` may not import app code, and two copies of the
+ * same rules is the thing the move avoids. Re-exported here so every
+ * existing importer is unchanged.
  */
-export function extractBodyText(contentJson: string | null | undefined): string {
-  if (!contentJson) return "";
-  let doc: unknown;
-  try {
-    doc = JSON.parse(contentJson);
-  } catch {
-    return "";
-  }
-  const parts: string[] = [];
-  const walk = (node: unknown): void => {
-    if (typeof node !== "object" || node === null) return;
-    const record = node as Record<string, unknown>;
-    if (typeof record.text === "string") parts.push(record.text);
-    const children = record.content;
-    if (Array.isArray(children)) children.forEach(walk);
-  };
-  walk(doc);
-  return parts.filter(Boolean).join("\n").trim();
-}
+export {
+  APPLY_SKIP_EMPTY,
+  APPLY_SKIP_POPULATED,
+  APPLY_UPDATED,
+  applyField,
+  isColumnPopulated,
+  isTemplateValueEmpty,
+  type ApplyResult,
+  type EntityRecord,
+} from "../lib/ai/template/applyField";
 
-/**
- * An AI- or template-supplied value is "empty" (always skip on apply) when it
- * is null/undefined, a whitespace-only string, or an empty array. Mirrors
- * `is_template_value_empty`.
- */
-export function isTemplateValueEmpty(value: unknown): boolean {
-  if (value === null || value === undefined) return true;
-  if (typeof value === "string" && value.trim() === "") return true;
-  if (Array.isArray(value) && value.length === 0) return true;
-  return false;
-}
-
-/**
- * Whether the current entity column is non-empty; `force=false` preserves it.
- * Operates on the native Dexie/API shape: list columns are real arrays, scalar
- * columns are strings. Mirrors `is_column_populated`, minus the JSON-decode
- * step (the browser shape never stores JSON-text lists).
- */
-export function isColumnPopulated(value: unknown, isList: boolean): boolean {
-  if (isList) return Array.isArray(value) && value.length > 0;
-  if (value === null || value === undefined) return false;
-  if (typeof value === "string") return value.trim() !== "";
-  return Boolean(value);
-}
-
-/**
- * Apply a single field to an entity record (mutates `record` in place on an
- * update). Returns the apply reason. Mirrors `apply_field`:
- * - empty `newValue`: always skip, regardless of `force`;
- * - existing column populated + `force=false`: skip;
- * - otherwise: write (the value is assigned directly, arrays included).
- */
-export function applyField(
-  record: EntityRecord,
-  columnName: string,
-  newValue: unknown,
-  opts: { force: boolean; isList: boolean },
-): ApplyResult {
-  if (isTemplateValueEmpty(newValue)) return APPLY_SKIP_EMPTY;
-  const existing = record[columnName];
-  if (!opts.force && isColumnPopulated(existing, opts.isList)) {
-    return APPLY_SKIP_POPULATED;
-  }
-  record[columnName] = newValue;
-  return APPLY_UPDATED;
-}
+export {extractBodyText} from "../lib/ai/template/bodyPreview";
 
 /**
  * Parse an LLM response into a JSON object. Strips an optional ``` / ```json

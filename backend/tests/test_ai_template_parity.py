@@ -32,6 +32,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+import yaml
 from fastapi.testclient import TestClient
 
 from app.database import SessionLocal
@@ -100,6 +101,23 @@ ARTICLE_CASES: list[dict[str, Any]] = [
 ]
 
 
+#: Keys dropped from the recorded source row. The timestamps are the
+#: moment the record was made and the embedded `chapters` carry their
+#: own freshly-minted ids, so both would make the record differ on
+#: every run; the template reads none of them (chapter TEXT travels as
+#: `chapter_contents`, which is deterministic).
+_VOLATILE_SOURCE_KEYS = ("created_at", "updated_at", "chapters")
+
+
+def _normalize_ids(row: dict[str, Any], record_id: str) -> dict[str, Any]:
+    """The source row with its id replaced and its timestamps dropped."""
+    return {
+        key: ("<id>" if value == record_id else value)
+        for key, value in row.items()
+        if key not in _VOLATILE_SOURCE_KEYS
+    }
+
+
 def _record_book(client: TestClient, db, case: dict[str, Any]) -> dict[str, Any]:
     book = Book(
         title=case["title"],
@@ -135,12 +153,20 @@ def _record_book(client: TestClient, db, case: dict[str, Any]) -> dict[str, Any]
 
     response = client.get(f"/api/books/{book.id}/ai-template")
     assert response.status_code == 200, response.text
+    # The source row as the API returns it, so the browser factory can
+    # be fed the same input the endpoint read. Without it the port could
+    # only be checked against a template it was handed, not against the
+    # record it has to build one from.
+    source = client.get(f"/api/books/{book.id}").json()
+    chapters = client.get(f"/api/books/{book.id}/chapters").json()
     return {
         "key": case["key"],
         "kind": "book",
         "title": case["title"],
         "content_disposition": response.headers["content-disposition"].replace(book.id, "<id>"),
         "yaml": response.text.replace(book.id, "<id>"),
+        "source": _normalize_ids(source, book.id),
+        "chapter_contents": [chapter.get("content") for chapter in chapters],
     }
 
 
@@ -168,12 +194,175 @@ def _record_article(client: TestClient, db, case: dict[str, Any]) -> dict[str, A
 
     response = client.get(f"/api/articles/{article.id}/ai-template")
     assert response.status_code == 200, response.text
+    source = client.get(f"/api/articles/{article.id}").json()
     return {
         "key": case["key"],
         "kind": "article",
         "title": case["title"],
         "content_disposition": response.headers["content-disposition"].replace(article.id, "<id>"),
         "yaml": response.text.replace(article.id, "<id>"),
+        "source": _normalize_ids(source, article.id),
+    }
+
+
+#: The apply half. Each case fills a template the way a returning
+#: assistant would and POSTs it back, so the port can be checked against
+#: what the endpoint ACTUALLY reports - which fields it wrote, which it
+#: skipped and why - rather than against a reading of the router.
+#:
+#: `force` is the axis that matters: with it false a populated column is
+#: preserved, with it true the same column is overwritten, and an empty
+#: incoming value is skipped either way. The chapter-summaries entries
+#: cover the three reconcile outcomes in one POST: matched by id,
+#: matched by a loosely-spelled title, and matched by nothing.
+APPLY_CASES: list[dict[str, Any]] = [
+    {"key": "book-apply-soft", "kind": "book", "force": False},
+    {"key": "book-apply-force", "kind": "book", "force": True},
+    {"key": "article-apply-soft", "kind": "article", "force": False},
+    {"key": "article-apply-force", "kind": "article", "force": True},
+]
+
+#: What a filled file carries, per field. Deliberately includes a value
+#: for a field the record already has (so `force` is observable) and an
+#: empty one (so the always-skip rule is).
+BOOK_FILL = {
+    "title": "Ein neuer Titel",
+    "subtitle": "Ein Untertitel",
+    "description": "   ",
+    "genre": "Sachbuch",
+    "keywords": ["kartografie", "feldbuch"],
+    "html_description": "<p>Amazon-Beschreibung</p>",
+    "backpage_description": "Rueckseitentext",
+    "backpage_author_bio": "Autorenvita",
+    "cover_image_prompt": "Handgezeichnete Karte, kein Text im Bild",
+}
+ARTICLE_FILL = {
+    "title": "Ein neuer Titel",
+    "seo_title": "SEO-Titel",
+    "seo_description": "SEO-Beschreibung",
+    "excerpt": "   ",
+    "tags": ["katzen", "daecher"],
+    "topic": "Natur",
+    "featured_image_prompt": "Eine Katze auf einem Dach",
+    "inline_image_prompts": [{"section_hint": "Einleitung", "prompt": "Daecher"}],
+}
+
+
+def _fill(template_yaml: str, values: dict[str, Any], extra: dict[str, Any]) -> str:
+    """Put `values` into the template's `current_value` keys, the way a
+    returning assistant would, and re-serialize."""
+    body = yaml.safe_load(template_yaml)
+    for name, value in {**values, **extra}.items():
+        body[name]["current_value"] = value
+    return yaml.safe_dump(body, allow_unicode=True, sort_keys=False)
+
+
+def _record_apply(client: TestClient, db, case: dict[str, Any]) -> dict[str, Any]:
+    if case["kind"] == "book":
+        book = Book(
+            title="Der Kater auf dem Dach",
+            author="Asterios Raptis",
+            language="de",
+            description="Eine Beschreibung die schon dasteht.",
+            genre="Belletristik",
+            book_type="prose",
+        )
+        db.add(book)
+        db.commit()
+        db.refresh(book)
+        chapters = []
+        for position, chapter_title in enumerate(["Erstes Kapitel", "Zweites Kapitel"]):
+            chapter = Chapter(
+                book_id=book.id,
+                title=chapter_title,
+                content=json.dumps(
+                    {
+                        "type": "doc",
+                        "content": [
+                            {
+                                "type": "paragraph",
+                                "content": [{"type": "text", "text": "Ein Absatz."}],
+                            }
+                        ],
+                    }
+                ),
+                position=position,
+            )
+            db.add(chapter)
+            chapters.append(chapter)
+        db.commit()
+        for chapter in chapters:
+            db.refresh(chapter)
+        record_id, path = book.id, f"/api/books/{book.id}"
+        summaries = [
+            # matched by id
+            {"chapter_id": chapters[0].id, "title": "egal", "summary": "Zusammenfassung eins."},
+            # matched by a loosely-spelled title
+            {"title": "  zweites   KAPITEL ", "summary": "Zusammenfassung zwei."},
+            # matched by nothing
+            {"chapter_id": "f" * 32, "title": "Gibt es nicht", "summary": "Verwaist."},
+        ]
+        filled = _fill(
+            client.get(f"{path}/ai-template").text,
+            BOOK_FILL,
+            {"chapter_summaries": summaries},
+        )
+        chapter_refs = [{"id": c.id, "title": c.title} for c in chapters]
+    else:
+        article = Article(
+            title="Warum Katzen klettern",
+            language="de",
+            topic="natur",
+            content_json=json.dumps(
+                {
+                    "type": "doc",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "content": [{"type": "text", "text": "Ein Absatz Text."}],
+                        }
+                    ],
+                }
+            ),
+        )
+        db.add(article)
+        db.commit()
+        db.refresh(article)
+        record_id, path = article.id, f"/api/articles/{article.id}"
+        filled = _fill(client.get(f"{path}/ai-template").text, ARTICLE_FILL, {})
+        chapter_refs = []
+
+    before = client.get(path).json()
+    response = client.post(
+        f"{path}/ai-template?force={'true' if case['force'] else 'false'}",
+        content=filled.encode("utf-8"),
+        headers={"Content-Type": "text/yaml"},
+    )
+    assert response.status_code == 200, response.text
+    after = client.get(path).json()
+
+    def normalize(value: Any) -> Any:
+        """Ids out, so two runs record the same thing."""
+        if isinstance(value, str):
+            out = value.replace(record_id, "<id>")
+            for index, chapter in enumerate(chapter_refs):
+                out = out.replace(chapter["id"], f"<c{index}>")
+            return out
+        if isinstance(value, list):
+            return [normalize(item) for item in value]
+        if isinstance(value, dict):
+            return {key: normalize(item) for key, item in value.items()}
+        return value
+
+    return {
+        "key": case["key"],
+        "kind": case["kind"],
+        "force": case["force"],
+        "before": normalize(_normalize_ids(before, record_id)),
+        "chapters": normalize(chapter_refs),
+        "filled_yaml": normalize(filled),
+        "response": normalize(response.json()),
+        "after": normalize(_normalize_ids(after, record_id)),
     }
 
 
@@ -182,6 +371,7 @@ def test_ai_template_parity_record_is_current() -> None:
     with TestClient(app) as client, SessionLocal() as db:
         recorded = [_record_book(client, db, case) for case in BOOK_CASES]
         recorded += [_record_article(client, db, case) for case in ARTICLE_CASES]
+        applied = [_record_apply(client, db, case) for case in APPLY_CASES]
 
     payload = {
         "_comment": (
@@ -189,6 +379,7 @@ def test_ai_template_parity_record_is_current() -> None:
             "hand-edit: regenerate with AI_TEMPLATE_PARITY_WRITE=1."
         ),
         "cases": recorded,
+        "apply_cases": applied,
     }
 
     if os.environ.get("AI_TEMPLATE_PARITY_WRITE"):
@@ -204,3 +395,4 @@ def test_ai_template_parity_record_is_current() -> None:
     )
     stored = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
     assert stored["cases"] == recorded
+    assert stored["apply_cases"] == applied
