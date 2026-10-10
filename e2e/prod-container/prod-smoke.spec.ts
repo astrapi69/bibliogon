@@ -196,8 +196,26 @@ test("a document written through the container is still there after a reload", a
     const title = `Prod-Container Text ${Date.now()}`;
     await page.goto("/articles/new");
     const titleField = page.getByTestId("create-article-title");
-    await titleField.fill(title);
-    await expect(titleField).toHaveValue(title);
+
+    // Re-fill until it sticks, rather than fill once and hope. Both
+    // create forms prefill asynchronously after mount - this one lands a
+    // default title from the content-type registry, which arrived mid-fill
+    // and produced `"Neuer TextProd-Container Text 1791605427409"`. Waiting
+    // for a specific default instead would hard-code a string this test
+    // has no business knowing.
+    //
+    // Safe to retry, which most polls that touch state are not: `fill`
+    // replaces the whole value, so each attempt re-establishes the state
+    // it is checking instead of destroying it.
+    await expect
+        .poll(
+            async () => {
+                await titleField.fill(title);
+                return titleField.inputValue();
+            },
+            {timeout: 20_000, message: "the create-article title never kept its value"},
+        )
+        .toBe(title);
     await page.getByTestId("create-article-submit").click();
 
     // The editor opens on the created article, which is already proof the
