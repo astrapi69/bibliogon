@@ -22,6 +22,7 @@ from typing import Any
 import git
 
 from app.services.git.backup import configure_remote, repo_path
+from app.services.git.urls import split_url_credentials
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +82,21 @@ def sanitize_git_dir(git_dir: Path) -> list[str]:  # noqa: C901  # Legacy, track
                 parser.remove_section("credential")
                 actions.append("stripped [credential] section")
                 dirty = True
+            # 3. `user:password@` inside a remote URL. Neither of the two
+            # above, so it survived the scrub that exists for exactly this
+            # - and it is where a pasted token actually lands (#1072).
+            for section in list(parser.sections()):
+                if not section.startswith("remote"):
+                    continue
+                for option in ("url", "pushurl"):
+                    stored = parser[section].get(option)
+                    if not stored:
+                        continue
+                    clean, _user, _secret = split_url_credentials(stored)
+                    if clean != stored:
+                        parser.set(section, option, clean)
+                        actions.append(f"stripped credentials from [{section}] {option}")
+                        dirty = True
             if dirty:
                 with config_path.open("w", encoding="utf-8") as f:
                     parser.write(f)

@@ -123,18 +123,65 @@ PAT_USERNAME = "x-access-token"
 #: every process of the same user.
 PAT_ENV_VAR = "BIBLIOGON_GIT_PAT"
 
+
 #: A one-shot git credential helper, as the shell function form git
 #: accepts after ``!``. It answers only the ``get`` action - ``store``
 #: and ``erase`` are no-ops, so git cannot persist the token anywhere -
 #: and it reads the password from the environment, so the token appears
 #: neither in the config file nor in the process arguments.
-_CREDENTIAL_HELPER = (
-    '!f() { test "$1" = get && printf "username='
-    + PAT_USERNAME
-    + '\\npassword=%s\\n" "$'
-    + PAT_ENV_VAR
-    + '"; }; f'
-)
+def _credential_helper(username: str) -> str:
+    """The helper shell function, for one username."""
+    return (
+        '!f() { test "$1" = get && printf "username='
+        + username
+        + '\\npassword=%s\\n" "$'
+        + PAT_ENV_VAR
+        + '"; }; f'
+    )
+
+
+_CREDENTIAL_HELPER = _credential_helper(PAT_USERNAME)
+
+
+def secret_git_env(url: str, secret: str | None, *, username: str | None = None) -> dict[str, str]:
+    """The environment that authenticates ``url`` with ``secret``.
+
+    The same one-shot credential helper :func:`pat_git_config` builds, but
+    for a secret handed in directly rather than loaded for a book - the
+    import path has no book yet, so there is nothing stored to load
+    (#1072). Delivered through git's own ``GIT_CONFIG_COUNT`` /
+    ``GIT_CONFIG_KEY_n`` / ``GIT_CONFIG_VALUE_n`` (git >= 2.31) rather
+    than ``-c`` arguments, so the helper never appears in argv either;
+    GitPython also ``shlex``-splits its ``multi_options``, which a shell
+    function with spaces in it does not survive.
+
+    Returns an empty dict when there is nothing to authenticate with, so
+    a caller can always splat the result and git falls back to the user's
+    ambient credentials.
+
+    Example::
+
+        env = secret_git_env(clean_url, secret, username=user)
+        Repo.clone_from(clean_url, dest, env=env or None)
+    """
+    if not secret:
+        return {}
+    scheme = url.split("://", 1)[0].lower() if "://" in url else ""
+    if scheme not in ("http", "https"):
+        return {}
+    helper = _credential_helper(username or PAT_USERNAME)
+    return {
+        # Two keys with the same name: the empty one resets any ambient
+        # helper list so a globally configured helper can neither see this
+        # request nor cache the token.
+        "GIT_CONFIG_COUNT": "2",
+        "GIT_CONFIG_KEY_0": "credential.helper",
+        "GIT_CONFIG_VALUE_0": "",
+        "GIT_CONFIG_KEY_1": "credential.helper",
+        "GIT_CONFIG_VALUE_1": helper,
+        PAT_ENV_VAR: secret,
+        "GIT_TERMINAL_PROMPT": "0",
+    }
 
 
 def pat_git_config(url: str, book_id: str) -> tuple[list[str], dict[str, str]] | None:

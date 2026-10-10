@@ -25,6 +25,7 @@ from sqlalchemy.orm import Session
 
 from app.models import GitSyncMapping
 from app.paths import get_upload_dir
+from app.services.git.urls import split_url_credentials
 
 logger = logging.getLogger(__name__)
 
@@ -131,6 +132,10 @@ def _read_repo_metadata(repo_root: Path) -> tuple[str, str, str]:
         url = next(iter(repo.remotes.origin.urls), "")
     except (AttributeError, ValueError):
         url = ""
+    # The row is the URL the metadata panel shows and the backup carries,
+    # so it must not hold a credential whatever the clone's config says -
+    # this does not depend on `sanitize_git_dir` having run first (#1072).
+    url, _user, _secret = split_url_credentials(url)
     try:
         branch = repo.active_branch.name
     except (TypeError, ValueError):
