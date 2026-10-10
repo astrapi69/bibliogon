@@ -248,17 +248,34 @@ test("the real service worker registers without a CSP violation", async ({page, 
     await page.goto("/");
     await page.getByTestId("dashboard-header").waitFor({state: "visible"});
 
-    const state = await page.evaluate(async () => {
-        if (!("serviceWorker" in navigator)) return "unsupported";
-        const registration = await Promise.race([
-            navigator.serviceWorker.ready,
-            new Promise<null>((resolve) => setTimeout(() => resolve(null), 15_000)),
+    // Two steps, because they fail for different reasons. First: did the
+    // worker register at all? Asserted, not logged - a worker that never
+    // registers would make the violation check below pass by measuring
+    // nothing. `ready` never settles when there is no registration, hence
+    // the race.
+    const registered = await page.evaluate(() => {
+        if (!("serviceWorker" in navigator)) return Promise.resolve(false);
+        return Promise.race([
+            navigator.serviceWorker.ready.then(() => true),
+            new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 15_000)),
         ]);
-        if (!registration) return "timeout";
-        return registration.active?.state ?? "no-active-worker";
     });
-    // Asserted, not logged: a worker that never registers would make the
-    // violation check below pass by measuring nothing.
-    expect(state, "the service worker did not reach an active state").toBe("activated");
+    expect(registered, "the service worker never registered").toBe(true);
+
+    // Then: let it finish activating. `ready` resolves as soon as there is
+    // an active worker, which can still read "activating" in that same
+    // tick - the first run of this test asserted the exact state once and
+    // caught it mid-lifecycle. A poll is safe here where a reload-and-retry
+    // would not be: reading the state does not change it.
+    await expect
+        .poll(
+            () =>
+                page.evaluate(async () => {
+                    const registration = await navigator.serviceWorker.getRegistration();
+                    return registration?.active?.state ?? "no-active-worker";
+                }),
+            {timeout: 15_000},
+        )
+        .toBe("activated");
     await expectNoViolations(page, "service worker registration");
 });
