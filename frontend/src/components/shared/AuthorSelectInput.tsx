@@ -145,11 +145,22 @@ export default function AuthorSelectInput({
     const inCustom =
         hasProfileSelect &&
         (customMode || (!valueIsChoice && value.trim() !== ""));
+    // Whichever control is on screen owns the canonical id, so a caller's
+    // `<label htmlFor>` finds it (#1066). Without a profile select the
+    // free-text input is the only control there is - keying this off
+    // `inCustom` alone left it with the `-custom` suffix and the label
+    // pointing at nothing, which is the common case: a profile with one
+    // name or none.
+    const inputOwnsLabel = inCustom || !hasProfileSelect;
 
     const freeText = (
         <>
             <input
-                id={inCustom ? resolvedInputId : `${resolvedInputId}-custom`}
+                id={
+                    inputOwnsLabel
+                        ? resolvedInputId
+                        : `${resolvedInputId}-custom`
+                }
                 className={inputClassName ?? "input"}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
@@ -210,7 +221,7 @@ export default function AuthorSelectInput({
     return (
         <>
             <select
-                id={inCustom ? undefined : resolvedInputId}
+                id={inputOwnsLabel ? undefined : resolvedInputId}
                 className={inputClassName ?? "input"}
                 value={selectValue}
                 onChange={(e) => handleSelectChange(e.target.value)}
