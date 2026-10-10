@@ -46,15 +46,18 @@ test("the cover step reaches both verdicts offline, without any /api call", asyn
     await page.waitForURL(/\/book\/[^/?]+/, {timeout: 20_000});
     const bookPath = new URL(page.url()).pathname;
 
-    // The metadata check gates step 0 on a description, so set one. The
-    // save is confirmed by reading it back rather than by the button
-    // re-enabling: the button is already enabled when clicked, so
-    // waiting on that races the write and the next goto drops it.
+    // Step 0 gates on a chapter and a description, so give it both.
+    await page.getByTestId("chapter-add-trigger").click();
+    await page.getByRole("menuitem", {name: /Neues Kapitel|New Chapter/}).click();
+    await expect(page.locator('[data-testid^="chapter-item-"]').first()).toBeVisible({
+        timeout: 15_000,
+    });
+
     await page.goto(`${bookPath}?view=metadata`);
     const description = page.getByLabel(/Beschreibung|Description/).first();
     await expect(description).toBeVisible({timeout: 15_000});
     await description.fill(DESCRIPTION);
-    await page.getByTestId("metadata-save").click();
+    await saveMetadata(page);
     await page.goto(`${bookPath}?view=metadata`);
     await expect(page.getByLabel(/Beschreibung|Description/).first()).toHaveValue(DESCRIPTION, {
         timeout: 15_000,
@@ -89,11 +92,24 @@ test("the cover step reaches both verdicts offline, without any /api call", asyn
     expect(apiCalls).toEqual([]);
 });
 
-/** Uploads the cover and does not return until the book row carries it.
+/** Clicks save and waits for the write to finish.
  *
- *  Reading it back is the only reliable wait: `metadata-save` is already
- *  enabled when clicked, so waiting on the button races the write, and
- *  the next navigation would destroy the context mid-write. */
+ *  Not on the button: it is already enabled when clicked, so waiting for
+ *  it to be enabled returns immediately and the next navigation destroys
+ *  the context mid-write. The success toast fires after the awaited
+ *  storage call returns, so it is the signal that the row has the
+ *  change - but the cover upload raises one of its own, so any toast
+ *  still on screen has to clear first or this would match that one and
+ *  wait for nothing. */
+async function saveMetadata(page: import("@playwright/test").Page) {
+    await expect(page.locator(".Toastify__toast")).toHaveCount(0, {timeout: 15_000});
+    await page.getByTestId("metadata-save").click();
+    await expect(page.locator(".Toastify__toast--success").first()).toBeVisible({
+        timeout: 15_000,
+    });
+    await expect(page.locator(".Toastify__toast--error")).toHaveCount(0);
+}
+
 async function uploadCover(
     page: import("@playwright/test").Page,
     bookPath: string,
@@ -105,7 +121,7 @@ async function uploadCover(
     const preview = page.getByTestId("cover-preview-img");
     await expect(preview).toBeVisible({timeout: 15_000});
     await expect(preview).toHaveAttribute("src", /^blob:/);
-    await page.getByTestId("metadata-save").click();
+    await saveMetadata(page);
 
     await page.goto(`${bookPath}?view=metadata`);
     await page.getByTestId("metadata-tab-design").click();
