@@ -6127,3 +6127,68 @@ have shown it before the merge instead of after.
 - "Pre-Inspection MUST audit all callers of a touched endpoint" - the
   caller-side twin. This is the producer side: audit what the endpoint does
   to its inputs before mirroring the function behind it.
+
+## An assertion on a function's return value is not an assertion on the artifact its consumer reads
+
+Filed 2026-10-10 (#742), third in the family with "A layout assertion whose
+bound comes from the box under test cannot see the bug" and "A retry that
+destroys the state it is retrying". Same shape every time: the assertion is
+careful, reads as evidence, and cannot observe the defect.
+
+`bubbleSvg` returns both the SVG markup and the `width`/`height` pdfmake
+should size the node with. svg-to-pdfkit lays the drawing out from the
+markup's own attributes; pdfmake sizes the box from the numbers. A mismatch
+between them squashes the outline inside a correctly sized box - the exact
+bug worth a test. The test I wrote:
+
+```ts
+const out = bubbleSvg(SPEECH, rect)!;
+expect(out.width).not.toBeCloseTo(out.height, 6);   // both from the return
+expect(out.svg).toContain('preserveAspectRatio="none"');
+```
+
+I then broke the markup on purpose - `height="${viewBoxSize * scaleX}"`,
+one axis' scale on both - and the test stayed green. It was reading the two
+numbers that were still right and never looking at the string that was
+wrong.
+
+The fix is one line, and it is the whole lesson: assert the two agree.
+
+```ts
+expect(out.svg).toContain(`width="${out.width}" height="${out.height}"`);
+```
+
+### The rule
+
+When a function returns both a rendered artifact and metadata about it, the
+test has to read the **artifact the consumer consumes**. Asserting the
+metadata proves the metadata, which is usually the half that was already
+correct - the artifact is where the string-building happens and therefore
+where the typo lives.
+
+Concretely, ask of each assertion: *which of these two values does the thing
+downstream actually read?* Then assert on that one, and assert that the
+other agrees with it. Instances to expect:
+
+- SVG, HTML or Markdown returned beside its measured dimensions.
+- A filename returned beside the bytes (the bytes carry the format; a test
+  on the extension proves nothing about the encoder).
+- A query string returned beside the parsed params it was built from.
+- A serialised payload returned beside the object it came from - the
+  parity-record lesson above is this one at the recording layer.
+
+### How it survives review
+
+The weak and the strong version differ by one line and both read as
+deliberate. What makes the weak one weak is invisible without asking which
+field has a consumer, and the green run is identical. So the only reliable
+detection is the one that caught it here: break the production code in the
+precise way the test claims to prevent, and watch. If it stays green, the
+test is measuring the wrong surface - whatever its name says.
+
+### Pairs with
+
+- `coding-standards.md` "A red-pin claim needs the red run linked" - this is
+  what that discipline is for. Three of #742's tests were confirmed red
+  against deliberate breaks; this one was the fourth, it passed, and it did
+  not deserve to.
