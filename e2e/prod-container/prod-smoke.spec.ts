@@ -38,20 +38,27 @@ import {test, expect, type BrowserContext, type Page} from "@playwright/test";
 const ONE_LINE_PX = 24;
 
 /**
- * The service worker is aborted here, as in every sibling static-smoke
- * spec. Two reasons, both about what this gate is for: a precaching
- * worker would serve one test's bundle to the next and mask a changed
- * artifact, and the worker's own auto-update (focus / visibility /
- * hourly) races Playwright's per-test storage wipe and logs an uncaught
- * InvalidStateError that has nothing to do with whether the container
- * renders. The real worker IS measured, against the canonical CSP, in
- * static-smoke/csp-report-only.spec.ts; the uncaught error it raises
- * here is #1065.
+ * The service worker is kept out of these tests. Two reasons, both about
+ * what this gate is for: a precaching worker would serve one test's
+ * bundle to the next and mask a changed artifact, and the worker's own
+ * auto-update (focus / visibility / hourly) races Playwright's per-test
+ * storage wipe and logs an uncaught InvalidStateError that says nothing
+ * about whether the container renders (#1065). The real worker IS
+ * measured, against the canonical CSP, in
+ * static-smoke/csp-report-only.spec.ts.
+ *
+ * FULFILLED empty, not aborted. The sibling static-smoke specs abort,
+ * which they can afford because they do not watch the console: an
+ * aborted request makes Chromium log `Failed to load resource:
+ * net::ERR_FAILED`, and this gate fails on exactly that. An empty 200
+ * leaves nothing to register and nothing to report.
  */
 const SW_SCRIPTS = /\/(registerSW\.js|sw\.js)(\?|$)/;
 
 test.beforeEach(async ({context}: {context: BrowserContext}) => {
-    await context.route(SW_SCRIPTS, (route) => route.abort());
+    await context.route(SW_SCRIPTS, (route) =>
+        route.fulfill({status: 200, contentType: "application/javascript", body: ""}),
+    );
 });
 
 interface PageFailures {
@@ -192,11 +199,35 @@ test("a book written through the container is still there after a reload", async
     await author.fill("Asterios Raptis");
 
     const submit = page.getByTestId("create-book-submit");
-    await expect(
-        submit,
-        "the create-book submit stayed disabled with both required fields filled" +
-            " - something cleared them after the profile load resolved",
-    ).toBeEnabled();
+    // The message carries the form's actual state, because "disabled"
+    // alone cannot distinguish a cleared field from a mode the form
+    // switched into - `canSubmit` wants a title, an author AND either
+    // blank mode or a chosen template, and all three are invisible from
+    // the button. A failure that does not name which one is missing costs
+    // another run to find out.
+    if (!(await submit.isEnabled())) {
+        const state = await page.evaluate(() => {
+            const read = (id: string) => {
+                const el = document.querySelector(`[data-testid="${id}"]`);
+                return el instanceof HTMLInputElement || el instanceof HTMLSelectElement
+                    ? el.value
+                    : el
+                      ? "(present, not a field)"
+                      : "(absent)";
+            };
+            const tab = document.querySelector('[data-testid="create-book-mode-template"]');
+            return {
+                title: read("create-book-title"),
+                author: read("create-book-author"),
+                authorSelect: read("create-book-author-select"),
+                templateTabState: tab?.getAttribute("data-state") ?? "(no tabs)",
+            };
+        });
+        throw new Error(
+            "the create-book submit stayed disabled after both required fields" +
+                ` were filled. Form state: ${JSON.stringify(state)}`,
+        );
+    }
     await submit.click();
 
     await page.goto("/");
