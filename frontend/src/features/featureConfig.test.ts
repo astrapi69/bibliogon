@@ -166,16 +166,18 @@ describe("featureRegistry", () => {
         ).toBe("active");
     });
 
-    it("disables ai-template-file-io offline (backend-only, key-independent)", () => {
+    it("keeps ai-template-file-io active in both modes, with or without a key (#745)", () => {
+        // The `.biblio.yaml` round-trip runs in the browser since #745:
+        // built from the record through the storage seam, applied back
+        // through it. No key is involved - the file's third workflow is
+        // a user pasting it into an assistant somewhere else, which is
+        // why it must work where there is no backend at all.
         expect(featureRegistry.getState(FEATURES.AI_TEMPLATE_FILE_IO, API)).toBe("active");
         expect(featureRegistry.getState(FEATURES.AI_TEMPLATE_FILE_IO, DEXIE_NO_KEY)).toBe(
-            "disabled",
+            "active",
         );
         expect(featureRegistry.getState(FEATURES.AI_TEMPLATE_FILE_IO, DEXIE_WITH_KEY)).toBe(
-            "disabled",
-        );
-        expect(featureRegistry.getReason(FEATURES.AI_TEMPLATE_FILE_IO, DEXIE_NO_KEY)).toBe(
-            FEATURE_REASON.REQUIRES_DESKTOP_APP,
+            "active",
         );
     });
 

@@ -14,6 +14,8 @@ import { notify } from "../../utils/platform/notify";
 import { api, ApiError } from "../../api/client";
 import type { AiFillResponse, AiTemplateImportResult } from "../../api/client";
 import { aiFillArticle, aiFillBook } from "../../ai/aiFill";
+import { exportTemplateOffline, importTemplateOffline } from "../../ai/template/fileIo";
+import { TemplateSchemaError } from "../../lib/ai/template/models";
 import { ARTICLE_OFFLINE_FILL_CLASSES } from "../../ai/articleFillPrompts";
 import { BOOK_OFFLINE_FILL_CLASSES } from "../../ai/bookFillPrompts";
 import FieldClassDialog, { type FieldClassDialogResult } from "./FieldClassDialog";
@@ -150,7 +152,14 @@ export default function AITemplatePanel({ kind, id, onApplied, layout = "default
     const handleExport = async () => {
         setExportLoading(true);
         try {
-            const { blob, filename } = await namespace.aiTemplate.export(id);
+            // Offline the file is built from the record through the
+            // storage seam (#745); online the endpoint builds it. Same
+            // bytes either way - the header, the field order and the
+            // download name are pinned against the endpoint's own
+            // recorded response.
+            const { blob, filename } = offline
+                ? await exportTemplateOffline(kind, id)
+                : await namespace.aiTemplate.export(id);
             downloadBlob(blob, filename);
             notify.success(
                 t("ui.ai_template.export.toast.success", "Template exported: {filename}").replace(
@@ -186,11 +195,13 @@ export default function AITemplatePanel({ kind, id, onApplied, layout = "default
         setImportLoading(true);
         try {
             const yamlText = await importFile.text();
-            const result = (await namespace.aiTemplate.import(
-                id,
-                yamlText,
-                importForce,
-            )) as AiTemplateImportResult;
+            const result = offline
+                ? await importTemplateOffline(kind, id, yamlText, importForce)
+                : ((await namespace.aiTemplate.import(
+                      id,
+                      yamlText,
+                      importForce,
+                  )) as AiTemplateImportResult);
             const updated = result.updated_fields.length;
             const skipped = result.skipped_fields.length;
             const dropped = result.dropped_chapter_summaries?.length ?? 0;
@@ -225,9 +236,15 @@ export default function AITemplatePanel({ kind, id, onApplied, layout = "default
             setShowImportDialog(false);
             onApplied?.();
         } catch (err) {
+            // A malformed or wrong-kind file is the offline equivalent of
+            // the endpoint's 400, and its message names the field or the
+            // type - which is the difference between "Import failed" and
+            // knowing where to look in a 300-line file.
             const detail =
-                err instanceof ApiError
-                    ? err.detail
+                err instanceof ApiError || err instanceof TemplateSchemaError
+                    ? err instanceof ApiError
+                        ? err.detail
+                        : err.message
                     : t("ui.ai_template.import.toast.error", "Import failed");
             notify.error(detail, err);
         } finally {
