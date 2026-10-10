@@ -16,8 +16,8 @@ import {
     Share2,
 } from "lucide-react";
 
-import { type ChapterType } from "../api/client";
-import { type EditorMenuGroup } from "../lib/components/EditorMenu";
+import { type ChapterType } from "../../api/client";
+import { type EditorMenuGroup } from "../../lib/components/EditorMenu";
 
 type TranslateFn = (key: string, fallback?: string) => string;
 

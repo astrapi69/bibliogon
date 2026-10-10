@@ -30,7 +30,7 @@ import { setDocumentMeta, resetDocumentMeta } from "../lib/utils/documentMeta";
 import { SidebarToggleButton } from "../components/shared/SidebarToggleButton";
 import { SidebarOverlay } from "../lib/components/SidebarOverlay";
 import { EditorMenu } from "../lib/components/EditorMenu";
-import { buildBookEditorMenu } from "./buildBookEditorMenu";
+import { buildBookEditorMenu } from "./menus/buildBookEditorMenu";
 import { BookOpen, Plus } from "lucide-react";
 import { EmptyState } from "../lib/components/EmptyState";
 import { LoadingIndicator } from "../components/shared/LoadingIndicator";
