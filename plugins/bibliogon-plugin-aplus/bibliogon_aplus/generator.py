@@ -98,12 +98,23 @@ def _parse_ai_yaml_fragment(text: str) -> dict[str, Any]:
     return parsed if isinstance(parsed, dict) else {}
 
 
-def _prompt_text(raw: Any) -> str:
-    """The model's image keywords as a clean string.
+def _text(raw: Any) -> str:
+    """One of the model's string fields, as a clean string.
 
-    A bare ``image_prompt:`` line parses to None and must not become
-    the literal prompt "None"; whitespace-only is no prompt either.
-    Both collapse to "", which ``render_image_prompt`` renders as "".
+    A YAML key present with no value parses to None, and ``str(None)``
+    is the literal four-character word "None". Every text field in the
+    package goes through here so that word cannot reach the author's
+    copy: None and whitespace-only both collapse to "" (#1086).
+
+    Only those two collapse. A model that answers with an unquoted
+    number meant those digits and YAML parsed them as an int, so the
+    field keeps them.
+
+    The guard existed for ``image_prompt`` alone from the start - a
+    bare prompt had to render as "" rather than as the word - and the
+    other nine fields were the ones that shipped it. An empty
+    ``alt_text`` now reaches the validator as empty, which is the error
+    the ruleset already wanted to report.
     """
     if raw is None:
         return ""
@@ -116,6 +127,8 @@ def _build_draft_package(
     """Tolerant construction: any missing key becomes an empty
     string/list rather than raising, so a partially-broken AI
     response still produces a draft the validator can report on.
+    A key present with no value is the same as absent - see
+    :func:`_text`.
 
     The model supplies only the keyword prompt per image
     (``image_prompt`` in its YAML); aspect ratio, size and style flags
@@ -125,7 +138,7 @@ def _build_draft_package(
     bullets_raw = parsed.get("bullets")
     bullets = (
         [
-            Bullet(heading=str(entry.get("heading", "")), body=str(entry.get("body", "")))
+            Bullet(heading=_text(entry.get("heading")), body=_text(entry.get("body")))
             for entry in bullets_raw
             if isinstance(entry, dict)
         ]
@@ -135,20 +148,20 @@ def _build_draft_package(
 
     header_raw = parsed.get("module_header") or {}
     header = ModuleHeader(
-        title=str(header_raw.get("title", "")),
-        text=str(header_raw.get("text", "")),
-        image=styles.header.image(_prompt_text(header_raw.get("image_prompt"))),
-        alt_text=str(header_raw.get("alt_text", "")),
+        title=_text(header_raw.get("title")),
+        text=_text(header_raw.get("text")),
+        image=styles.header.image(_text(header_raw.get("image_prompt"))),
+        alt_text=_text(header_raw.get("alt_text")),
     )
 
     images_raw = parsed.get("module_three_images")
     three_images = (
         [
             ThreeImageEntry(
-                title=str(entry.get("title", "")),
-                text=str(entry.get("text", "")),
-                image=styles.three_images.image(_prompt_text(entry.get("image_prompt"))),
-                alt_text=str(entry.get("alt_text", "")),
+                title=_text(entry.get("title")),
+                text=_text(entry.get("text")),
+                image=styles.three_images.image(_text(entry.get("image_prompt"))),
+                alt_text=_text(entry.get("alt_text")),
             )
             for entry in images_raw
             if isinstance(entry, dict)
@@ -158,7 +171,7 @@ def _build_draft_package(
     )
 
     return AplusPackage(
-        short_description=str(parsed.get("short_description", "")),
+        short_description=_text(parsed.get("short_description")),
         bullets=bullets,
         module_header=header,
         module_three_images=three_images,

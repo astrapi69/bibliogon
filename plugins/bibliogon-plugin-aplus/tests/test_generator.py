@@ -70,16 +70,26 @@ def _context(**overrides) -> BookContext:
 
 
 class _FakeClient:
-    """Returns each of ``responses`` in order, one per call."""
+    """Returns each of ``responses`` in order, one per call.
+
+    Once the list runs out the LAST reply repeats, so a case can hand
+    over one response and still describe a run that spends the whole
+    retry budget. The earlier version popped and then indexed the now
+    empty list, which raised ``IndexError`` from inside the generator
+    the moment a single-response case needed a second attempt - so
+    "one reply, every attempt" was unwritable and the only way to test
+    an exhausted budget was to count the retries by hand in the case.
+    """
 
     def __init__(self, responses: list[str], model: str = "fake-model-1") -> None:
         self._responses = list(responses)
+        assert self._responses, "a fake client with no response cannot answer a call"
         self.model = model
         self.calls: list[list[dict[str, str]]] = []
 
     async def chat(self, messages, temperature=None):
         self.calls.append(messages)
-        content = self._responses.pop(0) if self._responses else self._responses[-1]
+        content = self._responses[min(len(self.calls) - 1, len(self._responses) - 1)]
         return {"content": content, "model": self.model, "usage": {}}
 
 
@@ -309,3 +319,87 @@ class TestBrokenImagePromptShapes:
             generate_package(_context(), language="en", rules=RULES, client=_FakeClient([broken]))
         )
         assert [tile.image.prompt for tile in package.module_three_images] == ["", "", ""]
+
+
+class TestBareTextKeys:
+    """A YAML key present with no value must not become the word "None".
+
+    ``_text`` (then ``_prompt_text``) has guarded ``image_prompt`` against this since the
+    class was written; the other nine string fields went through a bare
+    ``str(...)`` and turned a blank line into the literal four-character
+    word. The validator then saw a 4-character field under its limit and
+    reported nothing, so "None" shipped into the author's A+ copy
+    (#1086).
+
+    A bare key is the shape a model produces when it has nothing to say
+    for a field but was told to reply with "exactly this YAML shape" -
+    the prompt lists every key, so blanking one is likelier than
+    omitting it.
+    """
+
+    @staticmethod
+    def _package(yaml_text: str):
+        return _run(
+            generate_package(
+                _context(), language="en", rules=RULES, client=_FakeClient([yaml_text])
+            )
+        )
+
+    def test_a_bare_short_description_is_empty_not_none(self) -> None:
+        broken = GOOD_YAML.replace(
+            "short_description: A quiet story about memory and choice.",
+            "short_description:",
+        )
+        assert self._package(broken).short_description == ""
+
+    def test_a_bare_bullet_heading_and_body_are_empty_not_none(self) -> None:
+        broken = GOOD_YAML.replace(
+            "  - heading: Clear structure\n    body: Chapters build on each other.",
+            "  - heading:\n    body:",
+        )
+        first = self._package(broken).bullets[0]
+        assert (first.heading, first.body) == ("", "")
+
+    def test_bare_module_header_text_fields_are_empty_not_none(self) -> None:
+        broken = GOOD_YAML.replace(
+            "  title: Overview\n  text: An inviting overview of the book's premise.",
+            "  title:\n  text:",
+        ).replace("  alt_text: A reader immersed in the story", "  alt_text:")
+        header = self._package(broken).module_header
+        assert (header.title, header.text, header.alt_text) == ("", "", "")
+
+    def test_bare_tile_text_fields_are_empty_not_none(self) -> None:
+        broken = GOOD_YAML.replace(
+            "  - title: Concept one\n    text: A supporting idea.",
+            "  - title:\n    text:",
+        ).replace("    alt_text: Icon representing concept one", "    alt_text:")
+        tile = self._package(broken).module_three_images[0]
+        assert (tile.title, tile.text, tile.alt_text) == ("", "", "")
+
+    def test_whitespace_only_text_collapses_the_same_way(self) -> None:
+        broken = GOOD_YAML.replace(
+            "short_description: A quiet story about memory and choice.",
+            'short_description: "   "',
+        )
+        assert self._package(broken).short_description == ""
+
+    def test_the_now_empty_alt_text_is_reported_as_an_error(self) -> None:
+        """The point of the fix, not a side effect: "None" passed every
+        length and wording rule, so a blanked alt text shipped silently.
+        An empty one is what the ruleset already calls an error."""
+        broken = GOOD_YAML.replace("  alt_text: A reader immersed in the story", "  alt_text:")
+        package = self._package(broken)
+        assert any(
+            finding.field == "module_header.alt_text" and finding.severity == "error"
+            for finding in package.validation
+        ), [f.field for f in package.validation]
+
+    def test_a_number_still_becomes_its_digits(self) -> None:
+        """Only None and whitespace collapse. A model that answers with
+        an unquoted number meant those digits, and YAML parsed them as
+        an int - the field is a string, so it keeps them."""
+        broken = GOOD_YAML.replace(
+            "short_description: A quiet story about memory and choice.",
+            "short_description: 2026",
+        )
+        assert self._package(broken).short_description == "2026"
