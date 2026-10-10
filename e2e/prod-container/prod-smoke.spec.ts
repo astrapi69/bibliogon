@@ -187,35 +187,26 @@ test("a document written through the container is still there after a reload", a
     // directory is not writable.
     //
     // An article, not a book. The create-book form needs a title AND an
-    // author, and its author field re-mounts when the profile load
-    // resolves (#1066) - two runs of this test lost the typed author to
-    // that re-render, once into the title field and once to nothing at
-    // all. Pinning a storage round-trip on the most load-racy form in the
-    // app measures that form, not the stack. The article form needs a
-    // title, and that is the whole point here.
+    // author, and `fill` on its author field failed twice here in two
+    // different ways. The article form needs a title, so there is one
+    // field between this test and the thing it measures.
     const title = `Prod-Container Text ${Date.now()}`;
     await page.goto("/articles/new");
     const titleField = page.getByTestId("create-article-title");
 
-    // Re-fill until it sticks, rather than fill once and hope. Both
-    // create forms prefill asynchronously after mount - this one lands a
-    // default title from the content-type registry, which arrived mid-fill
-    // and produced `"Neuer TextProd-Container Text 1791605427409"`. Waiting
-    // for a specific default instead would hard-code a string this test
-    // has no business knowing.
-    //
-    // Safe to retry, which most polls that touch state are not: `fill`
-    // replaces the whole value, so each attempt re-establishes the state
-    // it is checking instead of destroying it.
-    await expect
-        .poll(
-            async () => {
-                await titleField.fill(title);
-                return titleField.inputValue();
-            },
-            {timeout: 20_000, message: "the create-article title never kept its value"},
-        )
-        .toBe(title);
+    // Typed, not filled. `fill` sets the value through the native setter
+    // and inserts the text in one go; against this production build that
+    // raced React's controlled-input restore, and the insert landed on a
+    // value React had just put BACK - 22 re-fill attempts produced
+    // "Neuer Text" followed by the same title 22 times. The clear is done
+    // with real key events and asserted empty before anything is typed,
+    // so React has flushed the state the input is controlled by.
+    await titleField.click();
+    await titleField.press("ControlOrMeta+a");
+    await titleField.press("Delete");
+    await expect(titleField).toHaveValue("");
+    await titleField.pressSequentially(title);
+    await expect(titleField).toHaveValue(title);
     await page.getByTestId("create-article-submit").click();
 
     // The editor opens on the created article, which is already proof the
