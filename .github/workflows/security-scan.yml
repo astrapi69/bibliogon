@@ -13,6 +13,8 @@ name: Security Scan
 #                so nothing is ignored silently.
 #   - bandit     High severity blocks; Low/Medium stay warn-only.
 #   - npm audit  --audit-level=high with a real exit code.
+# The launcher tree joined the gate in #1047: it is frozen into the binary
+# attached to every release, so its lock ships to users.
 # The trigger stays Weekly + manual dispatch (no PR trigger - that gate is
 # ci.yml). A red here means a new advisory landed against a merged
 # dependency; triage it, then either fix or add a justified entry to
@@ -86,6 +88,52 @@ jobs:
             -r app ../plugins ../scripts \
             --severity-level medium --confidence-level medium -q || true
 
+  # The launcher is not dev tooling: `make release-*` freezes this tree with
+  # PyInstaller and attaches the binary to the GitHub release, so whatever
+  # `launcher/poetry.lock` resolves is shipped to users embedded in that
+  # artifact (#1047). Until now it was watched by hand - the `pillow` pin
+  # still carries the six CVE numbers somebody read advisories to find - and
+  # a hand is not a mechanism. Blocking, because the artifact ships.
+  #
+  # Still unaudited after this: `e2e/` (Playwright) and `docs/` (MkDocs),
+  # both dev-only. #1047 phase 2, advisory first.
+  #
+  # pip-audit lives in the launcher's dev group rather than being installed
+  # here, so the audited environment equals the lockfile - the same
+  # convention as the backend job, including the consequence that an
+  # advisory against the auditor's own tree fails this gate. That is what
+  # .security-ignore.yml is for. It never reaches a user: PyInstaller
+  # bundles what the launcher imports, and nothing imports pip-audit.
+  launcher-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      # `sync`, not `install`, for the same reason as the backend job above:
+      # the audited environment has to equal the lockfile by construction.
+      - name: Install launcher dependencies (synced to the lockfile)
+        working-directory: launcher
+        run: poetry sync --no-interaction --no-ansi
+
+      - name: Upgrade the venv's own pip before auditing it
+        working-directory: launcher
+        run: poetry run python -m pip install --quiet --upgrade pip
+
+      - name: pip-audit (blocks on non-ignored advisories)
+        working-directory: launcher
+        run: |
+          echo "=== pip-audit (launcher tree; ships inside the frozen binary) ==="
+          IGNORE=$(poetry run python ../scripts/security_ignore_args.py)
+          echo "accepted advisories (see .security-ignore.yml): ${IGNORE:-none}"
+          poetry run pip-audit --skip-editable $IGNORE
+
   frontend-security:
     runs-on: ubuntu-latest
     steps:
@@ -112,7 +160,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     if: always()
-    needs: [python-security, frontend-security]
+    needs: [python-security, launcher-security, frontend-security]
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
