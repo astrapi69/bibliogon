@@ -36,17 +36,11 @@
 
 import type {CSSProperties} from "react";
 
-export type BubbleTailDirection =
-    | "N"
-    | "NE"
-    | "E"
-    | "SE"
-    | "S"
-    | "SW"
-    | "W"
-    | "NW"
-    | "none"
-    | "auto";
+// Declared with the geometry in ``lib/comics/bubblePath.ts``; re-exported
+// here because this module was its home and six call sites import it from
+// it (#742).
+export type {BubbleTailDirection} from "../../lib/comics/bubblePath";
+import type {BubbleTailDirection} from "../../lib/comics/bubblePath";
 
 interface BubbleTailProps {
     direction: BubbleTailDirection;

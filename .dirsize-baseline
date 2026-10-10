@@ -21,7 +21,7 @@
   "frontend/src/components/articles": 39,
   "frontend/src/components/book": 52,
   "frontend/src/components/book-metadata/aplus": 14,
-  "frontend/src/components/comics": 31,
+  "frontend/src/components/comics": 30,
   "frontend/src/components/dashboard": 17,
   "frontend/src/components/editor": 28,
   "frontend/src/components/export": 12,
