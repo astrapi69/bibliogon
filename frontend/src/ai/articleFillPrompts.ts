@@ -6,11 +6,11 @@
  * request a JSON object instead of a YAML fragment (the browser has no YAML
  * parser; see templateApply.ts).
  *
- * Offline scope: the four editor-visible field-classes whose target columns
- * exist on the Dexie/API Article shape — seo, tags, topic, excerpt. The backend
- * `image_prompts` class is intentionally omitted offline (its
- * featured_image_prompt / inline_image_prompts columns are not on the frontend
- * Article shape); it remains a backend/online-only class.
+ * Offline scope: all five of the backend's field-classes. `image_prompts`
+ * was omitted until #1077 because its `featured_image_prompt` /
+ * `inline_image_prompts` columns were not on the frontend Article shape and
+ * no PATCH accepted them - #1076 fixed both, so the class works through the
+ * storage seam like the other four.
  */
 
 import type { AiChatMessage } from "./llmClient";
@@ -46,7 +46,7 @@ function systemPrompt(article: ArticlePromptInput): string {
   return `You are filling metadata fields for an article in a Bibliogon AI template. Follow these rules:
 
 1. Respond with a JSON object ONLY. No prose, no markdown fences, no commentary outside the JSON.
-2. Respond in the article's language: ${article.language}. All generated text (titles, descriptions, tags) must be in that language.
+2. Respond in the article's language: ${article.language}. All generated text (titles, descriptions, tags) must be in that language. Image prompts can stay in English (image generators are most reliable with English prompts).
 3. Use real UTF-8 characters (umlauts, accents, CJK characters). Do NOT escape them and do NOT substitute ASCII transliterations.
 4. If you cannot generate a field with high confidence, set it to null. Do not invent.
 5. Output ONLY the fields requested in the user message; do not echo unrelated fields.`;
@@ -110,8 +110,37 @@ Generate a short conversational excerpt for this article, shown on article lists
   );
 }
 
-/** Offline-supported article field-classes. Mirrors the backend registry minus
- *  `image_prompts`. */
+/**
+ * Prompts for the hero image and one illustration per body section.
+ *
+ * `inlineCount` mirrors the backend's heuristic default of 3, clamped to
+ * 1..5 the same way; the field-class dialog can override it.
+ */
+function buildImagePromptsMessages(
+  article: ArticlePromptInput,
+  body: string,
+  inlineCount = 3,
+): AiChatMessage[] {
+  const count = Math.max(1, Math.min(inlineCount, 5));
+  return messages(
+    article,
+    `${userPrefix(article, body)}
+
+Generate Stable-Diffusion-style image prompts for this article. Image prompts may stay in English even when the article language differs - image generators are most reliable with English prompts.
+
+Each prompt should include:
+- style hint (photorealistic, illustration, abstract)
+- composition + subject
+- mood + lighting
+- "no text in image" when appropriate
+
+Output exactly this JSON shape, with ${count} entries in inline_image_prompts:
+
+{"featured_image_prompt": "<hero image prompt, evokes the article's main theme>", "inline_image_prompts": [{"section_hint": "<short label, where this illustration goes>", "prompt": "<SD-style prompt>"}]}`,
+  );
+}
+
+/** The article field-classes, all five of them since #1077. */
 export const ARTICLE_FILL_CLASSES: Record<string, FillClassSpec<ArticlePromptInput>> = {
   seo: {
     buildMessages: buildSeoMessages,
@@ -131,6 +160,21 @@ export const ARTICLE_FILL_CLASSES: Record<string, FillClassSpec<ArticlePromptInp
   excerpt: {
     buildMessages: buildExcerptMessages,
     targets: [{ aiKey: "excerpt", column: "excerpt", isList: false }],
+  },
+  image_prompts: {
+    buildMessages: buildImagePromptsMessages,
+    targets: [
+      {
+        aiKey: "featured_image_prompt",
+        column: "featured_image_prompt",
+        isList: false,
+      },
+      {
+        aiKey: "inline_image_prompts",
+        column: "inline_image_prompts",
+        isList: true,
+      },
+    ],
   },
 };
 

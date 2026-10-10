@@ -20,4 +20,12 @@ export interface FillTarget {
 export interface FillClassSpec<TInput> {
   buildMessages: (input: TInput, body: string) => AiChatMessage[];
   targets: FillTarget[];
+  /**
+   * The book `chapter_summaries` class, which needs a step the others do
+   * not: the AI answers with one entry per chapter and each has to be
+   * matched back to a real chapter row before it is written, so an entry
+   * can never name a chapter that does not exist. Mirrors the backend's
+   * `is_chapter_summaries` flag on `_FieldClassSpec`.
+   */
+  isChapterSummaries?: boolean;
 }

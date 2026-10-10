@@ -5,12 +5,12 @@
  * field-class registry in `backend/app/routers/book_ai_fill.py`, adapted to
  * request a JSON object instead of a YAML fragment (see templateApply.ts).
  *
- * Offline scope: the three editor-visible field-classes whose target columns
- * exist on the Dexie/API Book shape — marketing_copy, tags, description_genre.
- * The backend `cover_prompt` (cover_image_prompt column not on the frontend
- * shape) and `chapter_summaries` (needs the chapter-reconcile pipeline; not
- * editor-visible) classes are intentionally omitted offline; they remain
- * backend/online-only classes.
+ * Offline scope: all five of the backend's field-classes since #1077.
+ * `cover_prompt` was omitted while its `cover_image_prompt` column was
+ * absent from the frontend shape and no PATCH accepted it (#1076 fixed
+ * both), and `chapter_summaries` while the chapter-reconcile had no browser
+ * implementation - it does now, ported for the `.biblio.yaml` round-trip
+ * (#745), and this registry calls that one rather than a second copy.
  */
 
 import type { AiChatMessage } from "./llmClient";
@@ -24,7 +24,17 @@ export interface BookPromptInput {
   genre?: string | null;
   series?: string | null;
   language: string;
+  /**
+   * One block per chapter for the `chapter_summaries` class, which asks
+   * for a summary per chapter rather than from the aggregated body.
+   * Mirrors `_build_chapter_input` in the backend router.
+   */
+  chapters?: { chapter_id: string; title: string; excerpt: string }[];
 }
+
+/** Per-chapter excerpt cap, mirroring the backend `_CHAPTER_EXCERPT_LIMIT`
+ *  so the prompt stays compact for books with many long chapters. */
+export const CHAPTER_EXCERPT_LIMIT = 600;
 
 const BODY_EXCERPT_LIMIT = 1500;
 
@@ -46,7 +56,7 @@ function systemPrompt(book: BookPromptInput): string {
   return `You are filling metadata fields for a book in a Bibliogon AI template. Follow these rules:
 
 1. Respond with a JSON object ONLY. No prose, no markdown fences, no commentary outside the JSON.
-2. Respond in the book's language: ${book.language}. All generated marketing copy must be in that language.
+2. Respond in the book's language: ${book.language}. All generated marketing copy must be in that language. Image prompts can stay in English (image generators are most reliable with English prompts).
 3. Use real UTF-8 characters (umlauts, accents, CJK characters). Do NOT escape them and do NOT substitute ASCII transliterations.
 4. If you cannot generate a field with high confidence, set it to null. Do not invent.
 5. Output ONLY the fields requested in the user message; do not echo unrelated fields.`;
@@ -99,8 +109,58 @@ Generate a short plain-text book description and identify the primary genre. Out
   );
 }
 
-/** Offline-supported book field-classes. Mirrors the backend registry minus
- *  `cover_prompt` and `chapter_summaries`. */
+function buildCoverPromptMessages(book: BookPromptInput, body: string): AiChatMessage[] {
+  return messages(
+    book,
+    `${userPrefix(book, body)}
+
+Generate a Stable-Diffusion-style prompt for the book cover. The prompt can stay in English even if the book language differs - image generators are most reliable with English prompts. Include:
+
+- style (photorealistic, illustration, hand-drawn, ...)
+- mood and color palette
+- dominant subject and composition
+- portrait orientation (book covers are usually 6x9 inches)
+- "no text in image" since title and author overlay separately
+
+Output exactly this JSON shape:
+
+{"cover_image_prompt": "<prompt body>"}`,
+  );
+}
+
+/**
+ * One summary per chapter, keyed by `chapter_id`.
+ *
+ * Reads the chapters off the prompt input rather than the aggregated
+ * body, because the answer has to be per chapter and matched back by id -
+ * which is also why this class carries `isChapterSummaries` and runs
+ * through the reconcile before anything is written.
+ */
+function buildChapterSummariesMessages(
+  book: BookPromptInput,
+  _body: string,
+): AiChatMessage[] {
+  const blocks = (book.chapters ?? []).map(
+    (chapter) =>
+      `chapter_id: ${chapter.chapter_id}\ntitle: ${chapter.title}\nexcerpt: ${chapter.excerpt.slice(
+        0,
+        CHAPTER_EXCERPT_LIMIT,
+      )}`,
+  );
+  return messages(
+    book,
+    `${formatHeader(book)}
+
+Chapters (one block per chapter):
+${blocks.join("\n\n---\n\n")}
+
+Generate a one-sentence summary for EACH chapter listed above. Match each summary to its chapter by chapter_id - do NOT invent new chapter_ids and do NOT skip chapters. Output exactly this JSON shape, one entry per chapter in the same order:
+
+{"chapter_summaries": [{"chapter_id": "<id from above>", "title": "<title from above>", "summary": "<one-sentence summary>"}]}`,
+  );
+}
+
+/** The book field-classes, all five of them since #1077. */
 export const BOOK_FILL_CLASSES: Record<string, FillClassSpec<BookPromptInput>> = {
   marketing_copy: {
     buildMessages: buildMarketingCopyMessages,
@@ -113,6 +173,17 @@ export const BOOK_FILL_CLASSES: Record<string, FillClassSpec<BookPromptInput>> =
   tags: {
     buildMessages: buildTagsMessages,
     targets: [{ aiKey: "keywords", column: "keywords", isList: true }],
+  },
+  cover_prompt: {
+    buildMessages: buildCoverPromptMessages,
+    targets: [
+      { aiKey: "cover_image_prompt", column: "cover_image_prompt", isList: false },
+    ],
+  },
+  chapter_summaries: {
+    buildMessages: buildChapterSummariesMessages,
+    targets: [{ aiKey: "chapter_summaries", column: "chapter_summaries", isList: true }],
+    isChapterSummaries: true,
   },
   description_genre: {
     buildMessages: buildDescriptionGenreMessages,

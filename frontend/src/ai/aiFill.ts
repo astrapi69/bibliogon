@@ -31,7 +31,12 @@ import {
   type EntityRecord,
 } from "./templateApply";
 import { ARTICLE_FILL_CLASSES } from "./articleFillPrompts";
-import { BOOK_FILL_CLASSES } from "./bookFillPrompts";
+import {
+  reconcileChapterSummaries,
+  type ChapterRef,
+  type DroppedSummary,
+} from "../lib/ai/template/apply";
+import { BOOK_FILL_CLASSES, CHAPTER_EXCERPT_LIMIT } from "./bookFillPrompts";
 import type { FillClassSpec } from "./fillTypes";
 import type {
   AiFillFieldClassResult,
@@ -54,17 +59,20 @@ async function runFieldClasses<TInput>(
   record: EntityRecord,
   fieldClasses: string[],
   force: boolean,
+  chapters: ChapterRef[] = [],
 ): Promise<{
   updated: string[];
   skipped: ApplySkipReasons;
   perClass: Record<string, AiFillFieldClassResult>;
   classErrors: Record<string, string>;
   tokens: number;
+  dropped: DroppedSummary[];
 }> {
   const updated: string[] = [];
   const skipped: ApplySkipReasons = {};
   const perClass: Record<string, AiFillFieldClassResult> = {};
   const classErrors: Record<string, string> = {};
+  const dropped: DroppedSummary[] = [];
   let tokens = 0;
 
   for (const className of fieldClasses) {
@@ -97,7 +105,18 @@ async function runFieldClasses<TInput>(
     const classUpdated: string[] = [];
     const classSkipped: ApplySkipReasons = {};
     for (const target of spec.targets) {
-      const result = applyField(record, target.column, parsed[target.aiKey], {
+      let value = parsed[target.aiKey];
+      if (spec.isChapterSummaries) {
+        // The answer names chapters; every entry is matched back to a
+        // real chapter row before anything is written, so a summary can
+        // never point at a chapter that does not exist. The unmatched
+        // ones are reported instead (same contract as the endpoint's
+        // `dropped_chapter_summaries`).
+        const reconciled = reconcileChapterSummaries(chapters, value);
+        dropped.push(...reconciled.dropped);
+        value = reconciled.reconciled;
+      }
+      const result = applyField(record, target.column, value, {
         force,
         isList: target.isList,
       });
@@ -120,7 +139,7 @@ async function runFieldClasses<TInput>(
     tokens += classTokens;
   }
 
-  return { updated, skipped, perClass, classErrors, tokens };
+  return { updated, skipped, perClass, classErrors, tokens, dropped };
 }
 
 /** Validate the requested classes against the registry, throwing on unknowns
@@ -225,11 +244,21 @@ export async function aiFillBook(
   const run = await runFieldClasses(
     config,
     BOOK_FILL_CLASSES,
-    book,
+    // The `chapter_summaries` class asks per chapter rather than from the
+    // aggregated body, so the prompt input carries the blocks.
+    {
+      ...book,
+      chapters: book.chapters.map((chapter) => ({
+        chapter_id: chapter.id,
+        title: chapter.title,
+        excerpt: extractBodyText(chapter.content).slice(0, CHAPTER_EXCERPT_LIMIT),
+      })),
+    },
     body,
     record,
     req.field_classes,
     force,
+    book.chapters.map((chapter) => ({ id: chapter.id, title: chapter.title })),
   );
 
   if (run.updated.length > 0) {
@@ -246,7 +275,7 @@ export async function aiFillBook(
     skip_reasons: run.skipped,
     field_class_results: run.perClass,
     field_class_errors: run.classErrors,
-    dropped_chapter_summaries: [],
+    dropped_chapter_summaries: run.dropped,
     tokens_used: run.tokens,
     estimated_cost_usd: null,
     force,

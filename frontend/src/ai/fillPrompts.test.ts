@@ -28,9 +28,31 @@ const BOOK: BookPromptInput = {
 };
 
 describe("article fill registry", () => {
-  it("exposes exactly the offline-supported classes", () => {
-    expect(ARTICLE_OFFLINE_FILL_CLASSES).toEqual(["seo", "tags", "topic", "excerpt"]);
-    expect(ARTICLE_FILL_CLASSES).not.toHaveProperty("image_prompts");
+  it("exposes every class the backend has, image_prompts included (#1077)", () => {
+    // `image_prompts` was absent while its two columns were missing from
+    // the frontend shape and no PATCH accepted them; #1076 fixed both.
+    expect(ARTICLE_OFFLINE_FILL_CLASSES).toEqual([
+      "seo",
+      "tags",
+      "topic",
+      "excerpt",
+      "image_prompts",
+    ]);
+  });
+
+  it("maps image_prompts to the hero column and the inline list", () => {
+    expect(ARTICLE_FILL_CLASSES.image_prompts.targets).toEqual([
+      {
+        aiKey: "featured_image_prompt",
+        column: "featured_image_prompt",
+        isList: false,
+      },
+      {
+        aiKey: "inline_image_prompts",
+        column: "inline_image_prompts",
+        isList: true,
+      },
+    ]);
   });
 
   it("maps seo to two scalar targets and tags to one list target", () => {
@@ -74,14 +96,34 @@ describe("article fill registry", () => {
 });
 
 describe("book fill registry", () => {
-  it("exposes exactly the offline-supported classes", () => {
+  it("exposes every class the backend has, including the two deferred ones (#1077)", () => {
+    // `cover_prompt` waited on its column being writable (#1076) and
+    // `chapter_summaries` on a browser chapter-reconcile, which the
+    // `.biblio.yaml` round-trip ported (#745).
     expect(BOOK_OFFLINE_FILL_CLASSES).toEqual([
       "marketing_copy",
       "tags",
+      "cover_prompt",
+      "chapter_summaries",
       "description_genre",
     ]);
-    expect(BOOK_FILL_CLASSES).not.toHaveProperty("cover_prompt");
-    expect(BOOK_FILL_CLASSES).not.toHaveProperty("chapter_summaries");
+  });
+
+  it("flags chapter_summaries as the class that reconciles before writing", () => {
+    expect(BOOK_FILL_CLASSES.chapter_summaries.isChapterSummaries).toBe(true);
+    expect(BOOK_FILL_CLASSES.chapter_summaries.targets).toEqual([
+      { aiKey: "chapter_summaries", column: "chapter_summaries", isList: true },
+    ]);
+    // The other classes must NOT carry the flag: it routes the value
+    // through a chapter match, which would drop anything else.
+    expect(BOOK_FILL_CLASSES.cover_prompt.isChapterSummaries).toBeUndefined();
+    expect(BOOK_FILL_CLASSES.marketing_copy.isChapterSummaries).toBeUndefined();
+  });
+
+  it("maps cover_prompt to the cover column", () => {
+    expect(BOOK_FILL_CLASSES.cover_prompt.targets).toEqual([
+      { aiKey: "cover_image_prompt", column: "cover_image_prompt", isList: false },
+    ]);
   });
 
   it("maps marketing_copy to three scalar targets and tags to the keywords list", () => {
