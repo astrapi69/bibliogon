@@ -3951,6 +3951,13 @@
       "cover_load_failed": "No se pudo cargar la portada.",
       "cover_summary_ok": "La portada cumple los requisitos de KDP.",
       "cover_summary_fail": "La portada no cumple los requisitos de KDP.",
+      "cover_finding": {
+        "format_unsupported": "Formato '{format}' no admitido. KDP requiere {allowed}.",
+        "file_size_exceeded": "El archivo pesa {size} MB y supera el máximo de {max} MB.",
+        "dimensions_too_small": "La imagen {width}x{height} es demasiado pequeña. Mínimo: {min_width}x{min_height}.",
+        "dimensions_too_large": "La imagen {width}x{height} es demasiado grande. Máximo: {max_width}x{max_height}.",
+        "aspect_ratio_outside_range": "La relación de aspecto {ratio} está fuera del intervalo recomendado ({min}-{max})."
+      },
       "export_hint": "Bibliogon crea un ZIP con el manuscrito, la portada, los metadatos y un informe de validación de portada de KDP. Sube el archivo a KDP tú mismo — Bibliogon NO lo sube por ti.",
       "export_generate": "Crear paquete de KDP",
       "export_generating": "Creando el paquete…",

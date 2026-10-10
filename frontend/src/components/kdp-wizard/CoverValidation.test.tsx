@@ -168,6 +168,14 @@ describe("CoverValidation", () => {
         expect(
             screen.getByTestId("kdp-publishing-wizard-step-1-summary-fail"),
         ).toBeTruthy()
+        // The sentence comes from a template now (#1037), so pin that
+        // the thresholds reach it: a template rendered with its
+        // placeholders still in place would read as a complete sentence.
+        expect(
+            screen.getByTestId(
+                "kdp-publishing-wizard-step-1-error-dimensions_too_small",
+            ).textContent,
+        ).toContain("Minimum: 625x1000")
         expect(onCanAdvanceChange).toHaveBeenLastCalledWith(false)
     })
 
@@ -228,6 +236,13 @@ describe("CoverValidation", () => {
                 ),
             ).toBeTruthy()
         })
+        // The allowed list is interpolated from the requirements, so it
+        // follows the constant instead of being retyped per language.
+        expect(
+            screen.getByTestId(
+                "kdp-publishing-wizard-step-1-error-format_unsupported",
+            ).textContent,
+        ).toContain("JPG, JPEG, TIFF, PNG")
         expect(onCanAdvanceChange).toHaveBeenLastCalledWith(false)
     })
 

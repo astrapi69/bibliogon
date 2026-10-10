@@ -3764,6 +3764,12 @@ ui:
     cover_load_failed: "Impossible de charger la couverture."
     cover_summary_ok: "La couverture répond aux exigences de KDP."
     cover_summary_fail: "La couverture ne répond pas aux exigences de KDP."
+    cover_finding:
+      format_unsupported: "Format '{format}' non pris en charge. KDP exige {allowed}."
+      file_size_exceeded: "Le fichier fait {size} Mo et dépasse le maximum de {max} Mo."
+      dimensions_too_small: "L'image {width}x{height} est trop petite. Minimum : {min_width}x{min_height}."
+      dimensions_too_large: "L'image {width}x{height} est trop grande. Maximum : {max_width}x{max_height}."
+      aspect_ratio_outside_range: "Le rapport hauteur/largeur {ratio} est hors de la plage recommandée ({min}-{max})."
     export_hint: "Bibliogon génère un ZIP contenant le manuscrit, la couverture, les métadonnées et un rapport de validation de couverture KDP. Téléversez-le vous-même sur KDP — Bibliogon ne le téléverse PAS pour vous."
     export_generate: "Générer le paquet KDP"
     export_generating: "Génération du paquet…"

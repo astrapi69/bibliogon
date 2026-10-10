@@ -3774,6 +3774,12 @@ ui:
     cover_load_failed: "Could not load the cover."
     cover_summary_ok: "Cover meets KDP requirements."
     cover_summary_fail: "Cover does not meet KDP requirements."
+    cover_finding:
+      format_unsupported: "Unsupported format '{format}'. KDP requires {allowed}."
+      file_size_exceeded: "File size {size} MB exceeds the maximum {max} MB."
+      dimensions_too_small: "Image {width}x{height} is too small. Minimum: {min_width}x{min_height}."
+      dimensions_too_large: "Image {width}x{height} is too large. Maximum: {max_width}x{max_height}."
+      aspect_ratio_outside_range: "Aspect ratio {ratio} is outside the recommended range ({min}-{max})."
     export_hint: "Bibliogon builds a ZIP with manuscript, cover, metadata, and a KDP cover validation report. Upload to KDP yourself — Bibliogon does NOT upload for you."
     export_generate: "Build KDP package"
     export_generating: "Building package…"

@@ -3951,6 +3951,13 @@
       "cover_load_failed": "Δεν ήταν δυνατή η φόρτωση του εξωφύλλου.",
       "cover_summary_ok": "Το εξώφυλλο πληροί τις απαιτήσεις του KDP.",
       "cover_summary_fail": "Το εξώφυλλο δεν πληροί τις απαιτήσεις του KDP.",
+      "cover_finding": {
+        "format_unsupported": "Η μορφή '{format}' δεν υποστηρίζεται. Το KDP απαιτεί {allowed}.",
+        "file_size_exceeded": "Το αρχείο είναι {size} MB και υπερβαίνει το μέγιστο των {max} MB.",
+        "dimensions_too_small": "Η εικόνα {width}x{height} είναι πολύ μικρή. Ελάχιστο: {min_width}x{min_height}.",
+        "dimensions_too_large": "Η εικόνα {width}x{height} είναι πολύ μεγάλη. Μέγιστο: {max_width}x{max_height}.",
+        "aspect_ratio_outside_range": "Η αναλογία {ratio} είναι εκτός του συνιστώμενου εύρους ({min}-{max})."
+      },
       "export_hint": "Το Bibliogon δημιουργεί ένα ZIP με το χειρόγραφο, το εξώφυλλο, τα μεταδεδομένα και μια αναφορά επικύρωσης εξωφύλλου KDP. Η μεταφόρτωση στο KDP γίνεται από εσάς — το Bibliogon ΔΕΝ μεταφορτώνει εκ μέρους σας.",
       "export_generate": "Δημιουργία πακέτου KDP",
       "export_generating": "Δημιουργία πακέτου…",
