@@ -87,6 +87,17 @@ export default defineConfig({
     // config, so the alias resolves in tests too.
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
+      // A browser build has no `path`, and Vite substitutes a stub whose
+      // members are `undefined` rather than failing the build - so `ejs`
+      // (via epub-gen-memory) reached `path.extname` at runtime and broke
+      // every client-side EPUB export (#1070). Unconditional rather than
+      // build-only so there is one shim and not an environment-dependent
+      // pair; what actually proves the EPUB path works in a bundle is
+      // `e2e/static-smoke/epub-export-offline.spec.ts`, because Vitest
+      // externalizes node_modules and ejs keeps Node's real `path` there.
+      path: fileURLToPath(
+        new URL("./src/lib/polyfills/posixPath.ts", import.meta.url),
+      ),
     },
   },
   plugins: [
