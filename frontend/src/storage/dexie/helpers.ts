@@ -70,6 +70,12 @@ export function buildBook(data: import("../../api/client").BookCreate, id: strin
         backpage_author_bio: null,
         cover_image: null,
         custom_css: null,
+        // UNIVERSAL-AI-TEMPLATE-01 columns (#1076): `BookOut` always
+        // populates them, so the offline row does too - see the note in
+        // `buildArticle` on why an undefined here is a divergence worth
+        // avoiding rather than a harmless absence.
+        cover_image_prompt: null,
+        chapter_summaries: [],
         notes: null,
         collections: null,
         repository_url: null,
@@ -115,6 +121,8 @@ export function buildArticle(data: import("../../api/client").ArticleCreate, id:
         seo_title: null,
         seo_description: null,
         series: null,
+        featured_image_prompt: null,
+        inline_image_prompts: [],
         created_at: ts,
         updated_at: ts,
         deleted_at: null,

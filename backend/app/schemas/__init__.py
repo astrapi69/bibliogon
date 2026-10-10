@@ -233,6 +233,12 @@ class BookUpdate(BaseModel):
     html_description: str | None = None
     backpage_description: str | None = None
     backpage_author_bio: str | None = None
+    # UNIVERSAL-AI-TEMPLATE-01 columns, PATCH-able since #1076 - see the
+    # note on ``ArticleUpdate``'s pair. ``chapter_summaries`` entries are
+    # shape-checked only; matching them to chapter rows is
+    # ``reconcile_chapter_summaries``' job on the import path.
+    cover_image_prompt: str | None = None
+    chapter_summaries: list[dict[str, Any]] | None = None
     cover_image: str | None = None
     custom_css: str | None = None
     # Project-level notes scratchpad (CHAPTER-SYNOPSIS-NOTES-01).
@@ -1157,6 +1163,16 @@ class ArticleUpdate(BaseModel):
     # content-types.yaml).
     content_type: ContentType | None = None
     article_metadata: dict[str, Any] | None = None
+    # UNIVERSAL-AI-TEMPLATE-01 columns, PATCH-able since #1076.
+    # ``ArticleOut`` had returned both from the start while no update
+    # body accepted them, so a client could PATCH one, get a 200 and
+    # find nothing written - and every offline path that routes through
+    # the storage seam dropped them for want of a field to write.
+    # ``list[dict[str, Any]]`` is the whole validation: an entry that is
+    # not a mapping is refused with a 422 rather than stored as junk a
+    # later template export fails to decode.
+    featured_image_prompt: str | None = None
+    inline_image_prompts: list[dict[str, Any]] | None = None
 
     @field_validator("status")
     @classmethod
