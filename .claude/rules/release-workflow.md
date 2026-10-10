@@ -514,6 +514,7 @@ as "done". Missing items block the release.
 - [ ] Frontend `tsc --noEmit` clean
 - [ ] `npm run test` (Vitest) green
 - [ ] `npx playwright test --project=smoke` green
+- [ ] `make test-prod-container` green (#704: the production compose stack opened in a real browser; `release.yml` runs it before tagging, `release-gate.yml` again on the tag push)
 - [ ] `ruff check` clean
 - [ ] `mypy app/` clean (MANDATORY since v0.26.x; not "if active")
 - [ ] `poetry run pre-commit run --all-files` clean (MANDATORY)

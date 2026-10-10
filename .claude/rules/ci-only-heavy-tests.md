@@ -14,7 +14,9 @@ drive the CPU up; everything heavy runs on GitHub Actions.**
   feature screenshots. That includes `make test-e2e*`, `make
   test-static-smoke`, `make capture-screenshots`, `npx playwright test ...`
   in any form.
-- Builds: `npm run build` (plain or with `VITE_STORAGE_MODE=dexie`),
+- Builds: the prod compose images (`make prod`, `make test-prod-container`,
+  `docker compose -f docker-compose.prod.yml build`), `npm run build` (plain or
+  with `VITE_STORAGE_MODE=dexie`),
   `make release-build`, `make release-test`, the launcher PyInstaller build,
   `poetry build`.
 - Mutation testing (mutmut, Stryker), `make audit*` scans.
@@ -43,6 +45,7 @@ drive the CPU up; everything heavy runs on GitHub Actions.**
 | Feature screenshots | `make e2e-remote SUITE=feature-screenshots GREP="<test title>"`, then merge the `chore/feature-screenshots-<run-id>` branch the run pushes (#1006) — an artifact download is served from blob storage an agent session cannot reach | `e2e-targeted.yml` |
 | Whole smoke suite | nightly, or `gh workflow run e2e-smoke.yml --ref <branch>` | `e2e-smoke.yml` |
 | Plugin suites | nightly, or `gh workflow run nightly.yml --ref <branch>` | `nightly.yml` |
+| The production compose stack in a browser | `make prod-container-remote` | `prod-container-smoke.yml` |
 
 Watch runs in the background (`gh run watch <id>`, `gh pr checks <n>
 --watch`), put the run URL in the PR description as the evidence, and treat
