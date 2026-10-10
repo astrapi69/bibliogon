@@ -253,6 +253,9 @@
         "manuscript/front-matter/toc.md": {
           "text": "# Inhalt\n\nText.\n"
         },
+        "manuscript/front-matter/notizen.md": {
+          "text": "# Notizen\n\nText.\n"
+        },
         "manuscript/chapters/01-eins.md": {
           "text": "# Eins\n\nText.\n"
         },
@@ -264,6 +267,9 @@
         },
         "manuscript/back-matter/glossary.md": {
           "text": "# Glossar\n\nText.\n"
+        },
+        "manuscript/back-matter/anhaenge.md": {
+          "text": "# Anhaenge\n\nText.\n"
         }
       },
       "detected_format": "wbt-zip",

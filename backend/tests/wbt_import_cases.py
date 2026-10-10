@@ -118,10 +118,16 @@ CASES: list[dict[str, Any]] = [
             "config/metadata.yaml": _file("title: Alphabetisch\nauthor: A\n"),
             "manuscript/front-matter/preface.md": _file("# Vorwort\n\nText.\n"),
             "manuscript/front-matter/toc.md": _file("# Inhalt\n\nText.\n"),
+            # Untyped, in neither matter map, so this layout drops it the
+            # same way the section-order layout does - pinned here too,
+            # because the two layouts take their files through different
+            # code and only one of them had a fixture for the drop.
+            "manuscript/front-matter/notizen.md": _file("# Notizen\n\nText.\n"),
             "manuscript/chapters/01-eins.md": _file("# Eins\n\nText.\n"),
             "manuscript/chapters/02-zwei.md": _file("# Zwei\n\nText.\n"),
             "manuscript/back-matter/epilogue.md": _file("# Nachwort\n\nText.\n"),
             "manuscript/back-matter/glossary.md": _file("# Glossar\n\nText.\n"),
+            "manuscript/back-matter/anhaenge.md": _file("# Anhaenge\n\nText.\n"),
         },
     },
     {
