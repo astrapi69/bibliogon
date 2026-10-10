@@ -1,7 +1,7 @@
 .PHONY: dev dev-bg dev-bg-logs dev-down dev-backend dev-frontend stop restart fix-watchers \
        launcher launcher-install test-launcher \
        install install-backend install-frontend install-plugins install-e2e \
-       test test-fast test-full test-nightly test-backend test-plugins test-e2e test-e2e-ui test-e2e-smoke test-e2e-smoke-retries test-e2e-manual test-e2e-all test-static-smoke e2e-remote ci-remote test-visual test-visual-update capture-screenshots update-screenshots \
+       test test-fast test-full test-nightly test-backend test-plugins test-e2e test-e2e-ui test-e2e-smoke test-e2e-smoke-retries test-e2e-manual test-e2e-all test-static-smoke test-prod-container prod-container-remote e2e-remote ci-remote test-visual test-visual-update capture-screenshots update-screenshots \
        tdd test-fail tdd-green tdd-refactor tdd-check test-only test-watch test-watch-backend \
        test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync test-plugin-comics test-plugin-medium-import test-plugin-learnset test-plugin-promotion test-plugin-story-bible test-plugin-aplus \
        test-coverage test-coverage-backend test-coverage-frontend test-coverage-plugins coverage-backend coverage-frontend test-cov-backend test-cov-frontend \
@@ -655,6 +655,28 @@ verify-external-hosts: ## Guard (#874): the frontend fetches nothing from a thir
 test-static-smoke: ## Build the static/Dexie bundle + smoke-test it with NO backend (catches "works with backend, crashes static")
 	cd frontend && VITE_STORAGE_MODE=dexie npm run build
 	cd e2e && npx playwright test --config=playwright.static-smoke.config.ts
+
+test-prod-container: ## Browser-smoke the production compose stack (#704). Builds, starts, measures and tears down; expects Docker.
+	docker compose -f docker-compose.prod.yml up -d --build --wait
+	@for attempt in $$(seq 1 30); do \
+		status=$$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:7880/ || true); \
+		if [ "$$status" = "200" ]; then echo "nginx answered 200 after $$attempt attempt(s)."; break; fi; \
+		if [ "$$attempt" = "30" ]; then echo "FATAL: nginx never answered 200 on :7880 (last: $$status)."; \
+			docker compose -f docker-compose.prod.yml logs --no-color --tail=200; \
+			docker compose -f docker-compose.prod.yml down -v; exit 1; fi; \
+		sleep 2; \
+	done
+	@cd e2e && BIBLIOGON_PROD_URL=http://127.0.0.1:7880 npx playwright test --config=playwright.prod-container.config.ts; \
+		status=$$?; \
+		cd ..; \
+		if [ $$status -ne 0 ]; then docker compose -f docker-compose.prod.yml logs --no-color --tail=200; fi; \
+		docker compose -f docker-compose.prod.yml down -v; \
+		exit $$status
+
+prod-container-remote: ## Run the prod-container browser gate on GitHub for the current branch, not locally (#898)
+	@branch=$$(git rev-parse --abbrev-ref HEAD); \
+	gh workflow run prod-container-smoke.yml --ref "$$branch" && \
+	echo "Started Prod Container Smoke on $$branch. Watch: gh run list --workflow=prod-container-smoke.yml --branch $$branch --limit 1"
 
 e2e-remote: ## Run Playwright on GitHub Actions for the pushed current branch, not locally (#898). Usage: make e2e-remote SUITE=smoke|static-smoke|feature-screenshots SPECS="smoke/a.spec.ts" GREP="pattern"
 	@branch=$$(git rev-parse --abbrev-ref HEAD); \
