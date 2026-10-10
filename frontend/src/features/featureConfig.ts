@@ -130,6 +130,13 @@ export const FEATURE_REASON = {
      *  calls, so it cannot run in the backendless PWA. Dormant: no shipped
      *  provider is currently CORS-blocked (kept for a hypothetical future one). */
     PROVIDER_CORS_BLOCKED: "ui.feature.provider_cors_blocked",
+    /** Write access needs a credential this deployment must not hold. The
+     *  browser build shares one origin with every sibling project site of
+     *  the host (#991), so a write-capable token entered here is readable by
+     *  all of them; #880 therefore keeps push on the desktop and leaves the
+     *  browser read-only. Distinct from REQUIRES_DESKTOP_APP because that one
+     *  names a surface and this one names a decision (#1100). */
+    WRITE_REQUIRES_DESKTOP_APP: "ui.feature.write_requires_desktop_app",
 } as const;
 
 /**
@@ -265,11 +272,11 @@ const NEEDS_KEY_AND_NETWORK: readonly string[] = [
 ];
 
 /**
- * Features that genuinely cannot work in a browser (no git binary, no TTS
- * engine, no Pandoc, no LAN host, no backend round-trip). In Dexie mode they
- * resolve to `disabled` with the desktop-app reason (per the policy: nothing
- * the user owns is hidden — it stays visible and explained); online the
- * strategy abstains so the descriptor `active` default wins.
+ * Features that genuinely cannot work in a browser (no TTS engine, no Pandoc,
+ * no LAN host, no backend round-trip). In Dexie mode they resolve to
+ * `disabled` with the desktop-app reason (per the policy: nothing the user
+ * owns is hidden — it stays visible and explained); online the strategy
+ * abstains so the descriptor `active` default wins.
  *
  * `portfolio-board` (#810) is in this bucket for the same reason as the
  * server-bound review surfaces: the per-format retail state lives in the
@@ -290,6 +297,10 @@ const NEEDS_KEY_AND_NETWORK: readonly string[] = [
  * schemas with Python jsonschema, so it has no browser implementation to
  * route through the storage seam.
  *
+ * `git-sync` and `git-backup` LEFT this bucket in #1100. They resolve
+ * identically, but their reason is a decision rather than a missing binary -
+ * see `WRITE_REQUIRES_DESKTOP` below.
+ *
  * `aplus-ai` LEFT this bucket in #890. The three Python halves it was gated
  * on all have browser ports now: the versioned ruleset ships in the offline
  * seed, the deterministic validator is a TypeScript mirror pinned against the
@@ -298,8 +309,6 @@ const NEEDS_KEY_AND_NETWORK: readonly string[] = [
  * `NEEDS_KEY_AND_NETWORK`, since it reaches the user's provider directly.
  */
 const DESKTOP_ONLY: readonly string[] = [
-    FEATURES.GIT_SYNC,
-    FEATURES.GIT_BACKUP,
     FEATURES.LEARNSET_EXPORT,
     FEATURES.PORTFOLIO_BOARD,
     FEATURES.TTS,
@@ -307,6 +316,26 @@ const DESKTOP_ONLY: readonly string[] = [
     FEATURES.PANDOC_EXPORT,
     FEATURES.GRAMMAR,
 ];
+
+/**
+ * Features that would need a WRITE-capable credential in the browser, which
+ * is a credential this deployment must not hold.
+ *
+ * `git-sync` and `git-backup` were plain `DESKTOP_ONLY` members until #1100.
+ * They resolve the same way - disabled in Dexie mode, active against a
+ * backend - so the bucket exists for the REASON, not for the condition: the
+ * generic desktop-only string names a surface ("this lives in the desktop
+ * app"), and after #880 the limit is a decision with its own ground. The
+ * Pages build shares one origin with every sibling project site of the host
+ * (#991), so a token with `contents:write` entered here is readable by all of
+ * them. Push therefore stays where the credential is not in a shared browser
+ * origin, and the browser stays read-only.
+ *
+ * The pull half is NOT blocked by this and is tracked separately in #755,
+ * reduced there to read-only. When it lands, `git-sync`'s pull surface
+ * becomes active-with-token and only its push surface keeps this reason.
+ */
+const WRITE_REQUIRES_DESKTOP: readonly string[] = [FEATURES.GIT_SYNC, FEATURES.GIT_BACKUP];
 
 /**
  * Features whose UI has shipped ahead of their implementation, so they are
@@ -334,6 +363,7 @@ const DESCRIPTORS: readonly FeatureDescriptor[] = [
     ...NEEDS_NETWORK,
     ...NEEDS_KEY_AND_NETWORK,
     ...DESKTOP_ONLY,
+    ...WRITE_REQUIRES_DESKTOP,
     ...NOT_YET_IMPLEMENTED,
 ].map(descriptor);
 
@@ -356,6 +386,13 @@ function desktopOnlyCondition(): FeatureCondition<FeatureContext> {
     return {
         evaluate: (ctx) => (ctx?.mode === "dexie" ? "disabled" : undefined),
         reason: FEATURE_REASON.REQUIRES_DESKTOP_APP,
+    };
+}
+
+function writeRequiresDesktopCondition(): FeatureCondition<FeatureContext> {
+    return {
+        evaluate: (ctx) => (ctx?.mode === "dexie" ? "disabled" : undefined),
+        reason: FEATURE_REASON.WRITE_REQUIRES_DESKTOP_APP,
     };
 }
 
@@ -397,6 +434,7 @@ function buildRules(): Record<string, FeatureCondition<FeatureContext>> {
     for (const id of NEEDS_NETWORK) rules[id] = networkDependentCondition();
     for (const id of NEEDS_KEY_AND_NETWORK) rules[id] = keyAndNetworkCondition();
     for (const id of DESKTOP_ONLY) rules[id] = desktopOnlyCondition();
+    for (const id of WRITE_REQUIRES_DESKTOP) rules[id] = writeRequiresDesktopCondition();
     for (const id of NOT_YET_IMPLEMENTED) rules[id] = notYetImplementedCondition();
     return rules;
 }

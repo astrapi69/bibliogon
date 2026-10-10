@@ -125,6 +125,7 @@ ui:
     requires_ai_key: "Cette fonctionnalité nécessite une clé IA configurée (Paramètres > Assistant IA)"
     not_yet_available: "Cette fonctionnalité n'est pas encore disponible."
     provider_cors_blocked: "Ce fournisseur d'IA n'est pas accessible directement depuis le navigateur (CORS). Utilisez l'application de bureau Bibliogon ou passez à Gemini."
+    write_requires_desktop_app: "L'accès en écriture (push) n'est disponible que dans l'application de bureau : dans le navigateur, tous les sites de projet de cet hôte partagent une même origine, un jeton GitHub avec droits d'écriture y serait donc lisible par chacun d'eux."
   not_found:
     title: "Page introuvable"
     description: "La page demandée n'existe pas ou a été déplacée."

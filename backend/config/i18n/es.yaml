@@ -125,6 +125,7 @@ ui:
     requires_ai_key: "Esta función requiere una clave de IA configurada (Ajustes > Asistente de IA)"
     not_yet_available: "Esta función aún no está disponible."
     provider_cors_blocked: "No se puede acceder a este proveedor de IA directamente desde el navegador (CORS). Usa la aplicación de escritorio de Bibliogon o cambia a Gemini."
+    write_requires_desktop_app: "El acceso de escritura (push) solo está disponible en la aplicación de escritorio: en el navegador todos los sitios de proyecto de este host comparten un mismo origen, por lo que cualquiera de ellos podría leer un token de GitHub con permisos de escritura."
   not_found:
     title: "Página no encontrada"
     description: "La página solicitada no existe o ha sido movida."
