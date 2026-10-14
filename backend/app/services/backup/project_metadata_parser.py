@@ -7,7 +7,6 @@ on-disk project metadata into a persistable Book. Chapter and asset import
 live in their own sibling modules.
 """
 
-import datetime
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -18,6 +17,7 @@ import yaml
 from app.models import Book
 from app.services.backup.markdown_utils import read_file_if_exists
 from app.services.backup.project_stylesheet_loader import _read_custom_css
+from app.yaml.projection import as_int, as_text
 
 
 @dataclass
@@ -51,61 +51,27 @@ class ProjectMetadata:
 
 
 def _scalar(value: Any) -> str | None:
-    """One YAML scalar as a string, or None when there is nothing in it.
+    """One YAML value as the text of a ``str | None`` field.
 
-    YAML types what it reads: ``date: 2026-03-01`` is a
-    ``datetime.date``, ``edition: 2`` is an ``int``, and an unquoted
-    13-digit ISBN is an ``int`` too. Every field below is declared
-    ``str | None`` on ``ProjectMetadata`` and on ``DetectedProject``,
-    so an untyped pass-through made the detect endpoint answer HTTP 500
-    for a project whose metadata.yaml carried a publication date -
-    which is the natural way to write one and the shape Pandoc metadata
-    uses (#1091).
-
-    A date renders in ISO form, which is what the user wrote and what
-    the metadata round-trips back to. ``str()`` would agree for a date
-    and disagree for a datetime, which it renders with a space where
-    ISO wants a T.
-
-    None and whitespace-only collapse to None rather than to the string
-    "None" - the same trap #1086 closed in the A+ generator, in a
-    second file.
-
-    A container is not a scalar, so a list or a mapping where one of
-    these fields belongs collapses to None rather than to its Python
-    repr (#1103). Without that, ``title: [a, b]`` imported a book whose
-    title was the literal ``['a', 'b']`` - visible on the dashboard, in
-    the editor header and in every export, which is quieter than the
-    500 #1091 produced and therefore worse. The readers that WANT a
-    container (``series``, ``isbn``, ``asin``, ``identifiers``,
-    ``keywords``, ``author``) index into it first and call this on the
-    leaf, so they are unaffected.
+    The contract lives in :func:`app.yaml.projection.as_text`, shared with the
+    A+ generator because the same class was patched twice in parallel there
+    and here (#1086, #1091, #1103, closed as a class by #1108). This stays as
+    a named alias: every call site below reads ``_scalar(metadata.get(...))``,
+    and that reads better than the generic name at the point where it says
+    "this field is text".
     """
-    if value is None:
-        return None
-    if isinstance(value, (datetime.date, datetime.datetime)):
-        return value.isoformat()
-    if isinstance(value, (list, tuple, set, dict)):
-        return None
-    text = str(value).strip()
-    return text or None
+    return as_text(value)
 
 
 def _optional_int(value: Any) -> int | None:
-    """One YAML scalar as an int, or None when it is not one.
+    """One YAML value as the number of an ``int | None`` field.
 
-    ``series_index`` is declared ``int | None``, so a volume written as
-    a word ("volume: zwei") has to become None rather than break the
-    response the way an untyped date did.
+    ``series_index`` is the only one, and a volume written as a word
+    ("volume: zwei") has to become None rather than break the response the way
+    the untyped date of #1091 did. Contract in
+    :func:`app.yaml.projection.as_int`.
     """
-    if isinstance(value, bool) or value is None:
-        return None
-    if isinstance(value, int):
-        return value
-    try:
-        return int(str(value).strip())
-    except (TypeError, ValueError):
-        return None
+    return as_int(value)
 
 
 def _read_metadata_yaml(path: Path) -> dict[str, Any]:

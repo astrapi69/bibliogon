@@ -7,7 +7,7 @@
 # Werte nur nach Splits SENKEN, nie erhoehen (make update-dir-baseline).
 #
 {
-  "backend/app": 23,
+  "backend/app": 22,
   "backend/app/ai": 19,
   "backend/app/import_plugins/handlers": 11,
   "backend/app/repositories": 13,

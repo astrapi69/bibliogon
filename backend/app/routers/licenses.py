@@ -13,7 +13,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from app.licensing import LICENSING_ENABLED, LicenseError, LicenseStore, LicenseValidator
-from app.yaml_io import read_yaml_roundtrip, write_yaml_roundtrip
+from app.yaml.io import read_yaml_roundtrip, write_yaml_roundtrip
 
 router = APIRouter(prefix="/licenses", tags=["licenses"])
 
