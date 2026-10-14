@@ -16,7 +16,7 @@
 
 import Dexie, { type Table } from "dexie";
 
-import { storageDbName } from "../../lib/storageNamespace";
+import { storageDbName } from "../../lib/origin/storageNamespace";
 
 import type { AplusDocumentRecord } from "../../api/platform";
 import type { TranslationGroupRow } from "./translations/groups";

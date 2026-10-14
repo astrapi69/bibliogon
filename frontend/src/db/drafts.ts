@@ -9,7 +9,7 @@
  */
 
 import Dexie, {type Table} from "dexie"
-import {storageDbName} from "../lib/storageNamespace"
+import {storageDbName} from "../lib/origin/storageNamespace"
 
 export interface ChapterDraft {
   chapterId: string
