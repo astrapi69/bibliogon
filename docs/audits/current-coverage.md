@@ -128,7 +128,7 @@ Delta since the 2026-04-18 primary audit:
 |--------|-----------|----------|
 | `app/models/__init__.py` | NONE | **NONE** |
 | `app/schemas/__init__.py` | `test_keywords_schema.py` (partial) | LOW |
-| `app/yaml_io.py` | `test_yaml_io.py` (5 tests) | HIGH |
+| `app/yaml/io.py` | `test_yaml_io.py` (5 tests) | HIGH |
 | `app/services/covers.py` | `test_covers.py` | HIGH |
 | `app/services/backup/backup_export.py` | `test_import_export.py`, `test_backup_compare.py` | HIGH |
 | `app/services/backup/backup_import.py` | `test_import_export.py` | HIGH |

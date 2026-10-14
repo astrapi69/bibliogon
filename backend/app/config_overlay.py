@@ -40,7 +40,7 @@ from pathlib import Path
 from typing import Any
 
 from app.paths import get_data_dir
-from app.yaml_io import read_yaml_roundtrip, write_yaml_roundtrip
+from app.yaml.io import read_yaml_roundtrip, write_yaml_roundtrip
 
 logger = logging.getLogger(__name__)
 

@@ -11,9 +11,20 @@
  * carry (headings, paragraphs, lists, blockquotes, code, rules, images, and
  * the bold/italic/underline/strike/code/link marks). Unknown elements degrade
  * to their inline text content rather than being dropped.
+ *
+ * Style attributes are read through `editorStyleAttributes` (#1105), which is
+ * the EDITOR's declaration of what it keeps. The walker holds no list of its
+ * own: it used to drop every style attribute, so a centred dedication imported
+ * centred on the desktop and flush-left here. Everything outside that
+ * declaration is still dropped, which is what keeps `position: fixed` and a
+ * third-party `background-image: url(...)` out of an imported document (#988).
  */
 
 import type { TipTapDoc, TipTapMark, TipTapNode } from "../medium-import/walker";
+import {
+    EDITOR_STYLE_ATTRIBUTES,
+    keptStyleDeclarations,
+} from "../components/editor/schema/editorStyleAttributes";
 
 const HEADING_TAGS: Record<string, number> = {
     H1: 1,
@@ -42,6 +53,46 @@ function withMark(marks: TipTapMark[], mark: TipTapMark): TipTapMark[] {
     return [...marks, mark];
 }
 
+/**
+ * `marks` plus the mark-shaped style declarations `el` carries.
+ *
+ * A declaration that lands on a node attribute (`text-align`) is not a mark
+ * and is handled by the block walker instead. Applied BEFORE the tag's own
+ * mark so that `<mark style="background-color: …">` keeps the author's
+ * colour: `withMark` leaves an existing highlight alone, and the coloured one
+ * is the better of the two.
+ */
+function withStyleMarks(el: Element, marks: TipTapMark[]): TipTapMark[] {
+    let out = marks;
+    for (const [property, value] of keptStyleDeclarations(el.getAttribute("style"))) {
+        const target = EDITOR_STYLE_ATTRIBUTES[property];
+        if (target.kind !== "mark") continue;
+        out = withMark(out, { type: target.mark, attrs: { [target.attr]: value } });
+    }
+    return out;
+}
+
+/**
+ * `base` plus the node-attribute style declarations `el` carries.
+ *
+ * Only the node types the editor configures the extension for get them -
+ * `TextAlign` is mounted over headings and paragraphs, so a styled list item
+ * is not a place the editor would keep an alignment either.
+ */
+function withStyleAttrs(
+    el: Element,
+    nodeType: string,
+    base: Record<string, unknown>,
+): Record<string, unknown> {
+    const out = { ...base };
+    for (const [property, value] of keptStyleDeclarations(el.getAttribute("style"))) {
+        const target = EDITOR_STYLE_ATTRIBUTES[property];
+        if (target.kind !== "nodeAttr" || !target.nodes.includes(nodeType)) continue;
+        out[target.attr] = value;
+    }
+    return out;
+}
+
 function textNode(text: string, marks: TipTapMark[]): TipTapNode {
     const node: TipTapNode = { type: "text", text };
     if (marks.length > 0) node.marks = marks;
@@ -65,16 +116,18 @@ function inlineNodes(node: Node, marks: TipTapMark[]): TipTapNode[] {
         return src ? [imageFigureNode(el)] : [];
     }
 
+    const styled = withStyleMarks(el, marks);
+
     if (tag === "A") {
         const href = el.getAttribute("href");
         const childMarks = href
-            ? withMark(marks, { type: "link", attrs: { href } })
-            : marks;
+            ? withMark(styled, { type: "link", attrs: { href } })
+            : styled;
         return childrenInline(el, childMarks);
     }
 
     const mark = MARK_FOR_TAG[tag];
-    return childrenInline(el, mark ? withMark(marks, mark) : marks);
+    return childrenInline(el, mark ? withMark(styled, mark) : styled);
 }
 
 function childrenInline(el: Element, marks: TipTapMark[]): TipTapNode[] {
@@ -93,10 +146,13 @@ function imageFigureNode(el: Element): TipTapNode {
     return { type: "imageFigure", attrs };
 }
 
-function paragraph(content: TipTapNode[]): TipTapNode {
-    return content.length > 0
+function paragraph(content: TipTapNode[], el?: Element): TipTapNode {
+    const node: TipTapNode = content.length > 0
         ? { type: "paragraph", content }
         : { type: "paragraph" };
+    if (!el) return node;
+    const attrs = withStyleAttrs(el, "paragraph", {});
+    return Object.keys(attrs).length > 0 ? { ...node, attrs } : node;
 }
 
 function listItem(el: Element): TipTapNode {
@@ -146,14 +202,14 @@ function blockNodes(parent: Node): TipTapNode[] {
             flush();
             out.push({
                 type: "heading",
-                attrs: { level: HEADING_TAGS[tag] },
+                attrs: withStyleAttrs(el, "heading", { level: HEADING_TAGS[tag] }),
                 content: childrenInline(el, []),
             });
             return;
         }
         if (tag === "P") {
             flush();
-            out.push(paragraph(childrenInline(el, [])));
+            out.push(paragraph(childrenInline(el, []), el));
             return;
         }
         if (tag === "UL") {

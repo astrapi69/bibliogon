@@ -6,7 +6,7 @@ architecture rules require # INTERNAL comments to stay in the file.
 """
 from pathlib import Path
 
-from app.yaml_io import read_yaml_roundtrip, write_yaml_roundtrip
+from app.yaml.io import read_yaml_roundtrip, write_yaml_roundtrip
 
 
 def test_pristine_plugin_yaml_round_trips_byte_identically(tmp_path: Path) -> None:
