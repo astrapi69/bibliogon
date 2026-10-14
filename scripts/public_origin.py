@@ -36,9 +36,12 @@ def read_field(field: str, config_path: Path = CONFIG_PATH) -> str:
     Raises:
         KeyError: when the field is not in the config and not derivable.
     """
-    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config: dict[str, object] = json.loads(config_path.read_text(encoding="utf-8"))
+    origin = config.get("origin")
+    if not isinstance(origin, str):
+        raise KeyError(f"{config_path.name} declares no string 'origin'")
     if field == "host":
-        return urlparse(config["origin"]).netloc
+        return urlparse(origin).netloc
     value = config.get(field)
     if not isinstance(value, str):
         raise KeyError(f"{field!r} is not a string field of {config_path.name}")

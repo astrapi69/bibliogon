@@ -11,14 +11,20 @@
  * The expected value comes from `public-origin.json`, the same source the
  * build reads - which makes this a check that the pipeline RAN, not that
  * somebody typed the same host twice.
+ *
+ * It is read through `__dirname` rather than `import.meta.url`: the e2e
+ * package is CommonJS, so Playwright transpiles a spec touching
+ * `import.meta` into a `require` shim, and the file then fails to load at
+ * all - which the run reports as "No tests found" rather than as a module
+ * error.
  */
 
 import {test, expect} from "@playwright/test";
 import {readFileSync} from "node:fs";
-import {fileURLToPath} from "node:url";
+import * as path from "node:path";
 
 const config = JSON.parse(
-    readFileSync(fileURLToPath(new URL("../../frontend/public-origin.json", import.meta.url)), "utf-8"),
+    readFileSync(path.resolve(__dirname, "../../frontend/public-origin.json"), "utf-8"),
 ) as {origin: string; appPath: string};
 
 const APP_URL = `${config.origin}${config.appPath}`;
