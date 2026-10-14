@@ -22,13 +22,13 @@ import { useNavigate } from "react-router-dom";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { ArrowUp, FileText, Folder, FolderGit2, Loader2 } from "lucide-react";
 
-import { useI18n } from "../../hooks/useI18n";
-import { notify } from "../../utils/platform/notify";
-import { FEATURES } from "../../features/featureConfig";
-import { FeatureNotice } from "../../features/FeatureNotice";
-import { loadGitHubToken, saveGitHubToken } from "../../import/credentials/githubToken";
-import { TokenInput } from "../../lib/components/TokenInput";
-import { SharedOriginNote } from "../ui/SharedOriginNote";
+import { useI18n } from "../../../hooks/useI18n";
+import { notify } from "../../../utils/platform/notify";
+import { FEATURES } from "../../../features/featureConfig";
+import { FeatureNotice } from "../../../features/FeatureNotice";
+import { loadGitHubToken, saveGitHubToken } from "../../../import/credentials/githubToken";
+import { TokenInput } from "../../../lib/components/TokenInput";
+import { SharedOriginNote } from "../../ui/SharedOriginNote";
 import {
     GitHubNotFoundError,
     GitHubRateLimitError,
@@ -38,7 +38,7 @@ import {
     type GitHubEntry,
     type GitHubImportSummary,
     type GitHubRepoRef,
-} from "../../import/githubImport";
+} from "../../../import/githubImport";
 
 export interface GitHubImportTabProps {
     onImported?: () => void;

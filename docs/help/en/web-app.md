@@ -23,6 +23,9 @@ Almost everything the desktop does:
 - Exporting in the browser to Markdown, HTML, plain text, PDF, EPUB and
   DOCX — see [Browser export](export/browser.md).
 - Importing a Medium HTML export.
+- Importing a write-book-template book project (`.bgp` or `.zip`) - its
+  chapter structure, metadata and images - see
+  [Importing a book project](import/project.md).
 - Settings, themes and the eight interface languages.
 
 ## What needs the desktop app

@@ -89,6 +89,7 @@ plugins:
         Git-Historie übernehmen: Adopt git history
         Medium-Archiv: Medium archive
         Word- und EPUB-Import: Word and EPUB import
+        Buchprojekt importieren: Importing a book project
         Docker Desktop installieren: Install Docker Desktop
         Plattformübergreifende Installer: Cross-platform installers
         Auf dem Handy nutzen: Use on mobile
@@ -199,6 +200,7 @@ nav:
   - Git-Historie übernehmen: de/import/git-adoption.md
   - Medium-Archiv: de/import/medium.md
   - Word- und EPUB-Import: de/import/office.md
+  - Buchprojekt importieren: de/import/project.md
 - Installation:
   - Übersicht: de/installation.md
   - Docker Desktop installieren: de/install/docker-desktop.md

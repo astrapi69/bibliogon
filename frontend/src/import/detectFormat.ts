@@ -4,11 +4,13 @@
  * Sniffs a user-selected file into one of the {@link ImportFormat} buckets so
  * the offline import router can dispatch without a backend round-trip. The
  * detector is extension-first, with a content probe where the extension is
- * ambiguous (`.zip` may be a Medium export or a write-book-template archive;
- * `.json` may be a full-data backup bundle or unrelated JSON).
+ * ambiguous (`.zip` may be a Medium export, a write-book-template project or
+ * neither; `.json` may be a full-data backup bundle or unrelated JSON).
  */
 
 import { unzipSync } from "fflate";
+
+import { isWbtArchive } from "./wbt/wbtImport";
 
 /**
  * The set of formats the offline import path recognises. Everything that is
@@ -18,6 +20,7 @@ import { unzipSync } from "fflate";
 export type ImportFormat =
     | "json-backup"
     | "medium-zip"
+    | "wbt-zip"
     | "markdown"
     | "text"
     | "html"
@@ -41,17 +44,23 @@ async function startsWithZipMagic(file: File): Promise<boolean> {
 }
 
 /**
- * Decide whether a `.zip` is a Medium export by looking for at least one
- * `posts/*.html` entry. A write-book-template archive (no `posts/`) returns
- * false so the caller resolves it to `unknown` (backend-only offline).
+ * Classify a ZIP by what is inside it, unpacking it once.
+ *
+ * A Medium export carries at least one `posts/*.html`; a write-book-template
+ * project carries the `config/metadata.yaml` marker its own importer looks
+ * for ({@link isWbtArchive}), so the two detectors cannot drift. Medium wins
+ * when both markers are present, because a Medium export is never also a book
+ * project and the article path is the narrower claim.
  */
-async function zipIsMedium(file: File): Promise<boolean> {
+async function classifyZip(file: File): Promise<ImportFormat> {
+    let entries: Record<string, Uint8Array>;
     try {
-        const entries = unzipSync(new Uint8Array(await file.arrayBuffer()));
-        return Object.keys(entries).some((path) => POSTS_HTML.test(path));
+        entries = unzipSync(new Uint8Array(await file.arrayBuffer()));
     } catch {
-        return false;
+        return "unknown";
     }
+    if (Object.keys(entries).some((path) => POSTS_HTML.test(path))) return "medium-zip";
+    return isWbtArchive(entries) ? "wbt-zip" : "unknown";
 }
 
 /**
@@ -96,9 +105,9 @@ export async function detectImportFormat(file: File): Promise<ImportFormat> {
         return (await jsonIsBackupBundle(file)) ? "json-backup" : "unknown";
     }
 
-    if (ext === ".zip") {
+    if (ext === ".zip" || ext === ".bgp") {
         if (!(await startsWithZipMagic(file))) return "unknown";
-        return (await zipIsMedium(file)) ? "medium-zip" : "unknown";
+        return await classifyZip(file);
     }
 
     return "unknown";
@@ -108,6 +117,7 @@ export async function detectImportFormat(file: File): Promise<ImportFormat> {
 export const OFFLINE_SUPPORTED_FORMATS: readonly ImportFormat[] = [
     "json-backup",
     "medium-zip",
+    "wbt-zip",
     "markdown",
     "text",
     "html",
