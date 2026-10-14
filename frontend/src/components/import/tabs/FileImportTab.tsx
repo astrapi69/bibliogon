@@ -15,19 +15,19 @@ import { useNavigate } from "react-router-dom";
 import { Feature } from "@astrapi69/feature-strategy-react";
 import { FolderUp, Upload } from "lucide-react";
 
-import { useI18n } from "../../hooks/useI18n";
-import { notify } from "../../utils/platform/notify";
-import { FEATURES } from "../../features/featureConfig";
-import { RadixSelect } from "../shared/RadixSelect";
-import { getStorage } from "../../storage";
-import type { Book } from "../../api/client";
-import { detectImportFormat, type ImportFormat } from "../../import/detectFormat";
+import { useI18n } from "../../../hooks/useI18n";
+import { notify } from "../../../utils/platform/notify";
+import { FEATURES } from "../../../features/featureConfig";
+import { RadixSelect } from "../../shared/RadixSelect";
+import { getStorage } from "../../../storage";
+import type { Book } from "../../../api/client";
+import { detectImportFormat, type ImportFormat } from "../../../import/detectFormat";
 import {
     importFile,
     OfflineNotSupportedError,
     UnknownFormatError,
     type ImportFileResult,
-} from "../../import/importRouter";
+} from "../../../import/importRouter";
 
 export interface FileImportTabProps {
     open: boolean;

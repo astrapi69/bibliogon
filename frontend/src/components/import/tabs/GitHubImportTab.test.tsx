@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
-vi.mock("../../hooks/useI18n", () => ({
+vi.mock("../../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_k: string, fallback: string) => fallback,
         lang: "en",
@@ -12,11 +12,11 @@ vi.mock("../../hooks/useI18n", () => ({
 const navigate = vi.fn();
 vi.mock("react-router-dom", () => ({ useNavigate: () => navigate }));
 
-vi.mock("../../utils/platform/notify", () => ({ notify: { success: vi.fn(), error: vi.fn() } }));
+vi.mock("../../../utils/platform/notify", () => ({ notify: { success: vi.fn(), error: vi.fn() } }));
 
 const loadGitHubToken = vi.fn(async () => "");
 const saveGitHubToken = vi.fn(async (_token: string) => {});
-vi.mock("../../import/credentials/githubToken", () => ({
+vi.mock("../../../import/credentials/githubToken", () => ({
     loadGitHubToken: () => loadGitHubToken(),
     saveGitHubToken: (token: string) => saveGitHubToken(token),
 }));
@@ -29,7 +29,7 @@ vi.mock("@astrapi69/feature-strategy-react", () => ({
 const listGitHubContents = vi.fn();
 const runGitHubImport = vi.fn();
 const parseGitHubUrl = vi.fn();
-vi.mock("../../import/githubImport", () => ({
+vi.mock("../../../import/githubImport", () => ({
     listGitHubContents: (...a: unknown[]) => listGitHubContents(...a),
     runGitHubImport: (...a: unknown[]) => runGitHubImport(...a),
     parseGitHubUrl: (...a: unknown[]) => parseGitHubUrl(...a),

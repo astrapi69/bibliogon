@@ -25,7 +25,7 @@
   "frontend/src/components/dashboard": 17,
   "frontend/src/components/editor": 28,
   "frontend/src/components/export": 12,
-  "frontend/src/components/import": 18,
+  "frontend/src/components/import": 13,
   "frontend/src/components/import-wizard/steps": 21,
   "frontend/src/components/kdp-wizard": 18,
   "frontend/src/components/picture-book": 22,

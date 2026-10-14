@@ -26,9 +26,9 @@ import { X } from "lucide-react";
 
 import { useI18n } from "../../hooks/useI18n";
 import type { ImportFileResult } from "../../import/importRouter";
-import FileImportTab from "./FileImportTab";
-import GitHubImportTab from "./GitHubImportTab";
-import UrlImportTab from "./UrlImportTab";
+import FileImportTab from "./tabs/FileImportTab";
+import GitHubImportTab from "./tabs/GitHubImportTab";
+import UrlImportTab from "./tabs/UrlImportTab";
 
 export interface OfflineImportDialogProps {
     open: boolean;

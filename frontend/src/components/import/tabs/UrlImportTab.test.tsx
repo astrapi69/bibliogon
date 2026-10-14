@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
-vi.mock("../../hooks/useI18n", () => ({
+vi.mock("../../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_k: string, fallback: string) => fallback,
         lang: "en",
@@ -12,7 +12,7 @@ vi.mock("../../hooks/useI18n", () => ({
 const navigate = vi.fn();
 vi.mock("react-router-dom", () => ({ useNavigate: () => navigate }));
 
-vi.mock("../../utils/platform/notify", () => ({ notify: { success: vi.fn(), error: vi.fn() } }));
+vi.mock("../../../utils/platform/notify", () => ({ notify: { success: vi.fn(), error: vi.fn() } }));
 
 const useFeatureMock = vi.fn();
 vi.mock("@astrapi69/feature-strategy-react", () => ({
@@ -20,7 +20,7 @@ vi.mock("@astrapi69/feature-strategy-react", () => ({
 }));
 
 const runUrlImport = vi.fn();
-vi.mock("../../import/urlImport", () => ({
+vi.mock("../../../import/urlImport", () => ({
     runUrlImport: (...a: unknown[]) => runUrlImport(...a),
     UrlImportError: class extends Error {},
 }));
