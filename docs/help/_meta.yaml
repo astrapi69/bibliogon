@@ -283,6 +283,10 @@ navigation:
           de: Word- und EPUB-Import
           en: Word and EPUB import
         slug: import/office
+      - title:
+          de: Buchprojekt importieren
+          en: Importing a book project
+        slug: import/project
 
   - title:
       de: Installation

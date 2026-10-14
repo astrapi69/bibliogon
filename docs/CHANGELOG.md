@@ -5,6 +5,20 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 ## [Unreleased]
 
 ### Added
+- **A write-book-template book project imports in the browser (#736).**
+  A `.bgp` (or `.zip`) project was desktop-only: the backendless web app
+  showed "requires the desktop app" and the mobile PWA could not take a
+  project at all. The whole import now runs client-side through the
+  storage seam - chapter order and titles from `section_order` and the
+  first `# ` line, chapter types from the filename, metadata from
+  `config/metadata.yaml`, images from `assets/` with their subfolder's
+  type, and the cover validated against the images that actually
+  arrived. Each decision is pinned against what the backend produced for
+  the same 17 projects, so the two sides import a project the same way.
+  Chapter content is stored as a TipTap document rather than HTML, which
+  keeps imported books out of the #787 class. The detector unpacks a ZIP
+  once and asks the importer itself what a project looks like, so the two
+  cannot disagree.
 - **All 17 KDP A+ modules in the A+ editor (#895).** "Add module"
   opens a gallery of Amazon's standard modules, as tiles with a layout
   sketch or as a list, grouped into image and text, text only, tables
