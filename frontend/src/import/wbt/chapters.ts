@@ -19,10 +19,11 @@
 
 import { parseAllDocuments } from "yaml";
 
+import type { ChapterType } from "../../api/client";
 import type { ProjectTree } from "./projectFiles";
 
 /** Front-matter filename stems and the chapter type each one means. */
-export const FRONT_MATTER_MAP: Readonly<Record<string, string>> = {
+export const FRONT_MATTER_MAP: Readonly<Record<string, ChapterType>> = {
     toc: "toc",
     dedication: "dedication",
     epigraph: "epigraph",
@@ -34,7 +35,7 @@ export const FRONT_MATTER_MAP: Readonly<Record<string, string>> = {
 };
 
 /** Back-matter filename stems and the chapter type each one means. */
-export const BACK_MATTER_MAP: Readonly<Record<string, string>> = {
+export const BACK_MATTER_MAP: Readonly<Record<string, ChapterType>> = {
     epilogue: "epilogue",
     afterword: "afterword",
     "about-the-author": "about_author",
@@ -49,13 +50,13 @@ export const BACK_MATTER_MAP: Readonly<Record<string, string>> = {
     "other-publications": "next_in_series",
 };
 
-export const ALL_SPECIAL_MAP: Readonly<Record<string, string>> = {
+export const ALL_SPECIAL_MAP: Readonly<Record<string, ChapterType>> = {
     ...FRONT_MATTER_MAP,
     ...BACK_MATTER_MAP,
 };
 
 /** Free-form stems that still carry a type, checked as a prefix. */
-const CHAPTER_FILENAME_PATTERNS: Readonly<Record<string, string>> = {
+const CHAPTER_FILENAME_PATTERNS: Readonly<Record<string, ChapterType>> = {
     part: "part_intro",
     "part-intro": "part_intro",
     interludium: "interlude",
@@ -80,7 +81,7 @@ const ORDER_PREFIX_RE = /^\d+(-\d+)?-/;
 export interface PlannedChapter {
     path: string;
     title: string;
-    chapter_type: string;
+    chapter_type: ChapterType;
     position: number;
 }
 
@@ -123,7 +124,7 @@ export function pythonTitle(text: string): string {
  * `02-kapitel` a plain chapter. The numeric prefix is stripped first so the
  * patterns match what the author actually named the file.
  */
-export function detectChapterType(stem: string): string {
+export function detectChapterType(stem: string): ChapterType {
     const cleaned = stem.replace(ORDER_PREFIX_RE, "").toLowerCase();
     for (const [pattern, chapterType] of Object.entries(CHAPTER_FILENAME_PATTERNS)) {
         if (cleaned.startsWith(pattern)) return chapterType;
@@ -197,7 +198,7 @@ function push(
     state: PlanState,
     tree: ProjectTree,
     path: string,
-    chapterType: string,
+    chapterType: ChapterType,
 ): void {
     const stem = stemOf(path);
     state.planned.push({
@@ -271,7 +272,11 @@ function planWithSectionOrder(
 function planAlphabetical(tree: ProjectTree): PlannedChapter[] {
     const planned: PlannedChapter[] = [];
 
-    const special = (dir: string, map: Readonly<Record<string, string>>, base: number) => {
+    const special = (
+        dir: string,
+        map: Readonly<Record<string, ChapterType>>,
+        base: number,
+    ) => {
         const state: PlanState = { position: base, planned, seen: new Set() };
         for (const path of tree.list(dir)) {
             if (!path.toLowerCase().endsWith(".md")) continue;
