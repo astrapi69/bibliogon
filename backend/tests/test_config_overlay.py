@@ -208,8 +208,8 @@ def test_write_user_app_config_is_atomic_under_concurrent_read(two_layer_dirs, m
 
     from ruamel.yaml import YAML
 
-    from app import yaml_io
-    from app.yaml_io import read_yaml_roundtrip
+    from app.yaml import io as yaml_io
+    from app.yaml.io import read_yaml_roundtrip
 
     original = {
         "app": {"default_language": "de"},

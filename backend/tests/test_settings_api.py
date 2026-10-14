@@ -599,7 +599,7 @@ def test_update_preserves_comments_and_formatting(client, temp_base):
     Regression pin for the PyYAML -> ruamel.yaml swap: saving plugin
     settings through the UI used to drop `# INTERNAL` comments and
     rewrite `"foo"` as `foo`. This test proves the HTTP round-trip
-    preserves both, so a future refactor that bypasses `app.yaml_io`
+    preserves both, so a future refactor that bypasses `app.yaml.io`
     fails loudly instead of silently corrupting user configs.
     """
     export_yaml_path = temp_base / "config" / "plugins" / "export.yaml"

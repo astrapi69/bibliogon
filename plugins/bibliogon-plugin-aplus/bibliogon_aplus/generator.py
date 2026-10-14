@@ -18,7 +18,7 @@ real import chain in place.
 from __future__ import annotations
 
 import hashlib
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Any, Protocol
 
 import yaml
@@ -101,22 +101,31 @@ def _parse_ai_yaml_fragment(text: str) -> dict[str, Any]:
 def _text(raw: Any) -> str:
     """One of the model's string fields, as a clean string.
 
-    A YAML key present with no value parses to None, and ``str(None)``
-    is the literal four-character word "None". Every text field in the
-    package goes through here so that word cannot reach the author's
-    copy: None and whitespace-only both collapse to "" (#1086).
+    Implements :func:`app.yaml.projection.as_text` with ``absent=""``, because
+    this model declares ``str`` where ``ProjectMetadata`` declares
+    ``str | None``: a bare ``alt_text`` has to reach the validator as empty,
+    which is the error the ruleset already wanted to report.
 
-    Only those two collapse. A model that answers with an unquoted
-    number meant those digits and YAML parsed them as an int, so the
-    field keeps them.
+    IMPLEMENTS rather than CALLS, deliberately. This plugin's standalone test
+    matrix installs only the plugin's own lockfile - no backend - and
+    ``generator`` is one of the modules those tests import, so an
+    ``app.yaml.projection`` import here would turn that matrix red (the "two
+    installation paths diverge" lesson). The backend owns the contract and
+    ``backend/tests/test_yaml_projection.py`` asserts this function agrees
+    with it across every input kind, so drift cannot merge.
 
-    The guard existed for ``image_prompt`` alone from the start - a
-    bare prompt had to render as "" rather than as the word - and the
-    other nine fields were the ones that shipped it. An empty
-    ``alt_text`` now reaches the validator as empty, which is the error
-    the ruleset already wanted to report.
+    The rule started here for ``image_prompt`` alone (#1086 - a bare YAML key
+    rendered as the literal word "None") and the import parser grew its own
+    copy of the same rule for the same reason; #1108 made that agreement a
+    gate instead of a coincidence.
     """
     if raw is None:
+        return ""
+    # datetime subclasses date, so one check covers both and each renders
+    # with its own isoformat.
+    if isinstance(raw, date):
+        return raw.isoformat()
+    if isinstance(raw, (list, tuple, set, frozenset, dict)):
         return ""
     return str(raw).strip()
 

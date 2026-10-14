@@ -25,7 +25,7 @@ from ruamel.yaml import YAMLError as RuamelYAMLError
 
 from app import credential_store
 from app.exceptions import BibliogonError, ExternalServiceError, ValidationError
-from app.yaml_io import read_yaml_roundtrip, write_yaml_roundtrip
+from app.yaml.io import read_yaml_roundtrip, write_yaml_roundtrip
 
 logger = logging.getLogger(__name__)
 
