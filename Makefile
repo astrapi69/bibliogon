@@ -649,8 +649,9 @@ test-e2e-all: ## Run all E2E projects
 	cd e2e && npx playwright test
 
 verify-external-hosts: ## Guard (#874): the frontend fetches nothing from a third-party host (sources; plus frontend/dist when built)
-	python3 scripts/check_external_hosts.py --sources frontend --origin https://astrapi69.github.io
-	@if [ -d frontend/dist ]; then python3 scripts/check_external_hosts.py frontend/dist --origin https://astrapi69.github.io; else echo "frontend/dist not built - dist scan skipped (deploy-pages.yml runs it on the real artifact)"; fi
+	@origin=$$(python3 scripts/public_origin.py) && \
+	python3 scripts/check_external_hosts.py --sources frontend --origin "$$origin" && \
+	{ if [ -d frontend/dist ]; then python3 scripts/check_external_hosts.py frontend/dist --origin "$$origin"; else echo "frontend/dist not built - dist scan skipped (deploy-pages.yml runs it on the real artifact)"; fi; }
 
 test-static-smoke: ## Build the static/Dexie bundle + smoke-test it with NO backend (catches "works with backend, crashes static")
 	cd frontend && VITE_STORAGE_MODE=dexie npm run build

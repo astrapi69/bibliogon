@@ -96,6 +96,7 @@ vi.mock("./ShareAppSection", () => ({
 }));
 
 import { api, type DiscoveredPlugin } from "../../api/client";
+import { publicUrl } from "../../lib/origin/publicOrigin";
 
 const FIXTURE = {
     app: {
@@ -375,7 +376,7 @@ describe("AboutSettings", () => {
             expect(repo.getAttribute("target")).toBe("_blank");
 
             expect(docs.getAttribute("href")).toBe(
-                "https://astrapi69.github.io/bibliogon/docs/",
+                publicUrl("docs/"),
             );
             expect(docs.getAttribute("target")).toBe("_blank");
 

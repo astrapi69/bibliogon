@@ -1,0 +1,6 @@
+{
+  "$comment": "The single source of the public origin and deploy paths (#1102). Read by vite.config.ts (index.html, sitemap.xml, robots.txt), by src/lib/origin/publicOrigin.ts for every shipped URL in the app, and by scripts/public_origin.py for the external-host gate. Changing the origin here is the whole domain move: nothing else carries the host.",
+  "origin": "https://astrapi69.github.io",
+  "appPath": "/bibliogon/",
+  "previewPath": "/bibliogon-preview/"
+}

@@ -5,14 +5,18 @@
  * book/article carries that item's title + description instead of the static
  * app-level defaults baked into `index.html`.
  *
- * Pure DOM, no app imports and no network — works identically online and in
- * Dexie/offline mode (Maximal Offline).
+ * Pure DOM and no network — works identically online and in Dexie/offline
+ * mode (Maximal Offline). Its one import is the `lib/` sibling that
+ * declares the published origin (#1102), because the default `og:image` is
+ * an absolute URL and an absolute URL needs a host from somewhere.
  *
  * @example
  * setDocumentMeta({ title: "Mein Buch", description: "Klappentext …" });
  * // on unmount / navigation away:
  * resetDocumentMeta();
  */
+
+import { publicUrl } from "../origin/publicOrigin";
 
 /** Static defaults mirroring `frontend/index.html`. {@link resetDocumentMeta}
  *  restores these when a route stops overriding the meta. */
@@ -23,7 +27,7 @@ export const DEFAULT_META = {
     ogTitle: "Bibliogon - Open-Source Autoren-Plattform",
     ogDescription:
         "Buecher, Artikel und Comics schreiben, organisieren und veroeffentlichen. Offline-faehig, lokal-first.",
-    ogImage: "https://astrapi69.github.io/bibliogon/og-image.png",
+    ogImage: publicUrl("og-image.png"),
     ogType: "website",
 } as const;
 

@@ -16,6 +16,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { DataManagementSettings } from "./DataManagementSettings";
+import { APP_URL } from "../../lib/origin/publicOrigin";
 
 vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
@@ -244,7 +245,7 @@ describe("DataManagementSettings", () => {
         await waitFor(() => expect(screen.getByTestId("data-import-section")).toBeTruthy());
         expect(screen.getByTestId("data-import-online-hint")).toBeTruthy();
         const link = screen.getByTestId("data-import-online-link") as HTMLAnchorElement;
-        expect(link.getAttribute("href")).toBe("https://astrapi69.github.io/bibliogon/");
+        expect(link.getAttribute("href")).toBe(APP_URL);
         expect(link.getAttribute("target")).toBe("_blank");
     });
 

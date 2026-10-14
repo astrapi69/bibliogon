@@ -1,5 +1,5 @@
 import { useI18n } from "../../hooks/useI18n";
-import { onSharedOrigin } from "../../lib/sharedOrigin";
+import { onSharedOrigin } from "../../lib/origin/sharedOrigin";
 
 /**
  * Tells the user that this page's storage is shared with other sites,

@@ -4,6 +4,18 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
+### Changed
+- **The published host is declared once (#1102).** It used to be written
+  out in thirteen shipped or gate-forming places - five meta tags in
+  `index.html`, `sitemap.xml`, `robots.txt`, four components, the share
+  section's two URLs, and twice as the external-host gate's `--origin`.
+  `frontend/public-origin.json` is the source now: the app reads it through
+  `lib/publicOrigin`, `index.html` through placeholders a Vite plugin
+  resolves, the sitemap and robots.txt are emitted from it rather than
+  stored, and the shell reads it with `scripts/public_origin.py`. A guard
+  test fails on a new literal. No user-visible change; a domain move is now
+  one edit instead of a search across five file types.
+
 ### Added
 - **A write-book-template book project imports in the browser (#736).**
   A `.bgp` (or `.zip`) project was desktop-only: the backendless web app

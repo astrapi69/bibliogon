@@ -4,6 +4,8 @@
  * Extracted from AboutSettings.tsx (#675).
  */
 
+import { publicUrl } from "../../../lib/origin/publicOrigin";
+
 /** The toolchain Bibliogon is built with. Each tag links to the
  *  project's home; the labels are project names and stay English
  *  (untranslated) per issue #87. */
@@ -26,5 +28,5 @@ export const AUTHOR_URL = "https://github.com/astrapi69";
 export const LICENSE_URL =
   "https://github.com/astrapi69/bibliogon/blob/main/LICENSE";
 export const REPOSITORY_URL = "https://github.com/astrapi69/bibliogon";
-export const DOCS_URL = "https://astrapi69.github.io/bibliogon/docs/";
+export const DOCS_URL = publicUrl("docs/");
 export const ISSUES_URL = "https://github.com/astrapi69/bibliogon/issues";

@@ -15,14 +15,15 @@ import { QRCodeSVG } from "qrcode.react";
 import { ExternalLink, Copy, QrCode, Share2 } from "lucide-react";
 import { copyToClipboard } from "../../utils/platform/clipboard";
 import { notify } from "../../utils/platform/notify";
+import { APP_URL, PREVIEW_URL } from "../../lib/origin/publicOrigin";
 
 type T = (key: string, fallback: string) => string;
 
-/** Shareable app URLs. Centralized so the QR/link/copy targets stay in one
- *  place rather than being duplicated across the component. */
+/** Shareable app URLs, read from the one file that declares the origin
+ *  (#1102) so a domain move reaches the QR code and the copy button. */
 export const SHARE_URLS = {
-  production: "https://astrapi69.github.io/bibliogon/",
-  preview: "https://astrapi69.github.io/bibliogon-preview/",
+  production: APP_URL,
+  preview: PREVIEW_URL,
 } as const;
 
 const sectionStyle: React.CSSProperties = {
