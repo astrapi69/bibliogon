@@ -16,9 +16,10 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { Download, ExternalLink, X } from "lucide-react";
 import { useI18n } from "../../hooks/useI18n";
+import { APP_URL } from "../../lib/origin/publicOrigin";
 
 /** Public online (GitHub Pages) build the user can export a `.bgb` from. */
-export const ONLINE_VERSION_URL = "https://astrapi69.github.io/bibliogon/";
+export const ONLINE_VERSION_URL = APP_URL;
 
 export const MIGRATION_OFFERED_KEY = "bibliogon-migration-offered";
 

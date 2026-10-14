@@ -1,7 +1,9 @@
 name: Deploy app to GitHub Pages
 
 # Deploys the Bibliogon frontend (the React/Vite SPA) to this repo's
-# GitHub Pages site at https://astrapi69.github.io/bibliogon/.
+# GitHub Pages site. The address it ends up at is declared in
+# frontend/public-origin.json, which the external-host gate below reads
+# too (#1102).
 #
 # This repo's Pages site hosts the APP. The documentation is published
 # separately to the astrapi69/bibliogondocs repo (see deploy-docs.yml) —
@@ -70,7 +72,9 @@ jobs:
       # party hands every visitor's IP to that host. Nothing in the build
       # does that today; this keeps the artifact from ever shipping it.
       - name: Guard - no third-party resource fetch in the artifact
-        run: python3 scripts/check_external_hosts.py frontend/dist --origin https://astrapi69.github.io
+        run: |
+          python3 scripts/check_external_hosts.py frontend/dist \
+            --origin "$(python3 scripts/public_origin.py)"
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:

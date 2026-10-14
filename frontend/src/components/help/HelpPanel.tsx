@@ -11,6 +11,7 @@ import {useHelp} from "../../contexts/HelpContext";
 import {useI18n} from "../../hooks/useI18n";
 import {LoadingIndicator} from "../shared/LoadingIndicator";
 import SearchClearButton from "../dashboard/SearchClearButton";
+import { APP_URL } from "../../lib/origin/publicOrigin";
 
 /**
  * Full-screen slide-over help panel mounted at the App root.
@@ -134,7 +135,7 @@ export default function HelpPanel() {
                         </Dialog.Title>
                         <div style={{display: "flex", gap: 8, alignItems: "center"}}>
                             <a
-                                href="https://astrapi69.github.io/bibliogon/"
+                                href={APP_URL}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="btn-icon"
