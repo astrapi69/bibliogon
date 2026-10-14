@@ -7,7 +7,9 @@
  * the `getStorage()` seam (zero `/api`). Markdown / Text / HTML offer a
  * "new book" vs "append to existing book" choice; a Medium ZIP is handed off
  * to its dedicated page; `.bgb` and JSON full-data backups run their
- * client-side importers. All `offline-import-*` test ids are preserved.
+ * client-side importers; a write-book-template project archive
+ * (`.bgp` / `.zip`) runs the client-side project importer (#736). All
+ * `offline-import-*` test ids are preserved.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -131,6 +133,15 @@ export default function FileImportTab({
                 .replace("{books}", String(result.result.imported.books))
                 .replace("{articles}", String(result.result.imported.articles));
         }
+        if (result.kind === "wbt") {
+            return t(
+                "ui.offline_import.success_project",
+                "Projekt importiert: {title} ({chapters} Kapitel, {assets} Bilder)",
+            )
+                .replace("{title}", result.result.bookTitle)
+                .replace("{chapters}", String(result.result.chapterCount))
+                .replace("{assets}", String(result.result.assetCount));
+        }
         return t(
             "ui.offline_import.success_medium",
             "Medium-Import: {imported} importiert",
@@ -194,7 +205,7 @@ export default function FileImportTab({
                         label={t("ui.offline_import.drop_zone", "Datei hier ablegen oder klicken")}
                         hint={t(
                             "ui.offline_import.accepted",
-                            "Markdown, Text, HTML, JSON-Backup, Medium-Export (.zip), Backup (.bgb).",
+                            "Markdown, Text, HTML, JSON-Backup, Medium-Export (.zip), Buchprojekt (.bgp), Backup (.bgb).",
                         )}
                     />
                 )}
@@ -419,7 +430,7 @@ function FilePicker({
                 }}
                 type="file"
                 data-testid="offline-import-input"
-                accept=".md,.markdown,.txt,.html,.htm,.json,.zip,.bgb"
+                accept=".md,.markdown,.txt,.html,.htm,.json,.zip,.bgp,.bgb"
                 className="hidden"
                 onChange={(e) => {
                     const picked = e.target.files?.[0];

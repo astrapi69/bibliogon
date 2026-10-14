@@ -10,6 +10,7 @@ const {
     importBgbFile,
     parseMediumZip,
     importParsed,
+    importWbtArchive,
     getApp,
 } = vi.hoisted(() => ({
     importMarkdownAsChapter: vi.fn(async () => ({
@@ -46,6 +47,12 @@ const {
         parsed: new Map(),
     })),
     importParsed: vi.fn(async () => ({ imported_count: 2 })),
+    importWbtArchive: vi.fn(async () => ({
+        bookId: "b4",
+        bookTitle: "Project",
+        chapterCount: 7,
+        assetCount: 3,
+    })),
     getApp: vi.fn(async () => ({ app: { default_language: "de" } })),
 }));
 
@@ -57,6 +64,7 @@ vi.mock("./chapterImporters", () => ({
 vi.mock("../export/backupImport", () => ({ importFullBackup }));
 vi.mock("./bgbImport", () => ({ importBgbFile }));
 vi.mock("../medium-import/clientImport", () => ({ parseMediumZip, importParsed }));
+vi.mock("./wbt/wbtImport", () => ({ importWbtArchive }));
 vi.mock("../storage", () => ({
     getStorage: () => ({ settings: { getApp } }),
 }));
@@ -114,6 +122,15 @@ describe("importFile routing", () => {
         const out = await importFile(file("x.bgb"), "bgb");
         expect(out.kind).toBe("bgb-backup");
         expect(importBgbFile).toHaveBeenCalledWith(expect.any(File));
+    });
+
+    it("routes wbt-zip to the client-side write-book-template importer", async () => {
+        const out = await importFile(file("project.bgp"), "wbt-zip");
+        expect(out.kind).toBe("wbt");
+        expect(importWbtArchive).toHaveBeenCalledWith(expect.any(File));
+        if (out.kind !== "wbt") throw new Error("wrong kind");
+        expect(out.result.chapterCount).toBe(7);
+        expect(out.result.bookTitle).toBe("Project");
     });
 
     it("throws UnknownFormatError for unknown", async () => {

@@ -5,8 +5,9 @@
  * reusing the existing offline importers where they already exist
  * (`importFullBackup` for the JSON backup bundle, the Medium client importer
  * for a Medium ZIP) and the new single-file chapter importers for
- * Markdown/Text/HTML, and the new client-side `.bgb` parser
- * (`importBgbFile`). Anything else is an `UnknownFormatError`.
+ * Markdown/Text/HTML, the client-side `.bgb` parser (`importBgbFile`) and
+ * the client-side write-book-template importer (`importWbtArchive`, #736).
+ * Anything else is an `UnknownFormatError`.
  */
 
 import type { MediumImportResponse } from "../api/client";
@@ -22,6 +23,7 @@ import {
     type ChapterImportTarget,
 } from "./chapterImporters";
 import type { ImportFormat } from "./detectFormat";
+import { importWbtArchive, type WbtImportResult } from "./wbt/wbtImport";
 
 /** Thrown when a recognised format cannot be imported in the browser. */
 export class OfflineNotSupportedError extends Error {
@@ -48,7 +50,8 @@ export type ImportFileResult =
       }
     | { kind: "backup"; format: "json-backup"; result: ImportResult }
     | { kind: "bgb-backup"; format: "bgb"; result: BgbImportResult }
-    | { kind: "medium"; format: "medium-zip"; result: MediumImportResponse };
+    | { kind: "medium"; format: "medium-zip"; result: MediumImportResponse }
+    | { kind: "wbt"; format: "wbt-zip"; result: WbtImportResult };
 
 export interface ImportFileOptions {
     /** Destination for single-file (md/txt/html) imports. Defaults to a new book. */
@@ -129,6 +132,12 @@ export async function importFile(
                 kind: "bgb-backup",
                 format,
                 result: await importBgbFile(file),
+            };
+        case "wbt-zip":
+            return {
+                kind: "wbt",
+                format,
+                result: await importWbtArchive(file),
             };
         default:
             throw new UnknownFormatError();
