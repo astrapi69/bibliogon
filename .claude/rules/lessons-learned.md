@@ -6354,3 +6354,64 @@ PY
 Every name that comes back is either derived (correct, and belongs in a
 documented drop-list) or a column the API can show and not change. There is
 no third category.
+
+## A wait whose condition an empty list satisfies reports green before anything ran
+
+Filed 2026-10-15 (#1117), third in the family with "A layout assertion whose
+bound comes from the box under test" and "A retry that destroys the state it is
+retrying". Same shape every time: the checking mechanism satisfies the claim by
+itself, and the result reads as evidence.
+
+`gh pr checks <n>` is GraphQL-backed and refused in a Claude Code session (HTTP
+403), so waiting for CI means writing the loop by hand over the REST check-runs.
+The obvious loop:
+
+```bash
+until [ -z "$(gh api "repos/O/R/commits/$SHA/check-runs" \
+  --jq '.check_runs[] | select(.status != "completed") | .name')" ]; do sleep 25; done
+echo "all green"
+```
+
+Run that straight after a push and it prints `all green` immediately. No check
+run exists yet, the list is empty, the filter matches nothing, and "no
+non-completed checks" is not "all checks completed". A direct read a moment
+later said `mergeable_state: "unstable"` with thirteen checks at
+`conclusion: null`.
+
+It fired twice in one session, both times on a PR I was about to merge.
+
+### The rule
+
+Wait for something that must be PRESENT, never for the absence of something:
+
+```bash
+until [ "$(gh api repos/O/R/pulls/$N --jq .mergeable_state)" = "clean" ]; do
+    failed=$(gh api "repos/O/R/commits/$SHA/check-runs" \
+      --jq '[.check_runs[] | select(.conclusion == "failure" or .conclusion == "cancelled" or .conclusion == "timed_out")] | length')
+    [ "$failed" = "0" ] || { echo "FAILED: $failed"; break; }
+    sleep 25
+done
+```
+
+`mergeable_state == "clean"` cannot be produced by an empty list, and the
+inner check means a real failure breaks out instead of running to the timeout.
+When the run id is known, `gh run watch <id>` is the shorter answer; a
+`workflow_dispatch` run attaches its check to the commit, so it shows up on the
+PR as well.
+
+### Generalises to
+
+Any gate-watching loop, and any assertion over a collection the producer fills
+later:
+
+- `until [ -z "$(... | grep pending)" ]` over a job list, a queue, a deploy's
+  pods, a migration's rows.
+- `expect(errors).toEqual([])` where `errors` comes from a scan whose own setup
+  can silently find no files - the second assertion that the existing
+  `publicOrigin.guard.test.ts` carries ("scans the files it claims to scan")
+  exists for exactly this.
+- A `--jq` filter whose path is wrong: a typo'd key yields nothing, which is
+  indistinguishable from "nothing matched".
+
+The cheap discipline: before trusting such a loop, assert the collection is
+non-empty, or wait on a positive state field instead.
