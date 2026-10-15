@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
     applyPlaceholders,
+    configFromEnv,
     isoDate,
     placeholders,
     robotsTxt,
@@ -78,5 +79,32 @@ describe("sitemapXml", () => {
 describe("isoDate", () => {
     it("is the date alone, which is what lastmod takes", () => {
         expect(isoDate(new Date("2026-10-14T23:59:59Z"))).toBe("2026-10-14");
+    });
+});
+
+describe("configFromEnv", () => {
+    it("is the declared config when the environment says nothing", () => {
+        expect(configFromEnv(CONFIG, {})).toMatchObject(CONFIG);
+    });
+
+    it("publishes the same bundle at an override origin, served at the root", () => {
+        const resolved = configFromEnv(CONFIG, {
+            VITE_PUBLIC_ORIGIN: "https://bibliogon.app",
+            VITE_PUBLIC_APP_PATH: "/",
+        });
+        expect(resolved.origin).toBe("https://bibliogon.app");
+        expect(resolved.appPath).toBe("/");
+        expect(applyPlaceholders("%PUBLIC_APP_URL%", resolved)).toBe("https://bibliogon.app/");
+        expect(robotsTxt(resolved)).toContain("Sitemap: https://bibliogon.app/sitemap.xml");
+        expect(sitemapXml(resolved, "2026-10-15")).toContain("<loc>https://bibliogon.app/</loc>");
+    });
+
+    it("fails the build on an origin that cannot carry a URL, not the artifact", () => {
+        expect(() => configFromEnv(CONFIG, { VITE_PUBLIC_ORIGIN: "bibliogon.app" })).toThrow(
+            /absolute/i,
+        );
+        expect(() =>
+            configFromEnv(CONFIG, { VITE_PUBLIC_ORIGIN: "https://bibliogon.app/app" }),
+        ).toThrow(/appPath/);
     });
 });

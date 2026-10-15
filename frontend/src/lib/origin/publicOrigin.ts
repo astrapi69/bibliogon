@@ -14,6 +14,12 @@
  * beside the app, never string concatenation - it is where the single and
  * double slash cases are handled once.
  *
+ * The declared values are defaults. A build may publish the same bundle at
+ * another origin with `VITE_PUBLIC_ORIGIN` / `VITE_PUBLIC_APP_PATH`, which
+ * is what lets the new domain run on a second host while the GitHub-Pages
+ * instance stays reachable. `PREVIEW_URL` deliberately does not follow:
+ * the preview deploy stays on Pages.
+ *
  * None of this describes the origin the code is RUNNING on. For that, read
  * `window.location`, or `onSharedOrigin()` when the question is whether
  * this origin is shared with other sites.
@@ -23,7 +29,15 @@
  * ogImage: publicUrl("og-image.png")
  */
 
-import config from "../../../public-origin.json";
+import declared from "../../../public-origin.json";
+import { resolveOriginConfig } from "./originConfig";
+
+const env = import.meta.env as Record<string, string | undefined>;
+
+const config = resolveOriginConfig(declared, {
+    origin: env.VITE_PUBLIC_ORIGIN,
+    appPath: env.VITE_PUBLIC_APP_PATH,
+});
 
 /** Scheme and host the app is published under, with no trailing slash. */
 export const PUBLIC_ORIGIN: string = config.origin;
@@ -34,8 +48,8 @@ export const PUBLIC_HOST: string = new URL(config.origin).host;
 /** The deployed app, origin plus its path, with a trailing slash. */
 export const APP_URL: string = `${config.origin}${config.appPath}`;
 
-/** The preview deploy, which is a sibling path on the same origin. */
-export const PREVIEW_URL: string = `${config.origin}${config.previewPath}`;
+/** The preview deploy, a sibling path on the GitHub-Pages origin. */
+export const PREVIEW_URL: string = `${config.previewOrigin}${config.previewPath}`;
 
 /**
  * An absolute URL for a file published beside the app.
