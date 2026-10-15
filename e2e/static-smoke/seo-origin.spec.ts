@@ -17,15 +17,28 @@
  * `import.meta` into a `require` shim, and the file then fails to load at
  * all - which the run reports as "No tests found" rather than as a module
  * error.
+ *
+ * The declared values go through the build's own resolver, so a run against
+ * a build published at a second origin (`VITE_PUBLIC_ORIGIN`) checks THAT
+ * origin instead of reporting the declared one as a mismatch. Importing the
+ * resolver rather than re-deriving it here is the point: a second copy of
+ * the normalisation rules is the drift #1102 exists to remove.
  */
 
 import {test, expect} from "@playwright/test";
 import {readFileSync} from "node:fs";
 import * as path from "node:path";
 
-const config = JSON.parse(
+import {resolveOriginConfig} from "../../frontend/src/lib/origin/originConfig";
+
+const declared = JSON.parse(
     readFileSync(path.resolve(__dirname, "../../frontend/public-origin.json"), "utf-8"),
-) as {origin: string; appPath: string};
+) as {origin: string; appPath: string; previewPath: string};
+
+const config = resolveOriginConfig(declared, {
+    origin: process.env.VITE_PUBLIC_ORIGIN,
+    appPath: process.env.VITE_PUBLIC_APP_PATH,
+});
 
 const APP_URL = `${config.origin}${config.appPath}`;
 
