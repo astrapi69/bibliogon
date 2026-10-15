@@ -118,10 +118,20 @@ Allowed on either machine:
 | Plugin suites | nightly, or `gh workflow run nightly.yml --ref <branch>` | `nightly.yml` |
 | The production compose stack in a browser | `make prod-container-remote` | `prod-container-smoke.yml` |
 
-Watch runs in the background (`gh run watch <id>`, `gh pr checks <n>
---watch`), put the run URL in the PR description as the evidence, and treat
-a red run exactly like a red local run: read the logs (`gh run view <id>
---log-failed`), download `e2e-test-results` for traces, fix, re-run.
+Watch runs in the background with `gh run watch <id>` when you know the run
+id. `gh pr checks <n> --watch` is GraphQL-backed and refused in a Claude Code
+session (HTTP 403), so a hand-written wait goes over the REST check-runs - and
+must wait on a POSITIVE state, never on the absence of unfinished checks,
+which an empty list satisfies before any check exists (see lessons-learned "A
+wait whose condition an empty list satisfies"):
+
+```bash
+until [ "$(gh api repos/{owner}/{repo}/pulls/$N --jq .mergeable_state)" = "clean" ]; do sleep 25; done
+```
+
+Put the run URL in the PR description as the evidence, and treat a red run
+exactly like a red local run: read the logs (`gh run view <id> --log-failed`),
+download `e2e-test-results` for traces, fix, re-run.
 
 `e2e-targeted.yml` and the `workflow_dispatch` trigger of `ci.yml` only
 exist once they are on the default branch (`develop`); a workflow file
