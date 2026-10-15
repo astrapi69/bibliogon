@@ -22,10 +22,37 @@
 
 import type { Plugin } from "vite";
 
-export interface PublicOriginConfig {
-    origin: string;
-    appPath: string;
-    previewPath: string;
+import {
+    assertUsableOrigin,
+    resolveOriginConfig,
+    type OriginConfig,
+} from "../src/lib/origin/originConfig";
+
+export type PublicOriginConfig = OriginConfig;
+
+/**
+ * The config this build publishes from: the declared values with the
+ * build's `VITE_PUBLIC_*` overrides applied, validated loudly.
+ *
+ * Validation lives here rather than in the app module because a throw at
+ * config time fails the build, while the same throw in the bundle would
+ * white-screen the app - and a typo'd override is a build mistake.
+ *
+ * @param declared - the values from `public-origin.json`.
+ * @param env - the environment to read overrides from.
+ * @returns the resolved config.
+ * @throws Error when the resulting origin cannot carry a URL.
+ */
+export function configFromEnv(
+    declared: OriginConfig,
+    env: Record<string, string | undefined> = process.env,
+): PublicOriginConfig {
+    const resolved = resolveOriginConfig(declared, {
+        origin: env.VITE_PUBLIC_ORIGIN,
+        appPath: env.VITE_PUBLIC_APP_PATH,
+    });
+    assertUsableOrigin(resolved);
+    return resolved;
 }
 
 /** The placeholders the HTML may use, and what each resolves to. */

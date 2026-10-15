@@ -25,6 +25,40 @@ else carries the host, and a guard test fails if something starts to
 | `frontend/src/lib/origin/publicOrigin.ts` | `PUBLIC_ORIGIN`, `PUBLIC_HOST`, `APP_URL`, `PREVIEW_URL`, `publicUrl(path)` for every absolute URL the app ships (share links and QR code, the migration dialog, the help panel's web-app link, the default `og:image`, the docs link in Settings > About) |
 | `frontend/build-plugins/publicOrigin.ts` (a Vite plugin) | resolves `%PUBLIC_APP_URL%` / `%PUBLIC_ORIGIN%` in `index.html`, and emits `sitemap.xml` + `robots.txt` into the bundle |
 | `scripts/public_origin.py` | prints a field for the shell: the `--origin` argument of the external-host gate, in the `Makefile` and in `deploy-pages.yml` |
+| `frontend/src/lib/origin/originConfig.ts` | the normalisation and validation rules both of the above end in, so one reading `import.meta.env` and one reading `process.env` cannot resolve differently |
+
+## Publishing the same bundle at a second origin
+
+The declared values are defaults. A build may override them:
+
+```bash
+VITE_PUBLIC_ORIGIN=https://example.com VITE_PUBLIC_APP_PATH=/ npm run build
+```
+
+That is what lets the new domain run on a **second host** (Cloudflare
+Pages, Netlify) while the GitHub-Pages instance stays reachable - which
+removes the deadline from the domain move entirely: nothing is stranded,
+because nothing is switched off. The old instance can be retired whenever,
+not when DNS forces it.
+
+Both overrides go through `resolveOriginConfig`, so the bundle and
+`scripts/public_origin.py` normalise identically (a trailing slash is
+stripped, a path gets both slashes, `/` stays `/`, and a blank value is not
+an override - an unset env-var arrives as `""`). The plugin additionally
+calls `assertUsableOrigin`, which **fails the build** on an origin that is
+not absolute or that carries a path: a typo would otherwise bake a broken
+canonical URL into the artifact, where a crawler is the first reader.
+
+Pass the same variables to the gate, which reads them from the same place:
+
+```bash
+VITE_PUBLIC_ORIGIN=https://example.com make verify-external-hosts
+```
+
+`PREVIEW_URL` deliberately does **not** follow the override. The preview
+deploy is a sibling path on the GitHub-Pages origin; production moving to
+another host does not move it, so the share link to the test build keeps
+pointing at Pages.
 
 ## Why the app URL is not derived from Vite's `base`
 
@@ -62,8 +96,13 @@ last step of a domain move, after the domain and HTTPS are in place.
 
 ```bash
 cd frontend && npx vitest run src/lib/origin build-plugins src/seoStatic
+cd backend && poetry run pytest tests/test_public_origin_script.py
 make verify-external-hosts            # reads the origin from the source
 cd frontend && npm run build && cat dist/robots.txt dist/sitemap.xml
+
+# and the same bundle at a second origin
+cd frontend && VITE_PUBLIC_ORIGIN=https://example.com VITE_PUBLIC_APP_PATH=/ \
+  npm run build && cat dist/robots.txt dist/sitemap.xml
 ```
 
 The artifact itself is checked by `e2e/static-smoke/seo-origin.spec.ts`,

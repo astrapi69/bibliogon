@@ -5,6 +5,15 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 ## [Unreleased]
 
 ### Changed
+- **The published origin is a build parameter (#1102).** `VITE_PUBLIC_ORIGIN`
+  / `VITE_PUBLIC_APP_PATH` override what `public-origin.json` declares, so
+  the same bundle can be published at a second origin and at the root rather
+  than under a project path. That is what lets the new domain run on another
+  host while the GitHub-Pages instance stays reachable - no deadline, nothing
+  stranded, and the old instance retired whenever rather than when DNS forces
+  it. Both readers normalise through one module, the build fails loudly on an
+  origin that cannot carry a URL, and the share link to the preview deploy
+  deliberately stays on Pages. Defaults unchanged, so no user-visible change.
 - **The published host is declared once (#1102).** It used to be written
   out in thirteen shipped or gate-forming places - five meta tags in
   `index.html`, `sitemap.xml`, `robots.txt`, four components, the share

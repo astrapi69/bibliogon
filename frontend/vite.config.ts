@@ -8,7 +8,7 @@ import { VitePWA } from "vite-plugin-pwa";
 import { buildVersion } from "@astrapi69/vite-plugin-build-version";
 
 import { securityHeaders } from "./security/securityHeaders";
-import { publicOrigin } from "./build-plugins/publicOrigin";
+import { configFromEnv, publicOrigin } from "./build-plugins/publicOrigin";
 
 import pkg from "./package.json" with { type: "json" };
 import publicOriginConfig from "./public-origin.json" with { type: "json" };
@@ -108,7 +108,7 @@ export default defineConfig({
     // The published origin resolved into the files that cannot import it:
     // index.html's canonical / og:url / social images / JSON-LD, plus the
     // emitted sitemap.xml and robots.txt (#1102).
-    publicOrigin(publicOriginConfig),
+    publicOrigin(configFromEnv(publicOriginConfig)),
     // Security response headers from security/csp.txt (#986). The CSP
     // rides the PREVIEW server, which serves the real built bundle the
     // static-smoke gate measures; the dev server gets the static headers
