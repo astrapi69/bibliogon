@@ -150,6 +150,18 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
   site in the docs gate of every pull request and in `deploy-docs.yml`
   before publishing. The live site changes with the next docs deploy
   from `main`.
+- **The third-party host scan reads nine more ways to fetch (#1124).**
+  `scripts/check_external_hosts.py` passed pages that make the browser
+  fetch from another host in a form it did not parse. It now also
+  reports a `style` attribute's `url()`, `<video poster>`,
+  `<input type=image>`, the `href`/`xlink:href` of SVG `<image>`,
+  `<feImage>`, `<script>` and `<use>`, `<link imagesrcset>`, the
+  document inside `<iframe srcdoc>`, and an inline script's static
+  `import`, `import()`, `importScripts()` and `new Worker()` of a URL.
+  It reads a URL the way the browser does, so `\\host\x.js` is
+  `//host/x.js`, and resolves relative references against a
+  `<base href>` on another host. Hyperlinks stay non-findings. None of
+  these occurs in a build today; the gap was in the guard.
 
 ### Security
 - **Web app: the GitHub token moves out of `localStorage` (#880).** The
