@@ -1,14 +1,20 @@
 #!/usr/bin/env python3
 """Report resources the browser would fetch from a third-party host (#874).
 
-Scans a built GitHub-Pages artifact (``frontend/dist``) or the frontend
-sources for resources a browser loads on its own: ``<link>`` (fetching
-rels only), ``<script src>``, ``<img>``, ``<iframe>``, media sources,
+Scans a built GitHub-Pages artifact (``frontend/dist``), the built MkDocs
+documentation site (``site/``, #1122) or the frontend sources for
+resources a browser loads on its own: ``<link>`` (fetching rels only),
+``<script src>``, ``<img>``, ``<iframe>``, media sources,
 ``<meta http-equiv=refresh>``, CSS ``url()`` / ``@import``, the service
 worker's ``importScripts`` and precache manifest, and the web manifest's
 icons. Each such reference to a host other than the page's own origin is
 a finding: it hands the visitor's IP address to that host before the
 visitor has done anything.
+
+One script-initiated fetch is visible in the markup and reported too:
+Material for MkDocs' repository widget (``data-md-component="source"``,
+rendered for ``repo_url``), whose script asks the forge's API for the
+repository's stars, forks and latest release on page load.
 
 Not findings: hyperlinks (``<a href>``), ``rel=canonical``/``alternate``,
 Open-Graph and other ``<meta>`` content, a JSON-LD ``@context``, and string
@@ -20,9 +26,12 @@ Usage::
 
     scripts/check_external_hosts.py frontend/dist --origin https://astrapi69.github.io
     scripts/check_external_hosts.py --sources frontend --origin https://astrapi69.github.io
+    scripts/check_external_hosts.py site
 
-Exit status 1 when a finding is not in ``ALLOWED_HOSTS``. Every allowlist
-entry needs a written reason; the pytest guard enforces that.
+Exit status 1 when a finding is not in ``ALLOWED_HOSTS``, 2 when the
+scanned directory holds no HTML page, because a scan that read nothing
+proves nothing. Every allowlist entry needs a written reason; the pytest
+guard enforces that.
 """
 
 from __future__ import annotations
@@ -58,6 +67,7 @@ _FETCHING_LINK_RELS = frozenset(
     }
 )
 _SRC_TAGS = frozenset({"script", "img", "iframe", "video", "audio", "source", "track", "embed"})
+_HTML_SUFFIXES = frozenset({".html", ".htm"})
 _CSS_URL_RE = re.compile(r"""url\(\s*['"]?\s*((?:https?:)?//[^'")\s]+)""", re.IGNORECASE)
 _CSS_IMPORT_RE = re.compile(r"""@import\s+['"]((?:https?:)?//[^'"]+)['"]""", re.IGNORECASE)
 _SW_IMPORT_RE = re.compile(r"""importScripts\(\s*['"]((?:https?:)?//[^'"]+)['"]""")
@@ -82,6 +92,20 @@ class Finding:
 def _is_absolute(url: str) -> bool:
     lowered = url.strip().lower()
     return lowered.startswith(("http://", "https://", "//"))
+
+
+def _forge_api_url(repo_url: str) -> str:
+    """Where Material's repository widget sends its request for ``repo_url``.
+
+    A github.com repository is asked on api.github.com
+    (``/repos/<owner>/<name>``, plus ``/releases/latest``). Material asks
+    any other forge it supports (GitLab) on that forge's own host, so the
+    repository URL itself names the host the widget contacts.
+    """
+    parts = urlsplit(repo_url.strip())
+    if parts.hostname == "github.com":
+        return f"https://api.github.com/repos{parts.path.rstrip('/')}"
+    return repo_url.strip()
 
 
 class _ResourceParser(HTMLParser):
@@ -110,6 +134,10 @@ class _ResourceParser(HTMLParser):
                 self._add(f"<{tag} srcset>", candidate.strip().split(" ")[0])
         elif tag == "object":
             self._add("<object data>", attributes.get("data"))
+        elif tag == "a" and attributes.get("data-md-component") == "source":
+            href = attributes.get("href")
+            if href and _is_absolute(href):
+                self._add("Material repository widget", _forge_api_url(href))
         elif tag == "meta" and (attributes.get("http-equiv") or "").lower() == "refresh":
             match = _REFRESH_URL_RE.search(attributes.get("content") or "")
             if match:
@@ -182,7 +210,7 @@ def scan(root: Path, origin: str | None = None) -> list[Finding]:
             continue
         file = str(path.relative_to(root))
         suffix = path.suffix.lower()
-        if suffix in {".html", ".htm"}:
+        if suffix in _HTML_SUFFIXES:
             findings += _scan_html(path, file)
         elif suffix == ".css":
             findings += _scan_css(path.read_text(encoding="utf-8", errors="replace"), file)
@@ -208,6 +236,13 @@ def scan_sources(frontend: Path, origin: str | None = None) -> list[Finding]:
     return [finding for finding in findings if finding.host != own_host]
 
 
+def _holds_a_page(root: Path) -> bool:
+    """Whether ``root`` is a directory with at least one HTML page to scan."""
+    return root.is_dir() and any(
+        path.suffix.lower() in _HTML_SUFFIXES and path.is_file() for path in root.rglob("*")
+    )
+
+
 def unallowed(findings: list[Finding], allowed: dict[str, str]) -> list[Finding]:
     """Findings whose host is not allowlisted. A blank reason is an error."""
     for host, reason in allowed.items():
@@ -228,6 +263,9 @@ def main(argv: list[str] | None = None) -> int:
         "--origin", default=None, help="the page's own origin, e.g. https://astrapi69.github.io"
     )
     args = parser.parse_args(argv)
+    if not args.sources and not _holds_a_page(args.path):
+        print(f"NOTHING SCANNED: {args.path} holds no HTML page. Build it first, or fix the path.")
+        return 2
     findings = (
         scan_sources(args.path, args.origin) if args.sources else scan(args.path, args.origin)
     )

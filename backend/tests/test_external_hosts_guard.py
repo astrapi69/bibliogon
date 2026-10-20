@@ -98,6 +98,35 @@ class TestSyntheticArtifacts:
         )
         assert _hosts(checker.scan(tmp_path)) == {"cdn.example.com"}
 
+    def test_material_repository_widget_is_reported_as_its_api_fetch(self, checker, tmp_path):
+        """Material for MkDocs turns ``repo_url`` into a header widget whose
+        script asks api.github.com for stars, forks and the latest release
+        on every page load (#1122). The markup is the only trace of that
+        fetch in the built files. A plain link to the same repository is
+        not a fetch."""
+        (tmp_path / "index.html").write_text(
+            '<a href="https://github.com/astrapi69/bibliogon" title="Zum Repository" '
+            'class="md-source" data-md-component="source">'
+            '<div class="md-source__repository">astrapi69/bibliogon</div></a>'
+            '<a href="https://github.com/astrapi69/bibliogon" class="md-social__link">GitHub</a>',
+            encoding="utf-8",
+        )
+        findings = checker.scan(tmp_path)
+        assert [finding.url for finding in findings] == [
+            "https://api.github.com/repos/astrapi69/bibliogon"
+        ]
+        assert _hosts(findings) == {"api.github.com"}
+
+    def test_repository_widget_of_another_forge_names_that_forge(self, checker, tmp_path):
+        """Material asks a GitLab instance on its own host, so the
+        repository URL itself names the host the widget contacts."""
+        (tmp_path / "index.html").write_text(
+            '<a href="https://gitlab.example.org/group/project" class="md-source" '
+            'data-md-component="source">group/project</a>',
+            encoding="utf-8",
+        )
+        assert _hosts(checker.scan(tmp_path)) == {"gitlab.example.org"}
+
     def test_own_origin_and_local_paths_are_not_findings(self, checker, tmp_path):
         (tmp_path / "index.html").write_text(
             '<link rel="icon" href="/bibliogon/favicon.svg">'
@@ -143,3 +172,17 @@ class TestRepositorySources:
     def test_allowlist_entries_carry_a_reason(self, checker):
         for host, reason in checker.ALLOWED_HOSTS.items():
             assert reason.strip(), f"{host}: allowlist entry without a reason"
+
+
+class TestCommandLine:
+    def test_a_directory_without_a_page_is_not_a_pass(self, checker, tmp_path):
+        """A scan that read nothing proves nothing. The docs gate scans
+        ``site/`` after the build; a build that wrote elsewhere must fail
+        the gate instead of passing it with zero findings."""
+        site = tmp_path / "site"
+        assert checker.main([str(site)]) == 2
+        site.mkdir()
+        (site / "style.css").write_text("body { color: black; }", encoding="utf-8")
+        assert checker.main([str(site)]) == 2
+        (site / "index.html").write_text("<html><body>Bibliogon</body></html>", encoding="utf-8")
+        assert checker.main([str(site)]) == 0
