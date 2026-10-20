@@ -135,6 +135,22 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
   capture now runs with an empty allowlist plus a positive control that
   switches the check on and sees the request.
 
+### Fixed
+- **The documentation site loads nothing from a third party (#1122).**
+  Every page of `astrapi69.github.io/bibliogondocs` loaded Roboto from
+  Google Fonts, Material for MkDocs' default while `mkdocs.yml` set no
+  `theme.font`, and asked api.github.com for the repository's stars,
+  forks and latest release through the header widget that `repo_url`
+  turns on. `theme.font` is now `false`, so the pages use the system
+  font stack, and `repo_url`, `repo_name` and the widget icon are gone;
+  the GitHub link stays as the plain icon link in the footer.
+  `scripts/check_external_hosts.py` now reports Material's repository
+  widget as the API request it makes and fails on a directory without a
+  page, and `make verify-docs-external-hosts` runs it over the built
+  site in the docs gate of every pull request and in `deploy-docs.yml`
+  before publishing. The live site changes with the next docs deploy
+  from `main`.
+
 ### Security
 - **Web app: the GitHub token moves out of `localStorage` (#880).** The
   optional personal access token of the GitHub import now lives in its

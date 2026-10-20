@@ -45,9 +45,10 @@ from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urlsplit
 
-#: ``host -> reason``. Empty on purpose: the Pages build fetches nothing
-#: from a third party today (#874). An entry here is a decision with a
-#: reason, not a way to make the check pass.
+#: ``host -> reason``. Empty on purpose: neither the Pages build (#874) nor
+#: the documentation site (#1122) fetches anything from a third party
+#: today. An entry here is a decision with a reason, not a way to make the
+#: check pass.
 ALLOWED_HOSTS: dict[str, str] = {}
 
 _FETCHING_LINK_RELS = frozenset(

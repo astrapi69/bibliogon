@@ -93,8 +93,13 @@ to **GitHub Actions** (it already is, from the previous docs deploy):
 
 - **`deploy-docs.yml`** (this repo) runs on pushes to `main` that touch
   `docs/help/**`, `mkdocs.yml`, or the nav generator, and on manual
-  dispatch. It builds the MkDocs site and pushes it to
-  `bibliogondocs:gh-pages`.
+  dispatch. It builds the MkDocs site, refuses to publish it when a page
+  would load anything from a third-party host
+  (`make verify-docs-external-hosts`, #1122; the docs gate in `ci.yml`
+  runs the same scan on every pull request), and pushes it to
+  `bibliogondocs:gh-pages`. Keep `theme.font: false` and leave
+  `repo_url` unset in `mkdocs.yml`: either one makes every page contact
+  Google or GitHub on load.
 - **`deploy-pages.yml`** (this repo) runs on pushes to `main` that touch
   `frontend/**`, and on manual dispatch. It builds the SPA (base
   `/bibliogon/`, offline Dexie storage) and deploys it to this repo's

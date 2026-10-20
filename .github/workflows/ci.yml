@@ -311,6 +311,20 @@ jobs:
       - name: Docs discipline (nav sync + mkdocs build --strict)
         run: make verify-docs-discipline
 
+      # #1122: the docs site is published to the public like the app, so the
+      # site/ the build above left behind gets the same scan the app's dist
+      # gets in deploy-pages.yml: a Google Fonts link (Material's default
+      # unless mkdocs.yml sets theme.font: false), the repository widget
+      # repo_url turns on (it fetches from api.github.com), any external
+      # script, image or stylesheet. No --origin: the pages reference their
+      # own files by relative path, so every absolute URL in a fetching
+      # position is reported, whatever its host. deploy-docs.yml runs the
+      # same target before it publishes; here a pull request learns it
+      # first, which matters because a path filter keeps that workflow off
+      # most pushes.
+      - name: Docs site fetches nothing from a third-party host
+        run: make verify-docs-external-hosts
+
   commit-trailers:
     name: Commit trailers
     runs-on: ubuntu-latest

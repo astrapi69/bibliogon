@@ -12,6 +12,12 @@ artifact is uploaded.
 The runtime half - a JS-initiated ``fetch`` to a third party, which no
 static scan can see - is ``e2e/static-smoke/external-hosts.spec.ts``.
 
+The documentation site that ``deploy-docs.yml`` publishes is held to the
+same rule (#1122): the scanner runs over the built MkDocs ``site/`` in
+the docs gate of ``ci.yml`` and before the publish step, and
+``TestDocsSite`` pins the two ``mkdocs.yml`` settings that made every
+page of it contact Google and GitHub.
+
 Hyperlinks (``<a href>``), ``rel=canonical``, Open-Graph metadata and a
 JSON-LD ``@context`` are strings, not fetches; the scanner must not
 report them, or every real finding drowns in noise.
@@ -24,6 +30,7 @@ import sys
 from pathlib import Path
 
 import pytest
+import yaml
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SCRIPT = _REPO_ROOT / "scripts" / "check_external_hosts.py"
@@ -172,6 +179,33 @@ class TestRepositorySources:
     def test_allowlist_entries_carry_a_reason(self, checker):
         for host, reason in checker.ALLOWED_HOSTS.items():
             assert reason.strip(), f"{host}: allowlist entry without a reason"
+
+
+class TestDocsSite:
+    """The MkDocs site ``deploy-docs.yml`` publishes (#1122). Two Material
+    for MkDocs settings made every page of it contact a third party on
+    load: the theme font, which Material loads from Google unless
+    ``theme.font`` is ``false``, and ``repo_url``, which turns on the
+    repository widget that fetches from api.github.com. The scan of the
+    built ``site/`` in ``ci.yml`` and ``deploy-docs.yml`` sees both in the
+    artifact; these pins see them in the config, without a build."""
+
+    @pytest.fixture(scope="class")
+    def mkdocs_config(self) -> dict:
+        return yaml.safe_load((_REPO_ROOT / "mkdocs.yml").read_text(encoding="utf-8"))
+
+    def test_theme_loads_no_font_from_google(self, mkdocs_config):
+        assert mkdocs_config["theme"].get("font") is False, (
+            "mkdocs.yml must set theme.font: false. Any other value, unset "
+            "included, makes Material link the font from fonts.googleapis.com."
+        )
+
+    def test_no_repository_widget(self, mkdocs_config):
+        assert not mkdocs_config.get("repo_url"), (
+            "mkdocs.yml must not set repo_url: Material renders it as a widget "
+            "that fetches the repository's facts from api.github.com on page "
+            "load. The GitHub link lives in extra.social, a plain link."
+        )
 
 
 class TestCommandLine:
