@@ -34,6 +34,7 @@ of those pages to the scanner verbatim.
 from __future__ import annotations
 
 import importlib.util
+import re
 import sys
 from pathlib import Path
 
@@ -420,6 +421,52 @@ class TestRepositorySources:
             assert reason.strip(), f"{host}: allowlist entry without a reason"
 
 
+class _MkdocsConfigLoader(yaml.SafeLoader):
+    """``yaml.SafeLoader`` that reads a ``!!python/...`` tag as its name.
+
+    MkDocs configs name Python objects that way; a Mermaid fence does
+    (``format: !!python/name:pymdownx.superfences.fence_code_format``).
+    ``yaml.safe_load`` refuses the tag, and the Mermaid pin has to read
+    exactly such a config.
+    """
+
+
+_MkdocsConfigLoader.add_multi_constructor(
+    "tag:yaml.org,2002:python/", lambda loader, suffix, node: suffix
+)
+
+
+def _markdown_extensions(mkdocs_config: dict) -> dict:
+    """``markdown_extensions`` as ``{name: options}``, from either shape MkDocs accepts."""
+    extensions = mkdocs_config.get("markdown_extensions") or []
+    entries = [extensions] if isinstance(extensions, dict) else extensions
+    named: dict = {}
+    for entry in entries:
+        named.update({entry: {}} if isinstance(entry, str) else entry)
+    return {name: options or {} for name, options in named.items()}
+
+
+def _is_mermaid_fence(fence: dict) -> bool:
+    return fence.get("name") == "mermaid" or "mermaid" in str(fence.get("class") or "").split()
+
+
+def _blocking_script_paths(mkdocs_config: dict) -> list[str]:
+    """``extra_javascript`` paths whose script has run before Material mounts.
+
+    Material sets up its components on ``DOMContentLoaded``. A plain
+    entry is a classic script at the end of the body and runs before
+    that; an ``async`` one may run after it, and a module defines no
+    global of its own.
+    """
+    paths = []
+    for entry in mkdocs_config.get("extra_javascript") or []:
+        if isinstance(entry, str):
+            paths.append(entry)
+        elif entry.get("type") != "module" and not entry.get("async"):
+            paths.append(entry.get("path", ""))
+    return paths
+
+
 class TestDocsSite:
     """The MkDocs site ``deploy-docs.yml`` publishes (#1122). Two Material
     for MkDocs settings made every page of it contact a third party on
@@ -427,11 +474,17 @@ class TestDocsSite:
     ``theme.font`` is ``false``, and ``repo_url``, which turns on the
     repository widget that fetches from api.github.com. The scan of the
     built ``site/`` in ``ci.yml`` and ``deploy-docs.yml`` sees both in the
-    artifact; these pins see them in the config, without a build."""
+    artifact; these pins see them in the config, without a build.
+
+    Two more requests to unpkg.com come from Material's script, so no
+    scan of the built site can see them: the ResizeObserver polyfill
+    and the Mermaid fallback. The last two pins are their only guard."""
 
     @pytest.fixture(scope="class")
     def mkdocs_config(self) -> dict:
-        return yaml.safe_load((_REPO_ROOT / "mkdocs.yml").read_text(encoding="utf-8"))
+        return yaml.load(
+            (_REPO_ROOT / "mkdocs.yml").read_text(encoding="utf-8"), Loader=_MkdocsConfigLoader
+        )
 
     def test_theme_loads_no_font_from_google(self, mkdocs_config):
         assert mkdocs_config["theme"].get("font") is False, (
@@ -444,6 +497,51 @@ class TestDocsSite:
             "mkdocs.yml must not set repo_url: Material renders it as a widget "
             "that fetches the repository's facts from api.github.com on page "
             "load. The GitHub link lives in extra.social, a plain link."
+        )
+
+    def test_old_browsers_get_a_resize_observer_stub_not_the_unpkg_polyfill(self, mkdocs_config):
+        """Material's bundle loads https://unpkg.com/resize-observer-polyfill
+        in a browser without ``ResizeObserver`` (Safari before 13.1,
+        Chrome before 64, Firefox before 69). The theme override fills
+        the ``libs`` block, which Material's ``base.html`` renders in
+        ``<head>`` before the bundle, with a no-op ``ResizeObserver``
+        for such a browser. The bundle finds it and asks unpkg.com for
+        nothing; it calls ``observe``, ``unobserve`` and ``disconnect``
+        and keeps the sizes it measured on load."""
+        custom_dir = mkdocs_config["theme"].get("custom_dir")
+        assert custom_dir, "mkdocs.yml must set theme.custom_dir, the theme override's directory"
+        template = (_REPO_ROOT / custom_dir / "main.html").read_text(encoding="utf-8")
+        assert re.search(r"{%-?\s*extends\s+\"base\.html\"\s*-?%}", template)
+        libs = re.search(r"{%-?\s*block\s+libs\s*-?%}(.*?){%-?\s*endblock", template, re.DOTALL)
+        assert libs, "main.html must fill the libs block, the one rendered before the bundle"
+        block = libs.group(1)
+        assert "super()" in block, "keep Material's own libs block content (extra.polyfills)"
+        assert re.search(
+            r"typeof\s+(?:window\.)?ResizeObserver\s*===?\s*[\"']undefined[\"']", block
+        )
+        for method in ("observe", "unobserve", "disconnect"):
+            assert re.search(rf"ResizeObserver\.prototype\.{method}\s*=\s*function", block), method
+
+    def test_mermaid_diagrams_bring_their_own_mermaid(self, mkdocs_config, checker):
+        """On a page with a ``pre.mermaid`` block Material's bundle loads
+        https://unpkg.com/mermaid@11/dist/mermaid.min.js unless the page
+        has defined ``mermaid`` already. A Mermaid fence in mkdocs.yml
+        therefore comes with a Mermaid the site serves itself: its UMD
+        build (which defines ``mermaid``) in ``extra_javascript`` by a
+        path on the site, as a plain classic script."""
+        superfences = _markdown_extensions(mkdocs_config).get("pymdownx.superfences") or {}
+        mermaid_fences = [
+            fence for fence in superfences.get("custom_fences") or [] if _is_mermaid_fence(fence)
+        ]
+        local_mermaid = [
+            path
+            for path in _blocking_script_paths(mkdocs_config)
+            if "mermaid" in path.lower() and checker.requested_url(path) is None
+        ]
+        assert not mermaid_fences or local_mermaid, (
+            "mkdocs.yml configures a Mermaid fence, but extra_javascript loads no Mermaid "
+            "from the site itself: Material would load it from unpkg.com on every page "
+            "with a diagram."
         )
 
 

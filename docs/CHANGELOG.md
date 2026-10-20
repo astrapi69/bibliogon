@@ -148,8 +148,16 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
   widget as the API request it makes and fails on a directory without a
   page, and `make verify-docs-external-hosts` runs it over the built
   site in the docs gate of every pull request and in `deploy-docs.yml`
-  before publishing. The live site changes with the next docs deploy
-  from `main`.
+  before publishing. In a browser without `ResizeObserver` (Safari
+  before 13.1, Chrome before 64, Firefox before 69) Material's script
+  also loaded a polyfill from unpkg.com; a theme override
+  (`docs/overrides/main.html`) now defines a no-op `ResizeObserver`
+  before Material's script runs, so such a browser keeps the layout it
+  measured on load and requests nothing. A Mermaid fence in
+  `mkdocs.yml` would bring unpkg.com back the same way, unless the site
+  serves Mermaid itself; `TestDocsSite` pins both, and `ci.yml` runs it
+  on every pull request. The live site changes with the next docs
+  deploy from `main`.
 - **The third-party host scan reads nine more ways to fetch (#1124).**
   `scripts/check_external_hosts.py` passed pages that make the browser
   fetch from another host in a form it did not parse. It now also

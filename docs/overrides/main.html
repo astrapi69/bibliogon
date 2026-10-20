@@ -1,0 +1,20 @@
+{#-
+  Theme override (mkdocs.yml theme.custom_dir), #1122. Material's bundle
+  loads https://unpkg.com/resize-observer-polyfill in a browser without
+  ResizeObserver (Safari before 13.1, Chrome before 64, Firefox before
+  69). The libs block is rendered in <head> before the bundle, so the
+  bundle finds this no-op stand-in and requests nothing; such a browser
+  keeps the layout measured on load and does not re-measure it.
+-#}
+{% extends "base.html" %}
+{% block libs %}
+  {{ super() }}
+  <script>
+    if (typeof ResizeObserver === "undefined") {
+      window.ResizeObserver = function ResizeObserver() {};
+      window.ResizeObserver.prototype.observe = function () {};
+      window.ResizeObserver.prototype.unobserve = function () {};
+      window.ResizeObserver.prototype.disconnect = function () {};
+    }
+  </script>
+{% endblock %}

@@ -10,8 +10,15 @@ docs_dir: docs/help
 # the plain icon link in extra.social. scripts/check_external_hosts.py
 # scans the built site for both in ci.yml and before deploy-docs.yml
 # publishes it.
+# custom_dir holds the theme override that keeps Material's bundle from
+# loading a ResizeObserver polyfill from unpkg.com in old browsers (see
+# docs/overrides/main.html). For the same reason a Mermaid fence needs a
+# Mermaid the site serves itself in extra_javascript, or Material loads
+# Mermaid from unpkg.com. Neither request is visible in the built files;
+# TestDocsSite in backend/tests/test_external_hosts_guard.py pins both.
 theme:
   name: material
+  custom_dir: docs/overrides
   font: false
   palette:
   - media: '(prefers-color-scheme: light)'
