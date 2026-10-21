@@ -20,6 +20,7 @@ on:
     branches: [main]
     paths:
       - 'docs/help/**'
+      - 'docs/overrides/**'
       - 'mkdocs.yml'
       - 'scripts/generate_mkdocs_nav.py'
       - '.github/workflows/deploy-docs.yml'
@@ -65,6 +66,12 @@ jobs:
       - name: Build docs
         working-directory: ./docs
         run: poetry run mkdocs build -f ../mkdocs.yml --strict
+
+      # #1122: a site whose pages contact a third party on load is never
+      # published. Same scan as the docs gate in ci.yml; see the comment
+      # there for what it reports.
+      - name: Guard - no third-party resource fetch in the docs site
+        run: make verify-docs-external-hosts
 
       - name: Publish to bibliogondocs (gh-pages)
         uses: peaceiris/actions-gh-pages@v4

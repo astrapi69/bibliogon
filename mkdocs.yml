@@ -1,11 +1,25 @@
 site_name: Bibliogon
 site_description: Open-Source Book Authoring Platform
 site_url: https://astrapi69.github.io/bibliogondocs/
-repo_url: https://github.com/astrapi69/bibliogon
-repo_name: astrapi69/bibliogon
 docs_dir: docs/help
+# No page of this site may contact a third party on load (#1122). So:
+# font: false - Material would otherwise link the font from Google Fonts;
+# the pages use the system font stack instead. And no repo_url - Material
+# turns it into a header widget whose script fetches the repository's
+# stars, forks and latest release from api.github.com. The GitHub link is
+# the plain icon link in extra.social. scripts/check_external_hosts.py
+# scans the built site for both in ci.yml and before deploy-docs.yml
+# publishes it.
+# custom_dir holds the theme override that keeps Material's bundle from
+# loading a ResizeObserver polyfill from unpkg.com in old browsers (see
+# docs/overrides/main.html). For the same reason a Mermaid fence needs a
+# Mermaid the site serves itself in extra_javascript, or Material loads
+# Mermaid from unpkg.com. Neither request is visible in the built files;
+# TestDocsSite in backend/tests/test_external_hosts_guard.py pins both.
 theme:
   name: material
+  custom_dir: docs/overrides
+  font: false
   palette:
   - media: '(prefers-color-scheme: light)'
     scheme: default
@@ -28,8 +42,6 @@ theme:
   - search.highlight
   - content.code.copy
   - content.tabs.link
-  icon:
-    repo: fontawesome/brands/github
 plugins:
 - search
 - i18n:

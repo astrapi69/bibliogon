@@ -14,7 +14,7 @@
        sync-versions sync-versions-dry sync-versions-check \
        generate-trial-key \
        docs-install docs-build docs-serve \
-       sync-mkdocs-nav verify-mkdocs-nav check-mkdocs-orphans verify-docs-discipline verify-external-hosts \
+       sync-mkdocs-nav verify-mkdocs-nav check-mkdocs-orphans verify-docs-discipline verify-external-hosts verify-docs-external-hosts \
        lock-all-plugins verify-plugin-locks verify-venv-lock verify-theme verify-components verify-seed-i18n verify-seed-drift verify-i18n-quotes sync-security-headers verify-security-headers check-cohesion check-complexity \
        bump-version update-doc-headers finalize-changelog release-prepare release-finish \
        clean prod prod-down prod-logs help
@@ -811,6 +811,9 @@ check-mkdocs-orphans: ## Adversarial check: fail if mkdocs reports orphan pages
 
 verify-docs-discipline: verify-mkdocs-nav check-mkdocs-orphans ## All docs-discipline gates (mandatory in pre-tag chain)
 	@echo "All docs-discipline checks passed."
+
+verify-docs-external-hosts: ## Guard (#1122): the built docs site (site/, from a docs build such as verify-docs-discipline) fetches nothing from a third-party host
+	python3 scripts/check_external_hosts.py site
 
 verify-docs-completeness: ## Release-time doc-completeness gate (version headers, help i18n parity, image/xref integrity). FAIL (exit 1) blocks; WARN (exit 2) is advisory.
 	@python3 scripts/verify_docs_completeness.py; ec=$$?; \

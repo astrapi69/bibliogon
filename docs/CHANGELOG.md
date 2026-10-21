@@ -135,6 +135,42 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
   capture now runs with an empty allowlist plus a positive control that
   switches the check on and sees the request.
 
+### Fixed
+- **The documentation site loads nothing from a third party (#1122).**
+  Every page of `astrapi69.github.io/bibliogondocs` loaded Roboto from
+  Google Fonts, Material for MkDocs' default while `mkdocs.yml` set no
+  `theme.font`, and asked api.github.com for the repository's stars,
+  forks and latest release through the header widget that `repo_url`
+  turns on. `theme.font` is now `false`, so the pages use the system
+  font stack, and `repo_url`, `repo_name` and the widget icon are gone;
+  the GitHub link stays as the plain icon link in the footer.
+  `scripts/check_external_hosts.py` now reports Material's repository
+  widget as the API request it makes and fails on a directory without a
+  page, and `make verify-docs-external-hosts` runs it over the built
+  site in the docs gate of every pull request and in `deploy-docs.yml`
+  before publishing. In a browser without `ResizeObserver` (Safari
+  before 13.1, Chrome before 64, Firefox before 69) Material's script
+  also loaded a polyfill from unpkg.com; a theme override
+  (`docs/overrides/main.html`) now defines a no-op `ResizeObserver`
+  before Material's script runs, so such a browser keeps the layout it
+  measured on load and requests nothing. A Mermaid fence in
+  `mkdocs.yml` would bring unpkg.com back the same way, unless the site
+  serves Mermaid itself; `TestDocsSite` pins both, and `ci.yml` runs it
+  on every pull request. The live site changes with the next docs
+  deploy from `main`.
+- **The third-party host scan reads nine more ways to fetch (#1124).**
+  `scripts/check_external_hosts.py` passed pages that make the browser
+  fetch from another host in a form it did not parse. It now also
+  reports a `style` attribute's `url()`, `<video poster>`,
+  `<input type=image>`, the `href`/`xlink:href` of SVG `<image>`,
+  `<feImage>`, `<script>` and `<use>`, `<link imagesrcset>`, the
+  document inside `<iframe srcdoc>`, and an inline script's static
+  `import`, `import()`, `importScripts()` and `new Worker()` of a URL.
+  It reads a URL the way the browser does, so `\\host\x.js` is
+  `//host/x.js`, and resolves relative references against a
+  `<base href>` on another host. Hyperlinks stay non-findings. None of
+  these occurs in a build today; the gap was in the guard.
+
 ### Security
 - **Web app: the GitHub token moves out of `localStorage` (#880).** The
   optional personal access token of the GitHub import now lives in its
