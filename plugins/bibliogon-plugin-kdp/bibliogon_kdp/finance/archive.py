@@ -1,9 +1,8 @@
 """Explicit export and restore of all finance data (#1129).
 
-Finance data is deliberately NOT part of the ``.bgb`` backup (decision
-pending with the author, proposal: explicit export only - the same
-reasoning that took the AI keys out of every backup, #985). This module
-is that explicit path. A restore replaces all finance tables in one
+Finance data is deliberately NOT part of the ``.bgb`` backup, decided
+in #1131 with the same reasoning that took the AI keys out of every
+backup (#985). This module is the only path out. A restore replaces all finance tables in one
 transaction and preserves row ids, so export -> restore -> export is
 byte-identical.
 """
