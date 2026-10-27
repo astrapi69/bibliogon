@@ -4,6 +4,22 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
+### Added
+- **KDP report import with a per-title contribution margin (#1129, backend
+  only).** `plugin-kdp` imports the KDP royalty and KENP reports and the
+  Amazon Ads advertised-product report (CSV). Together with dated direct
+  costs per title, it evaluates them per title, language, format,
+  marketplace, pen name, month and sales channel (`/api/kdp/finance`).
+  KENP is valued month by month with that month's rate. Foreign
+  currencies use a write-once monthly rate that each result echoes.
+  Months stay provisional for 90 days. Without recorded costs the figure
+  is labelled net revenue, never a margin. Unknown or missing report
+  columns fail the import instead of being dropped. Importing the same
+  file twice changes nothing, and a newer download of a month replaces
+  the old one. Finance data is not in the `.bgb` backup (decision
+  pending); there is an explicit export and restore. No scraping. See
+  `docs/development/kdp-finance-import.md`. The UI follows separately.
+
 ### Changed
 - **The published origin is a build parameter (#1102).** `VITE_PUBLIC_ORIGIN`
   / `VITE_PUBLIC_APP_PATH` override what `public-origin.json` declares, so

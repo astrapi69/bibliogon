@@ -28,6 +28,7 @@ from .cover_validator import (
     generate_kdp_metadata,
     validate_cover,
 )
+from .finance.routes import router as finance_router
 from .metadata_checker import check_metadata_completeness
 from .package import KdpPackageError, build_kdp_package
 from .publishing_state_service import (
@@ -41,6 +42,7 @@ from .publishing_state_service import (
 )
 
 router = APIRouter(prefix="/kdp", tags=["kdp"])
+router.include_router(finance_router)
 
 # ``KDP_COVER_REQUIREMENTS`` re-exported from cover_validator for the
 # in-process consumers that import it from here (plugin-export's

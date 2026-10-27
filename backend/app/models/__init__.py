@@ -1,6 +1,7 @@
 import enum
 import uuid
 from datetime import UTC, date, datetime
+from decimal import Decimal
 
 from sqlalchemy import (
     JSON,
@@ -17,6 +18,7 @@ from sqlalchemy import (
     UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.types import TypeDecorator
 
 from app.database import Base
 
@@ -1671,3 +1673,159 @@ class ArcReviewer(Base):
             f"publishing_state_id={self.publishing_state_id!r} "
             f"name={self.reviewer_name!r} status={self.review_status!r}>"
         )
+
+
+class DecimalText(TypeDecorator[Decimal]):
+    """Exact decimal stored as text.
+
+    SQLite has no decimal type; ``Numeric`` round-trips through float
+    and money must not. The finance tables (#1129) store amounts and
+    rates as their canonical string and hand back ``Decimal``.
+    """
+
+    impl = String(40)
+    cache_ok = True
+
+    def process_bind_param(self, value: Decimal | None, dialect: object) -> str | None:
+        return None if value is None else str(Decimal(value))
+
+    def process_result_value(self, value: str | None, dialect: object) -> Decimal | None:
+        return None if value is None else Decimal(value)
+
+
+class FinanceImport(Base):
+    """One imported report download (#1129), kept as the audit trail.
+
+    Lines of a later download of the same month replace the earlier
+    ones; the import row of the earlier download stays, so the history
+    of what was read when is not lost.
+    """
+
+    __tablename__ = "finance_imports"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    #: "kdp_royalty" | "kdp_kenp" | "amazon_ads"
+    kind: Mapped[str] = mapped_column(String(30), nullable=False)
+    #: "kdp" | "ingramspark" - validated at the API layer
+    sales_channel: Mapped[str] = mapped_column(String(30), nullable=False, default="kdp")
+    book_format: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    marketplace: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    filename: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    file_sha256: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    #: JSON list of the YYYY-MM months the download covered
+    months: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
+    row_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    imported_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class FinanceRevenueLine(Base):
+    """One royalty or KENP row of a sales report (#1129).
+
+    No ``book_id``: the row keeps the ASIN/ISBN it was reported under
+    and is matched against ``Book.asin_*`` / ``Book.isbn_*`` when it is
+    evaluated, so an ASIN added to a book later attributes old rows too
+    and there is no second title register to keep in sync.
+    """
+
+    __tablename__ = "finance_revenue_lines"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    import_id: Mapped[str | None] = mapped_column(
+        ForeignKey("finance_imports.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    sales_channel: Mapped[str] = mapped_column(String(30), nullable=False)
+    #: "royalty" | "kenp"
+    kind: Mapped[str] = mapped_column(String(20), nullable=False)
+    month: Mapped[str] = mapped_column(String(7), nullable=False, index=True)
+    marketplace: Mapped[str] = mapped_column(String(50), nullable=False)
+    book_format: Mapped[str] = mapped_column(String(20), nullable=False)
+    asin: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    isbn: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    title_text: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    author_text: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    royalty_type: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    transaction_type: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    units_sold: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    units_refunded: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    net_units: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    kenp_pages: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    royalty: Mapped[Decimal | None] = mapped_column(DecimalText(), nullable=True)
+    currency: Mapped[str | None] = mapped_column(String(3), nullable=True)
+
+
+class FinanceAdLine(Base):
+    """One row of an Amazon Ads advertised-product report (#1129)."""
+
+    __tablename__ = "finance_ad_lines"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    import_id: Mapped[str | None] = mapped_column(
+        ForeignKey("finance_imports.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    month: Mapped[str] = mapped_column(String(7), nullable=False, index=True)
+    marketplace: Mapped[str] = mapped_column(String(50), nullable=False)
+    campaign: Mapped[str] = mapped_column(String(300), nullable=False)
+    asin: Mapped[str] = mapped_column(String(20), nullable=False)
+    impressions: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    clicks: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    orders: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    spend: Mapped[Decimal] = mapped_column(DecimalText(), nullable=False)
+    currency: Mapped[str] = mapped_column(String(3), nullable=False)
+
+
+class FinanceKenpRate(Base):
+    """KDP Select per-page rate of one month and marketplace (#1129).
+
+    KENP pages are valued with the rate of their own month; summing
+    pages across months and applying one rate is wrong because the fund
+    rate changes every month.
+    """
+
+    __tablename__ = "finance_kenp_rates"
+    __table_args__ = (UniqueConstraint("month", "marketplace", name="uq_finance_kenp_rate"),)
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    month: Mapped[str] = mapped_column(String(7), nullable=False)
+    marketplace: Mapped[str] = mapped_column(String(50), nullable=False)
+    rate: Mapped[Decimal] = mapped_column(DecimalText(), nullable=False)
+    currency: Mapped[str] = mapped_column(String(3), nullable=False)
+
+
+class FinanceFxRate(Base):
+    """Monthly exchange rate into a base currency (#1129).
+
+    Write-once by convention (the API refuses an overwrite unless asked
+    explicitly), so an evaluation of a past period can be reproduced.
+    """
+
+    __tablename__ = "finance_fx_rates"
+    __table_args__ = (
+        UniqueConstraint("month", "currency", "base_currency", name="uq_finance_fx_rate"),
+    )
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    month: Mapped[str] = mapped_column(String(7), nullable=False)
+    currency: Mapped[str] = mapped_column(String(3), nullable=False)
+    base_currency: Mapped[str] = mapped_column(String(3), nullable=False)
+    rate: Mapped[Decimal] = mapped_column(DecimalText(), nullable=False)
+    source: Mapped[str | None] = mapped_column(String(200), nullable=True)
+
+
+class FinanceTitleCost(Base):
+    """A direct cost of one title: translation, cover, editing, ISBN, AI (#1129).
+
+    The author's own time is deliberately not tracked.
+    """
+
+    __tablename__ = "finance_title_costs"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    book_id: Mapped[str] = mapped_column(
+        ForeignKey("books.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    cost_date: Mapped[date] = mapped_column(Date, nullable=False)
+    amount: Mapped[Decimal] = mapped_column(DecimalText(), nullable=False)
+    currency: Mapped[str] = mapped_column(String(3), nullable=False)
+    category: Mapped[str] = mapped_column(String(50), nullable=False, default="other")
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
