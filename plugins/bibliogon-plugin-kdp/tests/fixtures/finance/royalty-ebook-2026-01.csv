@@ -1,0 +1,4 @@
+Royalty Date,Title,Author Name,ASIN,Marketplace,Royalty Type,Transaction Type,Units Sold,Units Refunded,Net Units Sold,Avg. List Price without tax,Avg. Offer Price without tax,Avg. File Size (MB),Avg. Delivery Cost,Royalty,Currency
+2026-01,Example Title Alpha,Example Pen Name,B000000001,Amazon.de,70%,Standard,10,0,10,4.99,4.99,1.2,0.18,33.00,EUR
+2026-01,Example Title Alpha,Example Pen Name,B000000001,Amazon.com,70%,Standard,4,0,4,5.99,5.99,1.2,0.18,16.00,USD
+2026-01,Example Title Beta,Example Pen Name,B000000002,Amazon.de,35%,Standard,2,0,2,2.99,2.99,0.8,0.00,2.10,EUR

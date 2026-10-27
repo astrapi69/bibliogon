@@ -111,3 +111,17 @@ tmp/
 # Agent-local copy of the dev database (#794). Never commit a copy of
 # the user's library; `make agent-db` regenerates it on demand.
 .agent-data/
+
+# KDP / Amazon Ads report downloads and finance exports (#1129).
+# Real royalty and ad figures never belong in this public repository;
+# backend/tests/test_finance_gitignore_guard.py pins these patterns.
+KDP_*.xlsx
+KDP_*.csv
+KENP_*.xlsx
+KENP_*.csv
+*Royalt*.xlsx
+*Royalt*.csv
+Sponsored_*.xlsx
+Sponsored_*.csv
+bibliogon-finance*.json
+!plugins/bibliogon-plugin-kdp/tests/fixtures/finance/*.csv
