@@ -91,7 +91,7 @@ Additionally for the AI:
 See architecture.md for architectural details. Per the "single source of truth
 for volatile statistics" rule below, version + counts are NOT duplicated here —
 read them from their canonical source:
-- Version + release summary + plugin catalog: the CLAUDE.md header (SSoT).
+- Version + plugin catalog: the CLAUDE.md header (SSoT). What a release changed lives in docs/CHANGELOG.md, never in CLAUDE.md.
 - Tests: see `docs/audits/current-coverage.md` for current counts. `make test`
   covers backend+plugins+Vitest, E2E is separate.
 - ChapterTypes: the `ChapterType` enum in `backend/app/models/__init__.py` (SSoT).
@@ -353,7 +353,7 @@ At the end of every session: a summary with statistics (commits, tests, new/chan
 
 ### When to update CLAUDE.md
 
-CLAUDE.md is loaded on EVERY prompt. It has to stay lean (target: under 8000 characters, ~2000 tokens). Only content that is ALWAYS relevant:
+CLAUDE.md is loaded on EVERY prompt. It has to stay lean: at most 8000 characters, enforced by `backend/tests/test_claude_md_budget.py` (#1139 - by v0.60.0 it had grown to about 60,000, almost all release summaries). Only content that is ALWAYS relevant:
 
 - Project description, repository, version, pointers to ROADMAP/CHANGELOG/API
 - Pointer to .claude/rules/ with short descriptions
@@ -365,12 +365,10 @@ CLAUDE.md is loaded on EVERY prompt. It has to stay lean (target: under 8000 cha
 - Plugin table (name, tier, dependency, short description)
 - Directory structure, top level only
 - Core conventions (max 10 bullets)
-- Overall test counts
 
 Update when:
 - A plugin is added, removed, or its tier changes
 - A new dependency joins the tech stack
-- Test counts have changed substantially
 - New Makefile targets
 - Data model changes (new fields, new ChapterTypes)
 - Version bumped
@@ -380,6 +378,8 @@ NOT in CLAUDE.md:
 - Complete package tables with version numbers (-> package.json/pyproject.toml)
 - Every API endpoint individually (-> docs/API.md)
 - Completed phase details (-> docs/CHANGELOG.md)
+- Release summaries, current or previous (-> docs/CHANGELOG.md, changelog/releases/)
+- Test counts (-> docs/audits/current-coverage.md)
 - Detailed deployment instructions (-> README.md)
 - Migration status tables (-> historical, belongs in the CHANGELOG)
 
@@ -388,7 +388,7 @@ NOT in CLAUDE.md:
 - IMMEDIATELY when a phase is completed. Do not accumulate in CLAUDE.md.
 - New entry at the TOP with phase number, version, description.
 - Format: bullet-point list of the main changes, structured the same way as existing entries.
-- After the entry: set the CLAUDE.md version to the new version, update test counts.
+- After the entry: set the CLAUDE.md version line to the new version. Nothing else about the release goes into CLAUDE.md.
 
 ### When to update docs/API.md
 
