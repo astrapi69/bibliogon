@@ -91,8 +91,11 @@ tmp/
 # Claude Code runtime artifacts (per-session lock + scheduled-task state).
 # Pre-commit's end-of-file-fixer would otherwise endlessly modify the
 # lock file, turning CI red on every push.
+# .claude/settings.json is NOT one of them: it is the shared project
+# settings file and carries the hooks (#1137). Personal settings belong
+# in .claude/settings.local.json.
 /.claude/scheduled_tasks.lock
-/.claude/settings.json
+/.claude/settings.local.json
 
 # pytest-testmon impact map (TIA, CI-only — never committed)
 .testmondata
