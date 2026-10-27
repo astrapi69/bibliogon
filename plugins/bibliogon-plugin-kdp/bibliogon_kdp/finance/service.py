@@ -34,6 +34,7 @@ from app.models import (
 )
 from bibliogon_kdp.finance.parsing import (
     AdSpendRecord,
+    ParsedReport,
     ReportFormatError,
     RevenueRecord,
     parse_report,
@@ -130,8 +131,15 @@ def _ad_row(record: AdSpendRecord) -> dict:
     return {name: getattr(record, name) for name in _AD_FIELDS}
 
 
+def _canonical(value: object) -> str:
+    """``33``, ``33.0`` and ``33.00`` are one amount, whichever file it came from."""
+    if isinstance(value, Decimal):
+        return format(value.normalize(), "f")
+    return str(value)
+
+
 def _signature(rows: Iterable[dict], fields: tuple[str, ...]) -> list[tuple]:
-    return sorted(tuple(str(row[name]) for name in fields) for row in rows)
+    return sorted(tuple(_canonical(row[name]) for name in fields) for row in rows)
 
 
 def _stored(model: type, query_rows: Iterable, fields: tuple[str, ...]) -> list[dict]:
@@ -151,14 +159,18 @@ def _scope_query(db: Session, kind: str, rows: list[dict], months: list[str]):
     )
 
 
-def _parse(kind: str, raw: bytes, book_format: str | None, marketplace: str | None) -> list[dict]:
+def _parse(
+    kind: str, raw: bytes, book_format: str | None, marketplace: str | None, sheet: str | None
+) -> tuple[list[dict], ParsedReport]:
     try:
-        parsed = parse_report(kind, raw, book_format=book_format, marketplace=marketplace)
+        parsed = parse_report(
+            kind, raw, book_format=book_format, marketplace=marketplace, sheet=sheet
+        )
     except ReportFormatError as exc:
         raise ValidationError(f"Report does not match the {kind} contract: {exc}") from exc
     if kind == "amazon_ads":
-        return [_ad_row(record) for record in parsed.ads]
-    return [_revenue_row(record, CHANNEL_BY_KIND[kind]) for record in parsed.revenue]
+        return [_ad_row(record) for record in parsed.ads], parsed
+    return [_revenue_row(record, CHANNEL_BY_KIND[kind]) for record in parsed.revenue], parsed
 
 
 def _unmatched(db: Session, rows: list[dict]) -> list[str]:
@@ -179,6 +191,7 @@ def import_report(
     filename: str | None,
     book_format: str | None = None,
     marketplace: str | None = None,
+    sheet: str | None = None,
     dry_run: bool = False,
 ) -> dict:
     """Parse, compare with the stored scope and replace it.
@@ -186,12 +199,13 @@ def import_report(
     Returns:
         ``status`` (``imported`` | ``unchanged`` | ``dry_run``), the
         months covered, the row count, how many stored rows were
-        replaced, and the ASIN/ISBN codes no book carries.
+        replaced, the ASIN/ISBN codes no book carries, and where the
+        table was found (``sheet`` for a workbook, 1-based ``header_row``).
 
     Raises:
         ValidationError: When the file breaks its column contract.
     """
-    rows = _parse(kind, raw, book_format, marketplace)
+    rows, parsed = _parse(kind, raw, book_format, marketplace, sheet)
     months = sorted({row["month"] for row in rows})
     fields = _AD_FIELDS if kind == "amazon_ads" else _REVENUE_FIELDS
     model = FinanceAdLine if kind == "amazon_ads" else FinanceRevenueLine
@@ -202,6 +216,8 @@ def import_report(
         "rows": len(rows),
         "replaced": len(stored),
         "unmatched": _unmatched(db, rows),
+        "sheet": parsed.sheet,
+        "header_row": parsed.header_row,
     }
     if _signature(_stored(model, stored, fields), fields) == _signature(rows, fields):
         return {**outcome, "status": "unchanged", "replaced": 0}

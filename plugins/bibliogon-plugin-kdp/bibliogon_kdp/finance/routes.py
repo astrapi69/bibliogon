@@ -66,10 +66,11 @@ async def import_report(
     kind: ReportKind = Form(...),
     book_format: BookFormat | None = Form(default=None),
     marketplace: str | None = Form(default=None, max_length=50),
+    sheet: str | None = Form(default=None, max_length=100),
     dry_run: bool = Form(default=False),
     db: Session = Depends(get_db),
 ) -> dict:
-    """Import one downloaded report; see ``service.import_report``."""
+    """Import one downloaded report (CSV or XLSX); see ``service.import_report``."""
     raw = await file.read()
     return service.import_report(
         db,
@@ -78,6 +79,7 @@ async def import_report(
         filename=file.filename,
         book_format=book_format,
         marketplace=marketplace,
+        sheet=sheet,
         dry_run=dry_run,
     )
 
