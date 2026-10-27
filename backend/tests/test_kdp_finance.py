@@ -347,3 +347,57 @@ class TestPrivacy:
         assert restored.status_code == 200, restored.text
         assert _report(client) == before
         assert client.get("/api/kdp/finance/export").json() == exported.json()
+
+
+def _xlsx_builder():
+    import importlib.util
+
+    path = FIXTURES.parents[1] / "xlsx_builder.py"
+    spec = importlib.util.spec_from_file_location("kdp_xlsx_builder", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+class TestXlsx:
+    def _workbook(self, *sheets: str) -> bytes:
+        builder = _xlsx_builder()
+        rows = builder.rows_from_csv((FIXTURES / "royalty-ebook-2026-01.csv").read_text())
+        return builder.build_xlsx({name: rows for name in sheets})
+
+    def _post(self, client: TestClient, raw: bytes, **form: str):
+        return client.post(
+            "/api/kdp/finance/imports",
+            data={"kind": "kdp_royalty", "book_format": "ebook", **form},
+            files={"file": ("royalties.xlsx", raw, "application/octet-stream")},
+        )
+
+    def test_an_xlsx_download_imports_and_reports_its_sheet(
+        self, client: TestClient, book: dict
+    ) -> None:
+        response = self._post(client, self._workbook("eBook Royalty"))
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert (body["status"], body["sheet"], body["header_row"]) == (
+            "imported",
+            "eBook Royalty",
+            1,
+        )
+        assert _count(FinanceRevenueLine) == 3
+
+    def test_the_same_data_as_csv_then_xlsx_is_unchanged(
+        self, client: TestClient, book: dict
+    ) -> None:
+        _import(client, "royalty-ebook-2026-01.csv", "kdp_royalty", book_format="ebook")
+        response = self._post(client, self._workbook("eBook Royalty"))
+        assert response.json()["status"] == "unchanged"
+        assert _count(FinanceImport) == 1
+
+    def test_several_sheets_without_a_choice_is_a_400_naming_them(self, client: TestClient) -> None:
+        response = self._post(client, self._workbook("Summary", "eBook Royalty"))
+        assert response.status_code == 400
+        assert "Summary, eBook Royalty" in response.json()["detail"]
+        chosen = self._post(
+            client, self._workbook("Summary", "eBook Royalty"), sheet="eBook Royalty"
+        )
+        assert chosen.json()["status"] == "imported"

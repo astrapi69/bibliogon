@@ -5,6 +5,12 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 ## [Unreleased]
 
 ### Added
+- **KDP and Ads reports import as XLSX (#1132).** No more saving each sheet
+  as CSV first. `python-calamine` (`^0.8.3`, read-only) reads the
+  workbook; a multi-sheet file needs the sheet named and otherwise lists
+  them. A report-period line above the table is skipped, and its
+  position is reported back. Cells pass through the same strict parsers
+  as CSV. `openpyxl` was ruled out: its last release is from 2024-06.
 - **KDP report import with a per-title contribution margin (#1129, backend
   only).** `plugin-kdp` imports the KDP royalty and KENP reports and the
   Amazon Ads advertised-product report (CSV). Together with dated direct

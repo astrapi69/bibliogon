@@ -10,15 +10,14 @@ exports produce).
 
 from __future__ import annotations
 
-import csv
-import io
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import TypeVar
 
-from bibliogon_kdp.finance.columns import CONTRACTS, ColumnContract
+from bibliogon_kdp.finance.columns import CONTRACTS
 from bibliogon_kdp.finance.money import parse_decimal, parse_int, parse_month
+from bibliogon_kdp.finance.tables import Row, TableError, read_table
 
 BOOK_FORMATS: tuple[str, ...] = ("ebook", "paperback", "hardcover")
 
@@ -71,11 +70,12 @@ class AdSpendRecord:
 @dataclass
 class ParsedReport:
     kind: str
+    header_row: int = 1
+    sheet: str | None = None
     revenue: list[RevenueRecord] = field(default_factory=list)
     ads: list[AdSpendRecord] = field(default_factory=list)
 
 
-Row = dict[str, str]
 T = TypeVar("T")
 
 
@@ -85,16 +85,19 @@ def parse_report(
     *,
     book_format: str | None = None,
     marketplace: str | None = None,
+    sheet: str | None = None,
 ) -> ParsedReport:
     """Parse one downloaded report.
 
     Args:
         kind: ``kdp_royalty``, ``kdp_kenp`` or ``amazon_ads``.
-        raw: File content (CSV; comma, semicolon or tab separated).
+        raw: File content: XLSX, or CSV (comma, semicolon or tab separated).
         book_format: Required for ``kdp_royalty`` - KDP ships one sheet
             per format and the eBook sheet has no format column.
         marketplace: Required for ``amazon_ads`` - an Ads account belongs
             to one marketplace and its report does not name it.
+        sheet: Worksheet of an XLSX workbook; required when it has more
+            than one.
 
     Raises:
         ReportFormatError: On any deviation from the declared contract.
@@ -102,14 +105,21 @@ def parse_report(
     contract = CONTRACTS.get(kind)
     if contract is None:
         raise ReportFormatError([f"unknown report kind {kind!r}"])
-    rows = _read_rows(raw, contract)
+    try:
+        table = read_table(raw, contract, sheet)
+    except TableError as exc:
+        raise ReportFormatError(exc.problems) from exc
+    parsed = ParsedReport(kind, header_row=table.header_row, sheet=table.sheet)
+    rows = table.rows
     if kind == "kdp_royalty":
         fmt = _require_choice("book_format", book_format, BOOK_FORMATS)
-        return ParsedReport(kind, revenue=_project(rows, lambda r: _royalty(r, fmt)))
-    if kind == "kdp_kenp":
-        return ParsedReport(kind, revenue=_project(rows, _kenp))
-    market = _require_text("marketplace", marketplace)
-    return ParsedReport(kind, ads=_project(rows, lambda r: _ad(r, market)))
+        parsed.revenue = _project(rows, lambda r: _royalty(r, fmt))
+    elif kind == "kdp_kenp":
+        parsed.revenue = _project(rows, _kenp)
+    else:
+        market = _require_text("marketplace", marketplace)
+        parsed.ads = _project(rows, lambda r: _ad(r, market))
+    return parsed
 
 
 def _require_choice(name: str, value: str | None, choices: tuple[str, ...]) -> str:
@@ -122,51 +132,6 @@ def _require_text(name: str, value: str | None) -> str:
     if not value or not value.strip():
         raise ReportFormatError([f"{name} is required for this report kind"])
     return value.strip()
-
-
-def _decode(raw: bytes) -> str:
-    try:
-        return raw.decode("utf-8-sig")
-    except UnicodeDecodeError as exc:
-        raise ReportFormatError([f"file is not UTF-8 text: {exc}"]) from exc
-
-
-def _read_rows(raw: bytes, contract: ColumnContract) -> list[tuple[int, Row]]:
-    """Header check plus the non-blank rows, numbered as in the file."""
-    text = _decode(raw)
-    if not text.strip():
-        raise ReportFormatError(["report has no data rows"])
-    delimiter = max((",", ";", "\t"), key=text.splitlines()[0].count)
-    reader = csv.reader(io.StringIO(text), delimiter=delimiter)
-    headers = [cell.strip() for cell in next(reader)]
-    _check_headers(headers, contract)
-    rows = []
-    for number, cells in enumerate(reader, start=2):
-        if not any(cell.strip() for cell in cells):
-            continue
-        if len(cells) != len(headers):
-            raise ReportFormatError(
-                [f"row {number}: {len(cells)} cells, header has {len(headers)}"]
-            )
-        rows.append((number, dict(zip(headers, (c.strip() for c in cells), strict=True))))
-    if not rows:
-        raise ReportFormatError(["report has no data rows"])
-    return rows
-
-
-def _check_headers(headers: list[str], contract: ColumnContract) -> None:
-    problems = []
-    unknown = [h for h in headers if h not in contract.known()]
-    if unknown:
-        problems.append(f"unknown column(s) for {contract.kind}: {', '.join(unknown)}")
-    missing = [h for h in contract.required if h not in headers]
-    if missing:
-        problems.append(f"missing required column(s) for {contract.kind}: {', '.join(missing)}")
-    duplicates = sorted({h for h in headers if headers.count(h) > 1})
-    if duplicates:
-        problems.append(f"duplicate column(s): {', '.join(duplicates)}")
-    if problems:
-        raise ReportFormatError(problems)
 
 
 def _project(rows: list[tuple[int, Row]], build: Callable[[Row], T]) -> list[T]:

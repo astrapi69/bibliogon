@@ -104,10 +104,25 @@ they are. When ad spend is present the response carries the note
 | `kdp_kenp` | none | pages only, the rate comes from `finance_kenp_rates` |
 | `amazon_ads` | `marketplace` | the advertised-product report; an Ads account belongs to one marketplace. A summary row spanning two months fails, because spend cannot be assigned to one of them |
 
-Accepted input is CSV (comma, semicolon or tab, UTF-8 with or without a
-BOM). KDP offers its royalty downloads as `.xlsx`: XLSX support needs a
-new dependency (`openpyxl`), which needs a decision first. Until then,
-export the sheet to CSV.
+Accepted input is **XLSX** (read with `python-calamine`, #1132) or **CSV**
+(comma, semicolon or tab, UTF-8 with or without a BOM). The format is
+detected from the file content, not the filename. Both go through the
+same contract:
+
+- A workbook with more than one sheet needs the form field `sheet`.
+  Without it, or with a name that does not exist, the import fails and
+  lists the available sheets. Nothing is guessed.
+- The header is the first of the first 10 rows that contains every
+  required column, so a report-period line above the table is skipped.
+  The response names it as `header_row`, and as `sheet` for a workbook.
+  When no row qualifies, the first row is checked and its unknown and
+  missing columns are reported.
+- XLSX cells are converted to the exact text the strict parsers expect:
+  whole numbers without a fraction, dates as ISO dates. A true/false
+  cell, or a value outside the header columns, fails with its row.
+- `33`, `33.0` and `33.00` count as one amount when checking for an
+  unchanged re-import, so the same month imported first as CSV and then
+  as XLSX is `unchanged`.
 
 The header names in `columns.py` follow the KDP and Ads downloads as
 known when they were written. **Check them against a real download
@@ -146,7 +161,7 @@ older one, plus the provisional window above.
 
 | method | path | purpose |
 |---|---|---|
-| POST | `/api/kdp/finance/imports` | multipart `file`, `kind`, `book_format`, `marketplace`, `dry_run` |
+| POST | `/api/kdp/finance/imports` | multipart `file` (XLSX or CSV), `kind`, `book_format`, `marketplace`, `sheet`, `dry_run` |
 | GET | `/api/kdp/finance/imports` | import log |
 | PUT | `/api/kdp/finance/kenp-rates/{month}/{marketplace}` | `{rate, currency}` |
 | PUT | `/api/kdp/finance/fx-rates/{month}/{currency}` | `{rate, base_currency, source, replace}` |
