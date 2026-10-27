@@ -264,6 +264,10 @@ tests_dir = [
     "tests/test_writing_goals.py",
     "tests/test_writing_history_stats.py",
     "tests/test_writing_progress_no_negative.py",
+    "tests/test_git_url_credentials.py",
+    "tests/test_wbt_import_parity.py",
+    "tests/test_wbt_metadata_scalar_coercion.py",
+    "tests/test_yaml_projection.py",
 ]
 do_not_mutate = ["app/main.py", "app/database.py"]
 
