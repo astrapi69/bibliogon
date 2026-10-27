@@ -482,7 +482,9 @@ but the release is still out.
 - `ROADMAP.md`:
   mark every item included in the release as `[x]`
 - `CLAUDE.md`:
-  update on new endpoints or architectural changes
+  update on new endpoints or architectural changes. The release itself
+  changes only the version line - no summary paragraph (#1139); the
+  summary is the CHANGELOG entry from Step 3
 - `.claude/rules/lessons-learned.md`:
   if anything noteworthy happened during the release (new pitfall,
   workflow improvement), document it
