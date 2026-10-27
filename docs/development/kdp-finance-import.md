@@ -131,13 +131,16 @@ older one, plus the provisional window above.
 - `.gitignore` covers KDP/KENP/Sponsored-Products downloads and
   `bibliogon-finance*.json`. `backend/tests/test_finance_gitignore_guard.py`
   asks git itself.
-- **Not in the `.bgb` backup** (pending the author's decision; proposal:
-  explicit export only, with the same reasoning that took the AI keys out
-  of backups in #985). The explicit path is `GET /api/kdp/finance/export`
-  and `POST /api/kdp/finance/restore`.
+- **Not in the `.bgb` backup - decided (#1131).** Finance data leaves the
+  machine only through an explicit export, with the same reasoning that
+  took the AI keys out of every backup (#985). The path is
+  `GET /api/kdp/finance/export` and `POST /api/kdp/finance/restore`.
+  `test_finance_data_is_not_in_the_bgb_backup` pins this decision.
 - The Danger-Zone reset wipes these tables, and the backup-before-reset
   does not carry them. Export the finance data before a reset. The raw
-  reports can always be imported again; costs and rates cannot.
+  reports can always be imported again; costs and rates cannot. The UI
+  has to offer the finance export in the pre-reset dialog, or at least
+  point to it.
 
 ## Endpoints
 

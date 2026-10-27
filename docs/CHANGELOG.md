@@ -16,8 +16,8 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
   is labelled net revenue, never a margin. Unknown or missing report
   columns fail the import instead of being dropped. Importing the same
   file twice changes nothing, and a newer download of a month replaces
-  the old one. Finance data is not in the `.bgb` backup (decision
-  pending); there is an explicit export and restore. No scraping. See
+  the old one. Finance data is deliberately not in the `.bgb` backup
+  (#1131); there is an explicit export and restore. No scraping. See
   `docs/development/kdp-finance-import.md`. The UI follows separately.
 
 ### Changed
