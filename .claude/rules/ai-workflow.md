@@ -534,6 +534,13 @@ responsibility, not a CI gate.
 - Import/export edge case solved
 - CSS/TipTap specificity problem solved
 
+Where it goes (#1141): the entry - incident, reasoning, detection recipe -
+goes into the matching `docs/development/lessons-learned/<topic>.md` as a
+`## <title>` section; the title alone goes into `.claude/rules/lessons-learned.md`
+under the same topic. Everything in `.claude/rules/` is loaded into every
+session, so the index carries titles only;
+`backend/tests/test_lessons_learned_index.py` keeps both in step.
+
 ### End-of-session flow
 
 1. Write a chat-journal entry covering all changes from the session.
