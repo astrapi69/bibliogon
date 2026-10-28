@@ -49,9 +49,11 @@ while IFS= read -r p; do
 done < <(find "$ROOT/plugins" -name "pyproject.toml" -type f 2>/dev/null)
 
 # Per-plugin `version` class attribute on BasePlugin + the
-# `__version__` sentinel fallback. CLAUDE.md "Plugin package
-# versions are independent of the app version" — plugin authors
-# maintain these explicitly, NOT via sync-versions.
+# `__version__` sentinel fallback. These are independent of the app
+# version - plugin authors maintain them explicitly, NOT via
+# sync-versions (unlike the plugin pyproject versions, which are
+# lock-step; docs/development/rules/architecture.md "Plugin package
+# versions").
 while IFS= read -r p; do
     KNOWN_FILES+=("${p#"$ROOT/"}")
 done < <(find "$ROOT/plugins" -path '*/bibliogon_*/plugin.py' -type f 2>/dev/null)

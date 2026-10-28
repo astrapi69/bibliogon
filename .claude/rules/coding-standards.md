@@ -17,7 +17,7 @@ Strict, no `any`. Functional components, props as interfaces, logic out of compo
 snake_case (Python), PascalCase/camelCase (TS), `bibliogon-plugin-{name}` / `bibliogon_{name}`, no I-prefix, `.bgb`/`.bgp`. No generic names (`data`, `info`, `result`, `tmp`...).
 
 ## Formatting
-No em-dash, plain UTF-8, no emojis in code. 4 spaces Python, 2 TypeScript/CSS. Prettier is configured but not gated: match each file's existing style, never mass-reformat.
+No em-dash, plain UTF-8, no emojis in code. 4 spaces in Python; in TypeScript/CSS match the file (2 and 4 both occur). Prettier and ESLint are configured but not gated: keep each file's existing style, lint what you touch, never mass-reformat.
 
 ## Git
 Gitflow: branch `feature/*`/`fix/*`/`chore/*` from `develop`, PR to `develop`; only releases reach `main`. Conventional commits with scope, one logical change each. No AI `Co-Authored-By` and a human git identity - both enforced by hooks and the `Commit trailers` CI job (#768, #786).

@@ -47,7 +47,7 @@ Bibliogons eigenes Frontend nutzt keines davon — `frontend/src/api/client.ts` 
 
 Die Endpoints unter `/api/books`, `/api/articles`, `/api/chapters`, `/api/assets`, `/api/templates`, `/api/chapter-templates`, `/api/backup` sind **stabil**. Neue optionale Felder können hinzukommen; bestehende Felder behalten ihre Form und Typen quer durch Minor-Releases.
 
-Plugin-eigene Endpoints unter `/api/{plugin-name}/*` folgen der Version des Plugins, nicht der Bibliogon-Release-Version. Plugin-Versionen sind unabhängig von der App-Version (siehe [Architektur](architecture.md#versionierung)). Den Plugin-Quelltext für seinen Endpoint-Vertrag lesen.
+Plugin-eigene Endpoints unter `/api/{plugin-name}/*` fallen nicht unter diese Stabilitätszusage. Die Plugin-Pakete werden im Gleichschritt mit Bibliogon veröffentlicht (siehe [Architektur](architecture.md#versionierung)), ein Plugin-Endpoint ändert sich also nur mit einem Bibliogon-Release, kann seine Form aber in einem Minor-Release ändern. Den Plugin-Quelltext für seinen Endpoint-Vertrag lesen.
 
 `/api/test/reset` ist **ausdrücklich instabil** und nur für Debug. Nicht in Produktiv-Skripten verwenden.
 

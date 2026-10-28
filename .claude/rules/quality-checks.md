@@ -20,7 +20,7 @@ Historical plan; CI now runs the suites (`ci.yml`, `nightly.yml`, `coverage.yml`
 See the full text; tracked in ROADMAP/backlog.
 
 ## Coverage Targets per Module Type
-These targets apply (the earlier, lower table in the full text is superseded): services and business logic 95%, API endpoints 90%, hooks and utilities 95%, frontend logic components 85%, presentational components 65%, models and schemas 80%, plugin routes 90%. Meaningful assertions over line count; regression pins count most.
+Services and business logic 95%, API endpoints 90%, hooks and utilities 95%, frontend logic components 85%, presentational components 65%, models and schemas 80%, plugin routes 90%. Meaningful assertions over line count; regression pins count most.
 
 ## TDD (Test-Driven Development)
 Red - green - refactor, see `tdd.md`.

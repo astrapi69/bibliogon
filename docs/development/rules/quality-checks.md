@@ -244,41 +244,15 @@ test('export book as EPUB with manual TOC', async ({ page }) => {
 
 ### Coverage targets per module type
 
-These are target coverage levels, not hard gates. They guide where to invest test effort and flag when a module is under-tested relative to its risk.
-
-**Project-wide target: 85-95% of modules at MEDIUM or above.** Currently at ~70% (2026-04-12 audit). The gap is mostly on the frontend side.
+The numeric targets per module type are in "Coverage Targets per Module
+Type" below - one table, so there is one answer. This section used to
+carry a second, lower set (services "HIGH >= 80%" against "95% minimum"
+there); it was removed in #1145.
 
 **Principle: frontend coverage is not subordinate to backend coverage.** A 95% backend with a 32% frontend is not "good enough". The frontend is the user's interface - bugs there are visible immediately. Both sides of the pyramid must reach their targets independently.
 
-#### Backend (Python)
-
-| Module Type | Target | Rationale |
-|-------------|--------|-----------|
-| Services (`app/services/`) | HIGH (>= 80%) | Core business logic, highest bug risk |
-| Routers (`app/routers/`) | MEDIUM-HIGH (>= 70%) | Integration tests covering happy path + error cases |
-| Models (`app/models/`) | LOW-MEDIUM | Tested indirectly via integration tests; direct tests only for custom methods |
-| Schemas (`app/schemas/`) | MEDIUM | Validators and field transformations need explicit tests |
-| Utilities (`app/utils/`, `licensing.py`, `job_store.py`) | HIGH (>= 80%) | Pure functions, easy to test, often security-relevant |
-
-#### Plugins (Python)
-
-| Module Type | Target | Rationale |
-|-------------|--------|-----------|
-| Core logic (converters, generators, checkers) | HIGH (>= 80%) | The plugin's reason to exist |
-| `plugin.py` (hook implementations) | MEDIUM | Tested indirectly through integration; explicit tests for non-trivial hooks |
-| `routes.py` | MEDIUM | At least happy-path integration test per endpoint |
-
-#### Frontend (TypeScript/React)
-
-| Module Type | Target | Rationale |
-|-------------|--------|-----------|
-| `api/client.ts` | HIGH (>= 90%) | Every API call, error path, and interceptor |
-| Hooks (`hooks/`) | HIGH (>= 80%) | State logic, side effects, computed values |
-| Utility functions (`utils/`) | HIGH (>= 90%) | Pure functions, trivial to test |
-| Complex form components (ExportDialog, CreateBookModal, BookMetadataEditor) | MEDIUM (>= 60%) | Validate form logic, conditional fields, submission |
-| Simple display components (BookCard, Tooltip, ThemeToggle) | LOW | E2E covers rendering; unit tests only for non-trivial logic |
-| Page components | LOW | E2E covers navigation and layout |
-| Contexts/Providers | MEDIUM | Test the provider logic, not the React tree |
+What a unit-test target cannot express is which user flows need an E2E
+spec at all:
 
 #### E2E (Playwright)
 

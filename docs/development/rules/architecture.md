@@ -234,14 +234,22 @@ Services NEVER throw HTTPException, routers catch NOTHING. The global exception 
 
 ## Plugin package versions
 
-Plugin versions are independent of the app version. A plugin is bumped only when the plugin itself changed, not on every app release. Concretely:
+A plugin carries two version strings, and they follow different rules
+(#1145; this section used to call both "independent"):
 
-- No forced bump of every `plugins/bibliogon-plugin-*/pyproject.toml` on an app release
-- Plugin versions stay at `1.0.0` until there is a real reason to raise them (new hook version, breaking change in the plugin API, ...)
-- The app version bump only touches `backend/pyproject.toml`, `frontend/package.json` and optionally `backend/app/__init__.py`
-- Plugin changes are recorded in the app CHANGELOG, but the plugin version string stays unchanged
+- **Package version** - `version` in `plugins/bibliogon-plugin-*/pyproject.toml`.
+  Lock-step with the app: `make sync-versions` sets every plugin package to
+  the version in `backend/pyproject.toml` at each release, and
+  `verify_version_pins.sh` fails the release on drift. Never hand-edit it.
+  See release-workflow.md "Step 4: Bump version".
+- **Plugin class version** - the `version` attribute on the `BasePlugin`
+  subclass in `plugin.py` (e.g. `"1.0.0"`), next to `api_version`.
+  Independent: `sync-versions` does not touch it. Raise it only when the
+  plugin itself changed in a way its consumers should see (a hook version,
+  a breaking change in the plugin API). Licence and trial keys are bound to
+  the plugin name, not to either version.
 
-Reason: plugins have their own lifecycles, and trial keys / license keys are bound to the plugin name, not to the version. A bump without a change would only create noise.
+Plugin changes are recorded in the app CHANGELOG.
 
 ## Plugin settings visibility
 

@@ -12,8 +12,10 @@
 # Two canonical sources are hand-edited per release:
 #   - backend/pyproject.toml      (Python subsystem)
 #   - frontend/package.json       (JS subsystem)
-# Plugin versions live in plugins/<name>/pyproject.toml and are
-# bumped independently (per CLAUDE.md "Plugin package versions").
+# Plugin package versions (plugins/<name>/pyproject.toml) are
+# lock-step with the app and set by `make sync-versions`; only the
+# BasePlugin `version` class attribute in plugin.py is independent
+# (docs/development/rules/architecture.md "Plugin package versions").
 #
 # Derived references (DO NOT EDIT):
 #   - backend/app/__init__.py:__version__  (tomllib at import)

@@ -4,153 +4,78 @@ Automated enforcement of code quality. These rules make every commit look consis
 
 ## Formatting and linting (automatic)
 
+The configuration lives in the tool files; this section says which ones
+apply and what enforces them. It used to copy the configs here, and the
+copies drifted (a `py311` ruff target, an `.eslintrc.json` that never
+existed, a Prettier block with the opposite settings to the real one -
+#1145). Read the files, not a copy.
+
 ### Python (Backend + Plugins)
 
-```toml
-# backend/pyproject.toml
+- Config: `[tool.ruff]` in `backend/pyproject.toml` (line length 100,
+  target `py312`, the selected rule set and per-file ignores).
+- Enforced: the `ruff` and `ruff-format` pre-commit hooks on
+  `backend/app/`, and the `Backend ruff + mypy` CI job. Plugins and tests
+  are not gated by ruff.
 
-[tool.ruff]
-target-version = "py311"
-line-length = 100
-
-[tool.ruff.lint]
-select = [
-    "E",    # pycodestyle errors
-    "W",    # pycodestyle warnings
-    "F",    # pyflakes
-    "I",    # isort
-    "N",    # pep8-naming
-    "UP",   # pyupgrade
-    "B",    # flake8-bugbear
-    "SIM",  # flake8-simplify
-    "TCH",  # flake8-type-checking
-]
-ignore = [
-    "E501",  # line-length (handled by the formatter)
-]
-
-[tool.ruff.lint.isort]
-known-first-party = ["app"]
-
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
-```
-
-**Commands:**
 ```bash
-cd backend && poetry run ruff check .         # lint
-cd backend && poetry run ruff check --fix .   # auto-fix
-cd backend && poetry run ruff format .        # format
+cd backend && poetry run ruff check app/          # lint
+cd backend && poetry run ruff check --fix <files> # auto-fix
+cd backend && poetry run ruff format <files>      # format
 ```
 
 ### TypeScript (Frontend)
 
-```json
-// frontend/.eslintrc.json
-{
-  "extends": [
-    "eslint:recommended",
-    "plugin:@typescript-eslint/recommended",
-    "plugin:react-hooks/recommended"
-  ],
-  "rules": {
-    "@typescript-eslint/no-explicit-any": "error",
-    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
-    "no-console": ["error", { "allow": ["warn", "error"] }],
-    "react-hooks/exhaustive-deps": "warn"
-  }
-}
-```
+- ESLint: the flat config `frontend/eslint.config.js` (correctness and
+  security findings are errors, stylistic rules start as warnings;
+  `eslint-config-prettier` keeps it from fighting Prettier).
+- Prettier: `frontend/.prettierrc` (`semi: true`, `singleQuote: false`,
+  `tabWidth: 4`, `printWidth: 100`, `trailingComma: "all"`).
+- **Neither is gated** - no pre-commit hook and no CI step runs them, and
+  much of the committed frontend does not match `.prettierrc`. So: match
+  each file's existing style when editing, run ESLint on the files you
+  touch, and never run `prettier --write` over files you did not change
+  (see lessons-learned "Prettier is configured but ungated"). Making
+  Prettier authoritative would be a deliberate repo-wide reformat plus a
+  gate, not a side effect.
 
-```json
-// frontend/.prettierrc
-{
-  "semi": false,
-  "singleQuote": true,
-  "trailingComma": "all",
-  "printWidth": 100,
-  "tabWidth": 2
-}
-```
-
-**Commands:**
 ```bash
-cd frontend && npx eslint src/ --fix    # lint + auto-fix
-cd frontend && npx prettier --write src/ # format
+cd frontend && npx eslint <files>   # lint the files you touched
 ```
 
 ### Setup (one-time)
 
-```bash
-# Backend
-cd backend && poetry add --group dev ruff
-
-# Frontend
-cd frontend && npm install -D eslint @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint-plugin-react-hooks prettier
-```
+Dependencies come with `make install`; the git hooks with
+`make install-hooks` (cloud sessions get both from the session-start
+hook, #1137).
 
 ---
 
 ## Pre-commit hooks
 
-Automatic checks before every commit. Prevents unformatted or broken code from reaching the repo in the first place.
+Config: `.pre-commit-config.yaml` at the repo root. What runs on
+`git commit`:
 
-```yaml
-# .pre-commit-config.yaml (in the project root)
-repos:
-  - repo: local
-    hooks:
-      - id: ruff-check
-        name: ruff lint
-        entry: bash -c 'cd backend && poetry run ruff check .'
-        language: system
-        pass_filenames: false
-        files: ^backend/
+- file checks: trailing whitespace, end-of-file fixer, YAML and JSON
+  syntax, large files, merge-conflict markers;
+- `ruff` (with `--fix`) and `ruff-format` on `backend/app/`;
+- `bandit` (Python SAST, MEDIUM/MEDIUM, the same gate as CI);
+- the repo's own guards, among them: no AI `Co-Authored-By` trailer
+  (commit-msg stage) and no AI commit identity (#768, #786), plugin
+  lockfile paired with its pyproject, help-nav completeness, theme-token
+  completeness, module-state audit, docs completeness, and a
+  non-blocking roadmap-archive reminder.
 
-      - id: ruff-format
-        name: ruff format check
-        entry: bash -c 'cd backend && poetry run ruff format --check .'
-        language: system
-        pass_filenames: false
-        files: ^backend/
+No frontend linter and no test suite runs in the hooks; tests run on CI
+(`ci-only-heavy-tests.md`).
 
-      - id: eslint
-        name: eslint
-        entry: bash -c 'cd frontend && npx eslint src/ --max-warnings=0'
-        language: system
-        pass_filenames: false
-        files: ^frontend/src/
-
-      - id: prettier
-        name: prettier check
-        entry: bash -c 'cd frontend && npx prettier --check src/'
-        language: system
-        pass_filenames: false
-        files: ^frontend/src/
-
-      - id: pytest-quick
-        name: pytest (backend only)
-        entry: bash -c 'cd backend && poetry run pytest tests/ -x -q'
-        language: system
-        pass_filenames: false
-        files: ^backend/
-```
-
-**Setup:**
 ```bash
-pip install pre-commit
-pre-commit install
+make install-hooks                                  # pre-commit + commit-msg stage + pre-push
+cd backend && poetry run pre-commit run --all-files # everything, by hand
 ```
 
-**After that, on every `git commit` the following happens automatically:**
-1. Python code is checked for lint errors (ruff)
-2. Python formatting is checked (ruff format)
-3. TypeScript is checked for errors (ESLint)
-4. TypeScript formatting is checked (Prettier)
-5. Backend tests run (quick smoke test)
-
-If anything fails: the commit is rejected and the errors are shown.
+The pre-push hook runs pre-commit over all backend files when a tag is
+pushed.
 
 ---
 
@@ -569,14 +494,12 @@ def export_book(book_id: str, fmt: str, options: ExportOptions) -> Path:
 
 ```
 git commit
-  -> pre-commit hooks run:
-     1. ruff check (Python lint)
-     2. ruff format --check (Python format)
-     3. eslint (TypeScript lint)
-     4. prettier --check (TypeScript format)
-     5. pytest -x -q (backend smoke test)
+  -> pre-commit hooks: file checks, ruff + ruff-format (backend/app/),
+     bandit, the repo guards; commit-msg stage: no AI co-author trailer
   -> all green? commit goes through.
   -> anything red? commit rejected, errors shown.
+git push (branch) -> CI runs lint, type checks and the test suites
+git push (tag)    -> pre-push runs pre-commit over all backend files
 ```
 
-No code reaches the repo that isn't formatted, linted, and tested.
+Frontend formatting and linting are not part of this chain (see above).

@@ -48,10 +48,13 @@
 - No em-dash (-- or Unicode U+2014). Use hyphens (-) or commas.
 - Standard UTF-8 characters only.
 - No emojis in code or comments.
-- Indentation: 4 spaces (Python), 2 spaces (TypeScript/CSS).
-- Automatic formatting: ruff (Python), Prettier (TypeScript). See code-hygiene.md.
-- Automatic linting: ruff (Python), ESLint (TypeScript). See code-hygiene.md.
-- Pre-commit hooks enforce formatting and linting before every commit.
+- Indentation: 4 spaces in Python. In TypeScript/CSS match the file:
+  the frontend mixes 2 and 4 spaces (`frontend/.prettierrc` says 4, and
+  e.g. `api/platform.ts` uses 2).
+- Python formatting and linting: ruff, enforced by pre-commit on
+  `backend/app/` and in CI. TypeScript: ESLint and Prettier are
+  configured but not gated - lint the files you touch, keep each file's
+  existing style. See code-hygiene.md (#1145).
 
 ## Git
 
