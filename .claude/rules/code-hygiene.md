@@ -5,7 +5,7 @@ code: `docs/development/rules/code-hygiene.md`. This summary must not
 contradict it (#1143).
 
 ## Formatting and linting (automatic)
-Python: ruff (lint + format), gated by pre-commit on `backend/app/` and in CI. Frontend: ESLint and Prettier are configured but not gated - match each file's existing style and never mass-reformat (the Prettier block in the full text does not match the real `frontend/.prettierrc`).
+Python: ruff (lint + format), gated by pre-commit on `backend/app/` and in CI. Frontend: ESLint (`eslint.config.js`) and Prettier (`.prettierrc`) are configured but not gated - lint the files you touch, match each file's existing style, never mass-reformat.
 
 ## Pre-commit hooks
 `make install-hooks` installs the git hooks including the commit-msg stage (no AI co-author) and the pre-push hook that runs pre-commit on tag pushes. Cloud sessions get them from the session-start hook.

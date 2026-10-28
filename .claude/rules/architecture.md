@@ -32,7 +32,7 @@ UI -> API client -> router -> service -> repository -> SQLite. One direction.
 Services raise `BibliogonError` subclasses, routers catch nothing, the global handler maps to HTTP status. Plugins raise `PluginError`, external tools `ExternalServiceError`.
 
 ## Plugin package versions
-Lock-step in practice: `make sync-versions` sets every plugin to the app version (see release-workflow.md). Never hand-edit a plugin version.
+Package version (`plugins/*/pyproject.toml`): lock-step, set by `make sync-versions`, never hand-edited. The `version` class attribute in `plugin.py`: independent, raised only when the plugin itself changes for its consumers.
 
 ## Plugin settings visibility
 Every plugin setting is editable in the UI or marked `# INTERNAL`. No hidden or dead settings. Per-book values are Book columns, not plugin YAML.
