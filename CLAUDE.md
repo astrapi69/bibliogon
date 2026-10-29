@@ -12,7 +12,7 @@ Open-source book authoring platform. Built on PluginForge (PyPI), a reusable plu
 
 Detailed rules live in `.claude/rules/`; on a conflict with this file, the rules win.
 
-- Always: `architecture.md`, `coding-standards.md`, `ci-only-heavy-tests.md` (full suites, Playwright and builds run on GitHub Actions)
+- Always: `architecture.md`, `coding-standards.md`, `ci-only-heavy-tests.md` (full suites, Playwright and builds run on GitHub Actions), `official-interfaces.md` (third-party services only via official, documented means - no scraping, no session reuse)
 - Task-specific (every file here is still loaded each session, so keep them short): `code-hygiene.md`, `lessons-learned.md` (index of known pitfalls; entries in docs/development/lessons-learned/), `quality-checks.md`, `ai-workflow.md`, `release-workflow.md` ("release new version"), `dev-db-isolation.md` (agents use their own DB copy), `tdd.md`, `i18n-removal.md`, `library-first.md`
 
 Hooks (`.claude/settings.json`): cloud sessions get dependencies and a human git identity at start; `git add -A`/`.` and `git commit -a` are refused.
