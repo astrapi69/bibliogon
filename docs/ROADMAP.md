@@ -565,6 +565,13 @@ Items waiting on external triggers. Re-audit monthly via
 `make check-blockers`. Do not attempt to advance these without an
 unblock signal.
 
+- **KDP-ADS-API-01** (#1151): fetch ad spend through the official Amazon
+  Ads API. Blocked on Aster's API access application; the step-by-step
+  plan is `docs/plans/amazon-ads-api-zugang.md`. Until then the manual
+  advertised-product report import (#1129) is the path.
+- **KDP-DE-REPORT-HEADERS-01** (#1153): German column contracts for the
+  royalty and KENP reports. Blocked on real downloads from Aster.
+
 - ~~**DEP-02**: TipTap 2 → 3 migration~~ — **RESOLVED, shipped in
   v0.49.0**: the editor moved to TipTap v3 via the listed alternative
   unblock path (the `prosemirror-search` adapter), without waiting on
