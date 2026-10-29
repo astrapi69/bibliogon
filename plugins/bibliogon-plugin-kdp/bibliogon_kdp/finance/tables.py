@@ -53,10 +53,7 @@ def read_table(raw: bytes, contract: ColumnContract, sheet: str | None = None) -
         TableError: For an unreadable file, an ambiguous or unknown
             sheet, a header outside the contract or a malformed row.
     """
-    if raw.startswith(_ZIP_MAGIC):
-        grid, sheet_name = _xlsx_grid(raw, sheet)
-    else:
-        grid, sheet_name = _csv_grid(raw), None
+    grid, sheet_name = read_grid(raw, sheet)
     if not any(_filled(row) for row in grid):
         raise TableError(["report has no data rows"])
     index = _header_index(grid, contract)
@@ -66,6 +63,21 @@ def read_table(raw: bytes, contract: ColumnContract, sheet: str | None = None) -
     if not rows:
         raise TableError(["report has no data rows"])
     return TableRows(rows=rows, header_row=index + 1, sheet=sheet_name)
+
+
+def read_grid(raw: bytes, sheet: str | None = None) -> tuple[list[list[Cell]], str | None]:
+    """The raw cell grid of a CSV or XLSX download, plus the sheet name.
+
+    For reports whose layout a flat header contract cannot describe (the
+    hierarchical payments report, #1147); everything else goes through
+    :func:`read_table`.
+
+    Raises:
+        TableError: For an unreadable file or an ambiguous or unknown sheet.
+    """
+    if raw.startswith(_ZIP_MAGIC):
+        return _xlsx_grid(raw, sheet)
+    return _csv_grid(raw), None
 
 
 def _csv_grid(raw: bytes) -> list[list[Cell]]:

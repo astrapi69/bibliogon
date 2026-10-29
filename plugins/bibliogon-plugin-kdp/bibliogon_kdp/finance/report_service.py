@@ -13,6 +13,7 @@ from app.models import (
     FinanceAdLine,
     FinanceFxRate,
     FinanceKenpRate,
+    FinancePayment,
     FinanceRevenueLine,
     FinanceTitleCost,
 )
@@ -25,6 +26,7 @@ from bibliogon_kdp.finance.evaluation import (
     KenpRate,
     RevenueLine,
     TitleInfo,
+    WithholdingLine,
     evaluate,
 )
 from bibliogon_kdp.finance.money import parse_month
@@ -93,6 +95,15 @@ def _cost_lines(costs: list[FinanceTitleCost], period: tuple) -> list[CostLine]:
     return lines
 
 
+def _withholding(db: Session, period: tuple) -> list[WithholdingLine]:
+    """Withheld tax per payout; payouts without any are left out."""
+    return [
+        WithholdingLine(p.sales_month, p.marketplace, p.tax, p.currency)
+        for p in db.query(FinancePayment).all()
+        if p.tax and _in_period(p.sales_month, *period)
+    ]
+
+
 def _titles(db: Session) -> dict[str, TitleInfo]:
     return {
         book.id: TitleInfo(title=book.title, language=book.language, pen_name=book.author)
@@ -144,6 +155,7 @@ def build_report(
         },
         base_currency=base,
         today=today or date.today(),
+        withholding=_withholding(db, period),
     )
     try:
         result = evaluate(inp, group_by)
@@ -166,6 +178,7 @@ def _serialize_group(group: Group, titles: dict[str, TitleInfo]) -> dict:
         "kenp_royalty": _money(group.kenp_royalty),
         "ad_spend": _money(group.ad_spend),
         "direct_costs": _money(group.direct_costs),
+        "tax_withheld": _money(group.tax_withheld),
         "contribution_margin": _money(group.contribution_margin),
         "margin_label": group.margin_label,
         "units_sold": group.units_sold,
