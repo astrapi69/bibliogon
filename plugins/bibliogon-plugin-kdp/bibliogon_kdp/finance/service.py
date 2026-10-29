@@ -131,7 +131,7 @@ def _ad_row(record: AdSpendRecord) -> dict:
     return {name: getattr(record, name) for name in _AD_FIELDS}
 
 
-def _canonical(value: object) -> str:
+def canonical_value(value: object) -> str:
     """``33``, ``33.0`` and ``33.00`` are one amount, whichever file it came from."""
     if isinstance(value, Decimal):
         return format(value.normalize(), "f")
@@ -139,7 +139,7 @@ def _canonical(value: object) -> str:
 
 
 def _signature(rows: Iterable[dict], fields: tuple[str, ...]) -> list[tuple]:
-    return sorted(tuple(_canonical(row[name]) for name in fields) for row in rows)
+    return sorted(tuple(canonical_value(row[name]) for name in fields) for row in rows)
 
 
 def _stored(model: type, query_rows: Iterable, fields: tuple[str, ...]) -> list[dict]:

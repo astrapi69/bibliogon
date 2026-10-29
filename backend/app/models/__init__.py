@@ -1829,3 +1829,50 @@ class FinanceTitleCost(Base):
     category: Mapped[str] = mapped_column(String(50), nullable=False, default="other")
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class FinancePayment(Base):
+    """One KDP payout for one marketplace and sales month (#1147).
+
+    From the payments report. Its ``fx_rate`` is the rate Amazon actually
+    applied (``payout_amount == net * fx_rate``); ``tax`` is the withheld
+    tax. The import replaces a payment by its number, so a newer download
+    of the same payment wins.
+    """
+
+    __tablename__ = "finance_payments"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    import_id: Mapped[str | None] = mapped_column(
+        ForeignKey("finance_imports.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    payment_no: Mapped[str] = mapped_column(String(40), nullable=False, unique=True)
+    marketplace: Mapped[str] = mapped_column(String(50), nullable=False)
+    sales_month: Mapped[str] = mapped_column(String(7), nullable=False, index=True)
+    payment_date: Mapped[str] = mapped_column(String(10), nullable=False)
+    method: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    currency: Mapped[str] = mapped_column(String(3), nullable=False)
+    accrued: Mapped[Decimal] = mapped_column(DecimalText(), nullable=False)
+    tax: Mapped[Decimal] = mapped_column(DecimalText(), nullable=False)
+    net: Mapped[Decimal] = mapped_column(DecimalText(), nullable=False)
+    fx_rate: Mapped[Decimal | None] = mapped_column(DecimalText(), nullable=True)
+    payout_currency: Mapped[str] = mapped_column(String(3), nullable=False)
+    payout_amount: Mapped[Decimal] = mapped_column(DecimalText(), nullable=False)
+    status: Mapped[str | None] = mapped_column(String(30), nullable=True)
+
+
+class FinancePaymentLine(Base):
+    """One source (eBook, paperback, Kindle Unlimited) of a payment (#1147)."""
+
+    __tablename__ = "finance_payment_lines"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    payment_id: Mapped[str] = mapped_column(
+        ForeignKey("finance_payments.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    sales_month: Mapped[str] = mapped_column(String(7), nullable=False)
+    source: Mapped[str] = mapped_column(String(100), nullable=False)
+    currency: Mapped[str] = mapped_column(String(3), nullable=False)
+    accrued: Mapped[Decimal] = mapped_column(DecimalText(), nullable=False)
+    tax: Mapped[Decimal] = mapped_column(DecimalText(), nullable=False)
+    net: Mapped[Decimal] = mapped_column(DecimalText(), nullable=False)

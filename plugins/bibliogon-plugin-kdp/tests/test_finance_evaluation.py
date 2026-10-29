@@ -258,3 +258,34 @@ class TestProvisionalAndNotes:
     def test_no_ad_spend_no_attribution_hint(self) -> None:
         result = evaluate(_input(revenue=[_royalty("2026-01", "1.00")]), ("title",))
         assert "ads_attribution_window" not in result.notes
+
+
+class TestWithholding:
+    def test_withheld_tax_reduces_the_margin_of_its_month(self) -> None:
+        from bibliogon_kdp.finance.evaluation import WithholdingLine
+
+        result = evaluate(
+            _input(
+                revenue=[_royalty("2026-01", "33.00")],
+                withholding=[WithholdingLine("2026-01", "Amazon.de", Decimal("3.30"), "EUR")],
+                costed_book_ids={"b1"},
+            ),
+            ("month",),
+        )
+        group = _only(result, month="2026-01")
+        assert group.tax_withheld == Decimal("3.30")
+        assert group.contribution_margin == Decimal("29.70")
+
+    def test_withheld_tax_is_not_spread_over_titles(self) -> None:
+        from bibliogon_kdp.finance.evaluation import WithholdingLine
+
+        result = evaluate(
+            _input(
+                revenue=[_royalty("2026-01", "33.00")],
+                withholding=[WithholdingLine("2026-01", "Amazon.com", Decimal("2"), "USD")],
+                fx={("2026-01", "USD"): Decimal("0.9")},
+            ),
+            ("title",),
+        )
+        assert _only(result, title="b1").tax_withheld == Decimal("0")
+        assert _only(result, title="not_attributable").tax_withheld == Decimal("1.8")

@@ -17,11 +17,11 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from bibliogon_kdp.finance import archive, report_service, service
+from bibliogon_kdp.finance import archive, payment_service, report_service, service
 
 router = APIRouter(prefix="/finance", tags=["kdp-finance"])
 
-ReportKind = Literal["kdp_royalty", "kdp_kenp", "amazon_ads"]
+ReportKind = Literal["kdp_royalty", "kdp_kenp", "amazon_ads", "kdp_payments"]
 BookFormat = Literal["ebook", "paperback", "hardcover"]
 MONTH = r"^\d{4}-(0[1-9]|1[0-2])$"
 CURRENCY = r"^[A-Za-z]{3}$"
@@ -37,6 +37,10 @@ class FxRateIn(BaseModel):
     base_currency: str = Field(pattern=CURRENCY)
     source: str | None = Field(default=None, max_length=200)
     replace: bool = False
+
+
+class FxFromPaymentsIn(BaseModel):
+    base_currency: str = Field(default="EUR", pattern=CURRENCY)
 
 
 class CostIn(BaseModel):
@@ -70,8 +74,16 @@ async def import_report(
     dry_run: bool = Form(default=False),
     db: Session = Depends(get_db),
 ) -> dict:
-    """Import one downloaded report (CSV or XLSX); see ``service.import_report``."""
+    """Import one downloaded report (CSV or XLSX).
+
+    ``kdp_payments`` goes to ``payment_service.import_payments``; every
+    other kind to ``service.import_report``.
+    """
     raw = await file.read()
+    if kind == "kdp_payments":
+        return payment_service.import_payments(
+            db, raw=raw, filename=file.filename, sheet=sheet, dry_run=dry_run
+        )
     return service.import_report(
         db,
         kind=kind,
@@ -141,6 +153,12 @@ def put_fx_rate(
         "rate": str(row.rate),
         "source": row.source,
     }
+
+
+@router.post("/fx-rates/from-payments")
+def fx_rates_from_payments(payload: FxFromPaymentsIn, db: Session = Depends(get_db)) -> dict:
+    """Amazon's applied rates from imported payments become monthly rates."""
+    return payment_service.apply_payment_fx_rates(db, payload.base_currency)
 
 
 @router.post("/costs", status_code=201)

@@ -5,6 +5,13 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 ## [Unreleased]
 
 ### Added
+- **KDP payments report import (#1147).** The German "Zahlungen" download
+  imports as `kdp_payments`. Every payout carries the exchange rate
+  Amazon actually applied, and `POST /api/kdp/finance/fx-rates/from-payments`
+  turns those into the monthly rates; a stored rate that differs is
+  reported, never overwritten. Withheld tax shows up as `tax_withheld`
+  and reduces the contribution margin. Each payment is checked against
+  its detail rows and its payout, and a mismatch fails the import.
 - **KDP and Ads reports import as XLSX (#1132).** No more saving each sheet
   as CSV first. `python-calamine` (`^0.8.3`, read-only) reads the
   workbook; a multi-sheet file needs the sheet named and otherwise lists

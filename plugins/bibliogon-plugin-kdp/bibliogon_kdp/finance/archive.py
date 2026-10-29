@@ -24,6 +24,8 @@ from app.models import (
     FinanceFxRate,
     FinanceImport,
     FinanceKenpRate,
+    FinancePayment,
+    FinancePaymentLine,
     FinanceRevenueLine,
     FinanceTitleCost,
 )
@@ -36,6 +38,8 @@ TABLES: tuple[tuple[str, type], ...] = (
     ("imports", FinanceImport),
     ("revenue_lines", FinanceRevenueLine),
     ("ad_lines", FinanceAdLine),
+    ("payments", FinancePayment),
+    ("payment_lines", FinancePaymentLine),
     ("kenp_rates", FinanceKenpRate),
     ("fx_rates", FinanceFxRate),
     ("title_costs", FinanceTitleCost),

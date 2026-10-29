@@ -33,9 +33,14 @@ at it.
 
 - One **base currency** per evaluation (query parameter, default `EUR`).
 - The rate is the **monthly rate** per (month, currency, base currency),
-  stored in `finance_fx_rates` (proposal: the monthly average. The
-  alternative is the payout rate, and the table accepts either. Its
-  `source` field records which one was used).
+  stored in `finance_fx_rates`; its `source` field records where it came
+  from.
+- **Preferred source: the rate Amazon actually applied** (#1147). Import
+  the payments report, then call `POST /api/kdp/finance/fx-rates/from-payments`.
+  Each non-EUR payout covers one marketplace and one sales month and
+  carries its rate (`payout = net x rate`), so it becomes that month's
+  rate with source `KDP payment <no>`. Months without a foreign-currency
+  payout need a rate entered by hand (`PUT .../fx-rates/{month}/{currency}`).
 - Rates are **write-once**: overwriting a stored rate with a different
   value returns 409 unless `replace: true` is sent explicitly. That is
   what makes an old evaluation reproducible.
@@ -103,6 +108,37 @@ they are. When ad spend is present the response carries the note
 | `kdp_royalty` | `book_format` (ebook/paperback/hardcover) | one KDP sheet per format; the eBook sheet has no format column |
 | `kdp_kenp` | none | pages only, the rate comes from `finance_kenp_rates` |
 | `amazon_ads` | `marketplace` | the advertised-product report; an Ads account belongs to one marketplace. A summary row spanning two months fails, because spend cannot be assigned to one of them |
+| `kdp_payments` | `sheet` (optional) | the payments report ("Zahlungen"); see below |
+
+### Payments report (#1147)
+
+Verified against a real German-language download. It holds no per-title
+data; it carries what the royalty reports lack - Amazon's applied
+exchange rate and the withheld tax.
+
+- **Layout:** one payment row per marketplace payout and sales month,
+  followed by its detail rows (one per source: `Verkäufe`,
+  `Taschenbuchverkäufe`, `Kindle+ Tantiemen`). `Währung` appears twice
+  (marketplace currency, payout currency), so columns are read by
+  position against the exact German header sequence. Another header
+  (including an English download) fails loudly until its sequence is
+  added from a real sample.
+- **Checked per payment**, a deviation fails the import: the detail rows
+  sum to the payment (accrued, tax, net); net = accrued - tax; detail
+  rows share the payment's month and currency; a foreign-currency payout
+  carries a rate and equals net x rate (within 0.02); a same-currency
+  payout equals net and has no rate.
+- **Stored** in `finance_payments` and `finance_payment_lines`; a newer
+  download replaces a payment by its number, the same content twice
+  writes nothing.
+- **Used** for the exchange rates (above) and for `tax_withheld` in the
+  evaluation: withheld tax carries only marketplace and month, lands in
+  the `not_attributable` group for every other dimension, and reduces
+  the contribution margin of the group it is in.
+
+The royalty and KENP contracts still list the English headers; German
+downloads of those reports need their real header rows before they can
+be imported.
 
 Accepted input is **XLSX** (read with `python-calamine`, #1132) or **CSV**
 (comma, semicolon or tab, UTF-8 with or without a BOM). The format is
@@ -165,6 +201,7 @@ older one, plus the provisional window above.
 | GET | `/api/kdp/finance/imports` | import log |
 | PUT | `/api/kdp/finance/kenp-rates/{month}/{marketplace}` | `{rate, currency}` |
 | PUT | `/api/kdp/finance/fx-rates/{month}/{currency}` | `{rate, base_currency, source, replace}` |
+| POST | `/api/kdp/finance/fx-rates/from-payments` | `{base_currency}`: Amazon's applied rates from imported payments; returns `written`, `unchanged`, `conflicts` (a differing stored rate is never overwritten) |
 | POST, GET, DELETE | `/api/kdp/finance/costs` | direct title costs |
 | GET | `/api/kdp/finance/report` | `group_by` (title, language, pen_name, format, marketplace, month, channel; comma-separated), `from_month`, `to_month`, `base_currency` |
 | GET, POST | `/api/kdp/finance/export`, `/restore` | explicit export and restore |

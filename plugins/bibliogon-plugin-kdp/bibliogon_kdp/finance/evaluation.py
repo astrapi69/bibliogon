@@ -13,6 +13,7 @@ Three rules carry the design:
   every title in a group has direct costs recorded. Otherwise it stays
   ``None`` and ``margin_label`` says ``net_revenue``.
 * **No spreading.** A cost only lands in the dimensions it carries.
+  Withheld tax (#1147) carries only marketplace and month.
   Direct costs have no format and no marketplace, so grouping by either
   puts them in a ``not_attributable`` group instead of dividing them up
   by a key nobody chose.
@@ -86,6 +87,16 @@ class CostLine:
 
 
 @dataclass
+class WithholdingLine:
+    """Tax Amazon withheld from one marketplace payout (#1147)."""
+
+    month: str
+    marketplace: str
+    amount: Decimal
+    currency: str
+
+
+@dataclass
 class KenpRate:
     rate: Decimal
     currency: str
@@ -109,6 +120,7 @@ class EvaluationInput:
     fx: dict[tuple[str, str], Decimal]
     base_currency: str
     today: date
+    withholding: list[WithholdingLine] = field(default_factory=list)
 
 
 @dataclass
@@ -118,6 +130,7 @@ class Group:
     kenp_royalty: Decimal = ZERO
     ad_spend: Decimal = ZERO
     direct_costs: Decimal = ZERO
+    tax_withheld: Decimal = ZERO
     units_sold: int = 0
     units_refunded: int = 0
     net_units: int = 0
@@ -278,10 +291,28 @@ def _add_cost(ev: _Evaluator, line: CostLine) -> None:
         group.direct_costs += converted
 
 
+def _add_withholding(ev: _Evaluator, line: WithholdingLine) -> None:
+    values = {
+        "title": NOT_ATTRIBUTABLE,
+        "language": NOT_ATTRIBUTABLE,
+        "pen_name": NOT_ATTRIBUTABLE,
+        "format": NOT_ATTRIBUTABLE,
+        "marketplace": line.marketplace,
+        "month": line.month,
+        "channel": "kdp",
+    }
+    group = ev.group_for(values)
+    converted = ev.to_base(group, line.amount, line.currency, line.month)
+    if converted is not None:
+        group.tax_withheld += converted
+
+
 def _finish(group: Group, costed: set[str]) -> None:
     covered = group.book_ids and not group.has_unassigned and group.book_ids <= costed
     if covered:
-        group.contribution_margin = group.net_revenue - group.ad_spend - group.direct_costs
+        group.contribution_margin = (
+            group.net_revenue - group.ad_spend - group.direct_costs - group.tax_withheld
+        )
         group.margin_label = "contribution_margin"
     group.fx_rates_used.sort()
 
@@ -302,6 +333,8 @@ def evaluate(inp: EvaluationInput, group_by: tuple[str, ...]) -> EvaluationResul
         _add_ad(ev, ad_line)
     for cost_line in inp.costs:
         _add_cost(ev, cost_line)
+    for withholding_line in inp.withholding:
+        _add_withholding(ev, withholding_line)
     groups = [ev.groups[key] for key in sorted(ev.groups)]
     for group in groups:
         _finish(group, inp.costed_book_ids)
