@@ -1,6 +1,6 @@
 # Board: Status und offene Aufgaben außerhalb des Codes
 
-**Stand: 2026-10-29** · Version auf `develop`: siehe `CLAUDE.md` · CI-Stand:
+**Stand: 2026-11-01** · Version auf `develop`: siehe `CLAUDE.md` · CI-Stand:
 `gh run list --branch develop --limit 3`
 
 Dieses Board ergänzt `docs/ROADMAP.md` und `docs/backlog.md`, es ersetzt sie
@@ -20,6 +20,9 @@ fliegen raus - die Geschichte steht in den Issues und im CHANGELOG.
 - [ ] **KDP-Berichte herunterladen und an Claude geben:** Royalty-Bericht
       (Verkäufe pro Titel) und KENP-Bericht, möglichst den ganzen verfügbaren
       Zeitraum. KDP hält Monatsberichte nur begrenzt vor. · Issue #1153
+- [ ] **Fragen zu Buchplattformen beantworten** (Leanpub, VLB, PublishDrive,
+      Gumroad, und welche Titel in KDP Select sind) - Abschnitt „Fragen an
+      dich“ in `docs/explorations/buchplattformen-apis.md` · #1155, #1157
 - [ ] **Einmalig lokal vor dem nächsten Pull von `develop`:** eine eigene
       `.claude/settings.json` in `.claude/settings.local.json` umbenennen, falls
       vorhanden (sonst verweigert git den Pull). · #1137
@@ -41,6 +44,8 @@ fliegen raus - die Geschichte steht in den Issues und im CHANGELOG.
 
 ## Zuletzt erledigt
 
+- [x] 2026-11-01 · Übersicht Buchplattformen und APIs · #1156
+- [x] 2026-10-29 · Board und Antragsplan Amazon Ads API · #1154
 - [x] 2026-10-29 · Regel: nur offizielle Schnittstellen · #1150
 - [x] 2026-10-29 · KDP-Zahlungsbericht importieren, Amazon-Wechselkurse übernehmen · #1148
 - [x] 2026-10-28 · Widersprüche in den Regel-Volltexten korrigiert · #1146

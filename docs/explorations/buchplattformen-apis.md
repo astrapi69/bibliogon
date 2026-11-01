@@ -1,6 +1,6 @@
 # Buchplattformen: Wer hat eine offizielle API, und was ist schnell integrierbar?
 
-Stand: 2026-11-01 · Issue #1155 · baut auf Epic #917 (Stand 2026-09-30) auf ·
+Stand: 2026-11-01 · Issues #1155, #1157 · baut auf Epic #917 (Stand 2026-09-30) auf ·
 Regel: `.claude/rules/official-interfaces.md` (nur offizielle, dokumentierte Wege)
 
 Dieses Dokument ist zum Bearbeiten gedacht. Ergänze unter „Notizen“, was du bei
@@ -83,6 +83,41 @@ fallen unter die Regel und sind tabu.
 Nutzen: Metadaten eines bereits erschienenen Buches beim Anlegen vorbefüllen.
 Open-Library-Details stammen aus Drittquellen (ungeprüft).
 
+## KDP Select: Exklusivität beachten
+
+Wichtig, bevor ein E-Book irgendwo außerhalb von Amazon erscheint. Stand der
+Recherche 2026-11-01, **aus Sekundärquellen** - der offizielle Text der
+KDP-Select-Bedingungen war aus der Claude-Sitzung nicht abrufbar. Vor einer
+Entscheidung den aktuellen Text im KDP-Dashboard lesen. Das hier ist keine
+Rechtsberatung.
+
+| Punkt | Stand |
+|---|---|
+| **Laufzeit** | 90 Tage pro Anmeldung, **verlängert sich automatisch**, wenn die automatische Verlängerung nicht rechtzeitig abgeschaltet wird (Bücherregal > KDP Select). |
+| **Was exklusiv ist** | Nur die **digitale Ausgabe**. Taschenbuch, Hardcover und Hörbuch dürfen überall verkauft werden. |
+| **„Im Wesentlichen ähnlich“** | Die Exklusivität gilt für das Buch **oder ein im Wesentlichen ähnliches Buch** in digitaler Form. Eine leicht umgeschriebene Fassung fällt genau darunter. |
+| **Leseproben** | Bis etwa 10 % des Buches dürfen als Leseprobe anderswo stehen (vielfach berichtet, genaue Formulierung ungeprüft). |
+| **Eigene Website, Gratis-Exemplare** | Quellen widersprechen sich; im Zweifel als „digital anderswo verfügbar“ behandeln. |
+
+**Umschreiben, um die Exklusivität zu umgehen, ist kein Ausweg.** Die Klausel
+ist genau für diesen Fall geschrieben, und es wäre eine Umgehung - die schließt
+`.claude/rules/official-interfaces.md` aus („wir machen uns nicht angreifbar“).
+
+**Die legalen Wege:**
+
+1. **Titel aus KDP Select herausnehmen:** automatische Verlängerung abschalten,
+   das Ende der laufenden 90 Tage abwarten, danach das E-Book überall
+   veröffentlichen. Der Titel bleibt bei Amazon im normalen KDP-Programm.
+2. **Pro Titel entscheiden:** manche Titel in Select (Kindle Unlimited, KENP),
+   andere breit. Eine Mischung ist erlaubt, nur nicht für dasselbe E-Book.
+3. **Print und Hörbuch breit, E-Book in Select:** jederzeit erlaubt.
+4. **Ein wirklich neues Werk** ist ein neues Buch - aber nicht als Trick: Wer
+   ein Buch nur umformuliert, hat dasselbe Buch.
+
+**In Bibliogon:** Issue #1157 hält den Select-Status pro Buch fest und sperrt
+jede künftige Integration, die ein E-Book außerhalb von Amazon veröffentlicht,
+solange der Titel eingeschrieben ist - mit Enddatum und Erinnerung.
+
 ## Empfehlung: Reihenfolge
 
 1. **Leanpub** (S-M) - nur, wenn du Leanpub nutzen willst. Schnellster echter
@@ -100,6 +135,9 @@ Für Artikel-Plattformen (WordPress, Ghost, dev.to, Hashnode, Mastodon, Bluesky)
 gilt die Bewertung in #917 weiter: dort sind APIs der Normalfall.
 
 ## Fragen an dich
+
+- [ ] Welche deiner Titel sind aktuell in KDP Select? (Für #1157 und für die
+      Entscheidung, welche Titel überhaupt breit gehen können.)
 
 - [ ] Nutzt du Leanpub oder willst du es nutzen? (Sonst fällt Platz 1 weg.)
 - [ ] Willst du einen ISBN-Verlag in Deutschland (VLB) - jetzt oder später?
@@ -136,3 +174,9 @@ Geprüft heißt: offizielle Doku oder Hilfeseite des Anbieters in den Ergebnisse
 - Kobo Writing Life: https://help.kobo.com/hc/zh-tw/articles/360017771754
 - Google Books API: https://developers.google.com/books/docs/v1/using
 - Epic #917 (Quellen dort, u. a. KDP-Community zur fehlenden KDP-API)
+- KDP Select (Sekundärquellen): https://justpublishingadvice.com/amazon-kdp-select-exclusivity-yes-or-no/ ·
+  https://scribecount.com/author-resource/publishing-a-book/kdp-select-the-complete-operational-guide ·
+  https://kdpcommunity.com/s/question/0D58V00008HrjrGSAR/how-many-words-can-be-shared-free-as-an-excerpt-when-enrolled-in-kuselect?language=en_US ·
+  https://www.kboards.com/threads/a-question-about-what-constitutes-exclusivity-on-kdp-select.117233/ ·
+  https://justpublishingadvice.com/amazon-changes-its-kdp-select-terms-without-notice/ ·
+  https://blog.bookuploadpro.com/kdp-select-term-length/
