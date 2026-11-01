@@ -31,6 +31,7 @@ The **Done / Open** column reflects how many of a doc's concrete tasks/phases ar
 
 | Doc | Done / Open | Status | Trigger to act |
 |---|---|---|---|
+| [buchplattformen-apis.md](buchplattformen-apis.md) | 0 / 6 | **Offen** - book platforms by official API (2026-11-01, builds on #917): self-serve APIs Leanpub, Lulu (#922), Gumroad; PublishDrive (one API, many stores, to confirm); ONIX export as neutral lever; KDP/Ingram/D2D/Kobo/B&N/tolino stay manual. | Aster's answers to the four questions in the doc. |
 | [preview-deployment.md](preview-deployment.md) | decided / shipped | **Erledigt** — `deploy-preview.yml` ships the offline PWA to the separate `bibliogon-preview` repo (GH Pages) from `develop`; production `deploy-pages.yml` unchanged. First deploy gated on a manual Deploy-Key + Pages setup by the maintainer (#639). | None; awaiting the one-time key/Pages setup. |
 | [children-book-plugin.md](children-book-plugin.md) | ~6.5 / 0.5 | **Erledigt** — shipped as `plugin-kinderbuch` (Sessions 2-6: page editor, layouts, PDF/EPUB3, page-count warn). Residual: onboarding/help polish (Session 7). | Onboarding/help polish only. |
 | [exploration-features-2026-05-15.md](exploration-features-2026-05-15.md) | ~7 / 3 | **Teilweise** — #1/#3/#4/#8/#9 shipped, #6 KDP-wizard partial, #2/#5/#10 partial, #7 multi-lang open. | Per-feature triggers (see doc). |
