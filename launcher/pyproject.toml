@@ -21,7 +21,7 @@ docker-app-launcher = "^0.28.0"
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0.0"
 pyinstaller = "^6.11.0"
-pillow = "^12.2.0"  # Used only by the icon-generation script; bumped from 11.x for CVE-2026-{25990,40192,42308,42309,42310,42311}
+pillow = ">=12.2,<14.0"  # Used only by the icon-generation script; bumped from 11.x for CVE-2026-{25990,40192,42308,42309,42310,42311}
 # In the lock, not installed ad-hoc in CI: pip-audit scans the environment
 # it runs in, so the audited environment has to equal the lockfile BY
 # CONSTRUCTION - the same reason the backend job uses `poetry sync` (#952).
