@@ -12,7 +12,7 @@ python = "^3.11"
 pluginforge = "^0.10.0"
 fastapi = "^0.136.0"
 pyyaml = "^6.0"
-pillow = "^12.0.0"
+pillow = ">=12,<14"
 python-calamine = "^0.8.3"
 
 [tool.poetry.group.dev.dependencies]
