@@ -1914,6 +1914,8 @@
       "ai_cost_hint": "一般的なプロバイダー料金に基づく推定コスト",
       "html_field_show_preview": "プレビューを表示",
       "html_field_show_source": "HTMLを表示",
+      "kdp_rejected_tags": "KDP はこれらのタグを含む説明を受け付けません: {tags}",
+      "kdp_fix_tags": "KDP 用に変換",
       "title": "タイトル",
       "author": "著者",
       "author_placeholder": "著者名またはペンネーム",

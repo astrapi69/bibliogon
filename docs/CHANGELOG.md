@@ -165,6 +165,12 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
   switches the check on and sees the request.
 
 ### Fixed
+- **KDP no longer rejects the book description over `strong` or `h2` (#1119).**
+  The preview let `strong` through and the AI prompts asked for `h2`,
+  both tags KDP refuses. The preview now shows what KDP accepts (`strong`
+  as `b`, `h1`-`h3` as `h4`), the field names any tag KDP would reject
+  and offers **Convert for KDP**, and the prompts name only accepted
+  tags.
 - **The documentation site loads nothing from a third party (#1122).**
   Every page of `astrapi69.github.io/bibliogondocs` loaded Roboto from
   Google Fonts, Material for MkDocs' default while `mkdocs.yml` set no

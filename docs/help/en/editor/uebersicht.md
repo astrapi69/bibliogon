@@ -24,6 +24,8 @@ In **Metadata > Marketing** you maintain keywords for the book. These land in th
 
 Three marketing fields accept HTML and have a preview toggle: **Book description (HTML for Amazon)**, **Back cover description**, and **Author bio (back cover)**. The editable textarea is the default state. The preview button at the top-right of the field switches between edit mode and a rendered HTML preview, so you can see how your text will look with paragraphs, lists, bold passages, and similar elements without starting an export. The preview renders safely: dangerous HTML (e.g. scripts) is stripped before display.
 
+KDP accepts only these tags in the book description: `b`, `i`, `em`, `u`, `p`, `br`, `ul`, `ol`, `li`, `h4`, `h5`, `h6`. A description with any other tag is rejected as a whole when you paste it. The preview therefore shows what KDP accepts: `strong` appears as `b`, `h1` to `h3` as `h4`. When the HTML contains a tag KDP rejects, the field names it; **Convert for KDP** rewrites the text into the accepted form. KDP's 4,000-character limit counts the tags, and so does the counter under the field.
+
 ![Marketing tab HTML preview toggle](../../assets/screenshots/editor-marketing-preview.png)
 
 ## Right-click menu

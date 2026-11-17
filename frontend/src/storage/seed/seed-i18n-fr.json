@@ -1956,6 +1956,8 @@
       "ai_cost_hint": "Cout estime base sur les tarifs typiques des fournisseurs",
       "html_field_show_preview": "Afficher l'apercu",
       "html_field_show_source": "Afficher le HTML",
+      "kdp_rejected_tags": "KDP refuse la description avec ces balises : {tags}",
+      "kdp_fix_tags": "Convertir pour KDP",
       "title": "Titre",
       "author": "Auteur",
       "author_placeholder": "Nom de l'auteur ou pseudonyme",

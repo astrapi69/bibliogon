@@ -83,7 +83,7 @@ function buildMarketingCopyMessages(book: BookPromptInput, body: string): AiChat
 
 Generate marketing copy for this book. Output exactly this JSON shape:
 
-{"backpage_description": "<100-200 words, back-cover blurb. Hook -> conflict -> stakes. No spoilers.>", "backpage_author_bio": "<50-100 words, third person. Credentials + personal note. null if the author is unknown.>", "html_description": "<200-300 word Amazon-style HTML description. Allowed tags: b, i, br, p, h2, ul, li. Hook in the first paragraph; benefits as a list; soft call-to-action at the end.>"}`,
+{"backpage_description": "<100-200 words, back-cover blurb. Hook -> conflict -> stakes. No spoilers.>", "backpage_author_bio": "<50-100 words, third person. Credentials + personal note. null if the author is unknown.>", "html_description": "<200-300 word Amazon-style HTML description. Allowed tags: b, i, br, p, h4, ul, li. Hook in the first paragraph; benefits as a list; soft call-to-action at the end.>"}`,
   );
 }
 

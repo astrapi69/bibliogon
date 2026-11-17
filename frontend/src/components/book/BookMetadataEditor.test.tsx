@@ -618,14 +618,17 @@ import { sanitizeAmazonHtml } from "./BookMetadataEditor";
 
 describe("sanitizeAmazonHtml", () => {
     it("preserves allowed Amazon tags", () => {
-        const html =
-            "<b>bold</b> <i>italic</i> <em>em</em> <strong>strong</strong> <u>underline</u>";
+        const html = "<b>bold</b> <i>italic</i> <em>em</em> <u>underline</u>";
         const result = sanitizeAmazonHtml(html);
         expect(result).toContain("<b>bold</b>");
         expect(result).toContain("<i>italic</i>");
         expect(result).toContain("<em>em</em>");
-        expect(result).toContain("<strong>strong</strong>");
         expect(result).toContain("<u>underline</u>");
+    });
+
+    it("turns strong into b: KDP rejects a description containing strong (#1119)", () => {
+        const result = sanitizeAmazonHtml("<strong>strong</strong>");
+        expect(result).toBe("<b>strong</b>");
     });
 
     it("preserves list tags", () => {

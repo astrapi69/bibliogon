@@ -1867,6 +1867,8 @@ ui:
     ai_cost_hint: "Estimated cost based on typical provider pricing"
     html_field_show_preview: "Show preview"
     html_field_show_source: "Show HTML"
+    kdp_rejected_tags: "KDP rejects the description with these tags: {tags}"
+    kdp_fix_tags: "Convert for KDP"
     title: Title
     author: Author
     author_placeholder: "Author name or pen name"

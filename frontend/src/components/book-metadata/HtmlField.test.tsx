@@ -39,7 +39,8 @@ describe("HtmlFieldWithPreview preview shape detection", () => {
     it("formats a Markdown value instead of showing its syntax", () => {
         const preview = showPreview("Ein **fetter** Hinweis.");
 
-        expect(preview.querySelector("strong")?.textContent).toBe("fetter");
+        expect(preview.querySelector("b")?.textContent).toBe("fetter");
+        expect(preview.querySelector("strong")).toBeNull();
         expect(preview.textContent).not.toContain("**");
     });
 
@@ -82,5 +83,57 @@ describe("HtmlFieldWithPreview preview shape detection", () => {
         const preview = showPreview("");
 
         expect(preview.textContent).toBe("");
+    });
+});
+
+describe("HtmlFieldWithPreview KDP tag check (#1119)", () => {
+    function renderKdp(value: string, onChange = vi.fn(), kdpCheck = true) {
+        render(
+            <HtmlFieldWithPreview
+                label="Buch-Beschreibung"
+                value={value}
+                onChange={onChange}
+                kdpCheck={kdpCheck}
+            />,
+        );
+        return onChange;
+    }
+
+    it("previews strong and h2 the way KDP accepts them, not as KDP rejects them", () => {
+        const preview = showPreview("<h2>Neu</h2><p><strong>Jetzt</strong> lesen</p>");
+
+        expect(preview.querySelector("h4")?.textContent).toBe("Neu");
+        expect(preview.querySelector("b")?.textContent).toBe("Jetzt");
+        expect(preview.querySelector("strong, h2")).toBeNull();
+    });
+
+    it("names the tags KDP rejects", () => {
+        renderKdp("<h2>Neu</h2><p><strong>Jetzt</strong></p>");
+
+        expect(screen.getByTestId("kdp-tag-warning").textContent).toContain("h2, strong");
+    });
+
+    it("rewrites the stored value into what KDP accepts on request", () => {
+        const onChange = renderKdp("<h2>Neu</h2><p><strong>Jetzt</strong></p>");
+
+        fireEvent.click(screen.getByTestId("kdp-tag-fix"));
+
+        expect(onChange).toHaveBeenCalledWith("<h4>Neu</h4><p><b>Jetzt</b></p>");
+    });
+
+    it("stays silent for a description KDP accepts", () => {
+        renderKdp("<p><b>Jetzt</b> lesen</p>");
+
+        expect(screen.queryByTestId("kdp-tag-warning")).toBeNull();
+    });
+
+    it("stays silent for a Markdown value", () => {
+        renderKdp("Ein **Satz**.");
+        expect(screen.queryByTestId("kdp-tag-warning")).toBeNull();
+    });
+
+    it("is off unless the field asks for it", () => {
+        renderKdp("<h2>Neu</h2>", vi.fn(), false);
+        expect(screen.queryByTestId("kdp-tag-warning")).toBeNull();
     });
 });

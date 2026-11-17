@@ -1,8 +1,8 @@
 import { useState } from "react";
-import DOMPurify from "dompurify";
 import { Sparkles } from "lucide-react";
 import { useI18n } from "../../hooks/useI18n";
 import { looksLikeHtml } from "../../lib/utils/content/contentShape";
+import { kdpRejectedTags, toKdpHtml } from "../../lib/utils/kdp/kdpHtml";
 import { markdownToHtml } from "../../lib/utils/markdownToHtml";
 import styles from "../BookMetadataEditor.module.css";
 
@@ -24,26 +24,13 @@ function CharCounter({ count, max, label }: { count: number; max: number; label:
     );
 }
 
-/** Amazon KDP allows only a limited subset of HTML tags. */
-const AMAZON_ALLOWED_TAGS = [
-    "b",
-    "strong",
-    "i",
-    "em",
-    "u",
-    "ul",
-    "ol",
-    "li",
-    "h4",
-    "h5",
-    "h6",
-    "p",
-    "br",
-];
-
-/** Sanitize HTML to only Amazon-compatible tags. */
+/**
+ * Sanitize HTML to what Amazon KDP accepts in a description (#1119):
+ * `strong` and `h1`-`h3` become their accepted equivalents, every other
+ * unsupported tag is dropped with its text kept.
+ */
 export function sanitizeAmazonHtml(html: string): string {
-    return DOMPurify.sanitize(html, { ALLOWED_TAGS: AMAZON_ALLOWED_TAGS, ALLOWED_ATTR: [] });
+    return toKdpHtml(html);
 }
 
 /**
@@ -59,14 +46,49 @@ export function sanitizeAmazonHtml(html: string): string {
  * being wrong again. `EnhancedTextarea`'s explicit `language` prop is
  * the right answer where the caller knows the shape; here it does not.
  *
- * Markdown headings above h3 do not survive the Amazon tag allowlist,
- * so `# Titel` previews as unformatted text. That is honest: the
- * allowlist is what KDP accepts, and showing the heading styled would
- * promise formatting the store will not render.
+ * The preview shows what KDP accepts: a Markdown `# Titel` or an HTML
+ * `h1`-`h3` previews as `h4`, `**fett**` or `strong` as `b` (#1119).
  */
 export function renderFieldPreview(value: string): string {
-    const html = looksLikeHtml(value) ? value : markdownToHtml(value);
-    return sanitizeAmazonHtml(html);
+    return sanitizeAmazonHtml(fieldHtml(value));
+}
+
+/** A field value as HTML, whichever shape it was stored in. */
+function fieldHtml(value: string): string {
+    return looksLikeHtml(value) ? value : markdownToHtml(value);
+}
+
+/**
+ * Names the tags in the stored HTML that KDP rejects and offers to
+ * rewrite the value into what KDP accepts. The textarea holds what the
+ * author pastes into KDP, so a preview that looks right is not enough.
+ */
+function KdpTagWarning({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+    const { t } = useI18n();
+    const rejected = looksLikeHtml(value) ? kdpRejectedTags(value) : [];
+    if (rejected.length === 0) return null;
+    return (
+        <div
+            role="status"
+            data-testid="kdp-tag-warning"
+            className="mt-1 flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--danger)]"
+        >
+            <span>
+                {t(
+                    "ui.metadata.kdp_rejected_tags",
+                    "KDP lehnt die Beschreibung mit diesen Tags ab: {tags}",
+                ).replace("{tags}", rejected.join(", "))}
+            </span>
+            <button
+                type="button"
+                className="btn btn-ghost btn-sm min-h-11"
+                data-testid="kdp-tag-fix"
+                onClick={() => onChange(toKdpHtml(value))}
+            >
+                {t("ui.metadata.kdp_fix_tags", "Für KDP umwandeln")}
+            </button>
+        </div>
+    );
 }
 
 /** Integrated HTML field: toggle between editable textarea and sanitized preview. */
@@ -77,6 +99,7 @@ export function HtmlFieldWithPreview({
     maxChars,
     rows = 8,
     aiButton,
+    kdpCheck = false,
 }: {
     label: string;
     value: string | null | undefined;
@@ -84,6 +107,8 @@ export function HtmlFieldWithPreview({
     maxChars?: number;
     rows?: number;
     aiButton?: { loading: boolean; onClick: () => void; label: string };
+    /** Warn about tags KDP rejects (the Amazon description field only). */
+    kdpCheck?: boolean;
 }) {
     const { t } = useI18n();
     const [showPreview, setShowPreview] = useState(false);
@@ -156,6 +181,7 @@ export function HtmlFieldWithPreview({
                     onChange={(e) => onChange(e.target.value)}
                 />
             )}
+            {kdpCheck && <KdpTagWarning value={text} onChange={onChange} />}
             {maxChars !== undefined && !showPreview && (
                 <CharCounter
                     count={text.length}

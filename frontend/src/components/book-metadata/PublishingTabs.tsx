@@ -253,6 +253,7 @@ export default function PublishingTabs({
                     value={form.html_description}
                     onChange={(v) => set("html_description", v)}
                     maxChars={4000}
+                    kdpCheck
                     aiButton={
                         aiAvailable
                             ? {

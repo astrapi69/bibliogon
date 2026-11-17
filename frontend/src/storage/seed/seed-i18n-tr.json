@@ -1956,6 +1956,8 @@
       "ai_cost_hint": "Tipik saglayici fiyatlarina gore tahmini maliyet",
       "html_field_show_preview": "Onizlemeyi goster",
       "html_field_show_source": "HTML goster",
+      "kdp_rejected_tags": "KDP bu etiketleri içeren açıklamayı reddeder: {tags}",
+      "kdp_fix_tags": "KDP için dönüştür",
       "title": "Baslik",
       "author": "Yazar",
       "author_placeholder": "Yazar adi veya takma ad",
