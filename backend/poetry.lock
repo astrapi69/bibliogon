@@ -404,6 +404,7 @@ files = []
 develop = true
 
 [package.dependencies]
+bibliogon-plugin-export = {path = "../bibliogon-plugin-export", develop = true}
 fastapi = "^0.136.0"
 pluginforge = "^0.10.0"
 pyyaml = "^6.0"
