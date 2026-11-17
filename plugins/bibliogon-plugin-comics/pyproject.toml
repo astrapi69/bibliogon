@@ -12,6 +12,11 @@ python = "^3.11"
 pluginforge = "^0.10.0"
 fastapi = "^0.136.0"
 pyyaml = "^6.0"
+# The comic-book PDF renders through plugin-export's picture-book
+# pipeline (``bibliogon_export.picture_book_pdf``, WeasyPrint); without
+# this line the plugin's own venv cannot import its PDF module (#1168).
+# The path form works in the monorepo, like plugin-git-sync's.
+bibliogon-plugin-export = {path = "../bibliogon-plugin-export", develop = true}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0"
