@@ -1867,6 +1867,8 @@ ui:
     ai_cost_hint: "Geschätzte Kosten basierend auf typischen Anbieterpreisen"
     html_field_show_preview: "Vorschau anzeigen"
     html_field_show_source: "HTML anzeigen"
+    kdp_rejected_tags: "KDP lehnt die Beschreibung mit diesen Tags ab: {tags}"
+    kdp_fix_tags: "Für KDP umwandeln"
     title: Titel
     author: Autor
     author_placeholder: "Autorenname oder Pen Name"

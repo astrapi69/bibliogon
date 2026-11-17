@@ -1914,6 +1914,8 @@
       "ai_cost_hint": "Custo estimado com base em precos tipicos de fornecedores",
       "html_field_show_preview": "Mostrar pre-visualizacao",
       "html_field_show_source": "Mostrar HTML",
+      "kdp_rejected_tags": "O KDP rejeita a descrição com estas tags: {tags}",
+      "kdp_fix_tags": "Converter para o KDP",
       "title": "Titulo",
       "author": "Autor",
       "author_placeholder": "Nome do autor ou pseudônimo",

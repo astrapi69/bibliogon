@@ -69,7 +69,7 @@ export const BOOK_FIELD_SPECS: Record<string, TemplateFieldSpec> = {
     },
     html_description: {
         description:
-            "Amazon-style HTML book description. Allowed tags: b, i, br, p, h2, ul, " +
+            "Amazon-style HTML book description. Allowed tags: b, i, br, p, h4, ul, " +
             "li. Hook in the first paragraph; benefits as a list; soft call-to-action " +
             "at the end. Around 200-300 words.",
         example:

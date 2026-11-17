@@ -184,7 +184,7 @@ def _book_field_specs() -> dict[str, dict[str, Any]]:
         "html_description": {
             "description": (
                 "Amazon-style HTML book description. Allowed tags: b, i, br, "
-                "p, h2, ul, li. Hook in the first paragraph; benefits as a "
+                "p, h4, ul, li. Hook in the first paragraph; benefits as a "
                 "list; soft call-to-action at the end. Around 200-300 words."
             ),
             "example": (

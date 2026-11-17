@@ -96,7 +96,7 @@ backpage_author_bio: |
   Leave null if the author is unknown.>
 html_description: |
   <200-300 word Amazon-style HTML description. Allowed tags:
-  b, i, br, p, h2, ul, li. Hook in the first paragraph;
+  b, i, br, p, h4, ul, li. Hook in the first paragraph;
   benefits as a list; soft call-to-action at the end.>
 """
     return _system_prompt(book), user

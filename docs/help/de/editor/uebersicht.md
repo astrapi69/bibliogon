@@ -48,6 +48,8 @@ Im Reiter **Metadaten > Marketing** pflegst du Schlüsselwörter (Keywords) für
 
 Drei Marketing-Felder akzeptieren HTML und besitzen einen Vorschau-Umschalter: **Buch-Beschreibung (HTML für Amazon)**, **Rückseitenbeschreibung** und **Autor-Bio (Rückseite)**. Standardmäßig ist die bearbeitbare Textarea aktiv. Mit dem Vorschau-Button oben rechts am Feld schaltest du zwischen Bearbeitungsmodus und gerenderter HTML-Vorschau um. So kannst du prüfen, wie deine Beschreibung mit Absätzen, Listen, fett gesetzten Stellen und ähnlichen Elementen tatsächlich aussehen wird, ohne den Export starten zu müssen. Die Vorschau wird sicher gerendert: gefährliches HTML (z.B. Skripte) wird vor der Anzeige entfernt.
 
+KDP nimmt in der Buch-Beschreibung nur diese Tags an: `b`, `i`, `em`, `u`, `p`, `br`, `ul`, `ol`, `li`, `h4`, `h5`, `h6`. Eine Beschreibung mit einem anderen Tag lehnt KDP beim Einfügen als Ganzes ab. Die Vorschau zeigt deshalb, was KDP annimmt: `strong` erscheint als `b`, `h1` bis `h3` als `h4`. Enthält der HTML-Text ein Tag, das KDP ablehnt, nennt das Feld es; **Für KDP umwandeln** schreibt den Text in die angenommene Form um. Die 4.000-Zeichen-Grenze zählt bei KDP die Tags mit, der Zähler am Feld auch.
+
 ![Marketing-Tab HTML-Vorschau](../../assets/screenshots/editor-marketing-preview.png)
 
 ## Rechtsklick-Menü

@@ -1914,6 +1914,8 @@
       "ai_cost_hint": "Εκτιμώμενο κόστος βάσει τυπικών τιμών παρόχων",
       "html_field_show_preview": "Εμφάνιση προεπισκόπησης",
       "html_field_show_source": "Εμφάνιση HTML",
+      "kdp_rejected_tags": "Το KDP απορρίπτει την περιγραφή με αυτές τις ετικέτες: {tags}",
+      "kdp_fix_tags": "Μετατροπή για το KDP",
       "title": "Τίτλος",
       "author": "Συγγραφέας",
       "author_placeholder": "Όνομα συγγραφέα ή ψευδώνυμο",
