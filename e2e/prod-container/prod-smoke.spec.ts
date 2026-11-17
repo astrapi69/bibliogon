@@ -121,15 +121,17 @@ function watchFailures(page: Page): PageFailures {
     return failures;
 }
 
+/**
+ * One assertion over both channels: a console line such as "Failed to
+ * load resource: 403" names no URL, so failing on the console list first
+ * hid the request list that does (#1173).
+ */
 function expectNoFailures(failures: PageFailures, surface: string): void {
     expect(
-        failures.console,
-        `${surface} logged console errors:\n${failures.console.join("\n")}`,
-    ).toEqual([]);
-    expect(
-        failures.requests,
-        `${surface} has resources that did not load:\n${failures.requests.join("\n")}`,
-    ).toEqual([]);
+        failures,
+        `${surface} logged console errors:\n${failures.console.join("\n")}\n` +
+            `${surface} has resources that did not load:\n${failures.requests.join("\n")}`,
+    ).toEqual({console: [], requests: []});
 }
 
 /** The element is on screen AND has a box a user could see. */
