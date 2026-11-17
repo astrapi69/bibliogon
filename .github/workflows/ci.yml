@@ -25,7 +25,9 @@ jobs:
   backend-tests:
     name: Backend Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # A full run (testmon selects everything after a lock or workflow
+    # change) takes 12-15 minutes; 15 cancelled it at 95% (#1175).
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
 
