@@ -33,7 +33,9 @@ env:
 
 jobs:
   smoke:
-    runs-on: ubuntu-latest
+    # Pinned (#1166): ubuntu-latest moved to 26.04, where Playwright 1.60
+    # cannot install its browser; the visual baselines come from 24.04.
+    runs-on: ubuntu-24.04
     # The smoke project is the full serial regression suite (500+ tests,
     # workers=1 against a live backend), so a run is long by nature. Cap it
     # so a stall fails fast and visibly instead of grinding to GitHub's 6h

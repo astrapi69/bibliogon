@@ -58,7 +58,9 @@ env:
 jobs:
   e2e:
     name: E2E ${{ inputs.suite }}
-    runs-on: ubuntu-latest
+    # Pinned (#1166): ubuntu-latest moved to 26.04, where Playwright 1.60
+    # cannot install its browser; the visual baselines come from 24.04.
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     permissions:
       contents: write
