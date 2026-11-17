@@ -171,11 +171,10 @@ class TestComicsExportExecuteHookimpl:
         )
         assert result is None
 
-    # The "dispatches when book_type + fmt both match" assertion
-    # requires ``bibliogon_comics.comic_book_pdf``, which transitively
-    # imports ``bibliogon_export.picture_book_pdf`` + WeasyPrint +
-    # sqlalchemy. The per-plugin isolated venv (this file's runner)
-    # intentionally does NOT install those. The end-to-end dispatch
+    # The "dispatches when book_type + fmt both match" assertion is
+    # not repeated here; plugin-export is a declared dependency since
+    # #1168, so ``comic_book_pdf`` imports in this venv, and its sheet
+    # count is pinned in ``test_comic_book_pdf_sheets.py``. The dispatch
     # pin lives in ``backend/tests/test_comic_routes.py::
     # TestComicBookExportDispatch::
     # test_comic_book_export_pdf_dispatches_via_export_execute_hook``
