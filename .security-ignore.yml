@@ -25,15 +25,19 @@ ignored:
       comic_book_pdf, bibliogon_kdp manuscript_pdf) construct
       HTML(string=...) and so keep the default presentational_hints=False.
       Still unfixed upstream as of weasyprint 70.0 - there is nothing to
-      upgrade to.
+      upgrade to. Re-checked 2026-11-17 (#1171): 70.0 is still the latest
+      release and the three call sites are unchanged; pip-audit's PyPI
+      source no longer lists the advisory, which is kept here until it is
+      confirmed withdrawn rather than missing.
     tracking: "#717"
-    review_by: "2026-11-16"
+    review_by: "2027-02-16"
   - id: PYSEC-2026-2132
     package: click
     reason: >
       Command injection in click.edit(). Bibliogon never calls click.edit();
       click is a transitive dependency only (gtts, uvicorn, mutmut). The fix
       is click 8.3.3, which is unreachable while gtts 2.5.4 (the latest
-      release) caps click at ">=7.1,<8.2".
+      release) caps click at ">=7.1,<8.2". Re-checked 2026-11-17 (#1171):
+      gtts is still 2.5.4 with the same cap; locked click is 8.1.8.
     tracking: "#717"
-    review_by: "2026-11-16"
+    review_by: "2027-02-16"

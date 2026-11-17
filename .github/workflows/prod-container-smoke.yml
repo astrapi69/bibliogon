@@ -56,7 +56,9 @@ env:
 jobs:
   prod-smoke:
     name: Prod container renders
-    runs-on: ubuntu-latest
+    # Pinned (#1166): ubuntu-latest moved to 26.04, where Playwright 1.60
+    # cannot install its browser; the visual baselines come from 24.04.
+    runs-on: ubuntu-24.04
     # The compose build is two images from scratch (poetry + every plugin,
     # npm + a Vite production build). 45 is the observed build plus a wide
     # margin; raise it rather than trimming what the gate loads.

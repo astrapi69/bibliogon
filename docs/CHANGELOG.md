@@ -201,6 +201,13 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
   these occurs in a build today; the gap was in the guard.
 
 ### Security
+- **Python dependency advisories fixed (#1171).** aiohttp 3.14.5,
+  filelock 4.2, certifi, gitpython 3.2.1, brotli, msgpack, soupsieve and
+  virtualenv in the backend; pillow 13, filelock, certifi and setuptools
+  in the launcher, which ships inside the binary; the docs tree and the
+  export, audiobook and git-sync plugin locks too. pillow stays on 12.x
+  in the backend for now: manuscripta (0.9.0 and the latest 0.11.1)
+  requires `pillow<13`.
 - **Web app: the GitHub token moves out of `localStorage` (#880).** The
   optional personal access token of the GitHub import now lives in its
   own IndexedDB database (`bibliogon-credentials`), outside every
