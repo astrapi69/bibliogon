@@ -4,7 +4,7 @@ KDP's "Supported HTML" help lists b, br, em, h4-h6, i, li, ol, p, u, ul;
 a description containing any other tag (strong, h1-h3) is rejected as a
 whole. The prompts told the model to use h2, so a generated description
 was refused the moment it was pasted. The frontend mirror of this list is
-``KDP_DESCRIPTION_TAGS`` in ``frontend/src/lib/utils/content/kdpHtml.ts``.
+``KDP_DESCRIPTION_TAGS`` in ``frontend/src/lib/utils/kdp/kdpHtml.ts``.
 """
 
 from __future__ import annotations

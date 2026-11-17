@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Sparkles } from "lucide-react";
 import { useI18n } from "../../hooks/useI18n";
 import { looksLikeHtml } from "../../lib/utils/content/contentShape";
-import { kdpRejectedTags, toKdpHtml } from "../../lib/utils/content/kdpHtml";
+import { kdpRejectedTags, toKdpHtml } from "../../lib/utils/kdp/kdpHtml";
 import { markdownToHtml } from "../../lib/utils/markdownToHtml";
 import styles from "../BookMetadataEditor.module.css";
 
