@@ -1005,22 +1005,26 @@ test.describe("Offline PWA (Dexie mode)", () => {
         // DangerZoneSettings.test.tsx. afterEach proves zero /api on mount.
     });
 
-    test("settings backups: history + compare visible+disabled offline, JSON backup stays, no /api", async ({
+    test("settings backups: history + compare active offline, JSON backup stays, no /api", async ({
         page,
     }) => {
-        // Backup history + compare are backend-only (.bgb archives +
-        // server-side store); policy #78: visible + disabled offline (header +
-        // notice card), never hidden. The JSON full-backup section works
-        // offline (Dexie) and stays fully active.
+        // Since #748 both run without the backend: the history reads the
+        // browser's own IndexedDB log through the storage seam, the .bgb
+        // compare unzips both archives in the browser. featureConfig marks
+        // them active in both modes, so offline they show their live
+        // surface and no "requires the desktop app" notice (#1180). The
+        // static-smoke specs backup-history-offline / backup-compare-offline
+        // pin the same on the Pages build. afterEach proves zero /api.
         await page.goto("/settings?tab=backups");
         await expect(page.getByTestId("backups-settings")).toBeVisible();
         await expect(page.getByTestId("backups-fulldata-section")).toBeVisible();
         await expect(page.getByTestId("backups-history-section")).toBeVisible();
-        await expect(page.getByTestId("backups-history-disabled")).toBeVisible();
-        await expect(page.getByTestId("backups-compare-btn")).toBeDisabled();
-        await expect(page.getByTestId("backups-compare-disabled")).toBeVisible();
-        // The live history list is replaced by the notice, so it fires no /api.
-        await expect(page.getByTestId("backups-history-list")).toHaveCount(0);
+        await expect(
+            page.getByTestId("backups-history-empty").or(page.getByTestId("backups-history-list")),
+        ).toBeVisible();
+        await expect(page.getByTestId("backups-history-disabled")).toHaveCount(0);
+        await expect(page.getByTestId("backups-compare-btn")).toBeEnabled();
+        await expect(page.getByTestId("backups-compare-disabled")).toHaveCount(0);
     });
 
     test("book metadata tabs open offline with no /api and no error toast", async ({
