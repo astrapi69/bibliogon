@@ -29,9 +29,9 @@ jobs:
     # change) takes 12-15 minutes; 15 cancelled it at 95% (#1175).
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
 
@@ -41,7 +41,7 @@ jobs:
       # The frontend job already does this via setup-node's
       # ``cache: "npm"``; backend was the asymmetry.
       - name: Cache Poetry virtualenv (backend)
-        uses: actions/cache@v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/pypoetry/virtualenvs
           key: poetry-backend-${{ runner.os }}-py3.12-${{ hashFiles('backend/poetry.lock') }}
@@ -110,7 +110,7 @@ jobs:
       # ever run) leaves no .testmondata, so testmon runs + maps EVERYTHING =
       # full suite -> it can never under-test on a cold cache.
       - name: Restore testmon impact map
-        uses: actions/cache@v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: backend/.testmondata
           key: testmondata-${{ runner.os }}-py3.12-${{ hashFiles('backend/poetry.lock') }}-${{ github.run_id }}
@@ -167,11 +167,11 @@ jobs:
     steps:
       # fetch-depth: 0 so the TIA step (vitest --changed) can diff against the
       # PR base branch (origin/<base_ref>) / the prior commit (HEAD~1 on push).
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "24"
           cache: "npm"
@@ -245,8 +245,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
       - name: Install pre-commit
@@ -259,8 +259,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
       # God-folder ratchet (#466): blocks PRs that grow a tracked directory
@@ -278,18 +278,18 @@ jobs:
       # commit date of every page and warns without it - and `--strict`,
       # which check_mkdocs_orphans.sh runs, turns that warning into a
       # failure.
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
 
       # The docs toolchain has its own venv (docs/pyproject.toml), not the
       # backend's. Separate cache key for the same reason.
       - name: Cache Poetry virtualenv (docs)
-        uses: actions/cache@v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/pypoetry/virtualenvs
           key: poetry-docs-${{ runner.os }}-py3.12-${{ hashFiles('docs/poetry.lock') }}
@@ -343,7 +343,7 @@ jobs:
     timeout-minutes: 5
     if: github.event_name == 'pull_request'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       # #768: coding-standards.md forbids Co-Authored-By trailers crediting
@@ -370,15 +370,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
       # Reuse the same backend Poetry cache as the test job
       # (same key). Mypy needs the SQLAlchemy + Pydantic
       # stub-bearing venv that ``poetry install`` produces.
       - name: Cache Poetry virtualenv (backend)
-        uses: actions/cache@v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/pypoetry/virtualenvs
           key: poetry-backend-${{ runner.os }}-py3.12-${{ hashFiles('backend/poetry.lock') }}

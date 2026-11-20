@@ -52,10 +52,10 @@ jobs:
   deploy-preview:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.inputs.branch || github.ref }}
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "24"
       - name: Build frontend (base /bibliogon-preview/, offline Dexie storage)
@@ -75,7 +75,7 @@ jobs:
           npm ci
           npm run build
       - name: Deploy to bibliogon-preview (gh-pages)
-        uses: peaceiris/actions-gh-pages@v4
+        uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
         with:
           deploy_key: ${{ secrets.PREVIEW_DEPLOY_KEY }}
           external_repository: astrapi69/bibliogon-preview

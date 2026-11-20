@@ -49,14 +49,14 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
 
       - name: Cache Poetry virtualenv
-        uses: actions/cache@v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/pypoetry/virtualenvs
           key: poetry-backend-${{ runner.os }}-py3.12-${{ hashFiles('backend/poetry.lock') }}
@@ -70,7 +70,7 @@ jobs:
         working-directory: backend
         run: poetry sync --no-interaction --no-ansi
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "24"
           cache: "npm"
@@ -100,7 +100,7 @@ jobs:
           fi
 
       # On a failing diff Playwright writes actual/expected/diff PNGs here.
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:
           name: visual-regression-diff
@@ -112,7 +112,7 @@ jobs:
       # `--update-snapshots` exits non-zero (Playwright reports updated
       # snapshots as failures), so without it this step's implicit success()
       # gate skips the upload.
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ always() && github.event.inputs.update_snapshots == 'true' }}
         with:
           name: visual-regression-baselines
@@ -167,8 +167,8 @@ jobs:
     if: always() && github.event.inputs.update_snapshots != 'true'
     needs: [visual]
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
       # #951: a scheduled workflow is not a required check, so a red run

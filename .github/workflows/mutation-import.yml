@@ -66,9 +66,9 @@ jobs:
     timeout-minutes: 150
     if: github.event_name == 'workflow_dispatch' || vars.DISABLE_NIGHTLY_MUTATION != 'true'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
 
@@ -96,7 +96,7 @@ jobs:
       # which is precisely how a broken tree from an earlier run gets
       # replayed forever. A miss now means a clean full run instead.
       - name: Restore mutmut cache
-        uses: actions/cache@v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: backend/mutants/
           key: mutmut-v2-${{ hashFiles('backend/pyproject.toml', 'backend/app/import_plugins/**', 'backend/app/services/**', 'backend/tests/**') }}
@@ -266,7 +266,7 @@ jobs:
           PY
 
       - name: Upload mutmut artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: mutmut-import-${{ github.run_id }}
@@ -284,8 +284,8 @@ jobs:
     if: always()
     needs: [mutmut-import]
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
       # #951: a scheduled workflow is not a required check, so a red run
