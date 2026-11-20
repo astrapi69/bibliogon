@@ -83,7 +83,7 @@ jobs:
           fi
           echo "Releasing v${{ inputs.version }}"
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           # Prefer a PAT (so downstream launcher-*.yml fire on the release
@@ -96,11 +96,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "24"
           cache: "npm"
@@ -183,7 +183,7 @@ jobs:
           echo "$hash  bibliogon-launcher" > dist/bibliogon-launcher.sha256
 
       - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
         with:
           tag_name: v${{ inputs.version }}
           name: Bibliogon v${{ inputs.version }}

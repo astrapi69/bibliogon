@@ -44,11 +44,11 @@ jobs:
   build-and-publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0  # Full history for the git-revision-date plugin
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: '3.12'
 
@@ -74,7 +74,7 @@ jobs:
         run: make verify-docs-external-hosts
 
       - name: Publish to bibliogondocs (gh-pages)
-        uses: peaceiris/actions-gh-pages@v4
+        uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
         with:
           deploy_key: ${{ secrets.DOCS_DEPLOY_KEY }}
           external_repository: astrapi69/bibliogondocs
