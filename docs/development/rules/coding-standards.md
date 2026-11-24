@@ -67,29 +67,23 @@
 - Provide a scope when it's clear: feat(export): ..., fix(editor): ...
 - One commit per logical change, not everything in one.
 - Branch naming: feature/{name}, fix/{name}, chore/{name} (from `develop`)
-- Do not add `Co-Authored-By` trailers attributing non-human
-  collaborators (AI tools, automation bots, MCP agents). Human
-  co-authors are attributed via the standard GitHub mechanism.
-  Exceptions require an explicit note in the commit body
-  stating who authorized the attribution - concretely a
-  `Co-Authored-By-Authorized-By: <name> (<reason>)` line.
-  ENFORCED (#768), not merely documented: the `commit-msg` hook
-  `no-ai-coauthor-trailer` (`scripts/check_no_ai_coauthor.py`)
-  refuses such a commit locally, and the `Commit trailers` CI job
-  re-checks every commit of a PR so a bypassed or uninstalled hook
-  is still caught. Install the stage once with `make install-hooks`
-  (plain `pre-commit install` does NOT cover `commit-msg`).
+- A commit or pull request made with an AI agent may name it (a
+  `Co-Authored-By` trailer, a session link, a "Generated with" line).
+  The rule that kept such lines out (#768) and its `commit-msg` check
+  were withdrawn by the maintainer on 2026-11-10
+  (astrapi69/astrapi69#14); `AI_USAGE.md` in the profile repository
+  says how the projects are made.
 - Commit under a human identity. `git config user.name` /
-  `user.email` must name a person, not a tool: GitHub's squash
-  merge adds the squashed commits' AUTHOR as a co-author on the
-  squash commit, so a session committing as
-  `Claude <noreply@anthropic.com>` produces exactly the trailer
-  above - created at merge time, after the `commit-msg` hook and
-  after the pull-request job, both of which only ever see a clean
-  message (#786). ENFORCED on both sides: the `pre-commit`-stage
-  hook `no-ai-commit-identity` refuses the configured identity
-  locally, and the `Commit trailers` CI job checks the author and
-  committer of every commit in a pull request. Checked on the
+  `user.email` must name a person, not a tool: an agent is named in
+  a trailer, it is not the author. GitHub's squash merge adds the
+  squashed commits' AUTHOR as a co-author on the squash commit, so
+  a session committing as `Claude <noreply@anthropic.com>` changes
+  who a commit on `develop` is attributed to at merge time, after
+  every check on the branch (#786). ENFORCED on both sides: the
+  `pre-commit`-stage hook `no-ai-commit-identity` refuses the
+  configured identity locally, and the `Commit identity` CI job
+  checks the author and committer of every commit in a pull
+  request. Checked on the
   BRANCH on purpose - a pull request can be rewritten, while a
   merge commit on `develop` would need the force-push the safety
   rules forbid.

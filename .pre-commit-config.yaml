@@ -61,17 +61,12 @@ repos:
 
   - repo: local
     hooks:
-      - id: no-ai-coauthor-trailer
-        name: no Co-Authored-By trailer crediting AI tools / bots
-        entry: python3 scripts/check_no_ai_coauthor.py
-        language: system
-        stages: [commit-msg]
-
-      # #786: the trailer is a symptom. GitHub's squash merge adds the
-      # squashed commits' AUTHOR as a co-author, so a non-human identity
-      # produces the forbidden trailer at merge time - after the hook above
-      # and after the pull-request job, both of which see a clean message.
-      # The identity is the only thing that can be refused beforehand.
+      # #786: a commit's author and committer are a person. GitHub's squash
+      # merge adds the squashed commits' AUTHOR as a co-author, at merge time
+      # and after every check on the branch, so the identity is refused
+      # before a commit exists. Naming an agent in a Co-Authored-By trailer
+      # is allowed (astrapi69/astrapi69#14); the commit-msg hook that
+      # refused it (#768) is withdrawn.
       - id: no-ai-commit-identity
         name: commit identity is a person, not a tool
         entry: python3 scripts/check_no_ai_coauthor.py --configured-identity

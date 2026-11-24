@@ -60,8 +60,7 @@ Config: `.pre-commit-config.yaml` at the repo root. What runs on
   syntax, large files, merge-conflict markers;
 - `ruff` (with `--fix`) and `ruff-format` on `backend/app/`;
 - `bandit` (Python SAST, MEDIUM/MEDIUM, the same gate as CI);
-- the repo's own guards, among them: no AI `Co-Authored-By` trailer
-  (commit-msg stage) and no AI commit identity (#768, #786), plugin
+- the repo's own guards, among them: no AI commit identity (#786), plugin
   lockfile paired with its pyproject, help-nav completeness, theme-token
   completeness, module-state audit, docs completeness, and a
   non-blocking roadmap-archive reminder.
@@ -70,7 +69,7 @@ No frontend linter and no test suite runs in the hooks; tests run on CI
 (`ci-only-heavy-tests.md`).
 
 ```bash
-make install-hooks                                  # pre-commit + commit-msg stage + pre-push
+make install-hooks                                  # pre-commit + pre-push
 cd backend && poetry run pre-commit run --all-files # everything, by hand
 ```
 
@@ -495,7 +494,7 @@ def export_book(book_id: str, fmt: str, options: ExportOptions) -> Path:
 ```
 git commit
   -> pre-commit hooks: file checks, ruff + ruff-format (backend/app/),
-     bandit, the repo guards; commit-msg stage: no AI co-author trailer
+     bandit, the repo guards
   -> all green? commit goes through.
   -> anything red? commit rejected, errors shown.
 git push (branch) -> CI runs lint, type checks and the test suites

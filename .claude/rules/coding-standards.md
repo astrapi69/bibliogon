@@ -20,7 +20,7 @@ snake_case (Python), PascalCase/camelCase (TS), `bibliogon-plugin-{name}` / `bib
 No em-dash, plain UTF-8, no emojis in code. 4 spaces in Python; in TypeScript/CSS match the file (2 and 4 both occur). Prettier and ESLint are configured but not gated: keep each file's existing style, lint what you touch, never mass-reformat.
 
 ## Git
-Gitflow: branch `feature/*`/`fix/*`/`chore/*` from `develop`, PR to `develop`; only releases reach `main`. Conventional commits with scope, one logical change each. No AI `Co-Authored-By` and a human git identity - both enforced by hooks and the `Commit trailers` CI job (#768, #786).
+Gitflow: branch `feature/*`/`fix/*`/`chore/*` from `develop`, PR to `develop`; only releases reach `main`. Conventional commits with scope, one logical change each. A human git identity, enforced by a hook and the `Commit identity` CI job (#786); an AI agent may be named in a `Co-Authored-By` trailer (astrapi69/astrapi69#14).
 
 ## Function design and cohesion
 One responsibility per function, about 40 lines (50 = refactor). One abstraction level. Route handlers only validate, delegate, return. Dataclasses instead of loose dicts. Guard clauses, crash early.

@@ -48,7 +48,7 @@ Ich bestimme den naechsten Task nach Prio. Nicht fragen "was soll X machen?" son
 - tsc + vitest gruen nach JEDEM Commit
 - Explicit `git add [paths]` (kein `-A`)
 - `git status` vor jedem Commit
-- Kein `Co-Authored-By`
+- Commit unter menschlicher Git-Identität; ein KI-Agent darf im `Co-Authored-By`-Trailer genannt werden
 - Tailwind-first, alle 6 Themes
 - i18n: alle 8 Kataloge
 - Ratchet-Guard (God-Folder, File-Size, Complexity)
