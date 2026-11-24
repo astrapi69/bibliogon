@@ -35,16 +35,6 @@ sponsors during the first year.
 
 ---
 
-## Flattr
-
-Microdonation platform where supporters set a monthly budget and distribute
-it across creators they appreciate. FOSS-friendly, established in the
-open-source community.
-
-**Link:** https://flattr.com/@astrapi69
-
----
-
 ## Ko-fi
 
 For one-time support without account requirements. "Buy me a coffee"
@@ -89,13 +79,13 @@ Bibliogon is not a registered non-profit, donations are not tax-deductible.
 
 ### What is the difference between recurring and one-time donations?
 
-Recurring donations (via Liberapay, GitHub Sponsors, or Flattr) help plan
+Recurring donations (via Liberapay or GitHub Sponsors) help plan
 development time long-term. One-time donations (via Ko-fi or PayPal) are
 equally welcome, especially when a specific feature has helped you.
 
 ### Can I change or cancel my recurring donation?
 
-Yes, anytime through the respective platform. All four recurring-donation
+Yes, anytime through the respective platform. Both recurring-donation
 platforms have account settings for managing subscriptions.
 
 ### Are donations anonymous?
@@ -111,7 +101,7 @@ payment methods and handle payment processing professionally.
 
 ### Which platform should I choose?
 
-- **Privacy-focused:** Liberapay or Flattr
+- **Privacy-focused:** Liberapay
 - **Developer community:** GitHub Sponsors
 - **Quick one-time support:** Ko-fi
 - **Widest reach:** PayPal
