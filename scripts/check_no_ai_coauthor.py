@@ -1,47 +1,36 @@
 #!/usr/bin/env python3
-"""Reject Co-Authored-By trailers that credit non-human collaborators (#768).
+"""Refuse a commit whose author or committer is a tool, not a person (#786).
 
-``coding-standards.md`` forbids attributing AI tools, automation bots
-and MCP agents as commit co-authors. Until now the rule relied purely
-on the discipline of whoever (or whatever) wrote the commit - and
-harness defaults have started injecting such a trailer, so a parallel
-session can slip one in unnoticed. This script is the enforcement:
+Naming an AI agent in a ``Co-Authored-By`` trailer is allowed: the rule
+against it (#768) was withdrawn by the maintainer on 2026-11-10
+(astrapi69/astrapi69#14), and the commit-msg check this script used to
+carry went with it. The file keeps its name so the hooks, the CI job and
+the session hooks that call it stay as they are.
 
-- **commit-msg mode** (``check_no_ai_coauthor.py <path>``): the
-  pre-commit framework passes the message file; a violating commit is
-  refused before it exists.
-- **range mode** (``check_no_ai_coauthor.py --stdin-messages``): CI
-  feeds every commit message of a PR, NUL-separated, so a bypassed
-  local hook still gets caught.
-- **identity modes** (``--stdin-identities`` / ``--configured-identity``):
-  the trailer is a symptom. GitHub's squash merge adds the squashed
-  commits' AUTHOR as a co-author on the squash commit, so a session
-  committing as ``Claude <noreply@anthropic.com>`` produces the forbidden
-  trailer at merge time - after the commit-msg hook and after the
-  pull-request job, both of which only ever see a clean message (#786).
-  CI feeds the authors and committers of a PR's commits; the local hook
-  checks the configured identity before a commit exists.
+What it still checks is the identity a commit is made under. GitHub's
+squash merge adds the squashed commits' AUTHOR as a co-author on the
+squash commit, so a session committing as ``Claude <noreply@anthropic.com>``
+changes who a commit on develop is attributed to, at merge time and
+after every check on the branch has passed. Two modes:
 
-Documented exception: the rule allows the trailer when the commit body
-explicitly states who authorized it. A ``Co-Authored-By-Authorized-By:``
-line anywhere in the message opts that commit out.
+- ``--stdin-identities``: CI feeds the authors and committers of a
+  pull request's commits, NUL-separated.
+- ``--configured-identity``: the local pre-commit hook checks the
+  configured ``user.name`` / ``user.email`` before a commit exists.
 """
 
 from __future__ import annotations
 
 import argparse
-import re
 import sys
 
-TRAILER_RE = re.compile(r"^\s*co-authored-by:\s*(?P<who>.+?)\s*$", re.IGNORECASE)
-
-#: Substrings that mark a co-author as non-human. Matched case-insensitively
-#: against the whole trailer value (name plus e-mail), so both the display
+#: Substrings that mark an identity as non-human. Matched case-insensitively
+#: against the whole identity (name plus e-mail), so both the display
 #: name and a vendor no-reply address trigger.
 #:
 #: ``users.noreply.github.com`` is deliberately NOT in this list (#779):
 #: GitHub hands that domain to every HUMAN who keeps their address
-#: private, so matching on it would refuse a legitimate co-author. Bots
+#: private, so matching on it would refuse a legitimate person. Bots
 #: using the same domain still carry the ``[bot]`` suffix.
 NON_HUMAN_MARKERS = (
     "claude",
@@ -59,8 +48,6 @@ NON_HUMAN_MARKERS = (
     "noreply@anthropic.com",
 )
 
-AUTHORIZED_MARKER = "co-authored-by-authorized-by:"
-
 
 def is_non_human(identity: str) -> bool:
     """Whether ``identity`` ("Name <mail>") names a tool rather than a person."""
@@ -68,49 +55,12 @@ def is_non_human(identity: str) -> bool:
     return any(marker in haystack for marker in NON_HUMAN_MARKERS)
 
 
-def offending_trailers(message: str) -> list[str]:
-    """Return every non-human ``Co-Authored-By`` trailer in ``message``.
-
-    Only real trailer LINES count - a mention inside prose (such as the
-    rule's own documentation) is ignored. An explicit authorization
-    marker anywhere in the message opts the commit out entirely.
-
-    Args:
-        message: Full commit message.
-
-    Returns:
-        The offending trailer values, empty when the message is clean.
-    """
-    if AUTHORIZED_MARKER in message.lower():
-        return []
-    offenders = []
-    for line in message.splitlines():
-        match = TRAILER_RE.match(line)
-        if not match:
-            continue
-        who = match.group("who")
-        if is_non_human(who):
-            offenders.append(who)
-    return offenders
-
-
-def _report(offenders: list[str], subject: str) -> None:
-    print(f"ERROR: non-human Co-Authored-By trailer in: {subject}")
-    for who in offenders:
-        print(f"  Co-Authored-By: {who}")
-    print()
-    print("coding-standards.md forbids crediting AI tools / bots as co-authors.")
-    print("Remove the trailer, or - if a human explicitly authorized it - add")
-    print("a 'Co-Authored-By-Authorized-By: <name> (<reason>)' line to the body.")
-
-
 def _report_identity(identity: str, where: str) -> None:
     print(f"ERROR: commit {where} is not a person: {identity}")
     print()
-    print("GitHub's squash merge turns a non-human author into exactly the")
-    print("Co-Authored-By trailer coding-standards.md forbids, on a commit")
-    print("created after every message check has already passed (#786).")
-    print("Set a human identity instead:")
+    print("coding-standards.md: commits are made under a human identity (#786).")
+    print("An AI agent may be named in a Co-Authored-By trailer, but it is not")
+    print("the author or committer. Set a human identity instead:")
     print('  git config user.name "Your Name"')
     print('  git config user.email "you@example.com"')
 
@@ -129,16 +79,6 @@ def _configured_identity() -> str:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument(
-        "message_files",
-        nargs="*",
-        help="Commit-message file(s), as passed by the pre-commit commit-msg stage",
-    )
-    parser.add_argument(
-        "--stdin-messages",
-        action="store_true",
-        help="Read NUL-separated commit messages from stdin (CI range check)",
-    )
     parser.add_argument(
         "--stdin-identities",
         action="store_true",
@@ -166,23 +106,6 @@ def main(argv: list[str] | None = None) -> int:
         identity = _configured_identity()
         if is_non_human(identity):
             _report_identity(identity, "identity configured here")
-            failed = True
-
-    if args.stdin_messages:
-        for message in sys.stdin.read().split("\x00"):
-            if not message.strip():
-                continue
-            offenders = offending_trailers(message)
-            if offenders:
-                _report(offenders, message.strip().splitlines()[0])
-                failed = True
-
-    for path in args.message_files:
-        with open(path, encoding="utf-8") as handle:
-            message = handle.read()
-        offenders = offending_trailers(message)
-        if offenders:
-            _report(offenders, message.strip().splitlines()[0] if message.strip() else path)
             failed = True
 
     return 1 if failed else 0

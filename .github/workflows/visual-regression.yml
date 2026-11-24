@@ -127,7 +127,7 @@ jobs:
       # whoever (or whatever) dispatched the run.
       #
       # Committed as the dispatching actor, which is accurate (a person asked
-      # for this refresh) and keeps the #768/#786 identity guard satisfied -
+      # for this refresh) and keeps the #786 identity guard satisfied -
       # `github-actions[bot]` would carry the `[bot]` marker it refuses.
       - name: Push the regenerated baselines to a branch
         if: ${{ always() && github.event.inputs.update_snapshots == 'true' }}

@@ -206,7 +206,8 @@ Do not blindly commit AI-generated blocks.
   `git add --all` are forbidden.
 - `git status` before every commit (prevents cross-session staging
   absorption).
-- No `Co-Authored-By` trailers.
+- Commits are made under a human git identity; an AI agent may be named in a
+  `Co-Authored-By` trailer (astrapi69/astrapi69#14).
 
 **Enforcement:**
 

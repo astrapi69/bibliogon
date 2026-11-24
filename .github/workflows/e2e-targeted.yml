@@ -173,7 +173,7 @@ jobs:
       # shape as the visual-baseline push added in #950.
       #
       # Committed as the dispatching actor, which is accurate (someone asked
-      # for this capture) and keeps the #768/#786 identity guard satisfied -
+      # for this capture) and keeps the #786 identity guard satisfied -
       # `github-actions[bot]` would carry the `[bot]` marker it refuses.
       - name: Push the captured screenshots to a branch
         if: ${{ always() && inputs.suite == 'feature-screenshots' }}

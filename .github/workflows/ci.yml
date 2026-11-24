@@ -337,8 +337,8 @@ jobs:
       - name: Docs site fetches nothing from a third-party host
         run: make verify-docs-external-hosts
 
-  commit-trailers:
-    name: Commit trailers
+  commit-identity:
+    name: Commit identity
     runs-on: ubuntu-latest
     timeout-minutes: 5
     if: github.event_name == 'pull_request'
@@ -346,19 +346,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      # #768: coding-standards.md forbids Co-Authored-By trailers crediting
-      # AI tools / bots. The commit-msg hook catches them locally; this job
-      # catches a bypassed or uninstalled hook, over EVERY commit in the PR.
-      - name: Reject non-human Co-Authored-By trailers
-        run: |
-          git log --format='%B%x00' \
-            ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} \
-            | python scripts/check_no_ai_coauthor.py --stdin-messages
-      # #786: and the authors themselves, because the squash commit's
-      # trailer is synthesised from them at merge time - too late for any
-      # message check. Checked on the PULL REQUEST on purpose: a branch can
-      # be rewritten, a merge commit on develop would need the force-push
-      # the repo's safety rules forbid.
+      # #786: a commit's author and committer are a person. The squash
+      # commit's co-author is synthesised from them at merge time - too late
+      # for any check on develop. Checked on the PULL REQUEST on purpose: a
+      # branch can be rewritten, a merge commit on develop would need the
+      # force-push the repo's safety rules forbid. The message check for AI
+      # Co-Authored-By trailers (#768) is withdrawn (astrapi69/astrapi69#14).
       - name: Reject non-human commit authors
         run: |
           git log --format='%an <%ae>%x00%cn <%ce>%x00' \

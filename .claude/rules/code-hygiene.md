@@ -8,7 +8,7 @@ contradict it (#1143).
 Python: ruff (lint + format), gated by pre-commit on `backend/app/` and in CI. Frontend: ESLint (`eslint.config.js`) and Prettier (`.prettierrc`) are configured but not gated - lint the files you touch, match each file's existing style, never mass-reformat.
 
 ## Pre-commit hooks
-`make install-hooks` installs the git hooks including the commit-msg stage (no AI co-author) and the pre-push hook that runs pre-commit on tag pushes. Cloud sessions get them from the session-start hook.
+`make install-hooks` installs the git hooks including the pre-push hook that runs pre-commit on tag pushes. Cloud sessions get them from the session-start hook.
 
 ## Error handling architecture
 Services raise `BibliogonError` subclasses (`NotFoundError` 404, `ValidationError` 400, `ConflictError` 409, `ExportError`/`PluginError` 500, `ExternalServiceError` 502), never `HTTPException`. Routers catch nothing; the global handler maps the status and adds the traceback in debug mode. No bare `except Exception`; wrap external tools. Frontend: every API error is an `ApiError`, shown via toast with i18n text, loading state reset in `finally`, a "Report issue" link on 5xx. Generic messages are forbidden.
@@ -23,4 +23,4 @@ Backend: `logging.getLogger(__name__)`, context via `extra`, never `print`. INFO
 No inline comments: names explain, docstrings (Google style) and TSDoc explain the rest. Allowed: `TODO(#N)`, the why of a non-obvious algorithm, licence headers. No commented-out code.
 
 ## Summary: what happens automatically on every commit
-The pre-commit hooks (ruff, ruff-format, file checks, bandit, the commit-msg checks) run on `git commit`; a red hook rejects the commit.
+The pre-commit hooks (ruff, ruff-format, file checks, bandit, the repo guards) run on `git commit`; a red hook rejects the commit.

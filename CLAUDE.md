@@ -33,7 +33,7 @@ make install / dev / dev-bg / dev-down   # deps; backend 8000 + frontend 5173
 make ci-remote                           # CI on GitHub for the pushed branch
 make e2e-remote SUITE=smoke SPECS="smoke/x.spec.ts"  # Playwright on GitHub
 make test-plugin-<name>                  # one plugin (every plugin needs a target)
-make install-hooks                       # git hooks incl. the commit-msg stage
+make install-hooks                       # git hooks (pre-commit, pre-push)
 make verify-theme / verify-seed-i18n / verify-seed-drift / verify-docs-discipline
 make generate-seed-data                  # regen offline seed JSON after i18n/help/registry changes
 make prod / prod-down                    # Docker Compose (port 7880)

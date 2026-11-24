@@ -1,7 +1,7 @@
 #!/bin/bash
 # Set a human git identity in the current repository when there is none
 # or when it is an AI identity (#1137). The repo refuses commits by an AI
-# author or committer (#786, the "Commit trailers" CI job), and a cloud
+# author or committer (#786, the "Commit identity" CI job), and a cloud
 # container starts out as Claude <noreply@anthropic.com>.
 #
 # A human identity is never overwritten. Override the maintainer with
