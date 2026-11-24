@@ -1605,6 +1605,19 @@ Scrivener analysis items 8-10 (filed 2026-06-01 from
 
 ## P5 - Speculative / Nice-to-have
 
+- **DOCS-DE-UMLAUT-CONSISTENCY-01** (P5, trigger-gated, filed
+  2026-11-24 from #1187): `DONATE-de.md` writes German umlauts as
+  `ue` / `ae` / `oe` throughout; only the three lines #1187 touched
+  use real characters. The same transliteration shows in 8 of the
+  help pages under `docs/help/de/` (measured 2026-11-24 with
+  `git grep -l -E "\b(fuer|ueber|koennen|moechte|aendern|Unterstuetz)"`
+  over the 85 files of `*-de.md` and `docs/help/de/`: 9 files hit).
+  Scope: one consistency pass that restores `ä`, `ö`, `ü`, `ß` in
+  `DONATE-de.md` and the other German docs, read match by match,
+  since words such as `neue` or `Quelle` carry a legitimate `ue`.
+  Trigger: the next substantial edit of the German docs, or an
+  explicit request of the maintainer. Not scheduled.
+
 - **COMIC-FOUNDATION-RESIDUAL-POLISH-01** (P5, trigger-gated, filed
   2026-06-17 from the explorations audit): `plugin-comics` shipped its
   foundation (Sessions 0-2: panels + multi-bubble + drag-to-position).
